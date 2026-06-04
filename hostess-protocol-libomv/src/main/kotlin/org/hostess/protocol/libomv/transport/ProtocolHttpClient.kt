@@ -1,0 +1,39 @@
+package org.hostess.protocol.libomv.transport
+
+import java.time.Duration
+
+data class ProtocolHttpRequest(
+    val method: String,
+    val url: String,
+    val headers: Map<String, String> = emptyMap(),
+    val body: ProtocolHttpBody = ProtocolHttpBody.NoBody,
+    val timeout: Duration = Duration.ofSeconds(30),
+    val redactionKeys: Set<String> = emptySet(),
+)
+
+sealed interface ProtocolHttpBody {
+    data object NoBody : ProtocolHttpBody
+
+    data class TextBody(
+        val content: String,
+        val contentType: String = "application/xml; charset=utf-8",
+    ) : ProtocolHttpBody
+
+    data class BinaryUploadBody(
+        val bytes: ByteArray,
+        val contentType: String = "application/octet-stream",
+    ) : ProtocolHttpBody
+}
+
+data class ProtocolHttpResponse(
+    val statusCode: Int,
+    val headers: Map<String, List<String>>,
+    val body: ByteArray,
+    val redactedSummary: String,
+)
+
+interface ProtocolHttpClient {
+    fun execute(request: ProtocolHttpRequest): ProtocolHttpResponse
+}
+
+class ProtocolHttpException(message: String) : RuntimeException(message)

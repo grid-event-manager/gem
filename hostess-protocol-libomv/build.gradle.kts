@@ -110,6 +110,7 @@ sourceSets {
 
 dependencies {
     implementation(project(":hostess-core"))
+    implementation(libs.okhttp)
     testImplementation(kotlin("test"))
 }
 

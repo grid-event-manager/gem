@@ -1,6 +1,10 @@
 [versions]
 android-gradle = "9.2.1"
 kotlin = "2.4.0"
+okhttp = "5.3.2"
+
+[libraries]
+okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "android-gradle" }
