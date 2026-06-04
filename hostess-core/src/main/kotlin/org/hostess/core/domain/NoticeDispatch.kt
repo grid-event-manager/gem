@@ -28,6 +28,11 @@ data class NoticeSendPlan(
         get() = draft.targetSet.selectedGroups
 }
 
+sealed interface NoticeDispatchResult {
+    data class Sent(val result: NoticeSendResult) : NoticeDispatchResult
+    data class Rejected(val validation: NoticeDraftValidation) : NoticeDispatchResult
+}
+
 class NoticeSendResult(
     val plan: NoticeSendPlan,
     statuses: List<GroupSendStatus>,
