@@ -3,8 +3,15 @@ package org.hostess.protocol.libomv
 import java.time.Instant
 import org.hostess.core.domain.AccountLabel
 import org.hostess.core.domain.CoreFailureReason
+import org.hostess.core.domain.GroupDisplayName
+import org.hostess.core.domain.GroupId
+import org.hostess.core.domain.GroupMembership
+import org.hostess.core.domain.GroupSendState
+import org.hostess.core.domain.GroupTargetSet
 import org.hostess.core.domain.HostessSession
+import org.hostess.core.domain.NoticeDraft
 import org.hostess.core.domain.SessionId
+import org.hostess.core.domain.TargetSelectionResult
 import org.hostess.core.ports.CredentialHandle
 import org.hostess.core.ports.GroupListResult
 import org.hostess.core.ports.LoginRequest
@@ -56,6 +63,18 @@ class ProtocolLibomvModuleTest {
         assertEquals("protocol session inactive", groups.failure.redactedMessage)
     }
 
+    @Test
+    fun `live runtime notice adapter reaches protocol runtime source`() {
+        val runtime = ProtocolLibomvModule.liveRuntime()
+        val session = fakeActiveUuidSession()
+        runtime.clientSession.activate(session, agentId = "11111111-1111-1111-1111-111111111111")
+
+        val status = runtime.noticePort.sendGroupNotice(session, group(), draft(), null)
+
+        assertEquals(GroupSendState.FAILED, status.state)
+        assertEquals("notice runtime unavailable", status.detail)
+    }
+
     private fun loginRequest(): LoginRequest = LoginRequest(
         accountLabel = AccountLabel("venue-proof"),
         credentialHandle = CredentialHandle("proof-handle"),
@@ -66,5 +85,27 @@ class ProtocolLibomvModuleTest {
         accountLabel = AccountLabel("venue-proof"),
         startedAt = Instant.EPOCH,
         isActive = false,
+    )
+
+    private fun fakeActiveUuidSession(): HostessSession = HostessSession(
+        sessionId = SessionId("22222222-2222-2222-2222-222222222222"),
+        accountLabel = AccountLabel("venue-proof"),
+        startedAt = Instant.EPOCH,
+        isActive = true,
+    )
+
+    private fun draft(): NoticeDraft = NoticeDraft(
+        subject = "Gig tonight",
+        message = "Doors at 8",
+        targetSet = assertIs<TargetSelectionResult.Changed>(
+            GroupTargetSet.from(listOf(group())).addAllSendable(),
+        ).targetSet,
+    )
+
+    private fun group(): GroupMembership = GroupMembership(
+        groupId = GroupId("33333333-3333-3333-3333-333333333333"),
+        displayName = GroupDisplayName("Music Room"),
+        canSendNotices = true,
+        acceptsNotices = true,
     )
 }

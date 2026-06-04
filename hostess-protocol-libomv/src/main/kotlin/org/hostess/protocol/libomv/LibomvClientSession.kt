@@ -7,6 +7,7 @@ import org.hostess.core.domain.HostessSession
 class LibomvClientSession private constructor(
     private val protocolAvailable: Boolean,
     private var activeSession: HostessSession?,
+    private var agentId: String?,
     private var privateEndpoint: String?,
 ) {
     fun unavailable(reason: CoreFailureReason): CoreFailure =
@@ -18,13 +19,19 @@ class LibomvClientSession private constructor(
 
     fun isProtocolAvailable(): Boolean = protocolAvailable
 
-    internal fun activate(session: HostessSession, privateEndpoint: String? = null) {
+    internal fun activate(
+        session: HostessSession,
+        agentId: String? = null,
+        privateEndpoint: String? = null,
+    ) {
         activeSession = session
+        this.agentId = agentId
         this.privateEndpoint = privateEndpoint
     }
 
     internal fun clear() {
         activeSession = null
+        agentId = null
         privateEndpoint = null
     }
 
@@ -43,23 +50,56 @@ class LibomvClientSession private constructor(
         }
     }
 
+    internal fun requireIdentity(session: HostessSession): LibomvSessionIdentityResult {
+        val bindingFailure = requireSession(session)
+        if (bindingFailure != null) {
+            return LibomvSessionIdentityResult.Failure(bindingFailure)
+        }
+        val activeAgentId = agentId?.takeIf(String::isNotBlank)
+            ?: return LibomvSessionIdentityResult.Failure(
+                CoreFailure(CoreFailureReason.LOGIN_FAILED, redactedMessage = "protocol agent identity unavailable"),
+            )
+        return LibomvSessionIdentityResult.Success(
+            LibomvSessionIdentity(
+                agentId = activeAgentId,
+                sessionId = session.sessionId.value,
+            ),
+        )
+    }
+
     companion object {
         fun unavailable(): LibomvClientSession = LibomvClientSession(
             protocolAvailable = false,
             activeSession = null,
+            agentId = null,
             privateEndpoint = null,
         )
 
         fun inactive(): LibomvClientSession = LibomvClientSession(
             protocolAvailable = true,
             activeSession = null,
+            agentId = null,
             privateEndpoint = null,
         )
 
-        internal fun active(session: HostessSession): LibomvClientSession = LibomvClientSession(
+        internal fun active(
+            session: HostessSession,
+            agentId: String? = null,
+        ): LibomvClientSession = LibomvClientSession(
             protocolAvailable = true,
             activeSession = session,
+            agentId = agentId,
             privateEndpoint = null,
         )
     }
+}
+
+internal data class LibomvSessionIdentity(
+    val agentId: String,
+    val sessionId: String,
+)
+
+internal sealed interface LibomvSessionIdentityResult {
+    data class Success(val identity: LibomvSessionIdentity) : LibomvSessionIdentityResult
+    data class Failure(val failure: CoreFailure) : LibomvSessionIdentityResult
 }

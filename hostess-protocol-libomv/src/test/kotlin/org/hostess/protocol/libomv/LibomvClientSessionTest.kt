@@ -8,15 +8,30 @@ import org.hostess.core.domain.SessionId
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertNull
 
 class LibomvClientSessionTest {
     @Test
     fun `matching active Hostess session passes binding check`() {
         val session = hostessSession("live-session")
-        val clientSession = LibomvClientSession.active(session)
+        val clientSession = LibomvClientSession.active(session, agentId = "agent-id")
 
         assertNull(clientSession.requireSession(session))
+        val identity = assertIs<LibomvSessionIdentityResult.Success>(clientSession.requireIdentity(session)).identity
+        assertEquals("agent-id", identity.agentId)
+        assertEquals("live-session", identity.sessionId)
+    }
+
+    @Test
+    fun `active session without protocol agent identity fails identity check`() {
+        val session = hostessSession("live-session")
+        val failure = assertIs<LibomvSessionIdentityResult.Failure>(
+            LibomvClientSession.active(session).requireIdentity(session),
+        ).failure
+
+        assertEquals(CoreFailureReason.LOGIN_FAILED, failure.reason)
+        assertEquals("protocol agent identity unavailable", failure.redactedMessage)
     }
 
     @Test

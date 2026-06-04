@@ -8,6 +8,7 @@ import org.w3c.dom.Node
 
 internal data class LibomvLoginSuccess(
     val sessionId: SessionId,
+    val agentId: String?,
     val privateEndpoint: String?,
 )
 
@@ -34,6 +35,7 @@ internal object LibomvLoginMapping {
             return LibomvLoginMappingResult.Success(
                 LibomvLoginSuccess(
                     sessionId = SessionId(sessionId),
+                    agentId = fields[LoginKeys.AGENT_ID]?.takeIf(String::isNotBlank),
                     privateEndpoint = fields[LoginKeys.PRIVATE_ENDPOINT]?.takeIf(String::isNotBlank),
                 ),
             )
@@ -80,6 +82,7 @@ internal object LibomvLoginMapping {
 internal object LoginKeys {
     val LOGIN: String = "login"
     val MESSAGE: String = "message"
+    val AGENT_ID: String = listOf("agent", "id").joinToString("_")
     val SESSION_ID: String = listOf("session", "id").joinToString("_")
     val PRIVATE_ENDPOINT: String = listOf(
         listOf("se", "ed").joinToString(""),

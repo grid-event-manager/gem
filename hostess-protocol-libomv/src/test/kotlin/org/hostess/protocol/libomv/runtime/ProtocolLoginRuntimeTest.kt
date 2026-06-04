@@ -12,6 +12,7 @@ import org.hostess.core.ports.LoginRequest
 import org.hostess.core.ports.SessionLoginResult
 import org.hostess.core.ports.SessionLogoutResult
 import org.hostess.protocol.libomv.LibomvClientSession
+import org.hostess.protocol.libomv.LibomvSessionIdentityResult
 import org.hostess.protocol.libomv.mapping.LoginKeys
 import org.hostess.protocol.libomv.transport.ProtocolHttpBody
 import org.hostess.protocol.libomv.transport.ProtocolHttpClient
@@ -62,6 +63,8 @@ class ProtocolLoginRuntimeTest {
         assertEquals(Instant.parse("2026-06-04T20:00:00Z"), session.startedAt)
         assertTrue(session.isActive)
         assertNull(clientSession.requireSession(session))
+        val identity = assertIs<LibomvSessionIdentityResult.Success>(clientSession.requireIdentity(session)).identity
+        assertEquals("agent-id", identity.agentId)
 
         val request = httpClient.capturedRequest
         assertEquals("POST", request?.method)
@@ -152,6 +155,7 @@ class ProtocolLoginRuntimeTest {
         <llsd>
           <map>
             <key>${LoginKeys.LOGIN}</key><string>true</string>
+            <key>${LoginKeys.AGENT_ID}</key><string>agent-id</string>
             <key>${LoginKeys.SESSION_ID}</key><string>$sessionValue</string>
             <key>${LoginKeys.PRIVATE_ENDPOINT}</key><string>${secureUrl("caps.example", "/private")}</string>
           </map>

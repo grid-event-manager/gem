@@ -45,7 +45,11 @@ class ProtocolLoginRuntime(
                     startedAt = clock.instant(),
                     isActive = true,
                 )
-                clientSession.activate(session, privateEndpoint = mapped.value.privateEndpoint)
+                clientSession.activate(
+                    session = session,
+                    agentId = mapped.value.agentId,
+                    privateEndpoint = mapped.value.privateEndpoint,
+                )
                 SessionLoginResult.Success(session)
             }
             is LibomvLoginMappingResult.Failure -> loginFailure("login failed")
