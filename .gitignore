@@ -1,0 +1,32 @@
+# Hostess public production repo
+.gradle/
+build/
+out/
+.idea/
+.vscode/
+*.iml
+*.code-workspace
+
+# Local secrets and runtime state
+.env
+.env.*
+*.log
+*.pid
+*.tmp
+*.swp
+
+# Android/desktop packaging outputs
+*.apk
+*.aab
+*.jks
+*.keystore
+dist/
+
+# Internal project/process material belongs in the private sibling repo.
+/reference/
+/docs/live-workstreams/
+/docs/*RUNBOOK*.md
+/docs/*WRITING-GUIDE*.md
+/docs/RFC-HYGIENE-CHECK.md
+/docs/VALIDATION-SPINE.md
+/docs/BUILD-RECORD.md
