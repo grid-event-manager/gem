@@ -1,11 +1,20 @@
 # Hostess CLI Tools
 
-Future local proof and operator helpers.
+Local proof and operator helpers.
 
-Initial tools should focus on protocol proof-of-life:
+Available proof commands:
 
-- login smoke test;
-- list-groups smoke test;
-- plain group-notice send proof;
-- landmark/texture attachment proof;
-- cleanup and redacted report capture.
+- `login`
+- `list-groups`
+- `send-notice`
+- `live-proof`
+
+Examples:
+
+```bash
+./gradlew :tools:cli:run --args="list-groups --mode fake --report ../private/evidence/HS001-A-09/fake-list-groups.json"
+./gradlew :tools:cli:run --args="send-notice --mode fake --target 'Venue Hosts' --subject 'Tonight' --body 'Doors at eight'"
+./gradlew :tools:cli:run --args="live-proof --mode live --account venue-proof --credential-env HOSTESS_PROOF_CREDENTIAL"
+```
+
+Live mode uses credential handles such as environment variable names or credential-file paths. Do not place raw credentials in command arguments.

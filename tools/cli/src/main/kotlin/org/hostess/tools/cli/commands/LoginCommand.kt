@@ -10,6 +10,7 @@ import org.hostess.tools.cli.CommandArguments
 import org.hostess.tools.cli.CommandMode
 import org.hostess.tools.cli.CommandResult
 import org.hostess.tools.cli.composition.CliCompositionRoot
+import org.hostess.tools.cli.report.ProofReportStatus
 
 class LoginCommand(
     private val compositionRoot: CliCompositionRoot,
@@ -21,12 +22,30 @@ class LoginCommand(
         val request = loginRequest(arguments, mode)
             ?: return usage(output, "missing account or credential handle")
 
-        return when (val result = compositionRoot.runtime(mode).sessionService.login(request)) {
+        val runtime = compositionRoot.runtime(mode)
+        return when (val result = runtime.sessionService.login(request)) {
             is SessionLoginResult.Success -> {
+                runtime.proofReportWriter.writeIfRequested(
+                    reportPath = arguments.option("report"),
+                    command = name,
+                    mode = mode.label(),
+                    status = ProofReportStatus.PASSED,
+                    inputs = mapOf("account" to request.accountLabel.value),
+                    results = listOf(mapOf("session" to "created")),
+                )
                 output.line("login ${mode.label()} ready for ${result.session.accountLabel.value}")
                 CommandResult.SUCCESS
             }
             is SessionLoginResult.Failure -> {
+                runtime.proofReportWriter.writeIfRequested(
+                    reportPath = arguments.option("report"),
+                    command = name,
+                    mode = mode.label(),
+                    status = ProofReportStatus.FAILED,
+                    inputs = mapOf("account" to request.accountLabel.value),
+                    results = emptyList(),
+                    blockedReason = result.failure.redactedMessage,
+                )
                 output.line("login ${mode.label()} failed: ${result.failure.redactedMessage ?: "unavailable"}")
                 CommandResult.UNAVAILABLE
             }
@@ -43,7 +62,7 @@ class LoginCommand(
 
     private fun usage(output: CliOutput, reason: String): CommandResult {
         output.line("login usage error: $reason")
-        output.line("usage: login --mode fake|live --account <label> --credential-env <name>")
+        output.line("usage: login --mode fake|live --account <label> --credential-env <name> --report <path>")
         return CommandResult.USAGE_ERROR
     }
 }

@@ -37,6 +37,7 @@ import org.hostess.protocol.libomv.LibomvInventoryAdapter
 import org.hostess.protocol.libomv.LibomvNoticeAdapter
 import org.hostess.protocol.libomv.LibomvSessionAdapter
 import org.hostess.tools.cli.CommandMode
+import org.hostess.tools.cli.report.ProofReportWriter
 
 class CliCompositionRoot(
     private val fakeGroups: List<GroupMembership> = defaultFakeGroups(),
@@ -59,6 +60,7 @@ class CliCompositionRoot(
             noticeDraftService = NoticeDraftService(),
             attachmentService = AttachmentService(inventoryPort),
             noticeDispatchService = NoticeDispatchService(noticePort, NoopClockPort),
+            proofReportWriter = ProofReportWriter(),
             sessionProvider = { session },
         )
     }
@@ -72,6 +74,7 @@ class CliCompositionRoot(
             noticeDraftService = NoticeDraftService(),
             attachmentService = AttachmentService(LibomvInventoryAdapter(clientSession)),
             noticeDispatchService = NoticeDispatchService(LibomvNoticeAdapter(clientSession), NoopClockPort),
+            proofReportWriter = ProofReportWriter(),
             sessionProvider = { fakeSession(active = false) },
         )
     }
@@ -92,6 +95,7 @@ data class CliRuntime(
     val noticeDraftService: NoticeDraftService,
     val attachmentService: AttachmentService,
     val noticeDispatchService: NoticeDispatchService,
+    val proofReportWriter: ProofReportWriter,
     val sessionProvider: () -> HostessSession,
 )
 

@@ -10,6 +10,7 @@ RAW_LIBOMV_PATTERN='(^|[^[:alnum:]_.])libomv\.'
 CORE_FORBIDDEN_PATTERN="hostess-protocol-libomv|org\.hostess\.protocol\.libomv|:apps:|:tools:cli|reference/|\.\./private|$RAW_LIBOMV_PATTERN"
 PRIVATE_REFERENCE_PATTERN='reference/|\.\./private'
 FORBIDDEN_PLATFORM_PATTERN='sun\.security|java\.awt|javax\.swing|printStackTrace\(|println\('
+CLI_COMMAND_REPORT_WRITE_PATTERN='File\(|Path\.of\(|Files\.|writeText\(|appendText\('
 
 add_existing() {
     local -n target="$1"
@@ -102,6 +103,10 @@ add_existing app_cli_targets \
     "apps/desktop/src/main" \
     "apps/android/src/main"
 
+cli_command_targets=()
+add_existing cli_command_targets \
+    "tools/cli/src/main/kotlin/org/hostess/tools/cli/commands"
+
 production_targets=()
 add_existing production_targets \
     "settings.gradle.kts" \
@@ -138,6 +143,11 @@ check_no_hits \
     "$FORBIDDEN_PLATFORM_PATTERN" \
     "${production_targets[@]}"
 
+check_no_hits \
+    "CLI command ad hoc report writes" \
+    "$CLI_COMMAND_REPORT_WRITE_PATTERN" \
+    "${cli_command_targets[@]}"
+
 check_pattern_matches \
     "self-test core forbidden dependency pattern" \
     "$CORE_FORBIDDEN_PATTERN" \
@@ -157,6 +167,11 @@ check_pattern_matches \
     "self-test forbidden platform/logging pattern" \
     "$FORBIDDEN_PLATFORM_PATTERN" \
     'println("debug")'
+
+check_pattern_matches \
+    "self-test CLI command report write pattern" \
+    "$CLI_COMMAND_REPORT_WRITE_PATTERN" \
+    'Files.writeString(path, value)'
 
 if [[ "$failures" -ne 0 ]]; then
     exit 1

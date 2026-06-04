@@ -16,6 +16,7 @@ import org.hostess.tools.cli.CommandArguments
 import org.hostess.tools.cli.CommandResult
 import org.hostess.tools.cli.composition.CliRuntime
 import org.hostess.tools.cli.composition.CliCompositionRoot
+import org.hostess.tools.cli.report.ProofReportStatus
 
 class SendNoticeCommand(
     private val compositionRoot: CliCompositionRoot,
@@ -35,6 +36,14 @@ class SendNoticeCommand(
         val groups = when (val result = runtime.groupDirectoryService.currentGroups(session)) {
             is GroupListResult.Success -> result.groups
             is GroupListResult.Failure -> {
+                runtime.proofReportWriter.writeIfRequested(
+                    reportPath = arguments.option("report"),
+                    command = name,
+                    mode = mode.label(),
+                    status = ProofReportStatus.FAILED,
+                    inputs = sendInputs(mode.label(), targetNames, subject, arguments.option("body").orEmpty()),
+                    blockedReason = result.failure.redactedMessage,
+                )
                 output.line("send-notice ${mode.label()} failed: ${result.failure.redactedMessage ?: "groups unavailable"}")
                 return CommandResult.UNAVAILABLE
             }
@@ -72,10 +81,32 @@ class SendNoticeCommand(
             )
         ) {
             is NoticeDispatchResult.Rejected -> {
+                runtime.proofReportWriter.writeIfRequested(
+                    reportPath = arguments.option("report"),
+                    command = name,
+                    mode = mode.label(),
+                    status = ProofReportStatus.FAILED,
+                    inputs = sendInputs(mode.label(), targetNames, subject, arguments.option("body").orEmpty()),
+                    blockedReason = dispatch.validation.toString(),
+                )
                 output.line("send-notice ${mode.label()} rejected: ${dispatch.validation}")
                 CommandResult.USAGE_ERROR
             }
             is NoticeDispatchResult.Sent -> {
+                runtime.proofReportWriter.writeIfRequested(
+                    reportPath = arguments.option("report"),
+                    command = name,
+                    mode = mode.label(),
+                    status = ProofReportStatus.PASSED,
+                    inputs = sendInputs(mode.label(), targetNames, subject, arguments.option("body").orEmpty()),
+                    results = dispatch.result.statuses.map { status ->
+                        mapOf(
+                            "displayName" to status.group.displayName.value,
+                            "state" to status.state.name.lowercase(),
+                            "detail" to status.detail.orEmpty(),
+                        )
+                    },
+                )
                 output.line("send-notice ${mode.label()} attempted=${dispatch.result.statuses.size}")
                 dispatch.result.statuses.forEach { status ->
                     output.line("${status.group.displayName.value}: ${status.state.name.lowercase()}")
@@ -121,9 +152,21 @@ class SendNoticeCommand(
 
     private fun usage(output: CliOutput, reason: String): CommandResult {
         output.line("send-notice usage error: $reason")
-        output.line("usage: send-notice --mode fake|live --target <display-name> --subject <subject> --body <body>")
+        output.line("usage: send-notice --mode fake|live --target <display-name> --subject <subject> --body <body> --report <path>")
         return CommandResult.USAGE_ERROR
     }
+
+    private fun sendInputs(
+        mode: String,
+        targets: List<String>,
+        subject: String,
+        body: String,
+    ): Map<String, String> = mapOf(
+        "mode" to mode,
+        "targetDisplayNames" to targets.joinToString(", "),
+        "subject" to subject,
+        "bodyLength" to body.length.toString(),
+    )
 
     private sealed interface AttachmentCommandResult {
         data class Valid(val attachment: AttachmentRef?) : AttachmentCommandResult
