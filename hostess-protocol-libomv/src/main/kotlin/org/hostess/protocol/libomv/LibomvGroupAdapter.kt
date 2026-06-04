@@ -6,7 +6,7 @@ import org.hostess.core.ports.GroupListResult
 import org.hostess.core.ports.GroupPort
 
 class LibomvGroupAdapter(
-    private val clientSession: LibomvClientSession,
+    internal val clientSession: LibomvClientSession,
 ) : GroupPort {
     override fun currentGroups(session: HostessSession): GroupListResult =
         GroupListResult.Failure(clientSession.unavailable(CoreFailureReason.GROUP_LIST_FAILED))

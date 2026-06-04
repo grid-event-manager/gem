@@ -44,7 +44,7 @@ class LiveProofCommandTest {
     }
 
     @Test
-    fun `complete live proof inputs classify unavailable protocol without leaking account or credential handle`() {
+    fun `complete live proof inputs reach shared runtime and fail closed without leaking inputs`() {
         val directory = Files.createTempDirectory("hostess-live-proof-unavailable")
         try {
             val reportPath = directory.resolve("live-proof.json")
@@ -74,12 +74,14 @@ class LiveProofCommandTest {
 
             val report = reportPath.readText()
             assertEquals(3, exitCode)
-            assertTrue(output.lines.any { it.contains("protocol bootstrap unavailable") })
-            assertContains(report, "\"status\": \"blocked\"")
+            assertTrue(output.lines.any { it == "live-proof live failed: [redacted]" })
+            assertContains(report, "\"status\": \"failed\"")
             assertContains(report, "\"account\": \"[redacted]\"")
             assertContains(report, "\"credentialHandle\": \"[redacted]\"")
             assertContains(report, "\"step\": \"login\"")
-            assertContains(report, "\"state\": \"blocked\"")
+            assertContains(report, "\"state\": \"failed\"")
+            assertContains(report, "\"step\": \"list-groups\"")
+            assertContains(report, "\"state\": \"not_run\"")
             assertFalse(report.contains("venue-proof"))
             assertFalse(report.contains("HOSTESS_PROOF_CREDENTIAL"))
             assertFalse(RAW_UUID.containsMatchIn(report))

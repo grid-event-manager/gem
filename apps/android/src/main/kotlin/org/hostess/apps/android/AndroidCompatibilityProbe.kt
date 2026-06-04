@@ -7,11 +7,8 @@ import org.hostess.core.domain.NoticeDraft
 import org.hostess.core.domain.NoticeDraftValidation
 import org.hostess.core.domain.TargetSelectionResult
 import org.hostess.core.services.TargetSelectionService
-import org.hostess.protocol.libomv.LibomvClientSession
-import org.hostess.protocol.libomv.LibomvGroupAdapter
-import org.hostess.protocol.libomv.LibomvInventoryAdapter
-import org.hostess.protocol.libomv.LibomvNoticeAdapter
-import org.hostess.protocol.libomv.LibomvSessionAdapter
+import org.hostess.protocol.libomv.LibomvProtocolRuntime
+import org.hostess.protocol.libomv.ProtocolLibomvModule
 
 class AndroidCompatibilityProbe {
     fun run(): AndroidCompatibilityResult {
@@ -28,7 +25,7 @@ class AndroidCompatibilityProbe {
             targetSet = selectedTargetSet,
         )
         val coreCompile = draft.validateForSend() == NoticeDraftValidation.Valid
-        val adapterLoad = loadAdapterClasses()
+        val adapterLoad = loadProtocolRuntime(ProtocolLibomvModule.liveRuntime())
 
         return if (coreCompile && adapterLoad) {
             AndroidCompatibilityResult.passed()
@@ -37,12 +34,12 @@ class AndroidCompatibilityProbe {
         }
     }
 
-    private fun loadAdapterClasses(): Boolean = listOf(
-        LibomvClientSession::class.java,
-        LibomvSessionAdapter::class.java,
-        LibomvGroupAdapter::class.java,
-        LibomvInventoryAdapter::class.java,
-        LibomvNoticeAdapter::class.java,
+    private fun loadProtocolRuntime(runtime: LibomvProtocolRuntime): Boolean = listOf(
+        runtime.clientSession::class.java,
+        runtime.sessionPort::class.java,
+        runtime.groupPort::class.java,
+        runtime.inventoryPort::class.java,
+        runtime.noticePort::class.java,
     ).all { it.name.isNotBlank() }
 
     private fun probeGroups(): List<GroupMembership> = listOf(

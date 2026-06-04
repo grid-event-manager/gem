@@ -31,11 +31,7 @@ import org.hostess.core.services.NoticeDispatchService
 import org.hostess.core.services.NoticeDraftService
 import org.hostess.core.services.SessionService
 import org.hostess.core.services.TargetSelectionService
-import org.hostess.protocol.libomv.LibomvClientSession
-import org.hostess.protocol.libomv.LibomvGroupAdapter
-import org.hostess.protocol.libomv.LibomvInventoryAdapter
-import org.hostess.protocol.libomv.LibomvNoticeAdapter
-import org.hostess.protocol.libomv.LibomvSessionAdapter
+import org.hostess.protocol.libomv.ProtocolLibomvModule
 import org.hostess.tools.cli.CommandMode
 import org.hostess.tools.cli.report.ProofReportWriter
 
@@ -67,16 +63,16 @@ class CliCompositionRoot(
     }
 
     private fun liveRuntime(): CliRuntime {
-        val clientSession = LibomvClientSession.unavailable()
+        val protocolRuntime = ProtocolLibomvModule.liveRuntime()
         return CliRuntime(
-            sessionService = SessionService(LibomvSessionAdapter(clientSession), CliRedactionPort),
-            groupDirectoryService = GroupDirectoryService(LibomvGroupAdapter(clientSession)),
+            sessionService = SessionService(protocolRuntime.sessionPort, CliRedactionPort),
+            groupDirectoryService = GroupDirectoryService(protocolRuntime.groupPort),
             targetSelectionService = TargetSelectionService(),
             noticeDraftService = NoticeDraftService(),
-            attachmentService = AttachmentService(LibomvInventoryAdapter(clientSession)),
-            noticeDispatchService = NoticeDispatchService(LibomvNoticeAdapter(clientSession), NoopClockPort),
+            attachmentService = AttachmentService(protocolRuntime.inventoryPort),
+            noticeDispatchService = NoticeDispatchService(protocolRuntime.noticePort, NoopClockPort),
             proofReportWriter = ProofReportWriter(),
-            protocolAvailable = clientSession.isProtocolAvailable(),
+            protocolAvailable = protocolRuntime.protocolAvailable,
             sessionProvider = { fakeSession(active = false) },
         )
     }

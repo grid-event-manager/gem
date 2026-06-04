@@ -10,7 +10,7 @@ import org.hostess.core.domain.NoticeDraft
 import org.hostess.core.ports.NoticePort
 
 class LibomvNoticeAdapter(
-    private val clientSession: LibomvClientSession,
+    internal val clientSession: LibomvClientSession,
 ) : NoticePort {
     override fun sendGroupNotice(
         session: HostessSession,

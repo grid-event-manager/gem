@@ -9,7 +9,7 @@ import org.hostess.core.ports.AttachmentResolutionResult
 import org.hostess.core.ports.InventoryPort
 
 class LibomvInventoryAdapter(
-    private val clientSession: LibomvClientSession,
+    internal val clientSession: LibomvClientSession,
 ) : InventoryPort {
     override fun resolveExistingAttachment(
         session: HostessSession,

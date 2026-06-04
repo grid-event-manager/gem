@@ -8,7 +8,7 @@ import org.hostess.core.ports.SessionLogoutResult
 import org.hostess.core.ports.SessionPort
 
 class LibomvSessionAdapter(
-    private val clientSession: LibomvClientSession,
+    internal val clientSession: LibomvClientSession,
 ) : SessionPort {
     override fun login(request: LoginRequest): SessionLoginResult =
         SessionLoginResult.Failure(clientSession.unavailable(CoreFailureReason.LOGIN_FAILED))
