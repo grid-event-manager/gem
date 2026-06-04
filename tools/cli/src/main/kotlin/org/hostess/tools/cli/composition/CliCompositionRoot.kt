@@ -6,8 +6,6 @@ import org.hostess.core.domain.AccountLabel
 import org.hostess.core.domain.AttachmentKind
 import org.hostess.core.domain.AttachmentOwnerId
 import org.hostess.core.domain.AttachmentRef
-import org.hostess.core.domain.GroupDisplayName
-import org.hostess.core.domain.GroupId
 import org.hostess.core.domain.GroupMembership
 import org.hostess.core.domain.GroupSendState
 import org.hostess.core.domain.GroupSendStatus
@@ -79,9 +77,9 @@ class CliCompositionRoot(
 
     companion object {
         fun defaultFakeGroups(): List<GroupMembership> = listOf(
-            GroupMembership(GroupId("fake-group-venue"), GroupDisplayName("Venue Hosts"), true, true),
-            GroupMembership(GroupId("fake-group-events"), GroupDisplayName("Event Notices"), true, true),
-            GroupMembership(GroupId("fake-group-readonly"), GroupDisplayName("Read Only Group"), false, true),
+            GroupMembership.fromValues("fake-group-venue", "Venue Hosts", true, true),
+            GroupMembership.fromValues("fake-group-events", "Event Notices", true, true),
+            GroupMembership.fromValues("fake-group-readonly", "Read Only Group", false, true),
         )
     }
 }

@@ -46,6 +46,21 @@ class TargetSelectionServiceTest {
         assertTrue(cleared.isEmpty())
     }
 
+    @Test
+    fun `display name helpers keep shell input conversion in core`() {
+        val targetSet = service.emptyTargetSet(listOf(group("music", "Music Room")))
+
+        val selected = assertIs<TargetSelectionResult.Changed>(
+            service.addTargetByDisplayName(targetSet, "Music Room"),
+        ).targetSet
+        val removed = assertIs<TargetSelectionResult.Changed>(
+            service.removeTargetByDisplayName(selected, "Music Room"),
+        ).targetSet
+
+        assertTrue(selected.isSelected(GroupId("music")))
+        assertTrue(removed.isEmpty())
+    }
+
     private fun group(
         id: String,
         displayName: String,

@@ -1,7 +1,5 @@
 package org.hostess.apps.android
 
-import org.hostess.core.domain.GroupDisplayName
-import org.hostess.core.domain.GroupId
 import org.hostess.core.domain.GroupMembership
 import org.hostess.core.domain.NoticeDraft
 import org.hostess.core.domain.NoticeDraftValidation
@@ -12,8 +10,9 @@ import org.hostess.protocol.libomv.ProtocolLibomvModule
 
 class AndroidCompatibilityProbe {
     fun run(): AndroidCompatibilityResult {
-        val targetSet = TargetSelectionService().emptyTargetSet(probeGroups())
-        val selected = TargetSelectionService().addTarget(targetSet, GroupDisplayName("Probe Hosts"))
+        val targetSelectionService = TargetSelectionService()
+        val targetSet = targetSelectionService.emptyTargetSet(probeGroups())
+        val selected = targetSelectionService.addTargetByDisplayName(targetSet, "Probe Hosts")
         val selectedTargetSet = when (selected) {
             is TargetSelectionResult.Changed -> selected.targetSet
             else -> return AndroidCompatibilityResult.androidGap("core target selection failed")
@@ -43,12 +42,7 @@ class AndroidCompatibilityProbe {
     ).all { it.name.isNotBlank() }
 
     private fun probeGroups(): List<GroupMembership> = listOf(
-        GroupMembership(
-            groupId = GroupId("android-probe-group"),
-            displayName = GroupDisplayName("Probe Hosts"),
-            canSendNotices = true,
-            acceptsNotices = true,
-        ),
+        GroupMembership.fromValues("android-probe-group", "Probe Hosts", true, true),
     )
 }
 

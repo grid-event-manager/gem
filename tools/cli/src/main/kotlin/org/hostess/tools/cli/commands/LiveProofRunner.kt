@@ -1,7 +1,6 @@
 package org.hostess.tools.cli.commands
 
 import org.hostess.core.domain.AccountLabel
-import org.hostess.core.domain.GroupDisplayName
 import org.hostess.core.domain.GroupSendState
 import org.hostess.core.domain.GroupTargetSet
 import org.hostess.core.domain.NoticeDispatchResult
@@ -59,7 +58,7 @@ internal class LiveProofRunner(
         }
 
         val targetSet = when (val selected = runtime.targetSelectionService
-            .addTarget(GroupTargetSet.from(groups), GroupDisplayName(inputs.targetDisplayName.orEmpty()))) {
+            .addTargetByDisplayName(GroupTargetSet.from(groups), inputs.targetDisplayName.orEmpty())) {
             is TargetSelectionResult.Changed -> {
                 steps += LiveProofStep.passed("select-group")
                 selected.targetSet

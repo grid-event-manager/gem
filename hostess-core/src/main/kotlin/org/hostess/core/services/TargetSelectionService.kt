@@ -11,8 +11,14 @@ class TargetSelectionService {
     fun addTarget(targetSet: GroupTargetSet, displayName: GroupDisplayName): TargetSelectionResult =
         targetSet.add(displayName)
 
+    fun addTargetByDisplayName(targetSet: GroupTargetSet, displayName: String): TargetSelectionResult =
+        addTarget(targetSet, GroupDisplayName(displayName))
+
     fun removeTarget(targetSet: GroupTargetSet, displayName: GroupDisplayName): TargetSelectionResult =
         targetSet.remove(displayName)
+
+    fun removeTargetByDisplayName(targetSet: GroupTargetSet, displayName: String): TargetSelectionResult =
+        removeTarget(targetSet, GroupDisplayName(displayName))
 
     fun addAllSendable(targetSet: GroupTargetSet): TargetSelectionResult = targetSet.addAllSendable()
 

@@ -3,7 +3,6 @@ package org.hostess.tools.cli.commands
 import org.hostess.core.domain.AttachmentKind
 import org.hostess.core.domain.AttachmentRef
 import org.hostess.core.domain.ExistingInventoryAttachment
-import org.hostess.core.domain.GroupDisplayName
 import org.hostess.core.domain.HostessSession
 import org.hostess.core.domain.InventoryItemId
 import org.hostess.core.domain.NoticeDispatchResult
@@ -51,7 +50,7 @@ class SendNoticeCommand(
 
         var targetSet = runtime.targetSelectionService.emptyTargetSet(groups)
         for (targetName in targetNames) {
-            when (val selection = runtime.targetSelectionService.addTarget(targetSet, GroupDisplayName(targetName))) {
+            when (val selection = runtime.targetSelectionService.addTargetByDisplayName(targetSet, targetName)) {
                 is TargetSelectionResult.Changed -> targetSet = selection.targetSet
                 is TargetSelectionResult.Unchanged -> targetSet = selection.targetSet
                 is TargetSelectionResult.NoSuchGroup -> return usage(output, "unknown group display name: ${selection.displayName.value}")

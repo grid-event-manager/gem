@@ -53,7 +53,7 @@ class ProtocolLibomvModuleTest {
 
         assertIs<GroupListResult.Failure>(groups)
         assertEquals(CoreFailureReason.GROUP_LIST_FAILED, groups.failure.reason)
-        assertEquals("protocol runtime unavailable", groups.failure.redactedMessage)
+        assertEquals("protocol session inactive", groups.failure.redactedMessage)
     }
 
     private fun loginRequest(): LoginRequest = LoginRequest(

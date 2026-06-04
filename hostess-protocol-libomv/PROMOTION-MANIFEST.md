@@ -42,6 +42,7 @@ Local modifications:
 - Packet skeleton generation is Hostess-owned Gradle generation from the promoted template. It does not claim field-complete parity with upstream `mapgenerator.java`.
 - HS001-B-01 is evidence-only. It classifies the required Track B protocol surface from private reference source; no production source or generated output was promoted.
 - HS001-B-05 reimplements login request and response mapping from retained `LoginManager.java:1032-1155` evidence behind Hostess-owned transport. No upstream login source was copied into production.
+- HS001-B-06 reuses retained `GroupManager.java` and `CapsMessage.java` evidence for current-groups field mapping. The live packet/CAPS source remains fail-closed until field-complete runtime promotion lands; no upstream group source was copied into production.
 
 Maintenance notes:
 

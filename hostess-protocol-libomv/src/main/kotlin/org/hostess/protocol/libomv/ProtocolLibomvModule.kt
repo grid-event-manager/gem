@@ -4,6 +4,7 @@ import org.hostess.core.ports.GroupPort
 import org.hostess.core.ports.InventoryPort
 import org.hostess.core.ports.NoticePort
 import org.hostess.core.ports.SessionPort
+import org.hostess.protocol.libomv.runtime.ProtocolGroupRuntime
 import org.hostess.protocol.libomv.runtime.ProtocolLoginRuntime
 import org.hostess.protocol.libomv.transport.OkHttpProtocolHttpClient
 import org.hostess.protocol.libomv.transport.ProtocolHttpClient
@@ -24,16 +25,18 @@ object ProtocolLibomvModule {
         val clientSession = LibomvClientSession.inactive()
         return runtimeFor(
             clientSession = clientSession,
+            groupRuntime = ProtocolGroupRuntime(clientSession),
             loginRuntime = ProtocolLoginRuntime(clientSession, httpClient),
         )
     }
 
     private fun runtimeFor(
         clientSession: LibomvClientSession,
+        groupRuntime: ProtocolGroupRuntime?,
         loginRuntime: ProtocolLoginRuntime?,
     ): LibomvProtocolRuntime = LibomvProtocolRuntime(
         sessionPort = LibomvSessionAdapter(clientSession, loginRuntime),
-        groupPort = LibomvGroupAdapter(clientSession),
+        groupPort = LibomvGroupAdapter(clientSession, groupRuntime),
         inventoryPort = LibomvInventoryAdapter(clientSession),
         noticePort = LibomvNoticeAdapter(clientSession),
         clientSession = clientSession,
