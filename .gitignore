@@ -11,6 +11,7 @@ out/
 .env
 .env.*
 *.log
+*.hprof
 *.pid
 *.tmp
 *.swp
