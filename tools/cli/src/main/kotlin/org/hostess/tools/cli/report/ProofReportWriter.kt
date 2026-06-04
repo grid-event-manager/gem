@@ -14,6 +14,7 @@ class ProofReportWriter {
         command: String,
         mode: String,
         status: ProofReportStatus,
+        statusFields: Map<String, String> = emptyMap(),
         inputs: Map<String, String> = emptyMap(),
         results: List<Map<String, String>> = emptyList(),
         cleanupStatus: String = "not_applicable",
@@ -29,6 +30,7 @@ class ProofReportWriter {
             command = command,
             mode = mode,
             status = status,
+            statusFields = RedactedText.map(statusFields),
             startedAt = now,
             finishedAt = now,
             inputs = RedactedText.map(inputs),
@@ -52,6 +54,9 @@ class ProofReportWriter {
         appendLine("  \"command\": ${report.command.json()},")
         appendLine("  \"mode\": ${report.mode.json()},")
         appendLine("  \"status\": ${report.status.wireValue.json()},")
+        report.statusFields.forEach { (key, value) ->
+            appendLine("  ${key.json()}: ${value.json()},")
+        }
         appendLine("  \"startedAt\": ${report.startedAt.json()},")
         appendLine("  \"finishedAt\": ${report.finishedAt.json()},")
         appendLine("  \"inputs\": ${report.inputs.jsonObject()},")

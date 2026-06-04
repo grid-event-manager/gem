@@ -19,6 +19,7 @@ class ProofReportWriterTest {
                 command = "list-groups",
                 mode = "fake",
                 status = ProofReportStatus.PASSED,
+                statusFields = mapOf("plainNoticeStatus" to "passed"),
                 inputs = mapOf("account" to "venue-proof"),
                 results = listOf(
                     mapOf("displayName" to "Venue Hosts", "groupId" to "12345678-1234-1234-1234-123456789abc"),
@@ -33,6 +34,7 @@ class ProofReportWriterTest {
             assertContains(json, "\"command\": \"list-groups\"")
             assertContains(json, "\"mode\": \"fake\"")
             assertContains(json, "\"status\": \"passed\"")
+            assertContains(json, "\"plainNoticeStatus\": \"passed\"")
             assertContains(json, "\"startedAt\"")
             assertContains(json, "\"finishedAt\"")
             assertContains(json, "\"inputs\"")

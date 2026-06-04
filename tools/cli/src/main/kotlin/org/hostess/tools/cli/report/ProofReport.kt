@@ -6,6 +6,7 @@ data class ProofReport(
     val command: String,
     val mode: String,
     val status: ProofReportStatus,
+    val statusFields: Map<String, String> = emptyMap(),
     val startedAt: String,
     val finishedAt: String,
     val inputs: Map<String, String>,
@@ -18,5 +19,8 @@ enum class ProofReportStatus(val wireValue: String) {
     PASSED("passed"),
     FAILED("failed"),
     BLOCKED("blocked"),
+    RUNTIME_GAP("runtime_gap"),
+    TRANSPORT_GAP("transport_gap"),
+    PROOF_GAP("proof_gap"),
     NOT_RUN("not_run"),
 }

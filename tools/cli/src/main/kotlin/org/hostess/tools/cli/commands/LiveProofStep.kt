@@ -13,13 +13,27 @@ internal data class LiveProofStep(
 
     companion object {
         private val orderedSteps = listOf(
+            "validate-inputs",
             "login",
-            "list-groups",
-            "select-group",
-            "send-plain-notice",
-            "resolve-attachment",
-            "send-attachment-notice",
-            "send-bulk-notice",
+            "current-groups",
+            "select-targets",
+            "plain-notice",
+            "landmark-attachment",
+            "landmark-notice",
+            "texture-attachment",
+            "texture-notice",
+            "bulk-notice",
+            "cleanup",
+            "logout",
+        )
+        val statusFieldNames = listOf(
+            "loginStatus",
+            "currentGroupsStatus",
+            "plainNoticeStatus",
+            "landmarkAttachmentStatus",
+            "textureAttachmentStatus",
+            "bulkNoticeStatus",
+            "androidProbeStatus",
         )
 
         fun passed(name: String, detail: String? = null): LiveProofStep = LiveProofStep(name, "passed", detail)
@@ -31,6 +45,9 @@ internal data class LiveProofStep(
 
         fun notRunPlan(detail: String, startAt: String = orderedSteps.first()): List<LiveProofStep> =
             orderedSteps.dropWhile { it != startAt }.map { LiveProofStep(it, "not_run", detail) }
+
+        fun statusFields(default: String = "not_run"): Map<String, String> =
+            statusFieldNames.associateWith { default }
 
         fun after(step: String): String {
             val index = orderedSteps.indexOf(step)

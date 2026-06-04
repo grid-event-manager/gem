@@ -15,21 +15,29 @@ internal data class LiveProofInputs(
     val grid: String?,
     val account: String?,
     val credentialHandle: String?,
-    val targetDisplayName: String?,
+    val targetDisplayNames: List<String>,
     val subject: String?,
     val body: String?,
     val authorisedLiveSend: Boolean,
-    val attachmentKind: String?,
-    val attachmentSource: String?,
-    val attachmentFileName: String?,
-    val attachmentDigest: String?,
+    val existingAttachmentKind: String?,
+    val existingAttachmentId: String?,
+    val landmarkVenue: String?,
+    val landmarkRegionId: String?,
+    val landmarkLocalPosition: String?,
+    val textureFileName: String?,
+    val texturePayloadHandle: String?,
+    val textureDigest: String?,
+    val bulkLimit: Int?,
+    val bulkDelayMs: Long?,
+    val cleanupMode: String?,
+    val retentionNote: String?,
 ) {
     fun missingRequiredFields(): List<String> = buildList {
         if (!authorisedLiveSend) add("authorised-live-send")
         if (grid.isNullOrBlank()) add("grid")
         if (account.isNullOrBlank()) add("account")
         if (credentialHandle.isNullOrBlank()) add("credential handle")
-        if (targetDisplayName.isNullOrBlank()) add("target display name")
+        if (targetDisplayNames.isEmpty()) add("target display name")
         if (subject.isNullOrBlank()) add("subject")
         if (body.isNullOrBlank()) add("body")
     }
@@ -38,41 +46,80 @@ internal data class LiveProofInputs(
         put("mode", mode.label())
         put("grid", grid.orEmpty())
         put("account", account.orEmpty())
-        put("credentialHandle", credentialHandle.orEmpty())
-        put("targetDisplayName", targetDisplayName.orEmpty())
+        put("authHandlePresent", (!credentialHandle.isNullOrBlank()).toString())
+        put("targetCount", targetDisplayNames.size.toString())
+        put("targetDisplayNames", targetDisplayNames.joinToString("|"))
         put("subject", subject.orEmpty())
         put("bodyLength", body.orEmpty().length.toString())
         put("authorisedLiveSend", authorisedLiveSend.toString())
-        val kind = attachmentKind?.lowercase()
-        attachmentKind?.let { put("attachmentKind", it) }
-        if (kind == "texture") {
-            put("attachmentFileName", textureFileName())
-            attachmentDigest?.let { put("attachmentDigest", it) }
-        }
+        existingAttachmentKind?.let { put("existingAttachmentKind", it) }
+        existingAttachmentId?.let { put("existingAttachmentId", it) }
+        landmarkVenue?.let { put("landmarkVenue", it) }
+        landmarkRegionId?.let { put("landmarkRegionId", it) }
+        landmarkLocalPosition?.let { put("landmarkLocalPos", it) }
+        textureFileName?.let { put("textureFileName", safeTextureFileName()) }
+        textureDigest?.let { put("textureDigest", it) }
+        bulkLimit?.let { put("bulkLimit", it.toString()) }
+        bulkDelayMs?.let { put("bulkDelayMs", it.toString()) }
+        cleanupMode?.let { put("cleanupMode", it) }
+        retentionNote?.let { put("retentionNote", it) }
     }
 
-    fun attachmentRequest(): AttachmentRequest? {
-        val kind = attachmentKind?.lowercase() ?: return null
-        val source = attachmentSource?.takeIf(String::isNotBlank) ?: return null
-        return when (kind) {
-            "landmark" -> CreateLandmarkAttachment(
-                venueLabel = source,
-                regionId = source,
-                localPosition = LocalPosition(0.0, 0.0, 0.0),
-            )
-            "texture" -> UploadTextureAttachment(
-                fileName = textureFileName(),
-                contentDigest = attachmentDigest?.takeIf(String::isNotBlank) ?: return null,
-                payloadHandle = AttachmentPayloadHandle(source),
-            )
-            "inventory-landmark" -> ExistingInventoryAttachment(AttachmentKind.LANDMARK, InventoryItemId(source))
-            "inventory-texture" -> ExistingInventoryAttachment(AttachmentKind.TEXTURE, InventoryItemId(source))
-            else -> null
+    fun landmarkRequest(): AttachmentRequest? =
+        existingRequest(AttachmentKind.LANDMARK) ?: createdLandmarkRequest()
+
+    fun textureRequest(): AttachmentRequest? =
+        existingRequest(AttachmentKind.TEXTURE) ?: uploadTextureRequest()
+
+    fun cleanupModeValue(): String = cleanupMode?.lowercase() ?: "delete-created"
+
+    private fun existingRequest(kind: AttachmentKind): AttachmentRequest? {
+        val requestedKind = when (existingAttachmentKind?.lowercase()) {
+            "landmark" -> AttachmentKind.LANDMARK
+            "texture" -> AttachmentKind.TEXTURE
+            else -> return null
         }
+        if (requestedKind != kind) {
+            return null
+        }
+        val itemId = existingAttachmentId?.takeIf(String::isNotBlank) ?: return null
+        return ExistingInventoryAttachment(kind, InventoryItemId(itemId))
     }
 
-    private fun textureFileName(): String =
-        attachmentFileName
+    private fun createdLandmarkRequest(): AttachmentRequest? {
+        val venue = landmarkVenue?.takeIf(String::isNotBlank) ?: return null
+        val regionId = landmarkRegionId?.takeIf(String::isNotBlank) ?: return null
+        val position = localPosition() ?: return null
+        return CreateLandmarkAttachment(
+            venueLabel = venue,
+            regionId = regionId,
+            localPosition = position,
+        )
+    }
+
+    private fun uploadTextureRequest(): AttachmentRequest? {
+        val handle = texturePayloadHandle?.takeIf(String::isNotBlank) ?: return null
+        val digest = textureDigest?.takeIf(String::isNotBlank) ?: return null
+        return UploadTextureAttachment(
+            fileName = safeTextureFileName(),
+            contentDigest = digest,
+            payloadHandle = AttachmentPayloadHandle(handle),
+        )
+    }
+
+    private fun localPosition(): LocalPosition? {
+        val parts = landmarkLocalPosition?.split(",")?.map(String::trim) ?: return null
+        if (parts.size != 3) {
+            return null
+        }
+        val x = parts[0].toDoubleOrNull() ?: return null
+        val y = parts[1].toDoubleOrNull() ?: return null
+        val z = parts[2].toDoubleOrNull() ?: return null
+        return LocalPosition(x, y, z)
+    }
+
+    private fun safeTextureFileName(): String =
+        textureFileName
             ?.replace('\\', '/')
             ?.substringAfterLast('/')
             ?.takeIf(String::isNotBlank)
@@ -83,14 +130,34 @@ internal data class LiveProofInputs(
             grid = arguments.option("grid"),
             account = arguments.option("account"),
             credentialHandle = arguments.option("credential-env") ?: arguments.option("credential-file"),
-            targetDisplayName = arguments.option("target") ?: arguments.option("group"),
+            targetDisplayNames = targetDisplayNames(arguments),
             subject = arguments.option("subject"),
             body = arguments.option("body"),
             authorisedLiveSend = arguments.has("authorised-live-send"),
-            attachmentKind = arguments.option("attachment-kind"),
-            attachmentSource = arguments.option("attachment-source"),
-            attachmentFileName = arguments.option("attachment-file-name") ?: arguments.option("texture-file-name"),
-            attachmentDigest = arguments.option("attachment-digest"),
+            existingAttachmentKind = arguments.option("existing-attachment-kind"),
+            existingAttachmentId = arguments.option("existing-attachment-id"),
+            landmarkVenue = arguments.option("landmark-venue"),
+            landmarkRegionId = arguments.option("landmark-region-id"),
+            landmarkLocalPosition = arguments.option("landmark-local-pos"),
+            textureFileName = arguments.option("texture-file-name"),
+            texturePayloadHandle = arguments.option("texture-payload-handle"),
+            textureDigest = arguments.option("texture-digest"),
+            bulkLimit = arguments.option("bulk-limit")?.toIntOrNull(),
+            bulkDelayMs = arguments.option("bulk-delay-ms")?.toLongOrNull(),
+            cleanupMode = arguments.option("cleanup-mode"),
+            retentionNote = arguments.option("retention-note"),
         )
+
+        private fun targetDisplayNames(arguments: CommandArguments): List<String> =
+            arguments.optionValues("target")
+                .map(String::trim)
+                .filter(String::isNotBlank)
+                .ifEmpty {
+                    arguments.option("group")
+                        ?.trim()
+                        ?.takeIf(String::isNotBlank)
+                        ?.let(::listOf)
+                        .orEmpty()
+                }
     }
 }
