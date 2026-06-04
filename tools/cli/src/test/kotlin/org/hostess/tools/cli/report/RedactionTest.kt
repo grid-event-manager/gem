@@ -12,6 +12,8 @@ class RedactionTest {
             "session_id" to "session-material",
             "credentialHandle" to "HOSTESS_PROOF_CREDENTIAL",
             "password" to "secret",
+            "attachmentPayloadHandle" to "/home/user/poster.png",
+            "attachmentSource" to "/home/user/poster.png",
         )
 
         assertEquals(

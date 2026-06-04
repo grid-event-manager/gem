@@ -1,6 +1,7 @@
 package org.hostess.core.services
 
 import org.hostess.core.domain.AttachmentKind
+import org.hostess.core.domain.AttachmentPayloadHandle
 import org.hostess.core.domain.CoreFailureReason
 import org.hostess.core.domain.ExistingInventoryAttachment
 import org.hostess.core.domain.GroupDisplayName
@@ -19,6 +20,7 @@ import org.hostess.core.testing.defaultSession
 import org.hostess.core.testing.failure
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
@@ -47,7 +49,7 @@ class AttachmentServiceTest {
         val result = assertIs<AttachmentResolutionResult.Failed>(
             service.resolveAttachment(
                 defaultSession(),
-                UploadTextureAttachment("poster.png", "sha256:abc"),
+                textureUpload(),
             ),
         )
 
@@ -64,7 +66,7 @@ class AttachmentServiceTest {
             targetSet = selectedTargets(),
             attachments = listOf(
                 ExistingInventoryAttachment(AttachmentKind.LANDMARK, InventoryItemId("landmark")),
-                UploadTextureAttachment("poster.png", "sha256:abc"),
+                textureUpload(),
             ),
         )
 
@@ -73,6 +75,13 @@ class AttachmentServiceTest {
         assertTrue(NoticeDraftInvalidReason.TOO_MANY_ATTACHMENTS in validation.reasons)
         assertTrue(inventoryPort.existingRequests.isEmpty())
         assertTrue(inventoryPort.textureRequests.isEmpty())
+    }
+
+    @Test
+    fun `texture upload requires opaque payload handle`() {
+        assertFailsWith<IllegalArgumentException> {
+            AttachmentPayloadHandle(" ")
+        }
     }
 
     private fun selectedTargets(): GroupTargetSet = assertIs<TargetSelectionResult.Changed>(
@@ -84,5 +93,11 @@ class AttachmentServiceTest {
         displayName = GroupDisplayName(displayName),
         canSendNotices = true,
         acceptsNotices = null,
+    )
+
+    private fun textureUpload(): UploadTextureAttachment = UploadTextureAttachment(
+        fileName = "poster.png",
+        contentDigest = "sha256:abc",
+        payloadHandle = AttachmentPayloadHandle("texture-handle"),
     )
 }

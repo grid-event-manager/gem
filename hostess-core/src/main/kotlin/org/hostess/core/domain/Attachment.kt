@@ -30,6 +30,7 @@ data class CreateLandmarkAttachment(
 data class UploadTextureAttachment(
     val fileName: String,
     val contentDigest: String,
+    val payloadHandle: AttachmentPayloadHandle,
 ) : AttachmentRequest {
     init {
         require(fileName.isNotBlank()) { "Texture file name cannot be blank." }
@@ -37,6 +38,13 @@ data class UploadTextureAttachment(
     }
 
     override val kind: AttachmentKind = AttachmentKind.TEXTURE
+}
+
+@JvmInline
+value class AttachmentPayloadHandle(val value: String) {
+    init {
+        require(value.isNotBlank()) { "Attachment payload handle cannot be blank." }
+    }
 }
 
 data class AttachmentRef(

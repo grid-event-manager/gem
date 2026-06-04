@@ -90,6 +90,57 @@ class LiveProofCommandTest {
         }
     }
 
+    @Test
+    fun `texture live proof report omits payload handle and keeps digest fields`() {
+        val directory = Files.createTempDirectory("hostess-live-proof-texture")
+        try {
+            val reportPath = directory.resolve("live-proof.json")
+            val output = RecordingCliOutput()
+
+            val exitCode = CommandRegistry.default(CliCompositionRoot()).execute(
+                listOf(
+                    "live-proof",
+                    "--report",
+                    reportPath.toString(),
+                    "--authorised-live-send",
+                    "--grid",
+                    "second-life",
+                    "--account",
+                    "venue-proof",
+                    "--credential-env",
+                    "HOSTESS_PROOF_CREDENTIAL",
+                    "--target",
+                    "Venue Hosts",
+                    "--subject",
+                    "Tonight",
+                    "--body",
+                    "Doors at eight",
+                    "--attachment-kind",
+                    "texture",
+                    "--attachment-source",
+                    "/home/user/private/poster.png",
+                    "--texture-file-name",
+                    "/home/user/private/poster.png",
+                    "--attachment-digest",
+                    "sha256:abc",
+                ),
+                output,
+            )
+
+            val report = reportPath.readText()
+            assertEquals(3, exitCode)
+            assertContains(report, "\"attachmentKind\": \"texture\"")
+            assertContains(report, "\"attachmentFileName\": \"poster.png\"")
+            assertContains(report, "\"attachmentDigest\": \"sha256:abc\"")
+            assertFalse(report.contains("attachmentSource"))
+            assertFalse(report.contains("attachmentPayloadHandle"))
+            assertFalse(report.contains("/home/user/private/poster.png"))
+            assertFalse(RAW_UUID.containsMatchIn(report))
+        } finally {
+            directory.toFile().deleteRecursively()
+        }
+    }
+
     private companion object {
         val RAW_UUID = Regex(
             "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}",

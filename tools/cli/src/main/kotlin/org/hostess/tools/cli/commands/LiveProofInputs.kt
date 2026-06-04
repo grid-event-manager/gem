@@ -1,6 +1,7 @@
 package org.hostess.tools.cli.commands
 
 import org.hostess.core.domain.AttachmentKind
+import org.hostess.core.domain.AttachmentPayloadHandle
 import org.hostess.core.domain.AttachmentRequest
 import org.hostess.core.domain.CreateLandmarkAttachment
 import org.hostess.core.domain.ExistingInventoryAttachment
@@ -20,6 +21,7 @@ internal data class LiveProofInputs(
     val authorisedLiveSend: Boolean,
     val attachmentKind: String?,
     val attachmentSource: String?,
+    val attachmentFileName: String?,
     val attachmentDigest: String?,
 ) {
     fun missingRequiredFields(): List<String> = buildList {
@@ -41,13 +43,17 @@ internal data class LiveProofInputs(
         put("subject", subject.orEmpty())
         put("bodyLength", body.orEmpty().length.toString())
         put("authorisedLiveSend", authorisedLiveSend.toString())
+        val kind = attachmentKind?.lowercase()
         attachmentKind?.let { put("attachmentKind", it) }
-        attachmentSource?.let { put("attachmentSource", it) }
+        if (kind == "texture") {
+            put("attachmentFileName", textureFileName())
+            attachmentDigest?.let { put("attachmentDigest", it) }
+        }
     }
 
     fun attachmentRequest(): AttachmentRequest? {
         val kind = attachmentKind?.lowercase() ?: return null
-        val source = attachmentSource ?: return null
+        val source = attachmentSource?.takeIf(String::isNotBlank) ?: return null
         return when (kind) {
             "landmark" -> CreateLandmarkAttachment(
                 venueLabel = source,
@@ -55,14 +61,22 @@ internal data class LiveProofInputs(
                 localPosition = LocalPosition(0.0, 0.0, 0.0),
             )
             "texture" -> UploadTextureAttachment(
-                fileName = source,
-                contentDigest = attachmentDigest ?: source,
+                fileName = textureFileName(),
+                contentDigest = attachmentDigest?.takeIf(String::isNotBlank) ?: return null,
+                payloadHandle = AttachmentPayloadHandle(source),
             )
             "inventory-landmark" -> ExistingInventoryAttachment(AttachmentKind.LANDMARK, InventoryItemId(source))
             "inventory-texture" -> ExistingInventoryAttachment(AttachmentKind.TEXTURE, InventoryItemId(source))
             else -> null
         }
     }
+
+    private fun textureFileName(): String =
+        attachmentFileName
+            ?.replace('\\', '/')
+            ?.substringAfterLast('/')
+            ?.takeIf(String::isNotBlank)
+            ?: "texture-upload"
 
     companion object {
         fun from(arguments: CommandArguments): LiveProofInputs = LiveProofInputs(
@@ -75,6 +89,7 @@ internal data class LiveProofInputs(
             authorisedLiveSend = arguments.has("authorised-live-send"),
             attachmentKind = arguments.option("attachment-kind"),
             attachmentSource = arguments.option("attachment-source"),
+            attachmentFileName = arguments.option("attachment-file-name") ?: arguments.option("texture-file-name"),
             attachmentDigest = arguments.option("attachment-digest"),
         )
     }

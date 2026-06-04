@@ -30,7 +30,7 @@ class NoticeDraftTest {
             targetSet = selectedTargets(),
             attachments = listOf(
                 ExistingInventoryAttachment(AttachmentKind.LANDMARK, InventoryItemId("landmark-item")),
-                UploadTextureAttachment("poster.png", "sha256:abc"),
+                textureUpload(),
             ),
         )
 
@@ -78,5 +78,11 @@ class NoticeDraftTest {
         displayName = GroupDisplayName(displayName),
         canSendNotices = true,
         acceptsNotices = null,
+    )
+
+    private fun textureUpload(): UploadTextureAttachment = UploadTextureAttachment(
+        fileName = "poster.png",
+        contentDigest = "sha256:abc",
+        payloadHandle = AttachmentPayloadHandle("texture-handle"),
     )
 }

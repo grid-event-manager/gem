@@ -12,11 +12,14 @@ value class RedactedText private constructor(val value: String) {
         private val sensitiveKeys = setOf(
             "account",
             "accountLabel",
+            "attachmentPayloadHandle",
+            "attachmentSource",
             "credential",
             "credentialHandle",
             "credentialEnv",
             "credentialFile",
             "groupId",
+            "payloadHandle",
             "password",
             "passwd",
             "seed_cap",
@@ -26,6 +29,7 @@ value class RedactedText private constructor(val value: String) {
             "upload_url",
             "uploadUrl",
             "token",
+            "texturePayloadHandle",
         )
 
         fun from(key: String, rawValue: String): RedactedText {
