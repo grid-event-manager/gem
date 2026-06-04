@@ -1,5 +1,6 @@
 package org.hostess.tools.cli
 
+import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -31,13 +32,26 @@ class CliCompositionRootTest {
 
     @Test
     fun `live proof validates credential handle before live execution`() {
-        val output = RecordingCliOutput()
-        val exitCode = CommandRegistry.default(CliCompositionRoot()).execute(
-            listOf("live-proof", "--mode", "live", "--account", "venue-proof"),
-            output,
-        )
+        val directory = Files.createTempDirectory("hostess-live-proof-composition")
+        try {
+            val output = RecordingCliOutput()
+            val exitCode = CommandRegistry.default(CliCompositionRoot()).execute(
+                listOf(
+                    "live-proof",
+                    "--mode",
+                    "live",
+                    "--report",
+                    directory.resolve("live-proof.json").toString(),
+                    "--account",
+                    "venue-proof",
+                ),
+                output,
+            )
 
-        assertEquals(2, exitCode)
-        assertTrue(output.lines.any { it.contains("credential handle") })
+            assertEquals(2, exitCode)
+            assertTrue(output.lines.any { it.contains("credential handle") })
+        } finally {
+            directory.toFile().deleteRecursively()
+        }
     }
 }

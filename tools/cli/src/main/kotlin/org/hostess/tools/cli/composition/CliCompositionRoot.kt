@@ -61,6 +61,7 @@ class CliCompositionRoot(
             attachmentService = AttachmentService(inventoryPort),
             noticeDispatchService = NoticeDispatchService(noticePort, NoopClockPort),
             proofReportWriter = ProofReportWriter(),
+            protocolAvailable = true,
             sessionProvider = { session },
         )
     }
@@ -75,6 +76,7 @@ class CliCompositionRoot(
             attachmentService = AttachmentService(LibomvInventoryAdapter(clientSession)),
             noticeDispatchService = NoticeDispatchService(LibomvNoticeAdapter(clientSession), NoopClockPort),
             proofReportWriter = ProofReportWriter(),
+            protocolAvailable = clientSession.isProtocolAvailable(),
             sessionProvider = { fakeSession(active = false) },
         )
     }
@@ -96,6 +98,7 @@ data class CliRuntime(
     val attachmentService: AttachmentService,
     val noticeDispatchService: NoticeDispatchService,
     val proofReportWriter: ProofReportWriter,
+    val protocolAvailable: Boolean,
     val sessionProvider: () -> HostessSession,
 )
 
