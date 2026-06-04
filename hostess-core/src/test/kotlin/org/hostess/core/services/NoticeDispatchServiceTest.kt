@@ -3,12 +3,11 @@ package org.hostess.core.services
 import java.time.Duration
 import java.time.Instant
 import org.hostess.core.domain.AccountLabel
-import org.hostess.core.domain.AttachmentRef
 import org.hostess.core.domain.GroupDisplayName
 import org.hostess.core.domain.GroupId
 import org.hostess.core.domain.GroupMembership
+import org.hostess.core.domain.GroupTargetSet
 import org.hostess.core.domain.GroupSendState
-import org.hostess.core.domain.GroupSendStatus
 import org.hostess.core.domain.HostessSession
 import org.hostess.core.domain.NoticeDispatchResult
 import org.hostess.core.domain.NoticeDraft
@@ -17,8 +16,8 @@ import org.hostess.core.domain.NoticeDraftValidation
 import org.hostess.core.domain.PacingPolicy
 import org.hostess.core.domain.SessionId
 import org.hostess.core.domain.TargetSelectionResult
-import org.hostess.core.ports.ClockPort
-import org.hostess.core.ports.NoticePort
+import org.hostess.core.testing.FakeClockPort
+import org.hostess.core.testing.FakeNoticePort
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -28,14 +27,14 @@ class NoticeDispatchServiceTest {
     @Test
     fun `dispatch calls notice port once per selected group and applies pacing between groups`() {
         val events = mutableListOf<String>()
-        val noticePort = RecordingNoticePort(
+        val noticePort = FakeNoticePort(
             events = events,
             statesByGroup = mapOf(
                 GroupId("music") to GroupSendState.SENT,
                 GroupId("gallery") to GroupSendState.FAILED,
             ),
         )
-        val service = NoticeDispatchService(noticePort, RecordingClockPort(events))
+        val service = NoticeDispatchService(noticePort, FakeClockPort(events))
         val draft = NoticeDraft(
             subject = "Opening set",
             message = "Tonight at 8",
@@ -57,7 +56,7 @@ class NoticeDispatchServiceTest {
     @Test
     fun `dispatch rejects invalid draft without calling notice port`() {
         val events = mutableListOf<String>()
-        val service = NoticeDispatchService(RecordingNoticePort(events), RecordingClockPort(events))
+        val service = NoticeDispatchService(FakeNoticePort(events), FakeClockPort(events))
         val invalidDraft = NoticeDraft(
             subject = "",
             message = "Tonight at 8",
@@ -73,36 +72,8 @@ class NoticeDispatchServiceTest {
         assertTrue(events.isEmpty())
     }
 
-    private class RecordingNoticePort(
-        private val events: MutableList<String>,
-        private val statesByGroup: Map<GroupId, GroupSendState> = emptyMap(),
-    ) : NoticePort {
-        override fun sendGroupNotice(
-            session: HostessSession,
-            group: GroupMembership,
-            draft: NoticeDraft,
-            attachment: AttachmentRef?,
-        ): GroupSendStatus {
-            events += "send:${group.groupId.value}"
-            return GroupSendStatus(
-                group = group,
-                state = statesByGroup[group.groupId] ?: GroupSendState.SENT,
-            )
-        }
-    }
-
-    private class RecordingClockPort(
-        private val events: MutableList<String>,
-    ) : ClockPort {
-        override fun now(): Instant = Instant.EPOCH
-
-        override fun pause(duration: Duration) {
-            events += "pause:$duration"
-        }
-    }
-
     private fun selectedTargets() = assertIs<TargetSelectionResult.Changed>(
-        org.hostess.core.domain.GroupTargetSet.from(
+        GroupTargetSet.from(
             listOf(
                 group("music", "Music Room"),
                 group("gallery", "Gallery"),

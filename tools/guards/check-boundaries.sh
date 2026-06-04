@@ -6,6 +6,11 @@ cd "$ROOT_DIR"
 
 failures=0
 
+CORE_FORBIDDEN_PATTERN='hostess-protocol-libomv|:apps:|:tools:cli|reference/|\.\./private|\blibomv\.'
+RAW_LIBOMV_PATTERN='\blibomv\.'
+PRIVATE_REFERENCE_PATTERN='reference/|\.\./private'
+FORBIDDEN_PLATFORM_PATTERN='sun\.security|java\.awt|javax\.swing|printStackTrace\(|println\('
+
 add_existing() {
     local -n target="$1"
     shift
@@ -57,6 +62,35 @@ check_no_hits() {
     esac
 }
 
+check_pattern_matches() {
+    local label="$1"
+    local pattern="$2"
+    local sample="$3"
+
+    local output
+    local status
+
+    set +e
+    output="$(printf '%s\n' "$sample" | rg -n "$pattern" 2>&1)"
+    status="$?"
+    set -e
+
+    case "$status" in
+        0)
+            echo "PASS: $label"
+            ;;
+        1)
+            echo "FAIL: $label did not detect fixture"
+            failures=1
+            ;;
+        *)
+            echo "ERROR: $label self-test failed"
+            echo "$output"
+            failures=1
+            ;;
+    esac
+}
+
 core_targets=()
 add_existing core_targets \
     "hostess-core/build.gradle.kts" \
@@ -86,23 +120,43 @@ add_existing production_targets \
 
 check_no_hits \
     "hostess-core forbidden dependencies" \
-    'hostess-protocol-libomv|:apps:|:tools:cli|reference/|\.\./private|\blibomv\.' \
+    "$CORE_FORBIDDEN_PATTERN" \
     "${core_targets[@]}"
 
 check_no_hits \
     "CLI/app raw libomv use" \
-    '\blibomv\.' \
+    "$RAW_LIBOMV_PATTERN" \
     "${app_cli_targets[@]}"
 
 check_no_hits \
     "private/reference production dependency" \
-    'reference/|\.\./private' \
+    "$PRIVATE_REFERENCE_PATTERN" \
     "${production_targets[@]}"
 
 check_no_hits \
     "forbidden platform/security/logging calls" \
-    'sun\.security|java\.awt|javax\.swing|printStackTrace\(|println\(' \
+    "$FORBIDDEN_PLATFORM_PATTERN" \
     "${production_targets[@]}"
+
+check_pattern_matches \
+    "self-test core forbidden dependency pattern" \
+    "$CORE_FORBIDDEN_PATTERN" \
+    'implementation(project(":hostess-protocol-libomv"))'
+
+check_pattern_matches \
+    "self-test raw libomv pattern" \
+    "$RAW_LIBOMV_PATTERN" \
+    'libomv.GroupManager'
+
+check_pattern_matches \
+    "self-test private/reference pattern" \
+    "$PRIVATE_REFERENCE_PATTERN" \
+    '../private/reference/source'
+
+check_pattern_matches \
+    "self-test forbidden platform/logging pattern" \
+    "$FORBIDDEN_PLATFORM_PATTERN" \
+    'println("debug")'
 
 if [[ "$failures" -ne 0 ]]; then
     exit 1
