@@ -43,6 +43,7 @@ Local modifications:
 - HS001-B-01 is evidence-only. It classifies the required Track B protocol surface from private reference source; no production source or generated output was promoted.
 - HS001-B-05 reimplements login request and response mapping from retained `LoginManager.java:1032-1155` evidence behind Hostess-owned transport. No upstream login source was copied into production.
 - HS001-B-06 reuses retained `GroupManager.java` and `CapsMessage.java` evidence for current-groups field mapping. The live packet/CAPS source remains fail-closed until field-complete runtime promotion lands; no upstream group source was copied into production.
+- HS001-B-08 reimplements source-derived attachment reference mapping and landmark asset byte encoding from retained inventory/asset evidence. The live CAPS/packet upload source remains fail-closed until field-complete runtime promotion lands; no upstream inventory or asset source was copied into production.
 
 Maintenance notes:
 

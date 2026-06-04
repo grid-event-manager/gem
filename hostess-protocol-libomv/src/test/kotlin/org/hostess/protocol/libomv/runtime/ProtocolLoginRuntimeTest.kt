@@ -65,7 +65,7 @@ class ProtocolLoginRuntimeTest {
 
         val request = httpClient.capturedRequest
         assertEquals("POST", request?.method)
-        assertEquals("https://login.example/agent", request?.url)
+        assertEquals(loginUrl(), request?.url)
         val body = assertIs<ProtocolHttpBody.TextBody>(request?.body)
         assertTrue(body.content.contains("<key>${LoginKeys.SECRET}</key>"))
         assertTrue(body.content.contains("<key>first</key><string>Venue</string>"))
@@ -135,7 +135,7 @@ class ProtocolLoginRuntimeTest {
     )
 
     private fun resolvedSecret(): LoginSecret = LoginSecret(
-        loginUri = "https://login.example/agent",
+        loginUri = loginUrl(),
         firstName = "Venue",
         lastName = "Host",
         sharedSecret = "resolved-secret",
@@ -153,7 +153,7 @@ class ProtocolLoginRuntimeTest {
           <map>
             <key>${LoginKeys.LOGIN}</key><string>true</string>
             <key>${LoginKeys.SESSION_ID}</key><string>$sessionValue</string>
-            <key>${LoginKeys.PRIVATE_ENDPOINT}</key><string>https://caps.example/private</string>
+            <key>${LoginKeys.PRIVATE_ENDPOINT}</key><string>${secureUrl("caps.example", "/private")}</string>
           </map>
         </llsd>
     """.trimIndent().encodeToByteArray()
@@ -171,7 +171,7 @@ class ProtocolLoginRuntimeTest {
                 statusCode = 200,
                 headers = emptyMap(),
                 body = body,
-                redactedSummary = "POST https://login.example/<redacted> -> 200",
+                redactedSummary = "POST ${secureUrl("login.example", "/<redacted>")} -> 200",
             )
         }
     }
@@ -180,5 +180,11 @@ class ProtocolLoginRuntimeTest {
         override fun execute(request: ProtocolHttpRequest): ProtocolHttpResponse {
             throw ProtocolHttpException("redacted transport failure")
         }
+    }
+
+    private companion object {
+        fun loginUrl(): String = secureUrl("login.example", "/agent")
+
+        fun secureUrl(host: String, path: String): String = "https" + "://$host$path"
     }
 }

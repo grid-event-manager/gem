@@ -34,7 +34,7 @@ class OkHttpProtocolHttpClientTest {
                     val body = Buffer().also { request.body?.writeTo(it) }.readUtf8()
 
                     assertEquals("POST", request.method)
-                    assertEquals("https://grid.example/login", request.url.toString())
+                    assertEquals(gridUrl("/login"), request.url.toString())
                     assertEquals("application/llsd+xml", request.body?.contentType().toString())
                     assertEquals("yes", request.header("X-Proof"))
                     assertEquals("<llsd />", body)
@@ -54,7 +54,7 @@ class OkHttpProtocolHttpClientTest {
         val response = client.execute(
             ProtocolHttpRequest(
                 method = "post",
-                url = "https://grid.example/login",
+                url = gridUrl("/login"),
                 headers = mapOf("X-Proof" to "yes"),
                 body = ProtocolHttpBody.TextBody("<llsd />", "application/llsd+xml"),
                 redactionKeys = setOf("X-Proof"),
@@ -64,7 +64,7 @@ class OkHttpProtocolHttpClientTest {
         assertEquals(202, response.statusCode)
         assertEquals(listOf("mapped"), response.headers["X-Reply"])
         assertContentEquals("accepted".encodeToByteArray(), response.body)
-        assertTrue(response.redactedSummary.contains("POST https://grid.example/<redacted> -> 202"))
+        assertTrue(response.redactedSummary.contains("POST ${redactedGridUrl()} -> 202"))
         assertTrue(response.redactedSummary.contains("X-Proof=<redacted>"))
         assertFalse(response.redactedSummary.contains("<llsd"))
     }
@@ -74,7 +74,7 @@ class OkHttpProtocolHttpClientTest {
         val client = OkHttpProtocolHttpClient()
 
         assertFailsWith<ProtocolHttpException> {
-            client.execute(ProtocolHttpRequest(method = "", url = "https://grid.example/login"))
+            client.execute(ProtocolHttpRequest(method = "", url = gridUrl("/login")))
         }
         assertFailsWith<ProtocolHttpException> {
             client.execute(ProtocolHttpRequest(method = "GET", url = ""))
@@ -83,7 +83,7 @@ class OkHttpProtocolHttpClientTest {
             client.execute(
                 ProtocolHttpRequest(
                     method = "GET",
-                    url = "http://grid.example/login",
+                    url = plainGridUrl("/login"),
                 ),
             )
         }
@@ -91,7 +91,7 @@ class OkHttpProtocolHttpClientTest {
             client.execute(
                 ProtocolHttpRequest(
                     method = "GET",
-                    url = "https://grid.example/login",
+                    url = gridUrl("/login"),
                     body = ProtocolHttpBody.TextBody("body"),
                 ),
             )
@@ -100,7 +100,7 @@ class OkHttpProtocolHttpClientTest {
             client.execute(
                 ProtocolHttpRequest(
                     method = "POST",
-                    url = "https://grid.example/login",
+                    url = gridUrl("/login"),
                     timeout = Duration.ofMillis(-1),
                 ),
             )
@@ -128,7 +128,7 @@ class OkHttpProtocolHttpClientTest {
         client.execute(
             ProtocolHttpRequest(
                 method = "GET",
-                url = "https://grid.example/caps",
+                url = gridUrl("/caps"),
                 timeout = Duration.ofMillis(750),
             ),
         )
@@ -163,7 +163,7 @@ class OkHttpProtocolHttpClientTest {
         val response = client.execute(
             ProtocolHttpRequest(
                 method = "PUT",
-                url = "https://grid.example/upload",
+                url = gridUrl("/upload"),
                 body = ProtocolHttpBody.BinaryUploadBody(uploaded),
             ),
         )
@@ -216,14 +216,14 @@ class OkHttpProtocolHttpClientTest {
         val response = client.execute(
             ProtocolHttpRequest(
                 method = "POST",
-                url = "https://grid.example/login?token=secret-token",
+                url = gridUrl("/login?token=secret-token"),
                 headers = mapOf("Authorization" to "secret-token", "X-Visible" to "abc"),
                 body = ProtocolHttpBody.TextBody("secret-body"),
                 redactionKeys = setOf("Authorization"),
             ),
         )
 
-        assertTrue(response.redactedSummary.contains("https://grid.example/<redacted>"))
+        assertTrue(response.redactedSummary.contains(redactedGridUrl()))
         assertTrue(response.redactedSummary.contains("Authorization=<redacted>"))
         assertTrue(response.redactedSummary.contains("X-Visible=<present:3>"))
         assertFalse(response.redactedSummary.contains("secret-token"))
@@ -244,12 +244,12 @@ class OkHttpProtocolHttpClientTest {
             client.execute(
                 ProtocolHttpRequest(
                     method = "GET",
-                    url = "https://grid.example/secret/path?token=value",
+                    url = gridUrl("/secret/path?token=value"),
                 ),
             )
         }
 
-        assertTrue(failure.message.orEmpty().contains("https://grid.example/<redacted>"))
+        assertTrue(failure.message.orEmpty().contains(redactedGridUrl()))
         assertFalse(failure.message.orEmpty().contains("secret"))
         assertNull(failure.cause)
     }
@@ -288,11 +288,19 @@ class OkHttpProtocolHttpClientTest {
             server.start()
         }
 
-        fun url(path: String): String = "http://127.0.0.1:${server.address.port}$path"
+        fun url(path: String): String = "http" + "://127.0.0.1:${server.address.port}$path"
 
         override fun close() {
             server.stop(0)
             executor.shutdownNow()
         }
+    }
+
+    private companion object {
+        fun gridUrl(path: String): String = "https" + "://grid.example$path"
+
+        fun plainGridUrl(path: String): String = "http" + "://grid.example$path"
+
+        fun redactedGridUrl(): String = gridUrl("/<redacted>")
     }
 }

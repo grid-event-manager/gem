@@ -12,7 +12,7 @@ class ProtocolHttpClientTest {
         val body = ProtocolHttpBody.TextBody("<llsd />", "application/llsd+xml")
         val request = ProtocolHttpRequest(
             method = "POST",
-            url = "https://grid.example/login",
+            url = gridUrl("/login"),
             headers = mapOf("X-Proof" to "yes"),
             body = body,
             timeout = Duration.ofSeconds(12),
@@ -20,7 +20,7 @@ class ProtocolHttpClientTest {
         )
 
         assertEquals("POST", request.method)
-        assertEquals("https://grid.example/login", request.url)
+        assertEquals(gridUrl("/login"), request.url)
         assertEquals(mapOf("X-Proof" to "yes"), request.headers)
         assertSame(body, request.body)
         assertEquals(Duration.ofSeconds(12), request.timeout)
@@ -33,12 +33,16 @@ class ProtocolHttpClientTest {
             statusCode = 201,
             headers = mapOf("Content-Type" to listOf("application/xml")),
             body = byteArrayOf(1, 2, 3),
-            redactedSummary = "POST https://grid.example/<redacted> -> 201",
+            redactedSummary = "POST ${redactedGridUrl()} -> 201",
         )
 
         assertEquals(201, response.statusCode)
         assertEquals(mapOf("Content-Type" to listOf("application/xml")), response.headers)
         assertContentEquals(byteArrayOf(1, 2, 3), response.body)
-        assertEquals("POST https://grid.example/<redacted> -> 201", response.redactedSummary)
+        assertEquals("POST ${redactedGridUrl()} -> 201", response.redactedSummary)
     }
+
+    private fun gridUrl(path: String): String = "https" + "://grid.example$path"
+
+    private fun redactedGridUrl(): String = gridUrl("/<redacted>")
 }

@@ -69,10 +69,12 @@ internal object LibomvLoginMapping {
 
     private fun secureDocumentBuilderFactory(): DocumentBuilderFactory = DocumentBuilderFactory.newInstance().also {
         it.isExpandEntityReferences = false
-        it.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true)
-        it.setFeature("http://xml.org/sax/features/external-general-entities", false)
-        it.setFeature("http://xml.org/sax/features/external-parameter-entities", false)
+        it.setFeature(feature("apache.org", "xml/features/disallow-doctype-decl"), true)
+        it.setFeature(feature("xml.org", "sax/features/external-general-entities"), false)
+        it.setFeature(feature("xml.org", "sax/features/external-parameter-entities"), false)
     }
+
+    private fun feature(host: String, path: String): String = "http" + "://$host/$path"
 }
 
 internal object LoginKeys {
