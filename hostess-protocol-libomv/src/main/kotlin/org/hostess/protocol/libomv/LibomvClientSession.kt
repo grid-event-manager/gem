@@ -7,6 +7,7 @@ import org.hostess.core.domain.HostessSession
 class LibomvClientSession private constructor(
     private val protocolAvailable: Boolean,
     private var activeSession: HostessSession?,
+    private var privateEndpoint: String?,
 ) {
     fun unavailable(reason: CoreFailureReason): CoreFailure =
         CoreFailure(reason, redactedMessage = if (protocolAvailable) {
@@ -17,12 +18,14 @@ class LibomvClientSession private constructor(
 
     fun isProtocolAvailable(): Boolean = protocolAvailable
 
-    internal fun activate(session: HostessSession) {
+    internal fun activate(session: HostessSession, privateEndpoint: String? = null) {
         activeSession = session
+        this.privateEndpoint = privateEndpoint
     }
 
     internal fun clear() {
         activeSession = null
+        privateEndpoint = null
     }
 
     internal fun requireSession(session: HostessSession): CoreFailure? {
@@ -44,16 +47,19 @@ class LibomvClientSession private constructor(
         fun unavailable(): LibomvClientSession = LibomvClientSession(
             protocolAvailable = false,
             activeSession = null,
+            privateEndpoint = null,
         )
 
         fun inactive(): LibomvClientSession = LibomvClientSession(
             protocolAvailable = true,
             activeSession = null,
+            privateEndpoint = null,
         )
 
         internal fun active(session: HostessSession): LibomvClientSession = LibomvClientSession(
             protocolAvailable = true,
             activeSession = session,
+            privateEndpoint = null,
         )
     }
 }

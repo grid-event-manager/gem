@@ -6,13 +6,17 @@ import org.hostess.core.ports.LoginRequest
 import org.hostess.core.ports.SessionLoginResult
 import org.hostess.core.ports.SessionLogoutResult
 import org.hostess.core.ports.SessionPort
+import org.hostess.protocol.libomv.runtime.ProtocolLoginRuntime
 
 class LibomvSessionAdapter(
     internal val clientSession: LibomvClientSession,
+    private val loginRuntime: ProtocolLoginRuntime? = null,
 ) : SessionPort {
     override fun login(request: LoginRequest): SessionLoginResult =
-        SessionLoginResult.Failure(clientSession.unavailable(CoreFailureReason.LOGIN_FAILED))
+        loginRuntime?.login(request)
+            ?: SessionLoginResult.Failure(clientSession.unavailable(CoreFailureReason.LOGIN_FAILED))
 
     override fun logout(session: HostessSession): SessionLogoutResult =
-        SessionLogoutResult.Failure(clientSession.unavailable(CoreFailureReason.LOGOUT_FAILED))
+        loginRuntime?.logout(session)
+            ?: SessionLogoutResult.Failure(clientSession.unavailable(CoreFailureReason.LOGOUT_FAILED))
 }

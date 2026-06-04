@@ -41,7 +41,7 @@ class ProtocolLibomvModuleTest {
     }
 
     @Test
-    fun `live runtime unimplemented methods still fail closed`() {
+    fun `live runtime unresolved login and unimplemented methods still fail closed`() {
         val runtime = ProtocolLibomvModule.liveRuntime()
 
         val login = runtime.sessionPort.login(loginRequest())
@@ -49,7 +49,7 @@ class ProtocolLibomvModuleTest {
 
         assertIs<SessionLoginResult.Failure>(login)
         assertEquals(CoreFailureReason.LOGIN_FAILED, login.failure.reason)
-        assertEquals("protocol runtime unavailable", login.failure.redactedMessage)
+        assertEquals("login secret unavailable", login.failure.redactedMessage)
 
         assertIs<GroupListResult.Failure>(groups)
         assertEquals(CoreFailureReason.GROUP_LIST_FAILED, groups.failure.reason)
