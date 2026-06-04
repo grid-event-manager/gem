@@ -1,5 +1,7 @@
 # Hostess Android App
 
-Future Android client shell for Hostess.
+Compatibility probe passed.
 
-The Android app should own mobile UI, platform credential storage, file/media pickers, and notification of send results. It should call `hostess-core/` for protocol behaviour.
+This module is a no-UI Android compatibility probe only. It compiles against `hostess-core` and the Hostess protocol adapter boundary without adding layouts, activities, fragments, screens, or Compose entrypoints.
+
+It is not an Android product app or support claim.

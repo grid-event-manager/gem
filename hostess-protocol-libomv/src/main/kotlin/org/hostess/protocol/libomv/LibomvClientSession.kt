@@ -7,7 +7,7 @@ class LibomvClientSession private constructor(
     private val protocolState: ProtocolState,
 ) {
     fun unavailable(reason: CoreFailureReason): CoreFailure =
-        CoreFailure(reason, redactedMessage = "libomv protocol bootstrap unavailable")
+        CoreFailure(reason, redactedMessage = "protocol bootstrap unavailable")
 
     fun isProtocolAvailable(): Boolean = protocolState is ProtocolState.Available
 

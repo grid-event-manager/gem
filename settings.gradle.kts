@@ -1,6 +1,7 @@
 pluginManagement {
     repositories {
         gradlePluginPortal()
+        google()
         mavenCentral()
     }
 }
@@ -8,6 +9,7 @@ pluginManagement {
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
+        google()
         mavenCentral()
     }
 }
@@ -18,3 +20,4 @@ include(":hostess-core")
 include(":hostess-protocol-libomv")
 include(":tools:cli")
 include(":apps:desktop")
+include(":apps:android")
