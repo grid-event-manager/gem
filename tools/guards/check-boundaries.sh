@@ -9,8 +9,13 @@ failures=0
 RAW_LIBOMV_PATTERN='(^|[^[:alnum:]_.])libomv\.'
 CORE_FORBIDDEN_PATTERN="hostess-protocol-libomv|org\.hostess\.protocol\.libomv|:apps:|:tools:cli|reference/|\.\./private|$RAW_LIBOMV_PATTERN"
 PRIVATE_REFERENCE_PATTERN='reference/|\.\./private'
-FORBIDDEN_PLATFORM_PATTERN='sun\.security|java\.awt|javax\.swing|printStackTrace\(|println\('
+FORBIDDEN_PLATFORM_PATTERN='TrustAll|ALLOW_ALL|HostnameVerifier|X509TrustManager|sslSocketFactory|org\.apache\.http|sun\.security|java\.awt|javax\.swing|METAbolt|WinForms|printStackTrace\(|println\('
 CLI_COMMAND_REPORT_WRITE_PATTERN='File\(|Path\.of\(|Files\.|writeText\(|appendText\('
+OK_HTTP_CLIENT_SYMBOL='OkHttp'"Client"
+PROTOCOL_PREFIX='Protocol'
+RUNTIME_SUFFIX='Runtime'
+TRACK_B_OKHTTP_PATTERN="(^|[^[:alnum:]_.])okhttp3\.|(^|[^[:alnum:]_.])${OK_HTTP_CLIENT_SYMBOL}([^[:alnum:]_]|$)"
+TRACK_B_RUNTIME_PATTERN="(^|[^[:alnum:]_.])(${PROTOCOL_PREFIX}Login${RUNTIME_SUFFIX}|${PROTOCOL_PREFIX}Group${RUNTIME_SUFFIX}|${PROTOCOL_PREFIX}Inventory${RUNTIME_SUFFIX}|${PROTOCOL_PREFIX}Notice${RUNTIME_SUFFIX}|${PROTOCOL_PREFIX}HttpClient)([^[:alnum:]_]|$)"
 
 add_existing() {
     local -n target="$1"
@@ -123,6 +128,31 @@ add_existing production_targets \
     "apps/android/build.gradle.kts" \
     "apps/android/src/main"
 
+okhttp_forbidden_targets=()
+add_existing okhttp_forbidden_targets \
+    "settings.gradle.kts" \
+    "build.gradle.kts" \
+    "gradle/libs.versions.toml" \
+    "hostess-core/build.gradle.kts" \
+    "hostess-core/src/main" \
+    "hostess-protocol-libomv/build.gradle.kts" \
+    "tools/cli/build.gradle.kts" \
+    "tools/cli/src/main" \
+    "apps/desktop/build.gradle.kts" \
+    "apps/desktop/src/main" \
+    "apps/android/build.gradle.kts" \
+    "apps/android/src/main"
+while IFS= read -r path; do
+    okhttp_forbidden_targets+=("$path")
+done < <(find "hostess-protocol-libomv/src/main" -type f ! -path '*/transport/*' 2>/dev/null || true)
+
+track_b_runtime_forbidden_targets=()
+add_existing track_b_runtime_forbidden_targets \
+    "hostess-core/src/main" \
+    "tools/cli/src/main" \
+    "apps/desktop/src/main" \
+    "apps/android/src/main"
+
 check_no_hits \
     "hostess-core forbidden dependencies" \
     "$CORE_FORBIDDEN_PATTERN" \
@@ -148,6 +178,16 @@ check_no_hits \
     "$CLI_COMMAND_REPORT_WRITE_PATTERN" \
     "${cli_command_targets[@]}"
 
+check_no_hits \
+    "Track B direct OkHttp outside protocol transport" \
+    "$TRACK_B_OKHTTP_PATTERN" \
+    "${okhttp_forbidden_targets[@]}"
+
+check_no_hits \
+    "Track B runtime/transport direct calls outside protocol module" \
+    "$TRACK_B_RUNTIME_PATTERN" \
+    "${track_b_runtime_forbidden_targets[@]}"
+
 check_pattern_matches \
     "self-test core forbidden dependency pattern" \
     "$CORE_FORBIDDEN_PATTERN" \
@@ -172,6 +212,21 @@ check_pattern_matches \
     "self-test CLI command report write pattern" \
     "$CLI_COMMAND_REPORT_WRITE_PATTERN" \
     'Files.writeString(path, value)'
+
+check_pattern_matches \
+    "self-test Track B direct OkHttp pattern" \
+    "$TRACK_B_OKHTTP_PATTERN" \
+    "import okhttp3.${OK_HTTP_CLIENT_SYMBOL}"
+
+check_pattern_matches \
+    "self-test Track B runtime/transport direct-call pattern" \
+    "$TRACK_B_RUNTIME_PATTERN" \
+    "${PROTOCOL_PREFIX}HttpClient.execute(request)"
+
+check_pattern_matches \
+    "self-test Track B stale platform pattern" \
+    "$FORBIDDEN_PLATFORM_PATTERN" \
+    'org.apache.http.client.HttpClient'
 
 if [[ "$failures" -ne 0 ]]; then
     exit 1
