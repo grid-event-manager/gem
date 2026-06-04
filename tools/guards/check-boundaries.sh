@@ -6,8 +6,8 @@ cd "$ROOT_DIR"
 
 failures=0
 
-CORE_FORBIDDEN_PATTERN='hostess-protocol-libomv|:apps:|:tools:cli|reference/|\.\./private|\blibomv\.'
-RAW_LIBOMV_PATTERN='\blibomv\.'
+RAW_LIBOMV_PATTERN='(^|[^[:alnum:]_.])libomv\.'
+CORE_FORBIDDEN_PATTERN="hostess-protocol-libomv|org\.hostess\.protocol\.libomv|:apps:|:tools:cli|reference/|\.\./private|$RAW_LIBOMV_PATTERN"
 PRIVATE_REFERENCE_PATTERN='reference/|\.\./private'
 FORBIDDEN_PLATFORM_PATTERN='sun\.security|java\.awt|javax\.swing|printStackTrace\(|println\('
 
