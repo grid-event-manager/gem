@@ -1,21 +1,30 @@
 package org.hostess.protocol.libomv.runtime
 
-import java.net.NetworkInterface
-import java.net.SocketException
 import java.security.MessageDigest
 
 object DefaultHostessViewerIdentityProvider : HostessViewerIdentityProvider {
     override fun resolve(): HostessViewerIdentity =
-        resolve(System::getProperty, ::hardwareAddressCandidates)
+        resolve(System::getProperty, DefaultHostessHardwareAddressSource)
 
     internal fun resolve(
         systemProperty: (String) -> String?,
         hardwareAddresses: () -> List<Pair<String, ByteArray>>,
+    ): HostessViewerIdentity =
+        resolve(
+            systemProperty = systemProperty,
+            hardwareAddressSource = HostessHardwareAddressSource {
+                hardwareAddresses().map { (name, bytes) -> HostessHardwareAddress(name, bytes.copyOf()) }
+            },
+        )
+
+    internal fun resolve(
+        systemProperty: (String) -> String?,
+        hardwareAddressSource: HostessHardwareAddressSource,
     ): HostessViewerIdentity {
-        val hardwareBytes = hardwareAddresses()
-            .sortedBy { it.first }
+        val hardwareBytes = hardwareAddressSource.candidates()
+            .sortedBy { it.interfaceName }
             .firstOrNull()
-            ?.second
+            ?.bytes
             ?: throw HostessHostIdentityUnavailableException()
 
         return HostessViewerIdentity(
@@ -29,31 +38,6 @@ object DefaultHostessViewerIdentityProvider : HostessViewerIdentityProvider {
                 hostId = md5Hex(HOST_ID_PREFIX, hardwareBytes),
             ),
         )
-    }
-
-    private fun hardwareAddressCandidates(): List<Pair<String, ByteArray>> {
-        val interfaces = try {
-            NetworkInterface.getNetworkInterfaces()?.toList().orEmpty()
-        } catch (ex: SocketException) {
-            emptyList()
-        }
-        return interfaces.mapNotNull { networkInterface ->
-            try {
-                val hardwareAddress = networkInterface.hardwareAddress?.takeIf(ByteArray::isNotEmpty)
-                if (
-                    networkInterface.isUp &&
-                    !networkInterface.isLoopback &&
-                    !networkInterface.isVirtual &&
-                    hardwareAddress != null
-                ) {
-                    networkInterface.name to hardwareAddress
-                } else {
-                    null
-                }
-            } catch (ex: SocketException) {
-                null
-            }
-        }
     }
 
     private fun platformIdentity(systemProperty: (String) -> String?): HostessPlatformIdentity {
