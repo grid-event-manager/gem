@@ -4,8 +4,13 @@ import org.hostess.core.domain.GroupMembership
 import org.hostess.core.domain.NoticeDraft
 import org.hostess.core.domain.NoticeDraftValidation
 import org.hostess.core.domain.TargetSelectionResult
+import org.hostess.core.ports.NoticeComplianceLedgerPort
+import org.hostess.core.services.LoginComplianceService
+import org.hostess.core.services.NoticeComplianceClock
+import org.hostess.core.services.NoticeComplianceService
 import org.hostess.core.services.TargetSelectionService
 import org.hostess.protocol.libomv.ProtocolLibomvModule
+import org.hostess.protocol.libomv.runtime.HostessViewerIdentityProvider
 
 class AndroidCompatibilityProbe {
     fun run(): AndroidCompatibilityResult {
@@ -16,8 +21,9 @@ class AndroidCompatibilityProbe {
         val runtimeLoad = loadState?.runtimeLoad ?: false
         val transportLoad = loadState?.transportLoad ?: false
         val trackCClassLoad = runtimeLoad && transportLoad
+        val trackDComplianceLoad = probeTrackDComplianceLoad()
 
-        return if (coreCompile && adapterLoad && runtimeLoad && transportLoad && trackCClassLoad) {
+        return if (coreCompile && adapterLoad && runtimeLoad && transportLoad && trackCClassLoad && trackDComplianceLoad) {
             AndroidCompatibilityResult.passed()
         } else {
             AndroidCompatibilityResult.androidGap(
@@ -26,12 +32,14 @@ class AndroidCompatibilityProbe {
                 runtimeLoad = runtimeLoad,
                 transportLoad = transportLoad,
                 trackCClassLoad = trackCClassLoad,
+                trackDComplianceLoad = trackDComplianceLoad,
                 reason = blockedReason(
                     coreCompile,
                     adapterLoad,
                     runtimeLoad,
                     transportLoad,
                     trackCClassLoad,
+                    trackDComplianceLoad,
                     runtimeResult.exceptionOrNull(),
                 ),
             )
@@ -55,12 +63,22 @@ class AndroidCompatibilityProbe {
         return draft.validateForSend() == NoticeDraftValidation.Valid
     }
 
+    private fun probeTrackDComplianceLoad(): Boolean =
+        listOf(
+            HostessViewerIdentityProvider::class.java,
+            LoginComplianceService::class.java,
+            NoticeComplianceService::class.java,
+            NoticeComplianceClock::class.java,
+            NoticeComplianceLedgerPort::class.java,
+        ).all { it.name.isNotBlank() }
+
     private fun blockedReason(
         coreCompile: Boolean,
         adapterLoad: Boolean,
         runtimeLoad: Boolean,
         transportLoad: Boolean,
         trackCClassLoad: Boolean,
+        trackDComplianceLoad: Boolean,
         failure: Throwable?,
     ): String {
         val failedLanes = listOfNotNull(
@@ -69,6 +87,7 @@ class AndroidCompatibilityProbe {
             "runtimeLoad".takeUnless { runtimeLoad },
             "transportLoad".takeUnless { transportLoad },
             "trackCClassLoad".takeUnless { trackCClassLoad },
+            "trackDComplianceLoad".takeUnless { trackDComplianceLoad },
         )
         val cause = failure?.let { " cause=${it::class.java.simpleName}" }.orEmpty()
         return "Android compatibility probe failed lanes=${failedLanes.joinToString(",")}$cause"
@@ -86,6 +105,7 @@ data class AndroidCompatibilityResult(
     val runtimeLoad: Boolean,
     val transportLoad: Boolean,
     val trackCClassLoad: Boolean,
+    val trackDComplianceLoad: Boolean,
     val forbiddenApiScan: String,
     val blockedReason: String?,
 ) {
@@ -97,6 +117,7 @@ data class AndroidCompatibilityResult(
             runtimeLoad = true,
             transportLoad = true,
             trackCClassLoad = true,
+            trackDComplianceLoad = true,
             forbiddenApiScan = "external_guard_required",
             blockedReason = null,
         )
@@ -107,6 +128,7 @@ data class AndroidCompatibilityResult(
             runtimeLoad: Boolean,
             transportLoad: Boolean,
             trackCClassLoad: Boolean,
+            trackDComplianceLoad: Boolean,
             reason: String,
         ): AndroidCompatibilityResult = AndroidCompatibilityResult(
             status = "android_gap",
@@ -115,6 +137,7 @@ data class AndroidCompatibilityResult(
             runtimeLoad = runtimeLoad,
             transportLoad = transportLoad,
             trackCClassLoad = trackCClassLoad,
+            trackDComplianceLoad = trackDComplianceLoad,
             forbiddenApiScan = "external_guard_required",
             blockedReason = reason,
         )

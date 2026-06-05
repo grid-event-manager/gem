@@ -80,28 +80,31 @@ class LiveProofCommand(
     }
 
     private fun bootstrapBlockedStatusFields(inputs: LiveProofInputs): Map<String, String> =
-        if (inputs.proofScope == LiveProofScope.READ_GROUPS) {
-            LiveProofStep.statusFields().toMutableMap().also {
+        when (inputs.proofScope) {
+            LiveProofScope.READ_GROUPS, LiveProofScope.LOGIN_ONLY -> LiveProofStep.statusFields().toMutableMap().also {
                 it["credentialStatus"] = "blocked"
                 it["loginStatus"] = "runtime_gap"
                 it += inputs.loginComplianceStatusFields()
             }
-        } else {
-            LiveProofStep.statusFields("blocked").toMutableMap().also {
+            LiveProofScope.FULL, LiveProofScope.UNSUPPORTED -> LiveProofStep.statusFields("blocked").toMutableMap().also {
                 it += inputs.loginComplianceStatusFields()
                 it += inputs.noticeComplianceArguments().reportStatusFields(null)
             }
         }
 
     private fun usage(output: CliOutput, scope: LiveProofScope) {
-        if (scope == LiveProofScope.READ_GROUPS) {
-            output.line(
+        when (scope) {
+            LiveProofScope.READ_GROUPS -> output.line(
                 "usage: live-proof --mode live --proof-scope read-groups --report <path> " +
                     "--grid <name> --account <label> --credential-env <name> --proof-account-attested " +
                     "--scripted-agent-attested --operator <label> --proof-account-label <label>",
             )
-        } else {
-            output.line(
+            LiveProofScope.LOGIN_ONLY -> output.line(
+                "usage: live-proof --mode live --proof-scope login-only --report <path> --grid <name> " +
+                    "--account <label> --credential-env <name> --proof-account-attested --scripted-agent-attested " +
+                    "--operator <label> --proof-account-label <label> [--automated-use true]",
+            )
+            LiveProofScope.FULL, LiveProofScope.UNSUPPORTED -> output.line(
                 "usage: live-proof --report <path> --authorised-live-send --grid <name> --account <label> " +
                     "--credential-env <name> --proof-account-attested --scripted-agent-attested " +
                     "--operator <label> --proof-account-label <label> --target <display-name> " +

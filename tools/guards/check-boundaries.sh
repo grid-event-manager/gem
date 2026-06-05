@@ -25,6 +25,7 @@ TRACK_D_SESSION_LOGIN_OVERLOAD_PATTERN='fun[[:space:]]+login\([[:space:]]*reques
 TRACK_D_SESSION_LOGIN_ONE_ARG_PATTERN='sessionService\.login\([^,\n)]*\)'
 TRACK_D_OLD_NOTICE_CALL_PATTERN='dispatch\([^\n]*session[^\n]*draft[^,\n]*\)'
 TRACK_D_SEND_GROUP_NOTICE_CALL_PATTERN='\.[[:space:]]*sendGroupNotice\('
+TRACK_D_VIEWER_PROVIDER_PATTERN='HostessViewerIdentityProvider'
 TRACK_D_SPOOFED_CHANNEL_PATTERN='channel[[:space:]]*=[[:space:]]*"(METAbolt|Firestorm|Alchemy|Second Life Viewer|Linden)"'
 TRACK_D_NOTICE_TIME_PATTERN='Instant\.now|LocalDate\.now|Clock\.system|System\.currentTimeMillis'
 TRACK_D_RAW_REPORT_KEY_PATTERN='("(mac|id0|host_id|seedCapability|credentialHandle|ledgerPath)"[[:space:]]+to|put\("(mac|id0|host_id|seedCapability|credentialHandle|ledgerPath)")'
@@ -289,11 +290,18 @@ add_existing track_d_notice_dispatch_targets \
     "apps/android/src/main"
 
 track_d_viewer_provider_forbidden_targets=()
-add_existing track_d_viewer_provider_forbidden_targets \
+while IFS= read -r path; do
+    case "$path" in
+        # D-08 Android no-UI load probe must class-load this protocol identity provider.
+        "apps/android/src/main/kotlin/org/hostess/apps/android/AndroidCompatibilityProbe.kt") ;;
+        *) track_d_viewer_provider_forbidden_targets+=("$path") ;;
+    esac
+done < <(find \
     "hostess-core/src/main" \
     "tools/cli/src/main" \
     "apps/desktop/src/main" \
-    "apps/android/src/main"
+    "apps/android/src/main" \
+    -type f -name '*.kt' 2>/dev/null || true)
 
 track_d_report_key_targets=()
 while IFS= read -r path; do
@@ -400,7 +408,7 @@ check_no_hits \
 
 check_no_hits \
     "Track D viewer identity provider outside protocol module" \
-    'HostessViewerIdentityProvider' \
+    "$TRACK_D_VIEWER_PROVIDER_PATTERN" \
     "${track_d_viewer_provider_forbidden_targets[@]}"
 
 check_no_hits \
@@ -507,6 +515,11 @@ check_pattern_matches \
     "self-test Track D direct group notice send pattern" \
     "$TRACK_D_SEND_GROUP_NOTICE_CALL_PATTERN" \
     'runtime.noticePort.sendGroupNotice(session, group, draft, null)'
+
+check_pattern_matches \
+    "self-test Track D viewer provider placement pattern" \
+    "$TRACK_D_VIEWER_PROVIDER_PATTERN" \
+    'HostessViewerIdentityProvider'
 
 check_pattern_matches \
     "self-test Track D spoofed channel pattern" \

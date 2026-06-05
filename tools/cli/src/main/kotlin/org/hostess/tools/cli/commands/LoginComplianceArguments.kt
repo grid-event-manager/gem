@@ -17,7 +17,7 @@ internal class LoginComplianceArguments(
         val values = parsed(defaultAutomatedUse = forLiveProof)
         return buildList {
             if (!values.proofAccountAttested) add("proof-account-attested")
-            if (values.automatedUse && !values.scriptedAgentAttested) add("scripted-agent-attested")
+            if (!values.scriptedAgentAttested) add("scripted-agent-attested")
             if (values.operatorLabel.isNullOrBlank()) add("operator")
             if (values.proofAccountLabel.isNullOrBlank()) add("proof-account-label")
         }

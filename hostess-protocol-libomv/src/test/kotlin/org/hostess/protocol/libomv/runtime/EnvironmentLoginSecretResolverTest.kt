@@ -66,8 +66,8 @@ class EnvironmentLoginSecretResolverTest {
         val resolver = resolver("HOSTESS_SL_SECRET" to validJson())
 
         assertNull(resolver.resolve(CredentialHandle("MISSING_ENV")))
-        assertNull(resolver.resolve(CredentialHandle("credential-file:/tmp/sl-creds.txt")))
-        assertNull(resolver.resolve(CredentialHandle("/tmp/sl-creds.txt")))
+        assertNull(resolver.resolve(CredentialHandle("credential-file:/tmp/blocked-credential-source.txt")))
+        assertNull(resolver.resolve(CredentialHandle("/tmp/blocked-credential-source.txt")))
         assertNull(resolver.resolve(CredentialHandle("""{"loginUri":"inline"}""")))
     }
 

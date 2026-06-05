@@ -124,6 +124,84 @@ class LiveProofRunnerTest {
     }
 
     @Test
+    fun `login only scope logs in logs out and does not read groups or send`() {
+        withReport { reportPath ->
+            val ports = Ports()
+
+            val exit = runner(
+                ports.runtime(),
+                reportPath,
+                inputs(
+                    proofScope = LiveProofScope.LOGIN_ONLY,
+                    targets = emptyList(),
+                    subject = null,
+                    body = null,
+                    authorisedLiveSend = false,
+                ),
+            ).run()
+
+            val report = reportPath.readText()
+            assertEquals(CommandResult.SUCCESS, exit)
+            assertContains(report, "\"status\": \"passed\"")
+            assertContains(report, "\"proofScope\": \"login-only\"")
+            assertContains(report, "\"loginComplianceStatus\": \"passed\"")
+            assertContains(report, "\"loginStatus\": \"passed\"")
+            assertContains(report, "\"logoutStatus\": \"passed\"")
+            assertContains(report, "\"currentGroupsStatus\": \"not_run\"")
+            assertContains(report, "\"plainNoticeStatus\": \"not_run\"")
+            assertContains(report, "\"landmarkAttachmentStatus\": \"not_run\"")
+            assertContains(report, "\"textureAttachmentStatus\": \"not_run\"")
+            assertContains(report, "\"bulkNoticeStatus\": \"not_run\"")
+            assertEquals(1, ports.sessionPort.loginCalls)
+            assertEquals(1, ports.sessionPort.logoutCalls)
+            assertEquals(0, ports.groupPort.currentGroupsCalls)
+            assertEquals(0, ports.inventoryPort.calls)
+            assertEquals(0, ports.noticePort.groups.size)
+        }
+    }
+
+    @Test
+    fun `login only scope blocks on login failure without logout groups or send`() {
+        withReport { reportPath ->
+            val ports = Ports(
+                sessionPort = RecordingSessionPort(
+                    loginResult = SessionLoginResult.Failure(
+                        CoreFailure(CoreFailureReason.LOGIN_FAILED, "login transport unavailable"),
+                    ),
+                ),
+            )
+
+            val exit = runner(
+                ports.runtime(),
+                reportPath,
+                inputs(
+                    proofScope = LiveProofScope.LOGIN_ONLY,
+                    targets = emptyList(),
+                    subject = null,
+                    body = null,
+                    authorisedLiveSend = false,
+                ),
+            ).run()
+
+            val report = reportPath.readText()
+            assertEquals(CommandResult.UNAVAILABLE, exit)
+            assertContains(report, "\"status\": \"blocked\"")
+            assertContains(report, "\"proofScope\": \"login-only\"")
+            assertContains(report, "\"loginStatus\": \"blocked\"")
+            assertContains(report, "\"logoutStatus\": \"not_run\"")
+            assertContains(report, "\"currentGroupsStatus\": \"not_run\"")
+            assertContains(report, "\"step\": \"logout\"")
+            assertContains(report, "\"detail\": \"login blocked\"")
+            assertEquals(1, Regex("\"step\": \"current-groups\"").findAll(report).count())
+            assertEquals(1, ports.sessionPort.loginCalls)
+            assertEquals(0, ports.sessionPort.logoutCalls)
+            assertEquals(0, ports.groupPort.currentGroupsCalls)
+            assertEquals(0, ports.inventoryPort.calls)
+            assertEquals(0, ports.noticePort.groups.size)
+        }
+    }
+
+    @Test
     fun `plain notice uses core dispatch and missing kind fixtures stay blocked`() {
         withReport { reportPath ->
             val ports = Ports()

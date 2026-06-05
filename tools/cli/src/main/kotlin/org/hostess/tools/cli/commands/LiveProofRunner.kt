@@ -39,6 +39,7 @@ internal class LiveProofRunner(
 
     fun run(): CommandResult = when (inputs.proofScope) {
         LiveProofScope.READ_GROUPS -> runReadGroupsProof()
+        LiveProofScope.LOGIN_ONLY -> runLoginOnlyProof()
         LiveProofScope.FULL -> runFullProof()
         LiveProofScope.UNSUPPORTED -> finish(ProofReportStatus.BLOCKED, "proof scope unsupported")
     }
@@ -89,7 +90,18 @@ internal class LiveProofRunner(
         }
     }
 
-    private fun login(): HostessSession? {
+    private fun runLoginOnlyProof(): CommandResult {
+        val session = login(planCurrentGroupsOnFailure = false)
+            ?: run {
+                markLoginOnlyProofStepsNotRun("login blocked", includeLogout = true)
+                return finish(ProofReportStatus.BLOCKED, "login blocked")
+            }
+        runLogout(session)
+        markLoginOnlyProofStepsNotRun("login-only scope", includeLogout = false)
+        return finish(terminalStatus(), "live proof ${terminalStatus().wireValue}")
+    }
+
+    private fun login(planCurrentGroupsOnFailure: Boolean = true): HostessSession? {
         val loginRequest = LoginRequest(
             accountLabel = AccountLabel(inputs.account.orEmpty()),
             credentialHandle = CredentialHandle(inputs.credentialHandle.orEmpty()),
@@ -106,7 +118,9 @@ internal class LiveProofRunner(
                 val detail = login.failure.redactedMessage ?: "login unavailable"
                 statusFields["loginStatus"] = "blocked"
                 steps += LiveProofStep("login", "blocked", detail)
-                steps += LiveProofStep.notRunPlan(detail, "current-groups")
+                if (planCurrentGroupsOnFailure) {
+                    steps += LiveProofStep.notRunPlan(detail, "current-groups")
+                }
                 null
             }
         }
@@ -143,6 +157,24 @@ internal class LiveProofRunner(
             "texture-notice",
             "bulk-notice",
         ).forEach { step -> steps += LiveProofStep(step, "not_run", detail) }
+    }
+
+    private fun markLoginOnlyProofStepsNotRun(
+        detail: String,
+        includeLogout: Boolean,
+    ) {
+        listOf(
+            "logout".takeIf { includeLogout },
+            "current-groups",
+            "select-targets",
+            "plain-notice",
+            "landmark-attachment",
+            "landmark-notice",
+            "texture-attachment",
+            "texture-notice",
+            "bulk-notice",
+            "cleanup",
+        ).filterNotNull().forEach { step -> steps += LiveProofStep(step, "not_run", detail) }
     }
 
     private fun selectTargets(groups: List<GroupMembership>): GroupTargetSet? {

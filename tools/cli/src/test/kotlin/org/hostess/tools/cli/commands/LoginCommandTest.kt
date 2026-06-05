@@ -85,4 +85,47 @@ class LoginCommandTest {
             directory.toFile().deleteRecursively()
         }
     }
+
+    @Test
+    fun `live login requires scripted agent evidence even when automated use false`() {
+        val directory = Files.createTempDirectory("hostess-login-scripted-evidence-block")
+        try {
+            val reportPath = directory.resolve("login.json")
+            val output = RecordingCliOutput()
+
+            val exitCode = CommandRegistry.default(CliCompositionRoot()).execute(
+                listOf(
+                    "login",
+                    "--mode",
+                    "live",
+                    "--account",
+                    "venue-proof",
+                    "--credential-env",
+                    "HOSTESS_PROOF_CREDENTIAL",
+                    "--report",
+                    reportPath.toString(),
+                    "--proof-account-attested",
+                    "--automated-use",
+                    "false",
+                    "--operator",
+                    "test-operator",
+                    "--proof-account-label",
+                    "test-proof-account",
+                ),
+                output,
+            )
+
+            val report = reportPath.readText()
+            assertEquals(2, exitCode)
+            assertTrue(output.lines.any { it.contains("scripted-agent-attested") })
+            assertContains(report, "\"status\": \"blocked\"")
+            assertContains(report, "\"loginComplianceStatus\": \"blocked\"")
+            assertContains(report, "\"proofAccountStatus\": \"passed\"")
+            assertContains(report, "\"scriptedAgentStatus\": \"blocked\"")
+            assertFalse(report.contains("venue-proof"))
+            assertFalse(report.contains("HOSTESS_PROOF_CREDENTIAL"))
+        } finally {
+            directory.toFile().deleteRecursively()
+        }
+    }
 }

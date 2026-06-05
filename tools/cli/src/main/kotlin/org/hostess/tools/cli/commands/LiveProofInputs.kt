@@ -58,7 +58,7 @@ internal data class LiveProofInputs(
             add("credential-env")
         }
         if (!proofAccountAttested) add("proof-account-attested")
-        if (automatedUse && !scriptedAgentAttested) add("scripted-agent-attested")
+        if (!scriptedAgentAttested) add("scripted-agent-attested")
         if (operator.isNullOrBlank()) add("operator")
         if (proofAccountLabel.isNullOrBlank()) add("proof-account-label")
         if (proofScope == LiveProofScope.FULL) {
@@ -72,9 +72,7 @@ internal data class LiveProofInputs(
 
     fun toReportInputs(mode: CommandMode): Map<String, String> = buildMap {
         put("mode", mode.label())
-        if (proofScope == LiveProofScope.READ_GROUPS) {
-            put("proofScope", proofScope.wireValue)
-        }
+        put("proofScope", proofScope.wireValue)
         put("grid", grid.orEmpty())
         put("account", account.orEmpty())
         put("authHandlePresent", (!credentialHandle.isNullOrBlank()).toString())
@@ -274,6 +272,7 @@ internal data class LiveProofInputs(
 internal enum class LiveProofScope(val wireValue: String) {
     FULL("full"),
     READ_GROUPS("read-groups"),
+    LOGIN_ONLY("login-only"),
     UNSUPPORTED("unsupported"),
     ;
 
@@ -281,6 +280,7 @@ internal enum class LiveProofScope(val wireValue: String) {
         fun parse(value: String?): LiveProofScope = when (value?.lowercase()) {
             null, "", "full" -> FULL
             "read-groups" -> READ_GROUPS
+            "login-only" -> LOGIN_ONLY
             else -> UNSUPPORTED
         }
     }

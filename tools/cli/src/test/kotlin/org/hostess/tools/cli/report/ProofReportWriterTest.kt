@@ -30,9 +30,24 @@ class ProofReportWriterTest {
                     "bulkNoticeStatus" to "not_run",
                     "androidProbeStatus" to "not_run",
                 ),
-                inputs = mapOf("account" to "venue-proof"),
+                inputs = mapOf(
+                    "account" to "venue-proof",
+                    "credentialHandle" to "HOSTESS_PROOF_CREDENTIAL",
+                    "ledgerPath" to "/home/user/private/notice-ledger.tsv",
+                    "recipientCountPath" to "/home/user/private/recipient-counts.csv",
+                    "mac" to "0123456789abcdef0123456789abcdef",
+                    "id0" to "abcdef0123456789abcdef0123456789",
+                    "host_id" to "fedcba9876543210fedcba9876543210",
+                    "rawLoginUri" to "https://login.example.invalid/raw",
+                ),
                 results = listOf(
-                    mapOf("displayName" to "Venue Hosts", "groupId" to "12345678-1234-1234-1234-123456789abc"),
+                    mapOf(
+                        "displayName" to "Venue Hosts",
+                        "groupId" to "12345678-1234-1234-1234-123456789abc",
+                        "sessionId" to "session-secret",
+                        "seedCapability" to "https://seed.example.invalid/cap",
+                        "token" to "mfa-token",
+                    ),
                 ),
                 cleanupStatus = "not_applicable",
             )
@@ -61,6 +76,15 @@ class ProofReportWriterTest {
             assertContains(json, "\"blockedReason\": null")
             assertContains(json, "\"account\": \"[redacted]\"")
             assertContains(json, "\"groupId\": \"[redacted]\"")
+            assertFalse(json.contains("HOSTESS_PROOF_CREDENTIAL"))
+            assertFalse(json.contains("/home/user/private"))
+            assertFalse(json.contains("0123456789abcdef0123456789abcdef"))
+            assertFalse(json.contains("abcdef0123456789abcdef0123456789"))
+            assertFalse(json.contains("fedcba9876543210fedcba9876543210"))
+            assertFalse(json.contains("login.example.invalid"))
+            assertFalse(json.contains("session-secret"))
+            assertFalse(json.contains("seed.example.invalid"))
+            assertFalse(json.contains("mfa-token"))
             assertFalse(RAW_UUID.containsMatchIn(json))
         } finally {
             directory.toFile().deleteRecursively()
