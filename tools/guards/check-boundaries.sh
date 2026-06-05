@@ -122,7 +122,10 @@ check_no_forbidden_files() {
     local matches=()
     while IFS= read -r path; do
         matches+=("$path")
-    done < <(find "$@" -path '*/src/main/*' -type f \
+    done < <(find "$@" -type f \
+        \( -path '*/src/main/*' -o -path '*/src/commonMain/*' \
+        -o -path '*/src/jvmMain/*' -o -path '*/src/androidMain/*' \
+        -o -path '*/src/jvmAndroidMain/*' \) \
         \( -name 'LoginCompliance.kt' -o -name 'NoticeCompliance.kt' \
         -o -name '*Manager.kt' -o -name '*Helper.kt' -o -name '*Utils.kt' -o -name '*Common.kt' \) \
         2>/dev/null || true)
@@ -137,11 +140,20 @@ check_no_forbidden_files() {
 }
 
 check_notice_dispatch_overloads() {
-    local file="hostess-core/src/main/kotlin/org/hostess/core/services/NoticeDispatchService.kt"
-    local output
+    local files=()
+    add_existing files \
+        "hostess-core/src/commonMain/kotlin/org/hostess/core/services/NoticeDispatchService.kt" \
+        "hostess-core/src/main/kotlin/org/hostess/core/services/NoticeDispatchService.kt"
+
+    if [[ "${#files[@]}" -eq 0 ]]; then
+        echo "ERROR: Track D notice dispatch overload scan has no scan targets"
+        failures=1
+        return
+    fi
 
     set +e
-    output="$(perl -0ne 'while (/fun\s+dispatch\s*\((.*?)\)\s*:/sg) { print "$ARGV: dispatch overload omits NoticeComplianceRequest\n" if $1 !~ /NoticeComplianceRequest/ }' "$file" 2>&1)"
+    local output
+    output="$(perl -0ne 'while (/fun\s+dispatch\s*\((.*?)\)\s*:/sg) { print "$ARGV: dispatch overload omits NoticeComplianceRequest\n" if $1 !~ /NoticeComplianceRequest/ }' "${files[@]}" 2>&1)"
     local status="$?"
     set -e
 
@@ -184,6 +196,10 @@ check_notice_dispatch_call_blocks() {
 core_targets=()
 add_existing core_targets \
     "hostess-core/build.gradle.kts" \
+    "hostess-core/src/commonMain" \
+    "hostess-core/src/jvmMain" \
+    "hostess-core/src/androidMain" \
+    "hostess-core/src/jvmAndroidMain" \
     "hostess-core/src/main"
 
 app_cli_targets=()
@@ -202,8 +218,16 @@ add_existing production_targets \
     "build.gradle.kts" \
     "gradle/libs.versions.toml" \
     "hostess-core/build.gradle.kts" \
+    "hostess-core/src/commonMain" \
+    "hostess-core/src/jvmMain" \
+    "hostess-core/src/androidMain" \
+    "hostess-core/src/jvmAndroidMain" \
     "hostess-core/src/main" \
     "hostess-protocol-libomv/build.gradle.kts" \
+    "hostess-protocol-libomv/src/commonMain" \
+    "hostess-protocol-libomv/src/jvmMain" \
+    "hostess-protocol-libomv/src/androidMain" \
+    "hostess-protocol-libomv/src/jvmAndroidMain" \
     "hostess-protocol-libomv/src/main" \
     "tools/cli/build.gradle.kts" \
     "tools/cli/src/main" \
@@ -218,6 +242,10 @@ add_existing okhttp_forbidden_targets \
     "build.gradle.kts" \
     "gradle/libs.versions.toml" \
     "hostess-core/build.gradle.kts" \
+    "hostess-core/src/commonMain" \
+    "hostess-core/src/jvmMain" \
+    "hostess-core/src/androidMain" \
+    "hostess-core/src/jvmAndroidMain" \
     "hostess-core/src/main" \
     "hostess-protocol-libomv/build.gradle.kts" \
     "tools/cli/build.gradle.kts" \
@@ -226,12 +254,23 @@ add_existing okhttp_forbidden_targets \
     "apps/desktop/src/main" \
     "apps/android/build.gradle.kts" \
     "apps/android/src/main"
-while IFS= read -r path; do
-    okhttp_forbidden_targets+=("$path")
-done < <(find "hostess-protocol-libomv/src/main" -type f ! -path '*/transport/*' 2>/dev/null || true)
+for protocol_root in \
+    "hostess-protocol-libomv/src/commonMain" \
+    "hostess-protocol-libomv/src/jvmMain" \
+    "hostess-protocol-libomv/src/androidMain" \
+    "hostess-protocol-libomv/src/jvmAndroidMain" \
+    "hostess-protocol-libomv/src/main"; do
+    while IFS= read -r path; do
+        okhttp_forbidden_targets+=("$path")
+    done < <(find "$protocol_root" -type f ! -path '*/transport/*' 2>/dev/null || true)
+done
 
 track_b_runtime_forbidden_targets=()
 add_existing track_b_runtime_forbidden_targets \
+    "hostess-core/src/commonMain" \
+    "hostess-core/src/jvmMain" \
+    "hostess-core/src/androidMain" \
+    "hostess-core/src/jvmAndroidMain" \
     "hostess-core/src/main" \
     "tools/cli/src/main" \
     "apps/desktop/src/main" \
@@ -239,6 +278,10 @@ add_existing track_b_runtime_forbidden_targets \
 
 track_c_runtime_forbidden_targets=()
 add_existing track_c_runtime_forbidden_targets \
+    "hostess-core/src/commonMain" \
+    "hostess-core/src/jvmMain" \
+    "hostess-core/src/androidMain" \
+    "hostess-core/src/jvmAndroidMain" \
     "hostess-core/src/main" \
     "tools/cli/src/main" \
     "apps/desktop/src/main" \
@@ -251,7 +294,15 @@ while IFS= read -r path; do
         *) track_c_env_forbidden_targets+=("$path") ;;
     esac
 done < <(find \
+    "hostess-core/src/commonMain" \
+    "hostess-core/src/jvmMain" \
+    "hostess-core/src/androidMain" \
+    "hostess-core/src/jvmAndroidMain" \
     "hostess-core/src/main" \
+    "hostess-protocol-libomv/src/commonMain" \
+    "hostess-protocol-libomv/src/jvmMain" \
+    "hostess-protocol-libomv/src/androidMain" \
+    "hostess-protocol-libomv/src/jvmAndroidMain" \
     "hostess-protocol-libomv/src/main" \
     "tools/cli/src/main" \
     "apps/desktop/src/main" \
@@ -265,7 +316,15 @@ while IFS= read -r path; do
         *) track_c_file_route_forbidden_targets+=("$path") ;;
     esac
 done < <(find \
+    "hostess-core/src/commonMain" \
+    "hostess-core/src/jvmMain" \
+    "hostess-core/src/androidMain" \
+    "hostess-core/src/jvmAndroidMain" \
     "hostess-core/src/main" \
+    "hostess-protocol-libomv/src/commonMain" \
+    "hostess-protocol-libomv/src/jvmMain" \
+    "hostess-protocol-libomv/src/androidMain" \
+    "hostess-protocol-libomv/src/jvmAndroidMain" \
     "hostess-protocol-libomv/src/main" \
     "tools/cli/src/main" \
     "apps/desktop/src/main" \
@@ -287,6 +346,10 @@ add_existing track_d_tools_apps_targets \
 
 track_d_notice_dispatch_targets=()
 add_existing track_d_notice_dispatch_targets \
+    "hostess-core/src/commonMain" \
+    "hostess-core/src/jvmMain" \
+    "hostess-core/src/androidMain" \
+    "hostess-core/src/jvmAndroidMain" \
     "hostess-core/src/main" \
     "tools/cli/src/main" \
     "apps/desktop/src/main" \
@@ -300,6 +363,10 @@ while IFS= read -r path; do
         *) track_d_viewer_provider_forbidden_targets+=("$path") ;;
     esac
 done < <(find \
+    "hostess-core/src/commonMain" \
+    "hostess-core/src/jvmMain" \
+    "hostess-core/src/androidMain" \
+    "hostess-core/src/jvmAndroidMain" \
     "hostess-core/src/main" \
     "tools/cli/src/main" \
     "apps/desktop/src/main" \
@@ -327,6 +394,10 @@ while IFS= read -r path; do
         *) track_ds_direct_owner_forbidden_targets+=("$path") ;;
     esac
 done < <(find \
+    "hostess-core/src/commonMain" \
+    "hostess-core/src/jvmMain" \
+    "hostess-core/src/androidMain" \
+    "hostess-core/src/jvmAndroidMain" \
     "hostess-core/src/main" \
     "tools/cli/src/main" \
     "apps/desktop/src/main" \
@@ -335,12 +406,39 @@ done < <(find \
 
 track_ds_login_package_targets=()
 add_existing track_ds_login_package_targets \
+    "hostess-protocol-libomv/src/commonMain/kotlin/org/hostess/protocol/libomv/runtime/ProtocolLoginRuntime.kt" \
+    "hostess-protocol-libomv/src/jvmMain/kotlin/org/hostess/protocol/libomv/runtime/ProtocolLoginRuntime.kt" \
+    "hostess-protocol-libomv/src/androidMain/kotlin/org/hostess/protocol/libomv/runtime/ProtocolLoginRuntime.kt" \
+    "hostess-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/runtime/ProtocolLoginRuntime.kt" \
     "hostess-protocol-libomv/src/main/kotlin/org/hostess/protocol/libomv/runtime/ProtocolLoginRuntime.kt"
-while IFS= read -r path; do
-    track_ds_login_package_targets+=("$path")
-done < <(find \
-    "hostess-protocol-libomv/src/main/kotlin/org/hostess/protocol/libomv/runtime" \
-    -maxdepth 1 -type f -name 'LoginPackage*.kt' 2>/dev/null || true)
+for protocol_runtime_root in \
+    "hostess-protocol-libomv/src/commonMain/kotlin/org/hostess/protocol/libomv/runtime" \
+    "hostess-protocol-libomv/src/jvmMain/kotlin/org/hostess/protocol/libomv/runtime" \
+    "hostess-protocol-libomv/src/androidMain/kotlin/org/hostess/protocol/libomv/runtime" \
+    "hostess-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/runtime" \
+    "hostess-protocol-libomv/src/main/kotlin/org/hostess/protocol/libomv/runtime"; do
+    while IFS= read -r path; do
+        track_ds_login_package_targets+=("$path")
+    done < <(find "$protocol_runtime_root" -maxdepth 1 -type f -name 'LoginPackage*.kt' 2>/dev/null || true)
+done
+
+track_d_session_service_targets=()
+add_existing track_d_session_service_targets \
+    "hostess-core/src/commonMain/kotlin/org/hostess/core/services/SessionService.kt" \
+    "hostess-core/src/main/kotlin/org/hostess/core/services/SessionService.kt"
+
+track_d_notice_time_targets=()
+add_existing track_d_notice_time_targets \
+    "hostess-core/src/commonMain/kotlin/org/hostess/core/services/NoticeComplianceService.kt" \
+    "hostess-core/src/main/kotlin/org/hostess/core/services/NoticeComplianceService.kt"
+
+track_ds_old_login_targets=()
+add_existing track_ds_old_login_targets \
+    "hostess-protocol-libomv/src/commonMain/kotlin/org/hostess/protocol/libomv/runtime/ProtocolLoginRuntime.kt" \
+    "hostess-protocol-libomv/src/jvmMain/kotlin/org/hostess/protocol/libomv/runtime/ProtocolLoginRuntime.kt" \
+    "hostess-protocol-libomv/src/androidMain/kotlin/org/hostess/protocol/libomv/runtime/ProtocolLoginRuntime.kt" \
+    "hostess-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/runtime/ProtocolLoginRuntime.kt" \
+    "hostess-protocol-libomv/src/main/kotlin/org/hostess/protocol/libomv/runtime/ProtocolLoginRuntime.kt"
 
 check_no_hits \
     "hostess-core forbidden dependencies" \
@@ -404,7 +502,7 @@ check_no_forbidden_files \
 check_no_hits \
     "Track D old SessionService login overload" \
     "$TRACK_D_SESSION_LOGIN_OVERLOAD_PATTERN" \
-    "hostess-core/src/main/kotlin/org/hostess/core/services/SessionService.kt"
+    "${track_d_session_service_targets[@]}"
 
 check_no_hits \
     "Track D one-argument CLI/app login calls" \
@@ -435,7 +533,7 @@ check_no_hits \
 check_no_hits \
     "Track DS old LLSD login route" \
     "$TRACK_DS_OLD_LOGIN_LLSD_PATTERN" \
-    "hostess-protocol-libomv/src/main/kotlin/org/hostess/protocol/libomv/runtime/ProtocolLoginRuntime.kt"
+    "${track_ds_old_login_targets[@]}"
 
 check_no_hits \
     "Track DS direct package owners outside protocol module" \
@@ -455,7 +553,7 @@ check_no_hits \
 check_no_hits \
     "Track D NoticeComplianceService direct system time" \
     "$TRACK_D_NOTICE_TIME_PATTERN" \
-    "hostess-core/src/main/kotlin/org/hostess/core/services/NoticeComplianceService.kt"
+    "${track_d_notice_time_targets[@]}"
 
 check_no_hits \
     "Track D raw report key leakage" \

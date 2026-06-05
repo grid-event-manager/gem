@@ -26,21 +26,6 @@ kotlin {
                 implementation(kotlin("test"))
             }
         }
-        jvmMain {
-            // HS001-F-08 deletion gate: temporary old source root until core files move to commonMain.
-            kotlin.srcDir("src/main/kotlin")
-        }
-        androidMain {
-            // HS001-F-08 deletion gate: temporary old source root until core files move to commonMain.
-            kotlin.srcDir("src/main/kotlin")
-        }
-        jvmTest {
-            // HS001-F-08 deletion gate: temporary old test root until core tests move to commonTest.
-            kotlin.srcDir("src/test/kotlin")
-            dependencies {
-                implementation(kotlin("test"))
-            }
-        }
     }
 }
 
