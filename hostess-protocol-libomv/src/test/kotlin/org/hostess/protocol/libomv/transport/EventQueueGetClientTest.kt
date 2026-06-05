@@ -47,6 +47,18 @@ class EventQueueGetClientTest {
     }
 
     @Test
+    fun `poll maps unsigned group powers bits`() {
+        val httpClient = RecordingHttpClient(groupEventResponse(groupPowers = "18446744073709551615"))
+        val client = EventQueueGetClient(httpClient)
+
+        val result = assertIs<EventQueueGetResult.AgentGroupDataUpdate>(
+            client.pollAgentGroupDataUpdate(eventUrl()),
+        )
+
+        assertTrue(result.groups.single().powers and LibomvMapping.SEND_NOTICES_POWER != 0L)
+    }
+
+    @Test
     fun `poll advances ack and times out without group event`() {
         val httpClient = RecordingHttpClient(
             mutableListOf(
@@ -173,7 +185,9 @@ class EventQueueGetClientTest {
         """.trimIndent().encodeToByteArray(),
     )
 
-    private fun groupEventResponse(): ProtocolHttpResponse = response(
+    private fun groupEventResponse(
+        groupPowers: String = LibomvMapping.SEND_NOTICES_POWER.toString(),
+    ): ProtocolHttpResponse = response(
         """
         <llsd>
           <map>
@@ -198,7 +212,7 @@ class EventQueueGetClientTest {
                       <key>GroupInsigniaID</key><uuid>00000000-0000-0000-0000-000000000000</uuid>
                       <key>GroupName</key><string>Music Room</string>
                       <key>GroupTitle</key><string>Host</string>
-                      <key>GroupPowers</key><integer>${LibomvMapping.SEND_NOTICES_POWER}</integer>
+                      <key>GroupPowers</key><integer>$groupPowers</integer>
                     </map>
                   </array>
                   <key>NewGroupData</key>
