@@ -121,6 +121,28 @@ class ProtocolLibomvModuleTest {
         assertEquals("notice runtime unavailable", status.detail)
     }
 
+    @Test
+    fun `live runtime group adapter reaches current groups source`() {
+        val httpClient = RecordingHttpClient(body = ByteArray(0), statusCode = 503)
+        val runtime = ProtocolLibomvModule.liveRuntime(httpClient)
+        val session = fakeActiveUuidSession()
+        runtime.clientSession.activate(
+            session = session,
+            agentId = "11111111-1111-1111-1111-111111111111",
+            seedCapability = secureUrl("caps.example", "/seed"),
+            simulatorIp = "203.0.113.8",
+            simulatorPort = 13000,
+            regionHandle = 123456789L,
+            circuitCode = 987654321L,
+        )
+
+        val groups = assertIs<GroupListResult.Failure>(runtime.groupPort.currentGroups(session))
+
+        assertEquals(CoreFailureReason.GROUP_LIST_FAILED, groups.failure.reason)
+        assertEquals("current groups transport unavailable", groups.failure.redactedMessage)
+        assertEquals(secureUrl("caps.example", "/seed"), httpClient.capturedRequest?.url)
+    }
+
     private fun loginRequest(): LoginRequest = LoginRequest(
         accountLabel = AccountLabel("venue-proof"),
         credentialHandle = CredentialHandle("proof-handle"),
@@ -157,16 +179,17 @@ class ProtocolLibomvModuleTest {
 
     private class RecordingHttpClient(
         private val body: ByteArray,
+        private val statusCode: Int = 200,
     ) : ProtocolHttpClient {
         var capturedRequest: ProtocolHttpRequest? = null
 
         override fun execute(request: ProtocolHttpRequest): ProtocolHttpResponse {
             capturedRequest = request
             return ProtocolHttpResponse(
-                statusCode = 200,
+                statusCode = statusCode,
                 headers = emptyMap(),
                 body = body,
-                redactedSummary = "POST <redacted> -> 200",
+                redactedSummary = "POST <redacted> -> $statusCode",
             )
         }
     }

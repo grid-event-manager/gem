@@ -2,10 +2,14 @@ package org.hostess.protocol.libomv.transport
 
 import org.hostess.protocol.libomv.LibomvSessionIdentity
 
+internal fun interface AgentDataUpdateRequester {
+    fun send(identity: LibomvSessionIdentity): AgentDataUpdateRequestResult
+}
+
 internal class AgentDataUpdateRequestTransport(
     private val circuitSender: BoundedSimulatorCircuitSender = BoundedSimulatorCircuitClient(),
-) {
-    fun send(identity: LibomvSessionIdentity): AgentDataUpdateRequestResult {
+) : AgentDataUpdateRequester {
+    override fun send(identity: LibomvSessionIdentity): AgentDataUpdateRequestResult {
         val circuit = SimulatorCircuit(
             agentId = identity.agentId,
             sessionId = identity.sessionId,

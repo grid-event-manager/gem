@@ -17,7 +17,7 @@ class LibomvGroupAdapterTest {
     @Test
     fun `current groups routes through protocol runtime`() {
         val session = hostessSession()
-        val clientSession = LibomvClientSession.active(session)
+        val clientSession = activeClientSession(session)
         val adapter = LibomvGroupAdapter(
             clientSession = clientSession,
             groupRuntime = ProtocolGroupRuntime(
@@ -58,5 +58,15 @@ class LibomvGroupAdapterTest {
         accountLabel = AccountLabel("venue-proof"),
         startedAt = Instant.EPOCH,
         isActive = true,
+    )
+
+    private fun activeClientSession(session: HostessSession): LibomvClientSession = LibomvClientSession.active(
+        session = session,
+        agentId = "11111111-1111-1111-1111-111111111111",
+        seedCapability = "seed-capability",
+        simulatorIp = "203.0.113.8",
+        simulatorPort = 13000,
+        regionHandle = 123456789L,
+        circuitCode = 0x01020304L,
     )
 }

@@ -1,10 +1,7 @@
 package org.hostess.protocol.libomv.mapping
 
-import java.io.ByteArrayInputStream
-import javax.xml.parsers.DocumentBuilderFactory
 import org.hostess.core.domain.SessionId
-import org.w3c.dom.Element
-import org.w3c.dom.Node
+import org.hostess.protocol.libomv.llsd.LlsdXml
 
 internal data class LibomvLoginSuccess(
     val sessionId: SessionId,
@@ -27,11 +24,8 @@ internal sealed interface LibomvLoginMappingResult {
 
 internal object LibomvLoginMapping {
     fun parse(body: ByteArray): LibomvLoginMappingResult {
-        val fields = try {
-            parseLlsdMap(body)
-        } catch (ex: Exception) {
-            return LibomvLoginMappingResult.Failure(LibomvLoginFailure("login response unreadable"))
-        }
+        val fields = LlsdXml.parseStringMap(body)
+            ?: return LibomvLoginMappingResult.Failure(LibomvLoginFailure("login response unreadable"))
         val loginValue = fields[LoginKeys.LOGIN]?.lowercase()
         if (loginValue == "true" || loginValue == "success" || loginValue == "1") {
             val sessionId = fields[LoginKeys.SESSION_ID]?.takeIf(String::isNotBlank)
@@ -53,38 +47,6 @@ internal object LibomvLoginMapping {
             ?: "login failed"
         return LibomvLoginMappingResult.Failure(LibomvLoginFailure(reason))
     }
-
-    private fun parseLlsdMap(body: ByteArray): Map<String, String> {
-        val document = secureDocumentBuilderFactory()
-            .newDocumentBuilder()
-            .parse(ByteArrayInputStream(body))
-        val map = document.getElementsByTagName("map").item(0) ?: document.documentElement
-        val fields = linkedMapOf<String, String>()
-        var pendingKey: String? = null
-        for (index in 0 until map.childNodes.length) {
-            val node = map.childNodes.item(index)
-            if (node.nodeType != Node.ELEMENT_NODE) {
-                continue
-            }
-            val element = node as Element
-            if (element.tagName == "key") {
-                pendingKey = element.textContent.trim()
-            } else if (pendingKey != null) {
-                fields[pendingKey] = element.textContent.trim()
-                pendingKey = null
-            }
-        }
-        return fields
-    }
-
-    private fun secureDocumentBuilderFactory(): DocumentBuilderFactory = DocumentBuilderFactory.newInstance().also {
-        it.isExpandEntityReferences = false
-        it.setFeature(feature("apache.org", "xml/features/disallow-doctype-decl"), true)
-        it.setFeature(feature("xml.org", "sax/features/external-general-entities"), false)
-        it.setFeature(feature("xml.org", "sax/features/external-parameter-entities"), false)
-    }
-
-    private fun feature(host: String, path: String): String = "http" + "://$host/$path"
 
     private fun regionHandle(fields: Map<String, String>): Long? {
         val regionX = fields[LoginKeys.REGION_X]?.toUnsigned32OrNull() ?: return null

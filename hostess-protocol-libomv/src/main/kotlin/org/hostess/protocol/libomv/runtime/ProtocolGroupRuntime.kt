@@ -6,6 +6,8 @@ import org.hostess.core.domain.HostessSession
 import org.hostess.core.ports.GroupListResult
 import org.hostess.protocol.libomv.LibomvClientSession
 import org.hostess.protocol.libomv.LibomvGroupSnapshot
+import org.hostess.protocol.libomv.LibomvSessionIdentity
+import org.hostess.protocol.libomv.LibomvSessionIdentityResult
 import org.hostess.protocol.libomv.mapping.LibomvGroupMapping
 import org.hostess.protocol.libomv.mapping.LibomvGroupMappingResult
 
@@ -14,14 +16,15 @@ class ProtocolGroupRuntime internal constructor(
     private val currentGroupsSource: CurrentGroupsSource = CurrentGroupsSource.unavailable(),
 ) {
     fun currentGroups(session: HostessSession): GroupListResult {
-        val bindingFailure = clientSession.requireSession(session)
-        if (bindingFailure != null) {
-            return GroupListResult.Failure(bindingFailure.copy(reason = CoreFailureReason.GROUP_LIST_FAILED))
+        val identity = when (val result = clientSession.requireIdentity(session)) {
+            is LibomvSessionIdentityResult.Failure ->
+                return GroupListResult.Failure(result.failure.copy(reason = CoreFailureReason.GROUP_LIST_FAILED))
+            is LibomvSessionIdentityResult.Success -> result.identity
         }
 
-        val fetched = currentGroupsSource.currentGroups(session)
+        val fetched = currentGroupsSource.currentGroups(identity)
         return when (fetched) {
-            is CurrentGroupsFetchResult.Failure -> groupFailure("current groups unavailable")
+            is CurrentGroupsFetchResult.Failure -> groupFailure(fetched.redactedMessage)
             is CurrentGroupsFetchResult.Success -> mapCurrentGroups(fetched)
         }
     }
@@ -37,15 +40,29 @@ class ProtocolGroupRuntime internal constructor(
 }
 
 internal fun interface CurrentGroupsSource {
-    fun currentGroups(session: HostessSession): CurrentGroupsFetchResult
+    fun currentGroups(identity: LibomvSessionIdentity): CurrentGroupsFetchResult
 
     companion object {
-        fun unavailable(): CurrentGroupsSource =
-            CurrentGroupsSource { CurrentGroupsFetchResult.Failure }
+        fun unavailable(): CurrentGroupsSource = CurrentGroupsSource {
+            CurrentGroupsFetchResult.Failure(
+                status = CurrentGroupsFailureStatus.RUNTIME_GAP,
+                redactedMessage = "current groups unavailable",
+            )
+        }
     }
 }
 
 internal sealed interface CurrentGroupsFetchResult {
     data class Success(val groups: List<LibomvGroupSnapshot>) : CurrentGroupsFetchResult
-    data object Failure : CurrentGroupsFetchResult
+    data class Failure(
+        val status: CurrentGroupsFailureStatus,
+        val redactedMessage: String,
+    ) : CurrentGroupsFetchResult
+}
+
+internal enum class CurrentGroupsFailureStatus {
+    RUNTIME_GAP,
+    TRANSPORT_GAP,
+    PACKET_GAP,
+    PROOF_GAP,
 }

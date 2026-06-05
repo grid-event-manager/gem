@@ -8,10 +8,14 @@ import org.hostess.protocol.libomv.runtime.AttachmentPayloadResult
 import org.hostess.protocol.libomv.runtime.AttachmentPayloadSource
 import org.hostess.protocol.libomv.runtime.EnvironmentLoginSecretResolver
 import org.hostess.protocol.libomv.runtime.LoginSecretResolver
+import org.hostess.protocol.libomv.runtime.ProtocolCurrentGroupsSource
 import org.hostess.protocol.libomv.runtime.ProtocolGroupRuntime
 import org.hostess.protocol.libomv.runtime.ProtocolInventoryRuntime
 import org.hostess.protocol.libomv.runtime.ProtocolLoginRuntime
 import org.hostess.protocol.libomv.runtime.ProtocolNoticeRuntime
+import org.hostess.protocol.libomv.transport.AgentDataUpdateRequestTransport
+import org.hostess.protocol.libomv.transport.BoundedSimulatorCircuitClient
+import org.hostess.protocol.libomv.transport.EventQueueGetClient
 import org.hostess.protocol.libomv.transport.OkHttpProtocolHttpClient
 import org.hostess.protocol.libomv.transport.ProtocolHttpClient
 
@@ -42,7 +46,12 @@ object ProtocolLibomvModule {
         secretResolver: LoginSecretResolver,
     ): LibomvProtocolRuntime {
         val clientSession = LibomvClientSession.inactive()
-        val groupRuntime = ProtocolGroupRuntime(clientSession)
+        val eventQueueGetClient = EventQueueGetClient(httpClient)
+        val currentGroupsSource = ProtocolCurrentGroupsSource(
+            eventQueueGetClient = eventQueueGetClient,
+            requestTransport = AgentDataUpdateRequestTransport(),
+        )
+        val groupRuntime = ProtocolGroupRuntime(clientSession, currentGroupsSource)
         val inventoryRuntime = ProtocolInventoryRuntime(clientSession)
         val loginRuntime = ProtocolLoginRuntime(
             clientSession = clientSession,
@@ -56,7 +65,13 @@ object ProtocolLibomvModule {
             inventoryRuntime = inventoryRuntime,
             loginRuntime = loginRuntime,
             noticeRuntime = noticeRuntime,
-            transportLoad = listOf(ProtocolHttpClient::class.java, httpClient::class.java).classesLoaded(),
+            transportLoad = listOf(
+                ProtocolHttpClient::class.java,
+                httpClient::class.java,
+                EventQueueGetClient::class.java,
+                AgentDataUpdateRequestTransport::class.java,
+                BoundedSimulatorCircuitClient::class.java,
+            ).classesLoaded(),
         )
     }
 
@@ -90,6 +105,7 @@ object ProtocolLibomvModule {
                 runtimeLoad = listOf(
                     loginRuntime?.let { it::class.java },
                     groupRuntime?.let { it::class.java },
+                    ProtocolCurrentGroupsSource::class.java,
                     inventoryRuntime?.let { it::class.java },
                     noticeRuntime?.let { it::class.java },
                     AttachmentPayloadSource::class.java,

@@ -9,6 +9,7 @@ import org.hostess.core.ports.GroupListResult
 import org.hostess.protocol.libomv.LibomvClientSession
 import org.hostess.protocol.libomv.LibomvGroupSnapshot
 import org.hostess.protocol.libomv.LibomvMapping
+import org.hostess.protocol.libomv.LibomvSessionIdentity
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -101,7 +102,7 @@ class ProtocolGroupRuntimeTest {
     @Test
     fun `current groups rejects mismatched session without calling source`() {
         val runtime = ProtocolGroupRuntime(
-            clientSession = LibomvClientSession.active(hostessSession("live-session")),
+            clientSession = activeClientSession(hostessSession("live-session")),
             currentGroupsSource = FailsIfCalledGroupsSource,
         )
 
@@ -118,8 +119,13 @@ class ProtocolGroupRuntimeTest {
     fun `current groups maps source failure to redacted failure`() {
         val session = hostessSession()
         val runtime = ProtocolGroupRuntime(
-            clientSession = LibomvClientSession.active(session),
-            currentGroupsSource = CurrentGroupsSource { CurrentGroupsFetchResult.Failure },
+            clientSession = activeClientSession(session),
+            currentGroupsSource = CurrentGroupsSource {
+                CurrentGroupsFetchResult.Failure(
+                    status = CurrentGroupsFailureStatus.TRANSPORT_GAP,
+                    redactedMessage = "current groups unavailable",
+                )
+            },
         )
 
         val result = runtime.currentGroups(session)
@@ -129,12 +135,37 @@ class ProtocolGroupRuntimeTest {
         assertEquals("current groups unavailable", failure.redactedMessage)
     }
 
+    @Test
+    fun `current groups requires complete live identity before calling source`() {
+        val session = hostessSession()
+        val runtime = ProtocolGroupRuntime(
+            clientSession = LibomvClientSession.active(session),
+            currentGroupsSource = FailsIfCalledGroupsSource,
+        )
+
+        val result = runtime.currentGroups(session)
+
+        val failure = assertIs<GroupListResult.Failure>(result).failure
+        assertEquals(CoreFailureReason.GROUP_LIST_FAILED, failure.reason)
+        assertEquals("protocol agent identity unavailable", failure.redactedMessage)
+    }
+
     private fun runtime(
         session: HostessSession,
         groups: List<LibomvGroupSnapshot>,
     ): ProtocolGroupRuntime = ProtocolGroupRuntime(
-        clientSession = LibomvClientSession.active(session),
+        clientSession = activeClientSession(session),
         currentGroupsSource = CurrentGroupsSource { CurrentGroupsFetchResult.Success(groups) },
+    )
+
+    private fun activeClientSession(session: HostessSession): LibomvClientSession = LibomvClientSession.active(
+        session = session,
+        agentId = AGENT_ID,
+        seedCapability = "seed-capability",
+        simulatorIp = SIM_HOST,
+        simulatorPort = SIM_PORT,
+        regionHandle = REGION_HANDLE,
+        circuitCode = CIRCUIT_CODE,
     )
 
     private fun group(
@@ -157,8 +188,16 @@ class ProtocolGroupRuntimeTest {
     )
 
     private object FailsIfCalledGroupsSource : CurrentGroupsSource {
-        override fun currentGroups(session: HostessSession): CurrentGroupsFetchResult {
+        override fun currentGroups(identity: LibomvSessionIdentity): CurrentGroupsFetchResult {
             error("group source must not be called for a rejected session")
         }
+    }
+
+    private companion object {
+        const val AGENT_ID = "11111111-1111-1111-1111-111111111111"
+        const val SIM_HOST = "203.0.113.8"
+        const val SIM_PORT = 13000
+        const val REGION_HANDLE = 123456789L
+        const val CIRCUIT_CODE = 0x01020304L
     }
 }
