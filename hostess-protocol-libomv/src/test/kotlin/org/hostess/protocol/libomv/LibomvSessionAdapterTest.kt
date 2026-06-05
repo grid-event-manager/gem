@@ -9,6 +9,10 @@ import org.hostess.core.ports.CredentialHandle
 import org.hostess.core.ports.LoginRequest
 import org.hostess.core.ports.SessionLoginResult
 import org.hostess.core.ports.SessionLogoutResult
+import org.hostess.protocol.libomv.runtime.HostessHostIdentity
+import org.hostess.protocol.libomv.runtime.HostessPlatformIdentity
+import org.hostess.protocol.libomv.runtime.HostessViewerIdentity
+import org.hostess.protocol.libomv.runtime.HostessViewerIdentityProvider
 import org.hostess.protocol.libomv.runtime.ProtocolLoginRuntime
 import org.hostess.protocol.libomv.transport.ProtocolHttpClient
 import org.hostess.protocol.libomv.transport.ProtocolHttpRequest
@@ -26,6 +30,7 @@ class LibomvSessionAdapterTest {
             loginRuntime = ProtocolLoginRuntime(
                 clientSession = clientSession,
                 httpClient = FailsIfCalledHttpClient,
+                viewerIdentityProvider = viewerIdentityProvider(),
             ),
         )
 
@@ -45,6 +50,7 @@ class LibomvSessionAdapterTest {
             loginRuntime = ProtocolLoginRuntime(
                 clientSession = clientSession,
                 httpClient = FailsIfCalledHttpClient,
+                viewerIdentityProvider = viewerIdentityProvider(),
             ),
         )
 
@@ -65,6 +71,20 @@ class LibomvSessionAdapterTest {
         startedAt = Instant.EPOCH,
         isActive = true,
     )
+
+    private fun viewerIdentityProvider(): HostessViewerIdentityProvider = HostessViewerIdentityProvider {
+        HostessViewerIdentity(
+            channel = "Hostess",
+            version = "0.1.0.0",
+            author = "Hostess",
+            platform = HostessPlatformIdentity("Linux", "6.8.0", "Linux 6.8.0 amd64 Test Runtime 17"),
+            host = HostessHostIdentity(
+                mac = "00000000000000000000000000000001",
+                id0 = "00000000000000000000000000000002",
+                hostId = "00000000000000000000000000000003",
+            ),
+        )
+    }
 
     private object FailsIfCalledHttpClient : ProtocolHttpClient {
         override fun execute(request: ProtocolHttpRequest): ProtocolHttpResponse {

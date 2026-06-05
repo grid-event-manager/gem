@@ -33,6 +33,7 @@ class ProtocolLoginRuntimeTest {
         val runtime = ProtocolLoginRuntime(
             clientSession = LibomvClientSession.inactive(),
             httpClient = httpClient,
+            viewerIdentityProvider = FailsIfCalledViewerIdentityProvider,
         )
 
         val result = runtime.login(loginRequest("proof-handle"))
@@ -51,6 +52,7 @@ class ProtocolLoginRuntimeTest {
         val runtime = ProtocolLoginRuntime(
             clientSession = clientSession,
             httpClient = httpClient,
+            viewerIdentityProvider = viewerIdentityProvider(),
             secretResolver = LoginSecretResolver { resolvedSecret() },
             clock = Clock.fixed(Instant.parse("2026-06-04T20:00:00Z"), ZoneOffset.UTC),
         )
@@ -71,14 +73,52 @@ class ProtocolLoginRuntimeTest {
         assertEquals((1024L shl 32) or 2048L, identity.regionHandle)
         assertEquals(123456789L, identity.circuitCode)
 
-        val request = httpClient.capturedRequest
-        assertEquals("POST", request?.method)
-        assertEquals(loginUrl(), request?.url)
-        val body = assertIs<ProtocolHttpBody.TextBody>(request?.body)
+        val request = httpClient.capturedRequest ?: error("login request was not captured")
+        assertEquals("POST", request.method)
+        assertEquals(loginUrl(), request.url)
+        val body = assertIs<ProtocolHttpBody.TextBody>(request.body)
         assertTrue(body.content.contains("<key>${LoginKeys.SECRET}</key>"))
         assertTrue(body.content.contains("<key>first</key><string>Venue</string>"))
         assertTrue(body.content.contains("<key>last</key><string>Host</string>"))
+        assertTrue(body.content.contains("<key>start</key><string>last</string>"))
+        assertTrue(body.content.contains("<key>${LoginKeys.CHANNEL}</key><string>Hostess</string>"))
+        assertTrue(body.content.contains("<key>${LoginKeys.VERSION}</key><string>0.1.0.0</string>"))
+        assertTrue(body.content.contains("<key>${LoginKeys.PLATFORM}</key><string>Linux</string>"))
+        assertTrue(body.content.contains("<key>${LoginKeys.PLATFORM_VERSION}</key><string>6.8.0</string>"))
+        assertTrue(body.content.contains("<key>${LoginKeys.PLATFORM_STRING}</key><string>Linux 6.8.0 amd64 Test Runtime 17</string>"))
+        assertTrue(body.content.contains("<key>${LoginKeys.MAC}</key><string>00000000000000000000000000000001</string>"))
+        assertTrue(body.content.contains("<key>${LoginKeys.ID0}</key><string>00000000000000000000000000000002</string>"))
+        assertTrue(body.content.contains("<key>${LoginKeys.HOST_ID}</key><string>00000000000000000000000000000003</string>"))
+        assertTrue(body.content.contains("<key>${LoginKeys.TOKEN}</key><string></string>"))
+        assertTrue(body.content.contains("<key>${LoginKeys.AGREE_TO_TOS}</key><boolean>0</boolean>"))
+        assertTrue(body.content.contains("<key>${LoginKeys.READ_CRITICAL}</key><boolean>0</boolean>"))
+        assertTrue(body.content.contains("<key>${LoginKeys.EXTENDED_ERRORS}</key><boolean>1</boolean>"))
+        assertTrue(body.content.contains("<string>max-agent-groups</string>"))
+        assertTrue(LoginKeys.SECRET in request.redactionKeys)
+        assertTrue(LoginKeys.MAC in request.redactionKeys)
+        assertTrue(LoginKeys.ID0 in request.redactionKeys)
+        assertTrue(LoginKeys.HOST_ID in request.redactionKeys)
+        assertTrue(LoginKeys.TOKEN in request.redactionKeys)
         assertFalse(body.content.contains("proof-handle"))
+    }
+
+    @Test
+    fun `login fails closed when viewer identity cannot resolve`() {
+        val httpClient = RecordingHttpClient(successBody("live-session"))
+        val runtime = ProtocolLoginRuntime(
+            clientSession = LibomvClientSession.inactive(),
+            httpClient = httpClient,
+            viewerIdentityProvider = HostessViewerIdentityProvider { throw IllegalStateException("host identity unavailable") },
+            secretResolver = LoginSecretResolver { resolvedSecret() },
+        )
+
+        val result = runtime.login(loginRequest("proof-handle"))
+
+        assertIs<SessionLoginResult.Failure>(result)
+        assertEquals(CoreFailureReason.LOGIN_FAILED, result.failure.reason)
+        assertEquals("viewer identity unavailable", result.failure.redactedMessage)
+        assertFalse(httpClient.called)
+        assertFalse(result.failure.redactedMessage.orEmpty().contains("host identity unavailable"))
     }
 
     @Test
@@ -86,6 +126,7 @@ class ProtocolLoginRuntimeTest {
         val runtime = ProtocolLoginRuntime(
             clientSession = LibomvClientSession.inactive(),
             httpClient = ThrowingHttpClient(),
+            viewerIdentityProvider = viewerIdentityProvider(),
             secretResolver = LoginSecretResolver { resolvedSecret() },
         )
 
@@ -101,6 +142,7 @@ class ProtocolLoginRuntimeTest {
         val runtime = ProtocolLoginRuntime(
             clientSession = LibomvClientSession.inactive(),
             httpClient = RecordingHttpClient("<llsd><map>".encodeToByteArray()),
+            viewerIdentityProvider = viewerIdentityProvider(),
             secretResolver = LoginSecretResolver { resolvedSecret() },
         )
 
@@ -117,6 +159,7 @@ class ProtocolLoginRuntimeTest {
         val runtime = ProtocolLoginRuntime(
             clientSession = clientSession,
             httpClient = RecordingHttpClient(successBody("live-session", includeSimulatorFields = false)),
+            viewerIdentityProvider = viewerIdentityProvider(),
             secretResolver = LoginSecretResolver { resolvedSecret() },
         )
 
@@ -136,7 +179,7 @@ class ProtocolLoginRuntimeTest {
     fun `logout clears matching session`() {
         val session = hostessSession("live-session")
         val clientSession = LibomvClientSession.active(session)
-        val runtime = ProtocolLoginRuntime(clientSession, RecordingHttpClient())
+        val runtime = ProtocolLoginRuntime(clientSession, RecordingHttpClient(), viewerIdentityProvider())
 
         val result = runtime.logout(session)
 
@@ -147,7 +190,7 @@ class ProtocolLoginRuntimeTest {
     @Test
     fun `logout rejects mismatched session without leaking IDs`() {
         val clientSession = LibomvClientSession.active(hostessSession("live-session"))
-        val runtime = ProtocolLoginRuntime(clientSession, RecordingHttpClient())
+        val runtime = ProtocolLoginRuntime(clientSession, RecordingHttpClient(), viewerIdentityProvider())
 
         val result = runtime.logout(hostessSession("other-session"))
 
@@ -169,6 +212,24 @@ class ProtocolLoginRuntimeTest {
         lastName = "Host",
         sharedSecret = "resolved-secret",
     )
+
+    private fun viewerIdentityProvider(): HostessViewerIdentityProvider = HostessViewerIdentityProvider {
+        HostessViewerIdentity(
+            channel = "Hostess",
+            version = "0.1.0.0",
+            author = "Hostess",
+            platform = HostessPlatformIdentity(
+                platform = "Linux",
+                platformVersion = "6.8.0",
+                platformString = "Linux 6.8.0 amd64 Test Runtime 17",
+            ),
+            host = HostessHostIdentity(
+                mac = "00000000000000000000000000000001",
+                id0 = "00000000000000000000000000000002",
+                hostId = "00000000000000000000000000000003",
+            ),
+        )
+    }
 
     private fun hostessSession(id: String): HostessSession = HostessSession(
         sessionId = SessionId(id),
@@ -225,6 +286,12 @@ class ProtocolLoginRuntimeTest {
     private class ThrowingHttpClient : ProtocolHttpClient {
         override fun execute(request: ProtocolHttpRequest): ProtocolHttpResponse {
             throw ProtocolHttpException("redacted transport failure")
+        }
+    }
+
+    private object FailsIfCalledViewerIdentityProvider : HostessViewerIdentityProvider {
+        override fun resolve(): HostessViewerIdentity {
+            error("viewer identity must not resolve before the login secret")
         }
     }
 

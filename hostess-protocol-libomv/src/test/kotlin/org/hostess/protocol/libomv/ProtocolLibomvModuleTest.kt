@@ -18,6 +18,10 @@ import org.hostess.core.ports.LoginRequest
 import org.hostess.core.ports.SessionLoginResult
 import org.hostess.protocol.libomv.mapping.LoginKeys
 import org.hostess.protocol.libomv.runtime.EnvironmentLoginSecretResolver
+import org.hostess.protocol.libomv.runtime.HostessHostIdentity
+import org.hostess.protocol.libomv.runtime.HostessPlatformIdentity
+import org.hostess.protocol.libomv.runtime.HostessViewerIdentity
+import org.hostess.protocol.libomv.runtime.HostessViewerIdentityProvider
 import org.hostess.protocol.libomv.transport.ProtocolHttpBody
 import org.hostess.protocol.libomv.transport.ProtocolHttpClient
 import org.hostess.protocol.libomv.transport.ProtocolHttpRequest
@@ -81,7 +85,7 @@ class ProtocolLibomvModuleTest {
                 else -> null
             }
         }
-        val runtime = ProtocolLibomvModule.liveRuntime(httpClient, resolver)
+        val runtime = ProtocolLibomvModule.liveRuntime(httpClient, resolver, viewerIdentityProvider())
 
         val login = runtime.sessionPort.login(
             LoginRequest(
@@ -98,6 +102,8 @@ class ProtocolLibomvModuleTest {
         val body = assertIs<ProtocolHttpBody.TextBody>(request?.body).content
         assertTrue(body.contains("<key>${LoginKeys.SECRET}</key>"))
         assertTrue(body.contains("<key>first</key><string>Venue</string>"))
+        assertTrue(body.contains("<key>${LoginKeys.CHANNEL}</key><string>Hostess</string>"))
+        assertTrue(body.contains("<key>${LoginKeys.HOST_ID}</key><string>00000000000000000000000000000003</string>"))
         assertFalse(body.contains("HOSTESS_SL_SECRET"))
     }
 
@@ -214,6 +220,24 @@ class ProtocolLibomvModuleTest {
           </map>
         </llsd>
     """.trimIndent().encodeToByteArray()
+
+    private fun viewerIdentityProvider(): HostessViewerIdentityProvider = HostessViewerIdentityProvider {
+        HostessViewerIdentity(
+            channel = "Hostess",
+            version = "0.1.0.0",
+            author = "Hostess",
+            platform = HostessPlatformIdentity(
+                platform = "Linux",
+                platformVersion = "6.8.0",
+                platformString = "Linux 6.8.0 amd64 Test Runtime 17",
+            ),
+            host = HostessHostIdentity(
+                mac = "00000000000000000000000000000001",
+                id0 = "00000000000000000000000000000002",
+                hostId = "00000000000000000000000000000003",
+            ),
+        )
+    }
 
     private companion object {
         fun secureUrl(host: String, path: String): String = "https" + "://$host$path"

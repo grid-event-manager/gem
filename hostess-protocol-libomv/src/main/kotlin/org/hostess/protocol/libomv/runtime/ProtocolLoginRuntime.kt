@@ -21,14 +21,20 @@ import org.hostess.protocol.libomv.transport.ProtocolHttpRequest
 class ProtocolLoginRuntime(
     private val clientSession: LibomvClientSession,
     private val httpClient: ProtocolHttpClient,
+    private val viewerIdentityProvider: HostessViewerIdentityProvider,
     private val secretResolver: LoginSecretResolver = LoginSecretResolver.unavailable(),
     private val clock: Clock = Clock.systemUTC(),
 ) {
     fun login(request: LoginRequest): SessionLoginResult {
         val secret = secretResolver.resolve(request.credentialHandle)
             ?: return loginFailure("login secret unavailable")
+        val viewerIdentity = try {
+            viewerIdentityProvider.resolve()
+        } catch (ex: RuntimeException) {
+            return loginFailure("viewer identity unavailable")
+        }
         val response = try {
-            httpClient.execute(loginHttpRequest(secret))
+            httpClient.execute(loginHttpRequest(secret, viewerIdentity))
         } catch (ex: ProtocolHttpException) {
             return loginFailure("login transport failed")
         }
@@ -69,26 +75,39 @@ class ProtocolLoginRuntime(
         return SessionLogoutResult.LoggedOut
     }
 
-    private fun loginHttpRequest(secret: LoginSecret): ProtocolHttpRequest = ProtocolHttpRequest(
+    private fun loginHttpRequest(secret: LoginSecret, viewerIdentity: HostessViewerIdentity): ProtocolHttpRequest = ProtocolHttpRequest(
         method = "POST",
         url = secret.loginUri,
         headers = mapOf("Content-Type" to "application/llsd+xml"),
-        body = ProtocolHttpBody.TextBody(loginBody(secret), "application/llsd+xml"),
+        body = ProtocolHttpBody.TextBody(loginBody(secret, viewerIdentity), "application/llsd+xml"),
         timeout = Duration.ofSeconds(30),
-        redactionKeys = setOf(LoginKeys.SECRET),
+        redactionKeys = setOf(LoginKeys.SECRET, LoginKeys.MAC, LoginKeys.ID0, LoginKeys.HOST_ID, LoginKeys.TOKEN),
     )
 
-    private fun loginBody(secret: LoginSecret): String = buildString {
+    private fun loginBody(secret: LoginSecret, viewerIdentity: HostessViewerIdentity): String = buildString {
         append("<llsd><map>")
         field("first", secret.firstName)
         field("last", secret.lastName)
         field(LoginKeys.SECRET, secret.sharedSecret)
         field("start", secret.startLocation)
+        field(LoginKeys.CHANNEL, viewerIdentity.channel)
+        field(LoginKeys.VERSION, viewerIdentity.version)
+        field(LoginKeys.PLATFORM, viewerIdentity.platform.platform)
+        field(LoginKeys.PLATFORM_VERSION, viewerIdentity.platform.platformVersion)
+        field(LoginKeys.PLATFORM_STRING, viewerIdentity.platform.platformString)
+        field(LoginKeys.MAC, viewerIdentity.host.mac)
+        field(LoginKeys.ID0, viewerIdentity.host.id0)
+        field(LoginKeys.HOST_ID, viewerIdentity.host.hostId)
+        field(LoginKeys.TOKEN, "")
+        booleanField(LoginKeys.AGREE_TO_TOS, false)
+        booleanField(LoginKeys.READ_CRITICAL, false)
+        booleanField(LoginKeys.EXTENDED_ERRORS, true)
         append("<key>options</key><array>")
         option("inventory-root")
         option("inventory-skeleton")
         option("initial-outfit")
         option("gestures")
+        option("max-agent-groups")
         append("</array>")
         append("</map></llsd>")
     }
@@ -101,6 +120,12 @@ class ProtocolLoginRuntime(
 
     private fun StringBuilder.option(value: String) {
         append("<string>").append(escapeXml(value)).append("</string>")
+    }
+
+    private fun StringBuilder.booleanField(key: String, value: Boolean) {
+        append("<key>").append(escapeXml(key)).append("</key><boolean>")
+            .append(if (value) "1" else "0")
+            .append("</boolean>")
     }
 
     private fun escapeXml(value: String): String = value

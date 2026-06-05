@@ -72,6 +72,18 @@ internal object LibomvLoginMapping {
 internal object LoginKeys {
     val LOGIN: String = "login"
     val MESSAGE: String = "message"
+    val CHANNEL: String = "channel"
+    val VERSION: String = "version"
+    val PLATFORM: String = "platform"
+    val PLATFORM_VERSION: String = listOf("platform", "version").joinToString("_")
+    val PLATFORM_STRING: String = listOf("platform", "string").joinToString("_")
+    val MAC: String = "mac"
+    val ID0: String = "id0"
+    val HOST_ID: String = listOf("host", "id").joinToString("_")
+    val TOKEN: String = "token"
+    val AGREE_TO_TOS: String = listOf("agree", "to", "tos").joinToString("_")
+    val READ_CRITICAL: String = listOf("read", "critical").joinToString("_")
+    val EXTENDED_ERRORS: String = listOf("extended", "errors").joinToString("_")
     val AGENT_ID: String = listOf("agent", "id").joinToString("_")
     val SESSION_ID: String = listOf("session", "id").joinToString("_")
     val SEED_CAPABILITY: String = listOf(
