@@ -20,6 +20,16 @@ TRACK_C_RUNTIME_PATTERN='EnvironmentLoginSecretResolver|BoundedSimulatorCircuitC
 TRACK_C_ENV_PATTERN='System(::|\.)getenv'
 TRACK_C_FILE_ROUTE_PATTERN='credential-file'
 TRACK_C_UNSUPPORTED_SECRET_PATTERN='keychain|Keychain|KeyStore|plaintext|plain-text|plain text'
+TRACK_D_GENERIC_OWNER_PATTERN='(^|/)(LoginCompliance|NoticeCompliance|.*(Manager|Helper|Utils|Common))\.kt$'
+TRACK_D_SESSION_LOGIN_OVERLOAD_PATTERN='fun[[:space:]]+login\([[:space:]]*request:[[:space:]]*LoginRequest[[:space:]]*\)'
+TRACK_D_SESSION_LOGIN_ONE_ARG_PATTERN='sessionService\.login\([^,\n)]*\)'
+TRACK_D_OLD_NOTICE_CALL_PATTERN='dispatch\([^\n]*session[^\n]*draft[^,\n]*\)'
+TRACK_D_SEND_GROUP_NOTICE_CALL_PATTERN='\.[[:space:]]*sendGroupNotice\('
+TRACK_D_SPOOFED_CHANNEL_PATTERN='channel[[:space:]]*=[[:space:]]*"(METAbolt|Firestorm|Alchemy|Second Life Viewer|Linden)"'
+TRACK_D_NOTICE_TIME_PATTERN='Instant\.now|LocalDate\.now|Clock\.system|System\.currentTimeMillis'
+TRACK_D_RAW_REPORT_KEY_PATTERN='("(mac|id0|host_id|seedCapability|credentialHandle|ledgerPath)"[[:space:]]+to|put\("(mac|id0|host_id|seedCapability|credentialHandle|ledgerPath)")'
+TRACK_D_UUID_TARGET_PATTERN='--group-id|--group-uuid|group uuid|uuid target'
+TRACK_D_CLI_CAP_LITERAL_PATTERN='(^|[^[:alnum:]_])(4500|4_500|5000|5_000)([^[:alnum:]_]|$)'
 
 add_existing() {
     local -n target="$1"
@@ -51,7 +61,7 @@ check_no_hits() {
         --glob '!**/build/**' \
         --glob '!**/.gradle/**' \
         --glob '!**/.kotlin/**' \
-        "$pattern" "$@" 2>&1)"
+        -- "$pattern" "$@" 2>&1)"
     status="$?"
     set -e
 
@@ -81,7 +91,7 @@ check_pattern_matches() {
     local status
 
     set +e
-    output="$(printf '%s\n' "$sample" | rg -n "$pattern" 2>&1)"
+    output="$(printf '%s\n' "$sample" | rg -n -- "$pattern" 2>&1)"
     status="$?"
     set -e
 
@@ -99,6 +109,72 @@ check_pattern_matches() {
             failures=1
             ;;
     esac
+}
+
+check_no_forbidden_files() {
+    local label="$1"
+    shift
+
+    local matches=()
+    while IFS= read -r path; do
+        matches+=("$path")
+    done < <(find "$@" -path '*/src/main/*' -type f \
+        \( -name 'LoginCompliance.kt' -o -name 'NoticeCompliance.kt' \
+        -o -name '*Manager.kt' -o -name '*Helper.kt' -o -name '*Utils.kt' -o -name '*Common.kt' \) \
+        2>/dev/null || true)
+
+    if [[ "${#matches[@]}" -eq 0 ]]; then
+        echo "PASS: $label"
+    else
+        echo "FAIL: $label"
+        printf '%s\n' "${matches[@]}"
+        failures=1
+    fi
+}
+
+check_notice_dispatch_overloads() {
+    local file="hostess-core/src/main/kotlin/org/hostess/core/services/NoticeDispatchService.kt"
+    local output
+
+    set +e
+    output="$(perl -0ne 'while (/fun\s+dispatch\s*\((.*?)\)\s*:/sg) { print "$ARGV: dispatch overload omits NoticeComplianceRequest\n" if $1 !~ /NoticeComplianceRequest/ }' "$file" 2>&1)"
+    local status="$?"
+    set -e
+
+    if [[ "$status" -ne 0 ]]; then
+        echo "ERROR: Track D notice dispatch overload scan failed"
+        echo "$output"
+        failures=1
+    elif [[ -n "$output" ]]; then
+        echo "FAIL: Track D notice dispatch overload requires NoticeComplianceRequest"
+        echo "$output"
+        failures=1
+    else
+        echo "PASS: Track D notice dispatch overload requires NoticeComplianceRequest"
+    fi
+}
+
+check_notice_dispatch_call_blocks() {
+    local label="$1"
+    shift
+
+    local output=""
+    local path line block
+    while IFS=: read -r path line _; do
+        [[ -n "$path" && -n "$line" ]] || continue
+        block="$(sed -n "${line},$((line + 12))p" "$path")"
+        if ! printf '%s\n' "$block" | rg -q 'compliance[[:space:]]*='; then
+            output+="${path}:${line}: noticeDispatchService.dispatch call omits named compliance argument"$'\n'
+        fi
+    done < <(rg -n 'noticeDispatchService\.dispatch\(' "$@" 2>/dev/null || true)
+
+    if [[ -z "$output" ]]; then
+        echo "PASS: $label"
+    else
+        echo "FAIL: $label"
+        printf '%s' "$output"
+        failures=1
+    fi
 }
 
 core_targets=()
@@ -192,6 +268,46 @@ done < <(find \
     "apps/android/src/main" \
     -type f 2>/dev/null || true)
 
+track_d_main_roots=(
+    "hostess-core"
+    "hostess-protocol-libomv"
+    "tools"
+    "apps"
+)
+
+track_d_tools_apps_targets=()
+add_existing track_d_tools_apps_targets \
+    "tools/cli/src/main" \
+    "apps/desktop/src/main" \
+    "apps/android/src/main"
+
+track_d_notice_dispatch_targets=()
+add_existing track_d_notice_dispatch_targets \
+    "hostess-core/src/main" \
+    "tools/cli/src/main" \
+    "apps/desktop/src/main" \
+    "apps/android/src/main"
+
+track_d_viewer_provider_forbidden_targets=()
+add_existing track_d_viewer_provider_forbidden_targets \
+    "hostess-core/src/main" \
+    "tools/cli/src/main" \
+    "apps/desktop/src/main" \
+    "apps/android/src/main"
+
+track_d_report_key_targets=()
+while IFS= read -r path; do
+    case "$path" in
+        *"/RedactedText.kt") ;;
+        *) track_d_report_key_targets+=("$path") ;;
+    esac
+done < <(find "tools/cli/src/main/kotlin/org/hostess/tools/cli" -type f -name '*.kt' 2>/dev/null || true)
+
+track_d_cap_forbidden_targets=()
+add_existing track_d_cap_forbidden_targets \
+    "tools/cli/src/main/kotlin/org/hostess/tools/cli/commands/SendNoticeCommand.kt" \
+    "tools/cli/src/main/kotlin/org/hostess/tools/cli/commands/LiveProofRunner.kt"
+
 check_no_hits \
     "hostess-core forbidden dependencies" \
     "$CORE_FORBIDDEN_PATTERN" \
@@ -246,6 +362,66 @@ check_no_hits \
     "Track C unsupported secret stores" \
     "$TRACK_C_UNSUPPORTED_SECRET_PATTERN" \
     "${production_targets[@]}"
+
+check_no_forbidden_files \
+    "Track D generic owner file names" \
+    "${track_d_main_roots[@]}"
+
+check_no_hits \
+    "Track D old SessionService login overload" \
+    "$TRACK_D_SESSION_LOGIN_OVERLOAD_PATTERN" \
+    "hostess-core/src/main/kotlin/org/hostess/core/services/SessionService.kt"
+
+check_no_hits \
+    "Track D one-argument CLI/app login calls" \
+    "$TRACK_D_SESSION_LOGIN_ONE_ARG_PATTERN" \
+    "${track_d_tools_apps_targets[@]}"
+
+check_notice_dispatch_overloads
+
+check_no_hits \
+    "Track D old notice dispatch single-line route" \
+    "$TRACK_D_OLD_NOTICE_CALL_PATTERN" \
+    "${track_d_notice_dispatch_targets[@]}"
+
+check_notice_dispatch_call_blocks \
+    "Track D notice dispatch calls require named compliance" \
+    "${track_d_notice_dispatch_targets[@]}"
+
+check_no_hits \
+    "Track D direct tools/apps group notice send" \
+    "$TRACK_D_SEND_GROUP_NOTICE_CALL_PATTERN" \
+    "${track_d_tools_apps_targets[@]}"
+
+check_no_hits \
+    "Track D spoofed viewer channel names" \
+    "$TRACK_D_SPOOFED_CHANNEL_PATTERN" \
+    "${production_targets[@]}"
+
+check_no_hits \
+    "Track D viewer identity provider outside protocol module" \
+    'HostessViewerIdentityProvider' \
+    "${track_d_viewer_provider_forbidden_targets[@]}"
+
+check_no_hits \
+    "Track D NoticeComplianceService direct system time" \
+    "$TRACK_D_NOTICE_TIME_PATTERN" \
+    "hostess-core/src/main/kotlin/org/hostess/core/services/NoticeComplianceService.kt"
+
+check_no_hits \
+    "Track D raw report key leakage" \
+    "$TRACK_D_RAW_REPORT_KEY_PATTERN" \
+    "${track_d_report_key_targets[@]}"
+
+check_no_hits \
+    "Track D direct UUID target UX" \
+    "$TRACK_D_UUID_TARGET_PATTERN" \
+    "${cli_command_targets[@]}"
+
+check_no_hits \
+    "Track D CLI-owned cap literals" \
+    "$TRACK_D_CLI_CAP_LITERAL_PATTERN" \
+    "${track_d_cap_forbidden_targets[@]}"
 
 check_pattern_matches \
     "self-test core forbidden dependency pattern" \
@@ -306,6 +482,56 @@ check_pattern_matches \
     "self-test Track C unsupported secret store pattern" \
     "$TRACK_C_UNSUPPORTED_SECRET_PATTERN" \
     'keychain lookup'
+
+check_pattern_matches \
+    "self-test Track D generic owner pattern" \
+    "$TRACK_D_GENERIC_OWNER_PATTERN" \
+    'src/main/kotlin/org/hostess/core/LoginCompliance.kt'
+
+check_pattern_matches \
+    "self-test Track D old login overload pattern" \
+    "$TRACK_D_SESSION_LOGIN_OVERLOAD_PATTERN" \
+    'fun login(request: LoginRequest): SessionLoginResult'
+
+check_pattern_matches \
+    "self-test Track D one-argument login call pattern" \
+    "$TRACK_D_SESSION_LOGIN_ONE_ARG_PATTERN" \
+    'runtime.sessionService.login(request)'
+
+check_pattern_matches \
+    "self-test Track D old notice route pattern" \
+    "$TRACK_D_OLD_NOTICE_CALL_PATTERN" \
+    'runtime.noticeDispatchService.dispatch(session, draft)'
+
+check_pattern_matches \
+    "self-test Track D direct group notice send pattern" \
+    "$TRACK_D_SEND_GROUP_NOTICE_CALL_PATTERN" \
+    'runtime.noticePort.sendGroupNotice(session, group, draft, null)'
+
+check_pattern_matches \
+    "self-test Track D spoofed channel pattern" \
+    "$TRACK_D_SPOOFED_CHANNEL_PATTERN" \
+    'channel = "Firestorm"'
+
+check_pattern_matches \
+    "self-test Track D notice time pattern" \
+    "$TRACK_D_NOTICE_TIME_PATTERN" \
+    'Instant.now()'
+
+check_pattern_matches \
+    "self-test Track D raw report key pattern" \
+    "$TRACK_D_RAW_REPORT_KEY_PATTERN" \
+    '"seedCapability" to identity.seedCapability'
+
+check_pattern_matches \
+    "self-test Track D UUID target UX pattern" \
+    "$TRACK_D_UUID_TARGET_PATTERN" \
+    '--group-uuid'
+
+check_pattern_matches \
+    "self-test Track D CLI cap literal pattern" \
+    "$TRACK_D_CLI_CAP_LITERAL_PATTERN" \
+    'if (count > 4_500) return blocked'
 
 if [[ "$failures" -ne 0 ]]; then
     exit 1
