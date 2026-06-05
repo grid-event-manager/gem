@@ -12,9 +12,11 @@ import org.hostess.tools.cli.CommandArguments
 import org.hostess.tools.cli.CommandMode
 
 internal data class LiveProofInputs(
+    val proofScope: LiveProofScope = LiveProofScope.FULL,
     val grid: String?,
     val account: String?,
     val credentialHandle: String?,
+    val credentialFile: String? = null,
     val targetDisplayNames: List<String>,
     val subject: String?,
     val body: String?,
@@ -33,20 +35,36 @@ internal data class LiveProofInputs(
     val retentionNote: String?,
 ) {
     fun missingRequiredFields(): List<String> = buildList {
-        if (!authorisedLiveSend) add("authorised-live-send")
+        if (proofScope == LiveProofScope.UNSUPPORTED) {
+            add("proof-scope")
+            return@buildList
+        }
         if (grid.isNullOrBlank()) add("grid")
         if (account.isNullOrBlank()) add("account")
-        if (credentialHandle.isNullOrBlank()) add("credential handle")
-        if (targetDisplayNames.isEmpty()) add("target display name")
-        if (subject.isNullOrBlank()) add("subject")
-        if (body.isNullOrBlank()) add("body")
+        if (!credentialFile.isNullOrBlank()) {
+            add("unsupported credential route")
+        } else if (credentialHandle.isNullOrBlank()) {
+            add("credential-env")
+        }
+        if (proofScope == LiveProofScope.FULL) {
+            if (!authorisedLiveSend) add("authorised-live-send")
+            if (targetDisplayNames.isEmpty()) add("target display name")
+            if (subject.isNullOrBlank()) add("subject")
+            if (body.isNullOrBlank()) add("body")
+        }
     }
 
     fun toReportInputs(mode: CommandMode): Map<String, String> = buildMap {
         put("mode", mode.label())
+        if (proofScope == LiveProofScope.READ_GROUPS) {
+            put("proofScope", proofScope.wireValue)
+        }
         put("grid", grid.orEmpty())
         put("account", account.orEmpty())
         put("authHandlePresent", (!credentialHandle.isNullOrBlank()).toString())
+        if (!credentialFile.isNullOrBlank()) {
+            put("credentialFilePresent", "true")
+        }
         put("targetCount", targetDisplayNames.size.toString())
         put("targetDisplayNames", targetDisplayNames.joinToString("|"))
         put("subject", subject.orEmpty())
@@ -72,6 +90,13 @@ internal data class LiveProofInputs(
         existingRequest(AttachmentKind.TEXTURE) ?: uploadTextureRequest()
 
     fun cleanupModeValue(): String = cleanupMode?.lowercase() ?: "delete-created"
+
+    fun validationStatusFields(): Map<String, String> =
+        LiveProofStep.statusFields().toMutableMap().also { fields ->
+            if (!credentialFile.isNullOrBlank() || credentialHandle.isNullOrBlank()) {
+                fields["credentialStatus"] = "blocked"
+            }
+        }
 
     private fun existingRequest(kind: AttachmentKind): AttachmentRequest? {
         val requestedKind = when (existingAttachmentKind?.lowercase()) {
@@ -127,9 +152,11 @@ internal data class LiveProofInputs(
 
     companion object {
         fun from(arguments: CommandArguments): LiveProofInputs = LiveProofInputs(
+            proofScope = LiveProofScope.parse(arguments.option("proof-scope")),
             grid = arguments.option("grid"),
             account = arguments.option("account"),
             credentialHandle = arguments.option("credential-env"),
+            credentialFile = arguments.option("credential-file"),
             targetDisplayNames = targetDisplayNames(arguments),
             subject = arguments.option("subject"),
             body = arguments.option("body"),
@@ -159,5 +186,20 @@ internal data class LiveProofInputs(
                         ?.let(::listOf)
                         .orEmpty()
                 }
+    }
+}
+
+internal enum class LiveProofScope(val wireValue: String) {
+    FULL("full"),
+    READ_GROUPS("read-groups"),
+    UNSUPPORTED("unsupported"),
+    ;
+
+    companion object {
+        fun parse(value: String?): LiveProofScope = when (value?.lowercase()) {
+            null, "", "full" -> FULL
+            "read-groups" -> READ_GROUPS
+            else -> UNSUPPORTED
+        }
     }
 }

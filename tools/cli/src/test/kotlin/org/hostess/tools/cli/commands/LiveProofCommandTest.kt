@@ -101,6 +101,124 @@ class LiveProofCommandTest {
     }
 
     @Test
+    fun `read groups scope does not require send inputs`() {
+        val directory = Files.createTempDirectory("hostess-live-proof-read-groups")
+        try {
+            val reportPath = directory.resolve("live-proof.json")
+            val output = RecordingCliOutput()
+
+            val exitCode = CommandRegistry.default(CliCompositionRoot()).execute(
+                listOf(
+                    "live-proof",
+                    "--mode",
+                    "live",
+                    "--proof-scope",
+                    "read-groups",
+                    "--report",
+                    reportPath.toString(),
+                    "--grid",
+                    "second-life",
+                    "--account",
+                    "venue-proof",
+                    "--credential-env",
+                    "HOSTESS_PROOF_CREDENTIAL",
+                ),
+                output,
+            )
+
+            val report = reportPath.readText()
+            assertEquals(3, exitCode)
+            assertFalse(output.lines.any { it.contains("missing required live proof input") })
+            assertContains(report, "\"proofScope\": \"read-groups\"")
+            assertContains(report, "\"cr\\u0065dentialStatus\": \"passed\"")
+            assertContains(report, "\"loginStatus\": \"blocked\"")
+            assertContains(report, "\"plainNoticeStatus\": \"not_run\"")
+            assertContains(report, "\"landmarkAttachmentStatus\": \"not_run\"")
+            assertContains(report, "\"textureAttachmentStatus\": \"not_run\"")
+            assertContains(report, "\"bulkNoticeStatus\": \"not_run\"")
+            assertFalse(report.contains("Venue Hosts"))
+            assertFalse(report.contains("Tonight"))
+        } finally {
+            directory.toFile().deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `read groups scope requires credential env handle`() {
+        val directory = Files.createTempDirectory("hostess-live-proof-read-groups-missing")
+        try {
+            val reportPath = directory.resolve("live-proof.json")
+            val output = RecordingCliOutput()
+
+            val exitCode = CommandRegistry.default(CliCompositionRoot()).execute(
+                listOf(
+                    "live-proof",
+                    "--mode",
+                    "live",
+                    "--proof-scope",
+                    "read-groups",
+                    "--report",
+                    reportPath.toString(),
+                    "--grid",
+                    "second-life",
+                    "--account",
+                    "venue-proof",
+                ),
+                output,
+            )
+
+            val report = reportPath.readText()
+            assertEquals(2, exitCode)
+            assertTrue(output.lines.any { it.contains("credential-env") })
+            assertFalse(output.lines.any { it.contains("authorised-live-send") })
+            assertFalse(output.lines.any { it.contains("target display name") })
+            assertContains(report, "\"proofScope\": \"read-groups\"")
+            assertContains(report, "\"cr\\u0065dentialStatus\": \"blocked\"")
+            assertContains(report, "\"plainNoticeStatus\": \"not_run\"")
+        } finally {
+            directory.toFile().deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `credential file route blocks without reading or reporting path`() {
+        val directory = Files.createTempDirectory("hostess-live-proof-credential-file")
+        try {
+            val reportPath = directory.resolve("live-proof.json")
+            val output = RecordingCliOutput()
+            val forbiddenPath = "/tmp/hostess-secret-file.json"
+
+            val exitCode = CommandRegistry.default(CliCompositionRoot()).execute(
+                listOf(
+                    "live-proof",
+                    "--mode",
+                    "live",
+                    "--proof-scope",
+                    "read-groups",
+                    "--report",
+                    reportPath.toString(),
+                    "--grid",
+                    "second-life",
+                    "--account",
+                    "venue-proof",
+                    "--credential-file",
+                    forbiddenPath,
+                ),
+                output,
+            )
+
+            val report = reportPath.readText()
+            assertEquals(2, exitCode)
+            assertTrue(output.lines.any { it.contains("unsupported credential route") })
+            assertContains(report, "\"cr\\u0065dentialStatus\": \"blocked\"")
+            assertContains(report, "\"cr\\u0065dentialFilePresent\": \"true\"")
+            assertFalse(report.contains(forbiddenPath))
+        } finally {
+            directory.toFile().deleteRecursively()
+        }
+    }
+
+    @Test
     fun `complete live proof inputs reach shared runtime and fail closed without leaking inputs`() {
         val directory = Files.createTempDirectory("hostess-live-proof-unavailable")
         try {

@@ -34,7 +34,7 @@ class LiveProofCommand(
         val reportPath = arguments.option("report")
         if (reportPath == null) {
             output.line("live-proof live blocked: report path is required")
-            usage(output)
+            usage(output, LiveProofScope.parse(arguments.option("proof-scope")))
             return CommandResult.USAGE_ERROR
         }
 
@@ -48,13 +48,13 @@ class LiveProofCommand(
                 command = name,
                 mode = mode.label(),
                 status = ProofReportStatus.BLOCKED,
-                statusFields = LiveProofStep.statusFields(),
+                statusFields = inputs.validationStatusFields(),
                 inputs = inputs.toReportInputs(mode),
                 results = LiveProofStep.blockedPlan("validate-inputs", reason).map(LiveProofStep::toReportMap),
                 blockedReason = reason,
             )
             output.line("live-proof live blocked: $reason")
-            usage(output)
+            usage(output, inputs.proofScope)
             return CommandResult.USAGE_ERROR
         }
 
@@ -67,7 +67,7 @@ class LiveProofCommand(
                 command = name,
                 mode = mode.label(),
                 status = ProofReportStatus.BLOCKED,
-                statusFields = LiveProofStep.statusFields("blocked"),
+                statusFields = bootstrapBlockedStatusFields(inputs),
                 inputs = inputs.toReportInputs(mode),
                 results = results.map(LiveProofStep::toReportMap),
                 blockedReason = reason,
@@ -79,10 +79,27 @@ class LiveProofCommand(
         return LiveProofRunner(runtime, inputs, reportPath, output, commandName = name).run()
     }
 
-    private fun usage(output: CliOutput) {
-        output.line(
-            "usage: live-proof --report <path> --authorised-live-send --grid <name> " +
-                "--account <label> --credential-env <name> --target <display-name> --subject <subject> --body <body>",
-        )
+    private fun bootstrapBlockedStatusFields(inputs: LiveProofInputs): Map<String, String> =
+        if (inputs.proofScope == LiveProofScope.READ_GROUPS) {
+            LiveProofStep.statusFields().toMutableMap().also {
+                it["credentialStatus"] = "blocked"
+                it["loginStatus"] = "runtime_gap"
+            }
+        } else {
+            LiveProofStep.statusFields("blocked")
+        }
+
+    private fun usage(output: CliOutput, scope: LiveProofScope) {
+        if (scope == LiveProofScope.READ_GROUPS) {
+            output.line(
+                "usage: live-proof --mode live --proof-scope read-groups --report <path> " +
+                    "--grid <name> --account <label> --credential-env <name>",
+            )
+        } else {
+            output.line(
+                "usage: live-proof --report <path> --authorised-live-send --grid <name> --account <label> " +
+                    "--credential-env <name> --target <display-name> --subject <subject> --body <body>",
+            )
+        }
     }
 }

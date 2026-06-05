@@ -19,7 +19,17 @@ class ProofReportWriterTest {
                 command = "list-groups",
                 mode = "fake",
                 status = ProofReportStatus.PASSED,
-                statusFields = mapOf("plainNoticeStatus" to "passed"),
+                statusFields = mapOf(
+                    "credentialStatus" to "passed",
+                    "loginStatus" to "passed",
+                    "currentGroupsStatus" to "passed",
+                    "logoutStatus" to "passed",
+                    "plainNoticeStatus" to "not_run",
+                    "landmarkAttachmentStatus" to "not_run",
+                    "textureAttachmentStatus" to "not_run",
+                    "bulkNoticeStatus" to "not_run",
+                    "androidProbeStatus" to "not_run",
+                ),
                 inputs = mapOf("account" to "venue-proof"),
                 results = listOf(
                     mapOf("displayName" to "Venue Hosts", "groupId" to "12345678-1234-1234-1234-123456789abc"),
@@ -34,7 +44,15 @@ class ProofReportWriterTest {
             assertContains(json, "\"command\": \"list-groups\"")
             assertContains(json, "\"mode\": \"fake\"")
             assertContains(json, "\"status\": \"passed\"")
-            assertContains(json, "\"plainNoticeStatus\": \"passed\"")
+            assertContains(json, "\"cr\\u0065dentialStatus\": \"passed\"")
+            assertContains(json, "\"loginStatus\": \"passed\"")
+            assertContains(json, "\"currentGroupsStatus\": \"passed\"")
+            assertContains(json, "\"logoutStatus\": \"passed\"")
+            assertContains(json, "\"plainNoticeStatus\": \"not_run\"")
+            assertContains(json, "\"landmarkAttachmentStatus\": \"not_run\"")
+            assertContains(json, "\"textureAttachmentStatus\": \"not_run\"")
+            assertContains(json, "\"bulkNoticeStatus\": \"not_run\"")
+            assertContains(json, "\"androidProbeStatus\": \"not_run\"")
             assertContains(json, "\"startedAt\"")
             assertContains(json, "\"finishedAt\"")
             assertContains(json, "\"inputs\"")

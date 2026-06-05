@@ -36,7 +36,13 @@ internal class LiveProofRunner(
     private var cleanupStatus = "not_applicable"
     private var terminalFailure = false
 
-    fun run(): CommandResult {
+    fun run(): CommandResult = when (inputs.proofScope) {
+        LiveProofScope.READ_GROUPS -> runReadGroupsProof()
+        LiveProofScope.FULL -> runFullProof()
+        LiveProofScope.UNSUPPORTED -> finish(ProofReportStatus.BLOCKED, "proof scope unsupported")
+    }
+
+    private fun runFullProof(): CommandResult {
         val session = login() ?: return finish(ProofReportStatus.BLOCKED, "login blocked")
         val groups = currentGroups(session) ?: return finish(terminalStatus(), "current groups unavailable")
         val targetSet = selectTargets(groups) ?: return finish(ProofReportStatus.FAILED, "target selection failed")
@@ -69,11 +75,24 @@ internal class LiveProofRunner(
         return finish(terminalStatus(), "live proof ${terminalStatus().wireValue}")
     }
 
+    private fun runReadGroupsProof(): CommandResult {
+        val session = login() ?: return finish(ProofReportStatus.BLOCKED, "login blocked")
+        val groups = currentGroups(session, planMutationStepsOnFailure = false)
+        markSendProofStepsNotRun("read-groups scope")
+        runLogout(session)
+        return if (groups == null) {
+            finish(terminalStatus(), "current groups unavailable")
+        } else {
+            finish(terminalStatus(), "live proof ${terminalStatus().wireValue}")
+        }
+    }
+
     private fun login(): HostessSession? {
         val loginRequest = LoginRequest(
             accountLabel = AccountLabel(inputs.account.orEmpty()),
             credentialHandle = CredentialHandle(inputs.credentialHandle.orEmpty()),
         )
+        statusFields["credentialStatus"] = "passed"
         return when (val login = runtime.sessionService.login(loginRequest)) {
             is SessionLoginResult.Success -> {
                 statusFields["loginStatus"] = "passed"
@@ -89,7 +108,10 @@ internal class LiveProofRunner(
         }
     }
 
-    private fun currentGroups(session: HostessSession): List<GroupMembership>? =
+    private fun currentGroups(
+        session: HostessSession,
+        planMutationStepsOnFailure: Boolean = true,
+    ): List<GroupMembership>? =
         when (val result = runtime.groupDirectoryService.currentGroups(session)) {
             is GroupListResult.Success -> {
                 statusFields["currentGroupsStatus"] = "passed"
@@ -100,10 +122,24 @@ internal class LiveProofRunner(
                 val detail = result.failure.redactedMessage ?: result.failure.reason.name.lowercase()
                 statusFields["currentGroupsStatus"] = classifyStatus(detail)
                 steps += LiveProofStep("current-groups", statusFields.getValue("currentGroupsStatus"), detail)
-                steps += LiveProofStep.notRunPlan(detail, "select-targets")
+                if (planMutationStepsOnFailure) {
+                    steps += LiveProofStep.notRunPlan(detail, "select-targets")
+                }
                 null
             }
         }
+
+    private fun markSendProofStepsNotRun(detail: String) {
+        listOf(
+            "select-targets",
+            "plain-notice",
+            "landmark-attachment",
+            "landmark-notice",
+            "texture-attachment",
+            "texture-notice",
+            "bulk-notice",
+        ).forEach { step -> steps += LiveProofStep(step, "not_run", detail) }
+    }
 
     private fun selectTargets(groups: List<GroupMembership>): GroupTargetSet? {
         var targetSet = runtime.targetSelectionService.emptyTargetSet(groups)
@@ -226,9 +262,13 @@ internal class LiveProofRunner(
 
     private fun runLogout(session: HostessSession) {
         when (val result = runtime.sessionService.logout(session)) {
-            SessionLogoutResult.LoggedOut -> steps += LiveProofStep.passed("logout")
+            SessionLogoutResult.LoggedOut -> {
+                statusFields["logoutStatus"] = "passed"
+                steps += LiveProofStep.passed("logout")
+            }
             is SessionLogoutResult.Failure -> {
                 terminalFailure = true
+                statusFields["logoutStatus"] = "failed"
                 steps += LiveProofStep.failed(
                     "logout",
                     result.failure.redactedMessage ?: result.failure.reason.name.lowercase(),

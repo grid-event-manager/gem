@@ -13,6 +13,8 @@ import org.hostess.core.domain.AccountLabel
 import org.hostess.core.domain.AttachmentKind
 import org.hostess.core.domain.AttachmentOwnerId
 import org.hostess.core.domain.AttachmentRef
+import org.hostess.core.domain.CoreFailure
+import org.hostess.core.domain.CoreFailureReason
 import org.hostess.core.domain.GroupMembership
 import org.hostess.core.domain.GroupSendState
 import org.hostess.core.domain.GroupSendStatus
@@ -43,6 +45,77 @@ import org.hostess.tools.cli.composition.CliRuntime
 import org.hostess.tools.cli.report.ProofReportWriter
 
 class LiveProofRunnerTest {
+    @Test
+    fun `read groups scope logs in reads groups and logs out without send services`() {
+        withReport { reportPath ->
+            val ports = Ports()
+
+            val exit = runner(
+                ports.runtime(),
+                reportPath,
+                inputs(
+                    proofScope = LiveProofScope.READ_GROUPS,
+                    targets = emptyList(),
+                    subject = null,
+                    body = null,
+                    authorisedLiveSend = false,
+                ),
+            ).run()
+
+            val report = reportPath.readText()
+            assertEquals(CommandResult.SUCCESS, exit)
+            assertContains(report, "\"status\": \"passed\"")
+            assertContains(report, "\"proofScope\": \"read-groups\"")
+            assertContains(report, "\"cr\\u0065dentialStatus\": \"passed\"")
+            assertContains(report, "\"loginStatus\": \"passed\"")
+            assertContains(report, "\"currentGroupsStatus\": \"passed\"")
+            assertContains(report, "\"logoutStatus\": \"passed\"")
+            assertContains(report, "\"plainNoticeStatus\": \"not_run\"")
+            assertContains(report, "\"landmarkAttachmentStatus\": \"not_run\"")
+            assertContains(report, "\"textureAttachmentStatus\": \"not_run\"")
+            assertContains(report, "\"bulkNoticeStatus\": \"not_run\"")
+            assertEquals(1, ports.sessionPort.loginCalls)
+            assertEquals(1, ports.sessionPort.logoutCalls)
+            assertEquals(1, ports.groupPort.currentGroupsCalls)
+            assertEquals(0, ports.inventoryPort.calls)
+            assertEquals(0, ports.noticePort.groups.size)
+        }
+    }
+
+    @Test
+    fun `read groups scope logs out after current groups failure`() {
+        withReport { reportPath ->
+            val ports = Ports(
+                groupPort = RecordingGroupPort(
+                    GroupListResult.Failure(
+                        CoreFailure(CoreFailureReason.GROUP_LIST_FAILED, "current groups transport unavailable"),
+                    ),
+                ),
+            )
+
+            val exit = runner(
+                ports.runtime(),
+                reportPath,
+                inputs(
+                    proofScope = LiveProofScope.READ_GROUPS,
+                    targets = emptyList(),
+                    subject = null,
+                    body = null,
+                    authorisedLiveSend = false,
+                ),
+            ).run()
+
+            val report = reportPath.readText()
+            assertEquals(CommandResult.UNAVAILABLE, exit)
+            assertContains(report, "\"status\": \"transport_gap\"")
+            assertContains(report, "\"currentGroupsStatus\": \"transport_gap\"")
+            assertContains(report, "\"logoutStatus\": \"passed\"")
+            assertContains(report, "\"plainNoticeStatus\": \"not_run\"")
+            assertEquals(1, ports.sessionPort.logoutCalls)
+            assertEquals(0, ports.noticePort.groups.size)
+        }
+    }
+
     @Test
     fun `plain notice uses core dispatch and missing kind fixtures stay blocked`() {
         withReport { reportPath ->
@@ -139,7 +212,11 @@ class LiveProofRunnerTest {
     )
 
     private fun inputs(
+        proofScope: LiveProofScope = LiveProofScope.FULL,
         targets: List<String> = listOf("Venue Hosts"),
+        subject: String? = "Tonight",
+        body: String? = "Doors at eight",
+        authorisedLiveSend: Boolean = true,
         textureFileName: String? = null,
         texturePayloadHandle: String? = null,
         textureDigest: String? = null,
@@ -148,13 +225,15 @@ class LiveProofRunnerTest {
         cleanupMode: String? = "delete-created",
         retentionNote: String? = null,
     ): LiveProofInputs = LiveProofInputs(
+        proofScope = proofScope,
         grid = "second-life",
         account = "venue-proof",
         credentialHandle = "HOSTESS_PROOF_CREDENTIAL",
+        credentialFile = null,
         targetDisplayNames = targets,
-        subject = "Tonight",
-        body = "Doors at eight",
-        authorisedLiveSend = true,
+        subject = subject,
+        body = body,
+        authorisedLiveSend = authorisedLiveSend,
         existingAttachmentKind = null,
         existingAttachmentId = null,
         landmarkVenue = null,
@@ -179,20 +258,57 @@ class LiveProofRunnerTest {
     }
 
     private class Ports(
+        val sessionPort: RecordingSessionPort = RecordingSessionPort(),
+        val groupPort: RecordingGroupPort = RecordingGroupPort(),
+        val inventoryPort: RecordingInventoryPort = RecordingInventoryPort(),
         val noticePort: RecordingNoticePort = RecordingNoticePort(),
         private val clock: RecordingClockPort = RecordingClockPort(),
     ) {
         fun runtime(): CliRuntime = CliRuntime(
-            sessionService = SessionService(FakeSessionPort, Redactor),
-            groupDirectoryService = GroupDirectoryService(FakeGroupPort),
+            sessionService = SessionService(sessionPort, Redactor),
+            groupDirectoryService = GroupDirectoryService(groupPort),
             targetSelectionService = TargetSelectionService(),
             noticeDraftService = NoticeDraftService(),
-            attachmentService = AttachmentService(FakeInventoryPort),
+            attachmentService = AttachmentService(inventoryPort),
             noticeDispatchService = NoticeDispatchService(noticePort, clock),
             proofReportWriter = ProofReportWriter(),
             protocolAvailable = true,
             sessionProvider = { SESSION },
         )
+    }
+
+    private class RecordingSessionPort(
+        private val loginResult: SessionLoginResult = SessionLoginResult.Success(SESSION),
+        private val logoutResult: SessionLogoutResult = SessionLogoutResult.LoggedOut,
+    ) : SessionPort {
+        var loginCalls = 0
+        var logoutCalls = 0
+
+        override fun login(request: LoginRequest): SessionLoginResult {
+            loginCalls += 1
+            return loginResult
+        }
+
+        override fun logout(session: HostessSession): SessionLogoutResult {
+            logoutCalls += 1
+            return logoutResult
+        }
+    }
+
+    private class RecordingGroupPort(
+        private val result: GroupListResult = GroupListResult.Success(
+            listOf(
+                GroupMembership.fromValues("venue-hosts", "Venue Hosts", true, true),
+                GroupMembership.fromValues("event-notices", "Event Notices", true, true),
+            ),
+        ),
+    ) : GroupPort {
+        var currentGroupsCalls = 0
+
+        override fun currentGroups(session: HostessSession): GroupListResult {
+            currentGroupsCalls += 1
+            return result
+        }
     }
 
     private class RecordingNoticePort : NoticePort {
@@ -221,36 +337,32 @@ class LiveProofRunnerTest {
         }
     }
 
-    private object FakeSessionPort : SessionPort {
-        override fun login(request: LoginRequest): SessionLoginResult = SessionLoginResult.Success(SESSION)
+    private class RecordingInventoryPort : InventoryPort {
+        var calls = 0
 
-        override fun logout(session: HostessSession): SessionLogoutResult = SessionLogoutResult.LoggedOut
-    }
-
-    private object FakeGroupPort : GroupPort {
-        override fun currentGroups(session: HostessSession): GroupListResult = GroupListResult.Success(
-            listOf(
-                GroupMembership.fromValues("venue-hosts", "Venue Hosts", true, true),
-                GroupMembership.fromValues("event-notices", "Event Notices", true, true),
-            ),
-        )
-    }
-
-    private object FakeInventoryPort : InventoryPort {
         override fun resolveExistingAttachment(
             session: HostessSession,
             request: org.hostess.core.domain.ExistingInventoryAttachment,
-        ): AttachmentResolutionResult = AttachmentResolutionResult.Resolved(fakeAttachment(request.kind))
+        ): AttachmentResolutionResult {
+            calls += 1
+            return AttachmentResolutionResult.Resolved(fakeAttachment(request.kind))
+        }
 
         override fun createLandmarkAttachment(
             session: HostessSession,
             request: org.hostess.core.domain.CreateLandmarkAttachment,
-        ): AttachmentResolutionResult = AttachmentResolutionResult.Resolved(fakeAttachment(AttachmentKind.LANDMARK))
+        ): AttachmentResolutionResult {
+            calls += 1
+            return AttachmentResolutionResult.Resolved(fakeAttachment(AttachmentKind.LANDMARK))
+        }
 
         override fun uploadTextureAttachment(
             session: HostessSession,
             request: org.hostess.core.domain.UploadTextureAttachment,
-        ): AttachmentResolutionResult = AttachmentResolutionResult.Resolved(fakeAttachment(AttachmentKind.TEXTURE))
+        ): AttachmentResolutionResult {
+            calls += 1
+            return AttachmentResolutionResult.Resolved(fakeAttachment(AttachmentKind.TEXTURE))
+        }
 
         private fun fakeAttachment(kind: AttachmentKind): AttachmentRef = AttachmentRef(
             attachmentId = InventoryItemId("attachment-${kind.name.lowercase()}"),

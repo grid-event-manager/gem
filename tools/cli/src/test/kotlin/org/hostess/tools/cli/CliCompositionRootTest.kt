@@ -49,7 +49,7 @@ class CliCompositionRootTest {
             )
 
             assertEquals(2, exitCode)
-            assertTrue(output.lines.any { it.contains("credential handle") })
+            assertTrue(output.lines.any { it.contains("credential-env") })
         } finally {
             directory.toFile().deleteRecursively()
         }

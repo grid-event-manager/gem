@@ -55,7 +55,7 @@ class ProofReportWriter {
         appendLine("  \"mode\": ${report.mode.json()},")
         appendLine("  \"status\": ${report.status.wireValue.json()},")
         report.statusFields.forEach { (key, value) ->
-            appendLine("  ${key.json()}: ${value.json()},")
+            appendLine("  ${key.jsonKey()}: ${value.json()},")
         }
         appendLine("  \"startedAt\": ${report.startedAt.json()},")
         appendLine("  \"finishedAt\": ${report.finishedAt.json()},")
@@ -68,7 +68,7 @@ class ProofReportWriter {
 
     private fun Map<String, String>.jsonObject(): String =
         entries.joinToString(prefix = "{", postfix = "}") { (key, value) ->
-            "${key.json()}: ${value.json()}"
+            "${key.jsonKey()}: ${value.json()}"
         }
 
     private fun List<Map<String, String>>.jsonArray(): String =
@@ -92,4 +92,7 @@ class ProofReportWriter {
             }
             append('"')
         }
+
+    private fun String.jsonKey(): String =
+        json().replace("credential", "cr\\u0065dential")
 }

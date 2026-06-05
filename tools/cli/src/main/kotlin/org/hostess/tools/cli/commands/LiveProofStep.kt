@@ -27,8 +27,10 @@ internal data class LiveProofStep(
             "logout",
         )
         val statusFieldNames = listOf(
+            "credentialStatus",
             "loginStatus",
             "currentGroupsStatus",
+            "logoutStatus",
             "plainNoticeStatus",
             "landmarkAttachmentStatus",
             "textureAttachmentStatus",
