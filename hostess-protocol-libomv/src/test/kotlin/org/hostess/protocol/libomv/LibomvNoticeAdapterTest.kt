@@ -24,7 +24,7 @@ class LibomvNoticeAdapterTest {
     fun `notice adapter routes through protocol runtime`() {
         val session = hostessSession()
         val source = RecordingNoticeRuntimeSource()
-        val clientSession = LibomvClientSession.active(session, agentId = AGENT_ID)
+        val clientSession = activeSession(session)
         val adapter = LibomvNoticeAdapter(
             clientSession = clientSession,
             noticeRuntime = ProtocolNoticeRuntime(clientSession, source),
@@ -70,6 +70,16 @@ class LibomvNoticeAdapterTest {
         accountLabel = AccountLabel("venue-proof"),
         startedAt = Instant.EPOCH,
         isActive = true,
+    )
+
+    private fun activeSession(session: HostessSession): LibomvClientSession = LibomvClientSession.active(
+        session = session,
+        agentId = AGENT_ID,
+        seedCapability = "seed-capability",
+        simulatorIp = "203.0.113.8",
+        simulatorPort = 13000,
+        regionHandle = 123456789L,
+        circuitCode = 987654321L,
     )
 
     private class RecordingNoticeRuntimeSource : NoticeRuntimeSource {

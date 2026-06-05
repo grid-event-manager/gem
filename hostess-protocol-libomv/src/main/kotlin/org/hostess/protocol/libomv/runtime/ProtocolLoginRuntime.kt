@@ -48,7 +48,11 @@ class ProtocolLoginRuntime(
                 clientSession.activate(
                     session = session,
                     agentId = mapped.value.agentId,
-                    privateEndpoint = mapped.value.privateEndpoint,
+                    seedCapability = mapped.value.seedCapability,
+                    simulatorIp = mapped.value.simulatorIp,
+                    simulatorPort = mapped.value.simulatorPort,
+                    regionHandle = mapped.value.regionHandle,
+                    circuitCode = mapped.value.circuitCode,
                 )
                 SessionLoginResult.Success(session)
             }

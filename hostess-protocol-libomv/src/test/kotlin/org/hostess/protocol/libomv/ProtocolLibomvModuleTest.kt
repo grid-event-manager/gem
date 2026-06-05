@@ -105,7 +105,15 @@ class ProtocolLibomvModuleTest {
     fun `live runtime notice adapter reaches protocol runtime source`() {
         val runtime = ProtocolLibomvModule.liveRuntime()
         val session = fakeActiveUuidSession()
-        runtime.clientSession.activate(session, agentId = "11111111-1111-1111-1111-111111111111")
+        runtime.clientSession.activate(
+            session = session,
+            agentId = "11111111-1111-1111-1111-111111111111",
+            seedCapability = "seed-capability",
+            simulatorIp = "203.0.113.8",
+            simulatorPort = 13000,
+            regionHandle = 123456789L,
+            circuitCode = 987654321L,
+        )
 
         val status = runtime.noticePort.sendGroupNotice(session, group(), draft(), null)
 
@@ -179,7 +187,7 @@ class ProtocolLibomvModuleTest {
             <key>${LoginKeys.LOGIN}</key><string>true</string>
             <key>${LoginKeys.AGENT_ID}</key><string>agent-id</string>
             <key>${LoginKeys.SESSION_ID}</key><string>$sessionValue</string>
-            <key>${LoginKeys.PRIVATE_ENDPOINT}</key><string>${secureUrl("caps.example", "/private")}</string>
+            <key>${LoginKeys.SEED_CAPABILITY}</key><string>${secureUrl("caps.example", "/private")}</string>
           </map>
         </llsd>
     """.trimIndent().encodeToByteArray()

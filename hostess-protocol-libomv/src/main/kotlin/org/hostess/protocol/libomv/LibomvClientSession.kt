@@ -8,7 +8,11 @@ class LibomvClientSession private constructor(
     private val protocolAvailable: Boolean,
     private var activeSession: HostessSession?,
     private var agentId: String?,
-    private var privateEndpoint: String?,
+    private var seedCapability: String?,
+    private var simulatorIp: String?,
+    private var simulatorPort: Int?,
+    private var regionHandle: Long?,
+    private var circuitCode: Long?,
 ) {
     fun unavailable(reason: CoreFailureReason): CoreFailure =
         CoreFailure(reason, redactedMessage = if (protocolAvailable) {
@@ -22,17 +26,29 @@ class LibomvClientSession private constructor(
     internal fun activate(
         session: HostessSession,
         agentId: String? = null,
-        privateEndpoint: String? = null,
+        seedCapability: String? = null,
+        simulatorIp: String? = null,
+        simulatorPort: Int? = null,
+        regionHandle: Long? = null,
+        circuitCode: Long? = null,
     ) {
         activeSession = session
         this.agentId = agentId
-        this.privateEndpoint = privateEndpoint
+        this.seedCapability = seedCapability
+        this.simulatorIp = simulatorIp
+        this.simulatorPort = simulatorPort
+        this.regionHandle = regionHandle
+        this.circuitCode = circuitCode
     }
 
     internal fun clear() {
         activeSession = null
         agentId = null
-        privateEndpoint = null
+        seedCapability = null
+        simulatorIp = null
+        simulatorPort = null
+        regionHandle = null
+        circuitCode = null
     }
 
     internal fun requireSession(session: HostessSession): CoreFailure? {
@@ -59,10 +75,35 @@ class LibomvClientSession private constructor(
             ?: return LibomvSessionIdentityResult.Failure(
                 CoreFailure(CoreFailureReason.LOGIN_FAILED, redactedMessage = "protocol agent identity unavailable"),
             )
+        val activeSeedCapability = seedCapability?.takeIf(String::isNotBlank)
+            ?: return LibomvSessionIdentityResult.Failure(
+                CoreFailure(CoreFailureReason.LOGIN_FAILED, redactedMessage = "protocol seed identity unavailable"),
+            )
+        val activeSimulatorIp = simulatorIp?.takeIf(String::isNotBlank)
+            ?: return LibomvSessionIdentityResult.Failure(
+                CoreFailure(CoreFailureReason.LOGIN_FAILED, redactedMessage = "protocol simulator identity unavailable"),
+            )
+        val activeSimulatorPort = simulatorPort?.takeIf { it > 0 }
+            ?: return LibomvSessionIdentityResult.Failure(
+                CoreFailure(CoreFailureReason.LOGIN_FAILED, redactedMessage = "protocol simulator identity unavailable"),
+            )
+        val activeRegionHandle = regionHandle
+            ?: return LibomvSessionIdentityResult.Failure(
+                CoreFailure(CoreFailureReason.LOGIN_FAILED, redactedMessage = "protocol region identity unavailable"),
+            )
+        val activeCircuitCode = circuitCode?.takeIf { it > 0L }
+            ?: return LibomvSessionIdentityResult.Failure(
+                CoreFailure(CoreFailureReason.LOGIN_FAILED, redactedMessage = "protocol circuit identity unavailable"),
+            )
         return LibomvSessionIdentityResult.Success(
             LibomvSessionIdentity(
                 agentId = activeAgentId,
                 sessionId = session.sessionId.value,
+                seedCapability = activeSeedCapability,
+                simulatorIp = activeSimulatorIp,
+                simulatorPort = activeSimulatorPort,
+                regionHandle = activeRegionHandle,
+                circuitCode = activeCircuitCode,
             ),
         )
     }
@@ -72,24 +113,41 @@ class LibomvClientSession private constructor(
             protocolAvailable = false,
             activeSession = null,
             agentId = null,
-            privateEndpoint = null,
+            seedCapability = null,
+            simulatorIp = null,
+            simulatorPort = null,
+            regionHandle = null,
+            circuitCode = null,
         )
 
         fun inactive(): LibomvClientSession = LibomvClientSession(
             protocolAvailable = true,
             activeSession = null,
             agentId = null,
-            privateEndpoint = null,
+            seedCapability = null,
+            simulatorIp = null,
+            simulatorPort = null,
+            regionHandle = null,
+            circuitCode = null,
         )
 
         internal fun active(
             session: HostessSession,
             agentId: String? = null,
+            seedCapability: String? = null,
+            simulatorIp: String? = null,
+            simulatorPort: Int? = null,
+            regionHandle: Long? = null,
+            circuitCode: Long? = null,
         ): LibomvClientSession = LibomvClientSession(
             protocolAvailable = true,
             activeSession = session,
             agentId = agentId,
-            privateEndpoint = null,
+            seedCapability = seedCapability,
+            simulatorIp = simulatorIp,
+            simulatorPort = simulatorPort,
+            regionHandle = regionHandle,
+            circuitCode = circuitCode,
         )
     }
 }
@@ -97,6 +155,11 @@ class LibomvClientSession private constructor(
 internal data class LibomvSessionIdentity(
     val agentId: String,
     val sessionId: String,
+    val seedCapability: String,
+    val simulatorIp: String,
+    val simulatorPort: Int,
+    val regionHandle: Long,
+    val circuitCode: Long,
 )
 
 internal sealed interface LibomvSessionIdentityResult {

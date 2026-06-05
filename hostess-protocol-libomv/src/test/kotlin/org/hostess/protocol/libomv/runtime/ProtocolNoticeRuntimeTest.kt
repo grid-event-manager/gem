@@ -188,8 +188,18 @@ class ProtocolNoticeRuntimeTest {
         session: HostessSession,
         source: RecordingNoticeRuntimeSource,
     ): ProtocolNoticeRuntime = ProtocolNoticeRuntime(
-        clientSession = LibomvClientSession.active(session, agentId = AGENT_ID),
+        clientSession = activeSession(session),
         noticeSource = source,
+    )
+
+    private fun activeSession(session: HostessSession): LibomvClientSession = LibomvClientSession.active(
+        session = session,
+        agentId = AGENT_ID,
+        seedCapability = "seed-capability",
+        simulatorIp = "203.0.113.8",
+        simulatorPort = 13000,
+        regionHandle = 123456789L,
+        circuitCode = 987654321L,
     )
 
     private fun draft(

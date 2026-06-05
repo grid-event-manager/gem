@@ -65,6 +65,11 @@ class ProtocolLoginRuntimeTest {
         assertNull(clientSession.requireSession(session))
         val identity = assertIs<LibomvSessionIdentityResult.Success>(clientSession.requireIdentity(session)).identity
         assertEquals("agent-id", identity.agentId)
+        assertEquals(secureUrl("caps.example", "/private"), identity.seedCapability)
+        assertEquals("203.0.113.8", identity.simulatorIp)
+        assertEquals(13000, identity.simulatorPort)
+        assertEquals((1024L shl 32) or 2048L, identity.regionHandle)
+        assertEquals(123456789L, identity.circuitCode)
 
         val request = httpClient.capturedRequest
         assertEquals("POST", request?.method)
@@ -104,6 +109,27 @@ class ProtocolLoginRuntimeTest {
         assertIs<SessionLoginResult.Failure>(result)
         assertEquals(CoreFailureReason.LOGIN_FAILED, result.failure.reason)
         assertEquals("login failed", result.failure.redactedMessage)
+    }
+
+    @Test
+    fun `login can pass while later identity fails without simulator fields`() {
+        val clientSession = LibomvClientSession.inactive()
+        val runtime = ProtocolLoginRuntime(
+            clientSession = clientSession,
+            httpClient = RecordingHttpClient(successBody("live-session", includeSimulatorFields = false)),
+            secretResolver = LoginSecretResolver { resolvedSecret() },
+        )
+
+        val login = runtime.login(loginRequest("proof-handle"))
+
+        val session = assertIs<SessionLoginResult.Success>(login).session
+        val failure = assertIs<LibomvSessionIdentityResult.Failure>(
+            clientSession.requireIdentity(session),
+        ).failure
+        assertEquals(CoreFailureReason.LOGIN_FAILED, failure.reason)
+        assertEquals("protocol simulator identity unavailable", failure.redactedMessage)
+        assertFalse(failure.redactedMessage.orEmpty().contains("live-session"))
+        assertFalse(failure.redactedMessage.orEmpty().contains("caps.example"))
     }
 
     @Test
@@ -151,16 +177,32 @@ class ProtocolLoginRuntimeTest {
         isActive = true,
     )
 
-    private fun successBody(sessionValue: String): ByteArray = """
-        <llsd>
-          <map>
-            <key>${LoginKeys.LOGIN}</key><string>true</string>
-            <key>${LoginKeys.AGENT_ID}</key><string>agent-id</string>
-            <key>${LoginKeys.SESSION_ID}</key><string>$sessionValue</string>
-            <key>${LoginKeys.PRIVATE_ENDPOINT}</key><string>${secureUrl("caps.example", "/private")}</string>
-          </map>
-        </llsd>
-    """.trimIndent().encodeToByteArray()
+    private fun successBody(
+        sessionValue: String,
+        includeSimulatorFields: Boolean = true,
+    ): ByteArray = buildString {
+        append("<llsd><map>")
+        field(LoginKeys.LOGIN, "true")
+        field(LoginKeys.AGENT_ID, "agent-id")
+        field(LoginKeys.SESSION_ID, sessionValue)
+        field(LoginKeys.SEED_CAPABILITY, secureUrl("caps.example", "/private"))
+        if (includeSimulatorFields) {
+            field(LoginKeys.SIM_IP, "203.0.113.8")
+            integer(LoginKeys.SIM_PORT, "13000")
+            integer(LoginKeys.REGION_X, "1024")
+            integer(LoginKeys.REGION_Y, "2048")
+            integer(LoginKeys.CIRCUIT_CODE, "123456789")
+        }
+        append("</map></llsd>")
+    }.encodeToByteArray()
+
+    private fun StringBuilder.field(key: String, value: String) {
+        append("<key>").append(key).append("</key><string>").append(value).append("</string>")
+    }
+
+    private fun StringBuilder.integer(key: String, value: String) {
+        append("<key>").append(key).append("</key><integer>").append(value).append("</integer>")
+    }
 
     private class RecordingHttpClient(
         private val body: ByteArray = ByteArray(0),

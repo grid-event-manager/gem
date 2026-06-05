@@ -15,12 +15,17 @@ class LibomvClientSessionTest {
     @Test
     fun `matching active Hostess session passes binding check`() {
         val session = hostessSession("live-session")
-        val clientSession = LibomvClientSession.active(session, agentId = "agent-id")
+        val clientSession = activeSession(session)
 
         assertNull(clientSession.requireSession(session))
         val identity = assertIs<LibomvSessionIdentityResult.Success>(clientSession.requireIdentity(session)).identity
         assertEquals("agent-id", identity.agentId)
         assertEquals("live-session", identity.sessionId)
+        assertEquals("seed-capability", identity.seedCapability)
+        assertEquals("203.0.113.8", identity.simulatorIp)
+        assertEquals(13000, identity.simulatorPort)
+        assertEquals(123456789L, identity.regionHandle)
+        assertEquals(987654321L, identity.circuitCode)
     }
 
     @Test
@@ -32,6 +37,41 @@ class LibomvClientSessionTest {
 
         assertEquals(CoreFailureReason.LOGIN_FAILED, failure.reason)
         assertEquals("protocol agent identity unavailable", failure.redactedMessage)
+    }
+
+    @Test
+    fun `active session without simulator identity fails identity check`() {
+        val session = hostessSession("live-session")
+        val failure = assertIs<LibomvSessionIdentityResult.Failure>(
+            LibomvClientSession.active(
+                session = session,
+                agentId = "agent-id",
+                seedCapability = "seed-capability",
+                simulatorIp = "203.0.113.8",
+                simulatorPort = 13000,
+                regionHandle = 123456789L,
+            ).requireIdentity(session),
+        ).failure
+
+        assertEquals(CoreFailureReason.LOGIN_FAILED, failure.reason)
+        assertEquals("protocol circuit identity unavailable", failure.redactedMessage)
+        assertFalse(failure.redactedMessage.orEmpty().contains("203.0.113.8"))
+        assertFalse(failure.redactedMessage.orEmpty().contains("seed-capability"))
+    }
+
+    @Test
+    fun `clear removes private identity fields`() {
+        val oldSession = hostessSession("old-session")
+        val newSession = hostessSession("new-session")
+        val clientSession = activeSession(oldSession)
+
+        clientSession.clear()
+        clientSession.activate(newSession, agentId = "agent-id")
+
+        val failure = assertIs<LibomvSessionIdentityResult.Failure>(
+            clientSession.requireIdentity(newSession),
+        ).failure
+        assertEquals("protocol seed identity unavailable", failure.redactedMessage)
     }
 
     @Test
@@ -67,5 +107,15 @@ class LibomvClientSessionTest {
         accountLabel = AccountLabel("venue-proof"),
         startedAt = Instant.EPOCH,
         isActive = true,
+    )
+
+    private fun activeSession(session: HostessSession): LibomvClientSession = LibomvClientSession.active(
+        session = session,
+        agentId = "agent-id",
+        seedCapability = "seed-capability",
+        simulatorIp = "203.0.113.8",
+        simulatorPort = 13000,
+        regionHandle = 123456789L,
+        circuitCode = 987654321L,
     )
 }
