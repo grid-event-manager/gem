@@ -1,6 +1,6 @@
 package org.hostess.protocol.libomv.runtime
 
-import java.time.Instant
+import org.hostess.core.domain.HostessInstant
 import org.hostess.core.domain.AccountLabel
 import org.hostess.core.domain.AttachmentKind
 import org.hostess.core.domain.AttachmentPayloadHandle
@@ -205,7 +205,7 @@ class ProtocolInventoryRuntimeTest {
     private fun hostessSession(id: String = "live-session"): HostessSession = HostessSession(
         sessionId = SessionId(id),
         accountLabel = AccountLabel("venue-proof"),
-        startedAt = Instant.EPOCH,
+        startedAt = HostessInstant.EPOCH,
         isActive = true,
     )
 

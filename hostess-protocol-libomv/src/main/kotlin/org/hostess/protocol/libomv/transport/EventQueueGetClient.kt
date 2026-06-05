@@ -1,6 +1,6 @@
 package org.hostess.protocol.libomv.transport
 
-import java.time.Duration
+import org.hostess.core.domain.HostessDelay
 import org.hostess.core.services.SafeDiagnosticRedaction
 import org.hostess.protocol.libomv.LibomvGroupSnapshot
 import org.hostess.protocol.libomv.llsd.LlsdValue
@@ -22,7 +22,7 @@ internal class EventQueueGetClient(
         if (seedCapability.isBlank()) {
             return transportGap("blank seed capability")
         }
-        val response = when (val executed = execute(request(seedCapability, seedBody(), Duration.ofSeconds(30)))) {
+        val response = when (val executed = execute(request(seedCapability, seedBody(), HostessDelay.ofSeconds(30)))) {
             is EventQueueHttpResult.Failed -> return EventQueueGetResult.TransportGap(executed.redactedMessage)
             is EventQueueHttpResult.Success -> executed.response
         }
@@ -41,7 +41,7 @@ internal class EventQueueGetClient(
         }
         var ack: Long? = null
         repeat(maxPolls) {
-            val response = when (val executed = execute(request(eventQueueUrl, pollBody(ack), Duration.ofSeconds(60)))) {
+            val response = when (val executed = execute(request(eventQueueUrl, pollBody(ack), HostessDelay.ofSeconds(60)))) {
                 is EventQueueHttpResult.Failed -> return EventQueueGetResult.TransportGap(executed.redactedMessage)
                 is EventQueueHttpResult.Success -> executed.response
             }
@@ -162,7 +162,7 @@ internal class EventQueueGetClient(
             ?.let { "response=$it" }
             ?: "response=<empty>"
 
-    private fun request(url: String, body: String, timeout: Duration): ProtocolHttpRequest = ProtocolHttpRequest(
+    private fun request(url: String, body: String, timeout: HostessDelay): ProtocolHttpRequest = ProtocolHttpRequest(
         method = "POST",
         url = url,
         headers = mapOf("Content-Type" to LLSD_XML),

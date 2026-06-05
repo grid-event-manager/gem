@@ -1,13 +1,13 @@
 package org.hostess.protocol.libomv.transport
 
-import java.time.Duration
+import org.hostess.core.domain.HostessDelay
 
 data class ProtocolHttpRequest(
     val method: String,
     val url: String,
     val headers: Map<String, String> = emptyMap(),
     val body: ProtocolHttpBody = ProtocolHttpBody.NoBody,
-    val timeout: Duration = Duration.ofSeconds(30),
+    val timeout: HostessDelay = HostessDelay.ofSeconds(30),
     val redactionKeys: Set<String> = emptySet(),
 )
 

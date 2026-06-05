@@ -1,7 +1,7 @@
 package org.hostess.protocol.libomv
 
-import java.time.Instant
-import java.time.Duration
+import org.hostess.core.domain.HostessInstant
+import org.hostess.core.domain.HostessDelay
 import org.hostess.core.domain.AccountLabel
 import org.hostess.core.domain.CoreFailureReason
 import org.hostess.core.domain.GroupDisplayName
@@ -109,7 +109,7 @@ class ProtocolLibomvModuleTest {
         assertEquals("POST", request?.method)
         assertEquals(secureUrl("login.example", "/cgi-bin/login.cgi"), request?.url)
         assertEquals("text/xml", request?.headers?.get("Content-Type"))
-        assertEquals(Duration.ofSeconds(120), request?.timeout)
+        assertEquals(HostessDelay.ofSeconds(120), request?.timeout)
         val body = assertIs<ProtocolHttpBody.TextBody>(request?.body).content
         assertTrue(body.contains("<methodName>login_to_simulator</methodName>"))
         assertTrue(body.contains("<name>${LoginKeys.SECRET}</name>"))
@@ -172,14 +172,14 @@ class ProtocolLibomvModuleTest {
     private fun fakeInactiveSession(): HostessSession = HostessSession(
         sessionId = SessionId("inactive-proof-session"),
         accountLabel = AccountLabel("venue-proof"),
-        startedAt = Instant.EPOCH,
+        startedAt = HostessInstant.EPOCH,
         isActive = false,
     )
 
     private fun fakeActiveUuidSession(): HostessSession = HostessSession(
         sessionId = SessionId("22222222-2222-2222-2222-222222222222"),
         accountLabel = AccountLabel("venue-proof"),
-        startedAt = Instant.EPOCH,
+        startedAt = HostessInstant.EPOCH,
         isActive = true,
     )
 

@@ -1,6 +1,6 @@
 package org.hostess.protocol.libomv.transport
 
-import java.time.Duration
+import org.hostess.core.domain.HostessDelay
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
@@ -15,7 +15,7 @@ class ProtocolHttpClientTest {
             url = gridUrl("/login"),
             headers = mapOf("X-Proof" to "yes"),
             body = body,
-            timeout = Duration.ofSeconds(12),
+            timeout = HostessDelay.ofSeconds(12),
             redactionKeys = setOf("X-Proof"),
         )
 
@@ -23,7 +23,7 @@ class ProtocolHttpClientTest {
         assertEquals(gridUrl("/login"), request.url)
         assertEquals(mapOf("X-Proof" to "yes"), request.headers)
         assertSame(body, request.body)
-        assertEquals(Duration.ofSeconds(12), request.timeout)
+        assertEquals(HostessDelay.ofSeconds(12), request.timeout)
         assertEquals(setOf("X-Proof"), request.redactionKeys)
     }
 

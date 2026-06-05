@@ -1,6 +1,6 @@
 package org.hostess.protocol.libomv.runtime
 
-import java.time.Duration
+import org.hostess.core.domain.HostessDelay
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -27,7 +27,7 @@ class LoginPackageBuilderTest {
         assertEquals("true", loginPackage.agreeToTos)
         assertEquals("true", loginPackage.readCritical)
         assertEquals(0, loginPackage.lastExecEvent)
-        assertEquals(Duration.ofSeconds(120), loginPackage.timeout)
+        assertEquals(HostessDelay.ofSeconds(120), loginPackage.timeout)
         assertEquals(
             listOf(
                 "inventory-root",

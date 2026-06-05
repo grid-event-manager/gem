@@ -1,13 +1,12 @@
 package org.hostess.protocol.libomv.runtime
 
-import java.time.Clock
-import java.time.Duration
-import java.time.Instant
-import java.time.ZoneOffset
 import org.hostess.core.domain.AccountLabel
 import org.hostess.core.domain.CoreFailureReason
+import org.hostess.core.domain.HostessDelay
+import org.hostess.core.domain.HostessInstant
 import org.hostess.core.domain.HostessSession
 import org.hostess.core.domain.SessionId
+import org.hostess.core.ports.ClockPort
 import org.hostess.core.ports.CredentialHandle
 import org.hostess.core.ports.LoginRequest
 import org.hostess.core.ports.SessionLoginResult
@@ -55,7 +54,7 @@ class ProtocolLoginRuntimeTest {
             httpClient = httpClient,
             viewerIdentityProvider = viewerIdentityProvider(),
             secretResolver = LoginSecretResolver { resolvedSecret() },
-            clock = Clock.fixed(Instant.parse("2026-06-04T20:00:00Z"), ZoneOffset.UTC),
+            clockPort = FixedClockPort(HostessInstant(1_780_603_200_000L)),
             machineIdentityProvider = machineIdentityProvider(),
         )
 
@@ -64,7 +63,7 @@ class ProtocolLoginRuntimeTest {
         val session = assertIs<SessionLoginResult.Success>(result).session
         assertEquals("live-session", session.sessionId.value)
         assertEquals("venue-proof", session.accountLabel.value)
-        assertEquals(Instant.parse("2026-06-04T20:00:00Z"), session.startedAt)
+        assertEquals(HostessInstant(1_780_603_200_000L), session.startedAt)
         assertTrue(session.isActive)
         assertNull(clientSession.requireSession(session))
         val identity = assertIs<LibomvSessionIdentityResult.Success>(clientSession.requireIdentity(session)).identity
@@ -79,7 +78,7 @@ class ProtocolLoginRuntimeTest {
         assertEquals("POST", request.method)
         assertEquals(loginUrl(), request.url)
         assertEquals("text/xml", request.headers["Content-Type"])
-        assertEquals(Duration.ofSeconds(120), request.timeout)
+        assertEquals(HostessDelay.ofSeconds(120), request.timeout)
         val body = assertIs<ProtocolHttpBody.TextBody>(request.body)
         assertEquals("text/xml", body.contentType)
         val normalized = LoginPackageCaptureNormalizer.normalize(body.content)
@@ -368,9 +367,17 @@ class ProtocolLoginRuntimeTest {
     private fun hostessSession(id: String): HostessSession = HostessSession(
         sessionId = SessionId(id),
         accountLabel = AccountLabel("venue-proof"),
-        startedAt = Instant.EPOCH,
+        startedAt = HostessInstant.EPOCH,
         isActive = true,
     )
+
+    private class FixedClockPort(
+        private val now: HostessInstant,
+    ) : ClockPort {
+        override fun now(): HostessInstant = now
+
+        override fun pause(duration: HostessDelay) = Unit
+    }
 
     private fun successBody(
         sessionValue: String,

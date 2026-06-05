@@ -1,6 +1,6 @@
 package org.hostess.protocol.libomv
 
-import java.time.Instant
+import org.hostess.core.domain.HostessInstant
 import org.hostess.core.domain.AccountLabel
 import org.hostess.core.domain.CoreFailureReason
 import org.hostess.core.domain.HostessSession
@@ -105,7 +105,7 @@ class LibomvClientSessionTest {
     private fun hostessSession(id: String): HostessSession = HostessSession(
         sessionId = SessionId(id),
         accountLabel = AccountLabel("venue-proof"),
-        startedAt = Instant.EPOCH,
+        startedAt = HostessInstant.EPOCH,
         isActive = true,
     )
 

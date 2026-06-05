@@ -3,7 +3,7 @@ package org.hostess.protocol.libomv.transport
 import com.sun.net.httpserver.HttpServer
 import java.io.IOException
 import java.net.InetSocketAddress
-import java.time.Duration
+import org.hostess.core.domain.HostessDelay
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -96,14 +96,8 @@ class OkHttpProtocolHttpClientTest {
                 ),
             )
         }
-        assertFailsWith<ProtocolHttpException> {
-            client.execute(
-                ProtocolHttpRequest(
-                    method = "POST",
-                    url = gridUrl("/login"),
-                    timeout = Duration.ofMillis(-1),
-                ),
-            )
+        assertFailsWith<IllegalArgumentException> {
+            HostessDelay.ofMilliseconds(-1)
         }
     }
 
@@ -129,7 +123,7 @@ class OkHttpProtocolHttpClientTest {
             ProtocolHttpRequest(
                 method = "GET",
                 url = gridUrl("/caps"),
-                timeout = Duration.ofMillis(750),
+                timeout = HostessDelay.ofMilliseconds(750),
             ),
         )
 
@@ -186,7 +180,7 @@ class OkHttpProtocolHttpClientTest {
                 ProtocolHttpRequest(
                     method = "GET",
                     url = server.url("/redirect"),
-                    timeout = Duration.ofSeconds(2),
+                    timeout = HostessDelay.ofSeconds(2),
                 ),
             )
 

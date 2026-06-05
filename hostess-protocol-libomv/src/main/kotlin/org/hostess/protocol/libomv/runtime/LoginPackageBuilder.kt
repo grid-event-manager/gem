@@ -1,6 +1,6 @@
 package org.hostess.protocol.libomv.runtime
 
-import java.time.Duration
+import org.hostess.core.domain.HostessDelay
 
 internal class LoginPackageBuilder {
     fun build(
@@ -29,7 +29,7 @@ internal class LoginPackageBuilder {
     }
 
     private companion object {
-        val LOGIN_TIMEOUT: Duration = Duration.ofSeconds(120)
+        val LOGIN_TIMEOUT: HostessDelay = HostessDelay.ofSeconds(120)
         const val RESIDENT_LAST_NAME = "Resident"
         const val TRUE_STRING = "true"
 

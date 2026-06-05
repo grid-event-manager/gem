@@ -1,6 +1,6 @@
 package org.hostess.protocol.libomv.runtime
 
-import java.time.Duration
+import org.hostess.core.domain.HostessDelay
 
 internal data class LoginPackage(
     val loginUri: String,
@@ -17,5 +17,5 @@ internal data class LoginPackage(
     val readCritical: String,
     val lastExecEvent: Int,
     val options: List<String>,
-    val timeout: Duration,
+    val timeout: HostessDelay,
 )

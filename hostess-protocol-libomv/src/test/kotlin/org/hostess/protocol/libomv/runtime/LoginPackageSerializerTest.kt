@@ -1,6 +1,6 @@
 package org.hostess.protocol.libomv.runtime
 
-import java.time.Duration
+import org.hostess.core.domain.HostessDelay
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -54,7 +54,7 @@ class LoginPackageSerializerTest {
         readCritical = "true",
         lastExecEvent = 0,
         options = listOf("inventory-root", "a&b"),
-        timeout = Duration.ofSeconds(120),
+        timeout = HostessDelay.ofSeconds(120),
     )
 
     private companion object {

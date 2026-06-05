@@ -2,14 +2,15 @@ package org.hostess.protocol.libomv.transport
 
 import java.io.IOException
 import java.net.URI
-import java.time.Duration
 import java.util.Locale
+import java.util.concurrent.TimeUnit
 import okhttp3.Headers
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
+import org.hostess.core.domain.HostessDelay
 
 class OkHttpProtocolHttpClient internal constructor(
     private val baseClient: OkHttpClient,
@@ -24,7 +25,7 @@ class OkHttpProtocolHttpClient internal constructor(
             throw ProtocolHttpException("Invalid protocol HTTP request: request mapping failed")
         }
         val client = baseClient.newBuilder()
-            .callTimeout(normalized.timeout)
+            .callTimeout(normalized.timeout.milliseconds, TimeUnit.MILLISECONDS)
             .followRedirects(true)
             .followSslRedirects(true)
             .build()
@@ -52,10 +53,6 @@ class OkHttpProtocolHttpClient internal constructor(
         if (request.url.isBlank()) {
             throw ProtocolHttpException("Invalid protocol HTTP request: URL is blank")
         }
-        if (request.timeout.isNegative) {
-            throw ProtocolHttpException("Invalid protocol HTTP request: timeout is negative")
-        }
-
         val uri = try {
             URI(request.url)
         } catch (ex: IllegalArgumentException) {
@@ -89,7 +86,7 @@ class OkHttpProtocolHttpClient internal constructor(
         val uri: URI,
         val headers: Map<String, String>,
         val body: ProtocolHttpBody,
-        val timeout: Duration,
+        val timeout: HostessDelay,
         val redactionKeys: Set<String>,
     ) {
         fun toOkHttpRequest(): Request {

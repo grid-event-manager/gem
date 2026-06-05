@@ -1,16 +1,17 @@
 package org.hostess.protocol.libomv.runtime
 
 import java.nio.charset.StandardCharsets
-import java.time.Clock
 import org.hostess.core.domain.CoreFailure
 import org.hostess.core.domain.CoreFailureReason
+import org.hostess.core.domain.HostessDelay
 import org.hostess.core.domain.HostessInstant
 import org.hostess.core.domain.HostessSession
-import org.hostess.core.services.SafeDiagnosticRedaction
+import org.hostess.core.ports.ClockPort
 import org.hostess.core.ports.CredentialHandle
 import org.hostess.core.ports.LoginRequest
 import org.hostess.core.ports.SessionLoginResult
 import org.hostess.core.ports.SessionLogoutResult
+import org.hostess.core.services.SafeDiagnosticRedaction
 import org.hostess.protocol.libomv.LibomvClientSession
 import org.hostess.protocol.libomv.mapping.LibomvLoginFailureKind
 import org.hostess.protocol.libomv.mapping.LibomvLoginMapping
@@ -26,7 +27,7 @@ class ProtocolLoginRuntime private constructor(
     private val httpClient: ProtocolHttpClient,
     private val viewerIdentityProvider: HostessViewerIdentityProvider,
     private val secretResolver: LoginSecretResolver,
-    private val clock: Clock,
+    private val clockPort: ClockPort,
     private val machineIdentityProvider: HostessMachineIdentityProvider,
     private val loginPackageBuilder: LoginPackageBuilder,
     private val loginPackageSerializer: LoginPackageSerializer,
@@ -36,14 +37,14 @@ class ProtocolLoginRuntime private constructor(
         httpClient: ProtocolHttpClient,
         viewerIdentityProvider: HostessViewerIdentityProvider,
         secretResolver: LoginSecretResolver = LoginSecretResolver.unavailable(),
-        clock: Clock = Clock.systemUTC(),
+        clockPort: ClockPort = JvmSystemClockPort,
         machineIdentityProvider: HostessMachineIdentityProvider = DefaultHostessMachineIdentityProvider,
     ) : this(
         clientSession = clientSession,
         httpClient = httpClient,
         viewerIdentityProvider = viewerIdentityProvider,
         secretResolver = secretResolver,
-        clock = clock,
+        clockPort = clockPort,
         machineIdentityProvider = machineIdentityProvider,
         loginPackageBuilder = LoginPackageBuilder(),
         loginPackageSerializer = LoginPackageSerializer,
@@ -83,7 +84,7 @@ class ProtocolLoginRuntime private constructor(
                 val session = HostessSession(
                     sessionId = mapped.value.sessionId,
                     accountLabel = request.accountLabel,
-                    startedAt = HostessInstant(clock.instant().toEpochMilli()),
+                    startedAt = clockPort.now(),
                     isActive = true,
                 )
                 clientSession.activate(
@@ -156,3 +157,12 @@ data class LoginSecret(
     val sharedSecret: String,
     val startLocation: String = "last",
 )
+
+private object JvmSystemClockPort : ClockPort {
+    override fun now(): HostessInstant =
+        HostessInstant(System.currentTimeMillis())
+
+    override fun pause(duration: HostessDelay) {
+        Thread.sleep(duration.milliseconds)
+    }
+}
