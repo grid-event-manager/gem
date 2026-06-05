@@ -1,8 +1,6 @@
 package org.hostess.tools.cli.commands
 
 import java.nio.file.Files
-import java.time.Duration
-import java.time.Instant
 import kotlin.io.path.readText
 import kotlin.test.Test
 import kotlin.test.assertContains
@@ -18,6 +16,8 @@ import org.hostess.core.domain.CoreFailureReason
 import org.hostess.core.domain.GroupMembership
 import org.hostess.core.domain.GroupSendState
 import org.hostess.core.domain.GroupSendStatus
+import org.hostess.core.domain.HostessDelay
+import org.hostess.core.domain.HostessInstant
 import org.hostess.core.domain.HostessSession
 import org.hostess.core.domain.InventoryItemId
 import org.hostess.core.domain.NoticeDraft
@@ -267,7 +267,7 @@ class LiveProofRunnerTest {
             val report = reportPath.readText()
             assertEquals(CommandResult.UNAVAILABLE, exit)
             assertContains(report, "\"bulkNoticeStatus\": \"passed\"")
-            assertEquals(listOf(Duration.ofMillis(25)), clock.pauses)
+            assertEquals(listOf(HostessDelay.ofMilliseconds(25)), clock.pauses)
             assertEquals(4, ports.noticePort.groups.size)
         }
     }
@@ -435,11 +435,11 @@ class LiveProofRunnerTest {
     }
 
     private class RecordingClockPort : ClockPort {
-        val pauses = mutableListOf<Duration>()
+        val pauses = mutableListOf<HostessDelay>()
 
-        override fun now(): Instant = Instant.EPOCH
+        override fun now(): HostessInstant = HostessInstant.EPOCH
 
-        override fun pause(duration: Duration) {
+        override fun pause(duration: HostessDelay) {
             pauses += duration
         }
     }
@@ -486,7 +486,7 @@ class LiveProofRunnerTest {
         val SESSION: HostessSession = HostessSession(
             sessionId = SessionId("session"),
             accountLabel = AccountLabel("venue-proof"),
-            startedAt = Instant.EPOCH,
+            startedAt = HostessInstant.EPOCH,
             isActive = true,
         )
         val RAW_UUID = Regex(

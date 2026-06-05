@@ -1,13 +1,13 @@
 package org.hostess.core.services
 
-import java.time.Duration
-import java.time.Instant
 import org.hostess.core.domain.AccountLabel
 import org.hostess.core.domain.GroupDisplayName
 import org.hostess.core.domain.GroupId
 import org.hostess.core.domain.GroupMembership
 import org.hostess.core.domain.GroupTargetSet
 import org.hostess.core.domain.GroupSendState
+import org.hostess.core.domain.HostessDelay
+import org.hostess.core.domain.HostessInstant
 import org.hostess.core.domain.HostessSession
 import org.hostess.core.domain.NoticeComplianceDecision
 import org.hostess.core.domain.NoticeComplianceLedgerResult
@@ -58,11 +58,11 @@ class NoticeDispatchServiceTest {
                 session = session(),
                 draft = draft,
                 compliance = request(),
-                pacingPolicy = PacingPolicy(Duration.ofSeconds(5)),
+                pacingPolicy = PacingPolicy(HostessDelay.ofSeconds(5)),
             ),
         ).result
 
-        assertEquals(listOf("send:music", "pause:PT5S", "send:gallery"), events)
+        assertEquals(listOf("send:music", "pause:5000ms", "send:gallery"), events)
         assertEquals(listOf(GroupSendState.SENT, GroupSendState.FAILED), result.statuses.map { it.state })
     }
 
@@ -156,7 +156,7 @@ class NoticeDispatchServiceTest {
     private fun session(): HostessSession = HostessSession(
         sessionId = SessionId("session"),
         accountLabel = AccountLabel("proof-account"),
-        startedAt = Instant.EPOCH,
+        startedAt = HostessInstant.EPOCH,
         isActive = true,
     )
 

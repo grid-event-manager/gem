@@ -1,8 +1,5 @@
 package org.hostess.core.services
 
-import java.time.Clock
-import java.time.Instant
-import java.time.ZoneOffset
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -10,6 +7,7 @@ import org.hostess.core.domain.AccountLabel
 import org.hostess.core.domain.GroupDisplayName
 import org.hostess.core.domain.GroupMembership
 import org.hostess.core.domain.GroupTargetSet
+import org.hostess.core.domain.HostessInstant
 import org.hostess.core.domain.HostessSession
 import org.hostess.core.domain.NoticeComplianceDecision
 import org.hostess.core.domain.NoticeComplianceLedgerResult
@@ -108,12 +106,8 @@ class NoticeComplianceServiceTest {
 
     @Test
     fun `default clock maps UTC instants to Second Life delivery day`() {
-        val beforeMidnight = DefaultNoticeComplianceClock(
-            Clock.fixed(Instant.parse("2026-06-05T06:59:00Z"), ZoneOffset.UTC),
-        )
-        val afterMidnight = DefaultNoticeComplianceClock(
-            Clock.fixed(Instant.parse("2026-06-05T07:00:00Z"), ZoneOffset.UTC),
-        )
+        val beforeMidnight = DefaultNoticeComplianceClock { "2026-06-04" }
+        val afterMidnight = DefaultNoticeComplianceClock { "2026-06-05" }
 
         assertEquals(NoticeDeliveryDay("2026-06-04"), beforeMidnight.currentSecondLifeDay())
         assertEquals(NoticeDeliveryDay("2026-06-05"), afterMidnight.currentSecondLifeDay())
@@ -187,7 +181,7 @@ class NoticeComplianceServiceTest {
     private fun session(): HostessSession = HostessSession(
         sessionId = SessionId("session"),
         accountLabel = AccountLabel("proof-account"),
-        startedAt = Instant.EPOCH,
+        startedAt = HostessInstant.EPOCH,
         isActive = true,
     )
 

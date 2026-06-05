@@ -1,7 +1,5 @@
 package org.hostess.core.testing
 
-import java.time.Duration
-import java.time.Instant
 import org.hostess.core.domain.AccountLabel
 import org.hostess.core.domain.AttachmentRef
 import org.hostess.core.domain.AttachmentKind
@@ -14,6 +12,8 @@ import org.hostess.core.domain.GroupId
 import org.hostess.core.domain.GroupMembership
 import org.hostess.core.domain.GroupSendState
 import org.hostess.core.domain.GroupSendStatus
+import org.hostess.core.domain.HostessDelay
+import org.hostess.core.domain.HostessInstant
 import org.hostess.core.domain.HostessSession
 import org.hostess.core.domain.InventoryItemId
 import org.hostess.core.domain.NoticeDraft
@@ -121,15 +121,15 @@ data class NoticeSendCall(
 
 class FakeClockPort(
     private val events: MutableList<String> = mutableListOf(),
-    private val now: Instant = Instant.EPOCH,
+    private val now: HostessInstant = HostessInstant.EPOCH,
 ) : ClockPort {
-    val pauses = mutableListOf<Duration>()
+    val pauses = mutableListOf<HostessDelay>()
 
-    override fun now(): Instant = now
+    override fun now(): HostessInstant = now
 
-    override fun pause(duration: Duration) {
+    override fun pause(duration: HostessDelay) {
         pauses += duration
-        events += "pause:$duration"
+        events += "pause:${duration.milliseconds}ms"
     }
 }
 
@@ -147,7 +147,7 @@ class FakeRedactionPort(
 fun defaultSession(): HostessSession = HostessSession(
     sessionId = SessionId("session"),
     accountLabel = AccountLabel("proof-account"),
-    startedAt = Instant.EPOCH,
+    startedAt = HostessInstant.EPOCH,
     isActive = true,
 )
 

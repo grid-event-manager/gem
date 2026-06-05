@@ -4,6 +4,7 @@ import java.nio.charset.StandardCharsets
 import java.time.Clock
 import org.hostess.core.domain.CoreFailure
 import org.hostess.core.domain.CoreFailureReason
+import org.hostess.core.domain.HostessInstant
 import org.hostess.core.domain.HostessSession
 import org.hostess.core.services.SafeDiagnosticRedaction
 import org.hostess.core.ports.CredentialHandle
@@ -82,7 +83,7 @@ class ProtocolLoginRuntime private constructor(
                 val session = HostessSession(
                     sessionId = mapped.value.sessionId,
                     accountLabel = request.accountLabel,
-                    startedAt = clock.instant(),
+                    startedAt = HostessInstant(clock.instant().toEpochMilli()),
                     isActive = true,
                 )
                 clientSession.activate(

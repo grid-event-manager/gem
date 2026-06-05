@@ -1,6 +1,5 @@
 package org.hostess.core.services
 
-import java.time.Duration
 import org.hostess.core.domain.AttachmentRef
 import org.hostess.core.domain.GroupSendState
 import org.hostess.core.domain.HostessSession
@@ -60,7 +59,7 @@ class NoticeDispatchService(
     }
 
     private fun applyPacing(pacingPolicy: PacingPolicy) {
-        if (pacingPolicy.delayBetweenGroups > Duration.ZERO) {
+        if (pacingPolicy.delayBetweenGroups.isPositive) {
             clockPort.pause(pacingPolicy.delayBetweenGroups)
         }
     }

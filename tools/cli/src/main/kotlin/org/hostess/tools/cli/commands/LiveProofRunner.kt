@@ -1,11 +1,11 @@
 package org.hostess.tools.cli.commands
 
-import java.time.Duration
 import org.hostess.core.domain.AttachmentRef
 import org.hostess.core.domain.AttachmentRequest
 import org.hostess.core.domain.GroupMembership
 import org.hostess.core.domain.GroupSendState
 import org.hostess.core.domain.GroupTargetSet
+import org.hostess.core.domain.HostessDelay
 import org.hostess.core.domain.HostessSession
 import org.hostess.core.domain.NoticeDispatchResult
 import org.hostess.core.domain.NoticeDraft
@@ -274,7 +274,7 @@ internal class LiveProofRunner(
             draft = noticeDraft(bulkTargetSet),
             targetSet = bulkTargetSet,
             attachment = null,
-            pacingPolicy = PacingPolicy(Duration.ofMillis(inputs.bulkDelayMs?.coerceAtLeast(0L) ?: 0L)),
+            pacingPolicy = PacingPolicy(HostessDelay.ofMilliseconds(inputs.bulkDelayMs?.coerceAtLeast(0L) ?: 0L)),
         )
         if (detail == null) {
             statusFields["bulkNoticeStatus"] = "passed"

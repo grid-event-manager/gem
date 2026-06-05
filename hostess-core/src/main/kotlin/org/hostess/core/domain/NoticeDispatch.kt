@@ -1,16 +1,10 @@
 package org.hostess.core.domain
 
-import java.time.Duration
-
 data class PacingPolicy(
-    val delayBetweenGroups: Duration,
+    val delayBetweenGroups: HostessDelay,
 ) {
-    init {
-        require(!delayBetweenGroups.isNegative) { "Pacing delay cannot be negative." }
-    }
-
     companion object {
-        val NONE: PacingPolicy = PacingPolicy(Duration.ZERO)
+        val NONE: PacingPolicy = PacingPolicy(HostessDelay.ZERO)
     }
 }
 

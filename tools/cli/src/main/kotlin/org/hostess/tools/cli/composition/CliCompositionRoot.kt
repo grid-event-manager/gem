@@ -1,7 +1,5 @@
 package org.hostess.tools.cli.composition
 
-import java.time.Duration
-import java.time.Instant
 import java.nio.file.Path
 import org.hostess.core.domain.AccountLabel
 import org.hostess.core.domain.AttachmentKind
@@ -10,6 +8,8 @@ import org.hostess.core.domain.AttachmentRef
 import org.hostess.core.domain.GroupMembership
 import org.hostess.core.domain.GroupSendState
 import org.hostess.core.domain.GroupSendStatus
+import org.hostess.core.domain.HostessDelay
+import org.hostess.core.domain.HostessInstant
 import org.hostess.core.domain.HostessSession
 import org.hostess.core.domain.InventoryItemId
 import org.hostess.core.domain.SessionId
@@ -168,14 +168,14 @@ private class FakeProofNoticePort : NoticePort {
 }
 
 private object NoopClockPort : ClockPort {
-    override fun now(): Instant = Instant.EPOCH
+    override fun now(): HostessInstant = HostessInstant.EPOCH
 
-    override fun pause(duration: Duration) = Unit
+    override fun pause(duration: HostessDelay) = Unit
 }
 
 private fun fakeSession(active: Boolean = true): HostessSession = HostessSession(
     sessionId = SessionId("fake-session"),
     accountLabel = AccountLabel("fake-account"),
-    startedAt = Instant.EPOCH,
+    startedAt = HostessInstant.EPOCH,
     isActive = active,
 )

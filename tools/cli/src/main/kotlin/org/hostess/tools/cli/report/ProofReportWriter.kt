@@ -4,7 +4,8 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 import java.security.SecureRandom
-import java.time.Instant
+import java.time.Clock
+import java.time.format.DateTimeFormatter
 
 class ProofReportWriter {
     private val random = SecureRandom()
@@ -24,7 +25,7 @@ class ProofReportWriter {
             return null
         }
 
-        val now = Instant.now().toString()
+        val now = DateTimeFormatter.ISO_INSTANT.format(Clock.systemUTC().instant())
         val report = ProofReport(
             runId = runId(now),
             command = command,

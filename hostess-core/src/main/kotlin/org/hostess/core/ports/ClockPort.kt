@@ -1,10 +1,10 @@
 package org.hostess.core.ports
 
-import java.time.Duration
-import java.time.Instant
+import org.hostess.core.domain.HostessDelay
+import org.hostess.core.domain.HostessInstant
 
 interface ClockPort {
-    fun now(): Instant
+    fun now(): HostessInstant
 
-    fun pause(duration: Duration)
+    fun pause(duration: HostessDelay)
 }
