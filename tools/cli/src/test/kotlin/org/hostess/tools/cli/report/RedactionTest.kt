@@ -41,7 +41,7 @@ class RedactionTest {
         ).value
 
         assertEquals(
-            "Bearer [redacted] seed_cap=[redacted] upload_url=[redacted] [redacted-group-id]",
+            "Bearer [redacted] seed_cap=[redacted] upload_url=[redacted] [redacted-id]",
             redacted,
         )
     }

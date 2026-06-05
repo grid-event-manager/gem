@@ -20,12 +20,12 @@ import org.hostess.core.ports.GroupPort
 import org.hostess.core.ports.InventoryPort
 import org.hostess.core.ports.LoginRequest
 import org.hostess.core.ports.NoticePort
-import org.hostess.core.ports.RedactionPort
 import org.hostess.core.ports.SessionLoginResult
 import org.hostess.core.ports.SessionLogoutResult
 import org.hostess.core.ports.SessionPort
 import org.hostess.core.services.AttachmentService
 import org.hostess.core.services.DefaultNoticeComplianceClock
+import org.hostess.core.services.DefaultRedactionPort
 import org.hostess.core.services.GroupDirectoryService
 import org.hostess.core.services.LoginComplianceService
 import org.hostess.core.domain.NoticeCompliancePolicy
@@ -53,7 +53,7 @@ class CliCompositionRoot(
         val inventoryPort = FakeProofInventoryPort()
         val noticePort = FakeProofNoticePort()
         return CliRuntime(
-            sessionService = SessionService(sessionPort, LoginComplianceService(), CliRedactionPort),
+            sessionService = SessionService(sessionPort, LoginComplianceService(), DefaultRedactionPort),
             groupDirectoryService = GroupDirectoryService(groupPort),
             targetSelectionService = TargetSelectionService(),
             noticeDraftService = NoticeDraftService(),
@@ -81,7 +81,7 @@ class CliCompositionRoot(
             ?.let { FileNoticeComplianceLedgerPort(Path.of(it)) }
             ?: UnavailableNoticeComplianceLedgerPort()
         return CliRuntime(
-            sessionService = SessionService(protocolRuntime.sessionPort, LoginComplianceService(), CliRedactionPort),
+            sessionService = SessionService(protocolRuntime.sessionPort, LoginComplianceService(), DefaultRedactionPort),
             groupDirectoryService = GroupDirectoryService(protocolRuntime.groupPort),
             targetSelectionService = TargetSelectionService(),
             noticeDraftService = NoticeDraftService(),
@@ -171,10 +171,6 @@ private object NoopClockPort : ClockPort {
     override fun now(): Instant = Instant.EPOCH
 
     override fun pause(duration: Duration) = Unit
-}
-
-private object CliRedactionPort : RedactionPort {
-    override fun redact(value: String): String = "[redacted]"
 }
 
 private fun fakeSession(active: Boolean = true): HostessSession = HostessSession(

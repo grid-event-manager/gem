@@ -1,10 +1,12 @@
 package org.hostess.protocol.libomv.runtime
 
+import java.nio.charset.StandardCharsets
 import java.time.Clock
 import java.time.Duration
 import org.hostess.core.domain.CoreFailure
 import org.hostess.core.domain.CoreFailureReason
 import org.hostess.core.domain.HostessSession
+import org.hostess.core.services.SafeDiagnosticRedaction
 import org.hostess.core.ports.CredentialHandle
 import org.hostess.core.ports.LoginRequest
 import org.hostess.core.ports.SessionLoginResult
@@ -37,11 +39,15 @@ class ProtocolLoginRuntime(
         val response = try {
             httpClient.execute(loginHttpRequest(secret, viewerIdentity))
         } catch (ex: ProtocolHttpException) {
-            return loginFailure(LibomvLoginFailureKind.TRANSPORT_FAILURE.redactedMessage)
+            return loginFailure(transportFailure(ex.message))
         }
 
         if (response.statusCode !in 200..299) {
-            return loginFailure(LibomvLoginFailureKind.TRANSPORT_FAILURE.redactedMessage)
+            return loginFailure(
+                transportFailure(
+                    "http_status=${response.statusCode}; ${bodyDiagnostic(response.body)}",
+                ),
+            )
         }
 
         return when (val mapped = LibomvLoginMapping.parse(response.body)) {
@@ -135,6 +141,24 @@ class ProtocolLoginRuntime(
         .replace(">", "&gt;")
         .replace("\"", "&quot;")
         .replace("'", "&apos;")
+
+    private fun transportFailure(diagnostic: String?): String {
+        val redacted = diagnostic
+            ?.takeIf(String::isNotBlank)
+            ?.let(SafeDiagnosticRedaction::redact)
+            ?.takeIf(String::isNotBlank)
+        return redacted
+            ?.let { "${LibomvLoginFailureKind.TRANSPORT_FAILURE.redactedMessage}: $it" }
+            ?: LibomvLoginFailureKind.TRANSPORT_FAILURE.redactedMessage
+    }
+
+    private fun bodyDiagnostic(body: ByteArray): String {
+        val text = body.toString(StandardCharsets.UTF_8)
+        return SafeDiagnosticRedaction.excerpt(text)
+            .takeIf(String::isNotBlank)
+            ?.let { "response=$it" }
+            ?: "response=<empty>"
+    }
 
     private fun loginFailure(message: String): SessionLoginResult.Failure =
         SessionLoginResult.Failure(CoreFailure(CoreFailureReason.LOGIN_FAILED, redactedMessage = message))

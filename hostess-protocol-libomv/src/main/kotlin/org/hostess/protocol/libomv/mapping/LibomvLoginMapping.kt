@@ -1,7 +1,11 @@
 package org.hostess.protocol.libomv.mapping
 
+import java.nio.charset.StandardCharsets
 import org.hostess.core.domain.SessionId
+import org.hostess.core.services.SafeDiagnosticRedaction
+import org.hostess.protocol.libomv.llsd.LlsdValue
 import org.hostess.protocol.libomv.llsd.LlsdXml
+import org.hostess.protocol.libomv.llsd.asString
 
 internal data class LibomvLoginSuccess(
     val sessionId: SessionId,
@@ -35,12 +39,19 @@ internal sealed interface LibomvLoginMappingResult {
 
 internal object LibomvLoginMapping {
     fun parse(body: ByteArray): LibomvLoginMappingResult {
-        val fields = LlsdXml.parseStringMap(body)
-            ?: return failure(LibomvLoginFailureKind.MALFORMED_RESPONSE)
+        val parsedFields = LlsdXml.parseMap(body)
+            ?: return failure(
+                LibomvLoginFailureKind.MALFORMED_RESPONSE,
+                bodyDiagnostic(body),
+            )
+        val fields = parsedFields.stringFields()
         val loginValue = fields[LoginKeys.LOGIN]?.lowercase()
         if (loginValue == "true" || loginValue == "success" || loginValue == "1") {
             val sessionId = fields[LoginKeys.SESSION_ID]?.takeIf(String::isNotBlank)
-                ?: return failure(LibomvLoginFailureKind.MALFORMED_RESPONSE)
+                ?: return failure(
+                    LibomvLoginFailureKind.MALFORMED_RESPONSE,
+                    "missing=${LoginKeys.SESSION_ID}",
+                )
             return LibomvLoginMappingResult.Success(
                 LibomvLoginSuccess(
                     sessionId = SessionId(sessionId),
@@ -54,11 +65,19 @@ internal object LibomvLoginMapping {
             )
         }
 
-        return failure(classifyFailure(fields))
+        return failure(classifyFailure(fields), sourceDiagnostics(fields))
     }
 
-    private fun failure(kind: LibomvLoginFailureKind): LibomvLoginMappingResult.Failure =
-        LibomvLoginMappingResult.Failure(LibomvLoginFailure(kind, kind.redactedMessage))
+    private fun failure(
+        kind: LibomvLoginFailureKind,
+        diagnostic: String? = null,
+    ): LibomvLoginMappingResult.Failure {
+        val message = diagnostic
+            ?.takeIf(String::isNotBlank)
+            ?.let { "${kind.redactedMessage}: $it" }
+            ?: kind.redactedMessage
+        return LibomvLoginMappingResult.Failure(LibomvLoginFailure(kind, message))
+    }
 
     private fun classifyFailure(fields: Map<String, String>): LibomvLoginFailureKind {
         val sourceText = listOf(
@@ -87,6 +106,28 @@ internal object LibomvLoginMapping {
         }
     }
 
+    private fun Map<String, LlsdValue>.stringFields(): Map<String, String> =
+        mapNotNull { (key, value) ->
+            value.asString()
+                ?.takeIf(String::isNotBlank)
+                ?.let { key to it }
+        }.toMap()
+
+    private fun sourceDiagnostics(fields: Map<String, String>): String =
+        diagnosticKeys.mapNotNull { key ->
+            fields[key]
+                ?.takeIf(String::isNotBlank)
+                ?.let { value -> "$key=${SafeDiagnosticRedaction.redact(key, value)}" }
+        }.joinToString("; ")
+
+    private fun bodyDiagnostic(body: ByteArray): String {
+        val text = body.toString(StandardCharsets.UTF_8)
+        return SafeDiagnosticRedaction.excerpt(text)
+            .takeIf(String::isNotBlank)
+            ?.let { "response=$it" }
+            ?: "response=<empty>"
+    }
+
     private fun regionHandle(fields: Map<String, String>): Long? {
         val regionX = fields[LoginKeys.REGION_X]?.toUnsigned32OrNull() ?: return null
         val regionY = fields[LoginKeys.REGION_Y]?.toUnsigned32OrNull() ?: return null
@@ -106,6 +147,14 @@ internal object LibomvLoginMapping {
 
     private const val MAX_PORT: Long = 65535L
     private const val UNSIGNED_32_MAX: Long = 0xFFFF_FFFFL
+    private val diagnosticKeys = listOf(
+        LoginKeys.MESSAGE,
+        LoginKeys.REASON,
+        LoginKeys.ERROR,
+        LoginKeys.LOGIN,
+        LoginKeys.NEXT_URL,
+        LoginKeys.INDETERMINATE,
+    )
 }
 
 internal object LoginKeys {

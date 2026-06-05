@@ -134,7 +134,31 @@ class ProtocolLoginRuntimeTest {
 
         assertIs<SessionLoginResult.Failure>(result)
         assertEquals(CoreFailureReason.LOGIN_FAILED, result.failure.reason)
-        assertEquals("login transport failed", result.failure.redactedMessage)
+        assertEquals("login transport failed: redacted transport failure", result.failure.redactedMessage)
+    }
+
+    @Test
+    fun `login includes redacted http response detail on non success status`() {
+        val runtime = ProtocolLoginRuntime(
+            clientSession = LibomvClientSession.inactive(),
+            httpClient = RecordingHttpClient(
+                body = "Forbidden token=secret https://login.example.invalid/raw".encodeToByteArray(),
+                statusCode = 403,
+            ),
+            viewerIdentityProvider = viewerIdentityProvider(),
+            secretResolver = LoginSecretResolver { resolvedSecret() },
+        )
+
+        val result = runtime.login(loginRequest("proof-handle"))
+
+        assertIs<SessionLoginResult.Failure>(result)
+        assertEquals(CoreFailureReason.LOGIN_FAILED, result.failure.reason)
+        assertEquals(
+            "login transport failed: http_status=403; response=Forbidden token=[redacted] [redacted-url]",
+            result.failure.redactedMessage,
+        )
+        assertFalse(result.failure.redactedMessage.orEmpty().contains("secret"))
+        assertFalse(result.failure.redactedMessage.orEmpty().contains("login.example.invalid"))
     }
 
     @Test
@@ -150,7 +174,7 @@ class ProtocolLoginRuntimeTest {
 
         assertIs<SessionLoginResult.Failure>(result)
         assertEquals(CoreFailureReason.LOGIN_FAILED, result.failure.reason)
-        assertEquals("login response malformed", result.failure.redactedMessage)
+        assertEquals("login response malformed: response=<llsd><map>", result.failure.redactedMessage)
     }
 
     @Test
@@ -166,8 +190,11 @@ class ProtocolLoginRuntimeTest {
 
         assertIs<SessionLoginResult.Failure>(result)
         assertEquals(CoreFailureReason.LOGIN_FAILED, result.failure.reason)
-        assertEquals("login blocked: terms of service required", result.failure.redactedMessage)
-        assertFalse(result.failure.redactedMessage.orEmpty().contains("agree_to_tos"))
+        assertEquals(
+            "login blocked: terms of service required: " +
+                "message=Terms of Service requires agree_to_tos; login=false",
+            result.failure.redactedMessage,
+        )
     }
 
     @Test
@@ -291,6 +318,7 @@ class ProtocolLoginRuntimeTest {
 
     private class RecordingHttpClient(
         private val body: ByteArray = ByteArray(0),
+        private val statusCode: Int = 200,
     ) : ProtocolHttpClient {
         var capturedRequest: ProtocolHttpRequest? = null
         val called: Boolean
@@ -299,10 +327,10 @@ class ProtocolLoginRuntimeTest {
         override fun execute(request: ProtocolHttpRequest): ProtocolHttpResponse {
             capturedRequest = request
             return ProtocolHttpResponse(
-                statusCode = 200,
+                statusCode = statusCode,
                 headers = emptyMap(),
                 body = body,
-                redactedSummary = "POST ${secureUrl("login.example", "/<redacted>")} -> 200",
+                redactedSummary = "POST ${secureUrl("login.example", "/<redacted>")} -> $statusCode",
             )
         }
     }

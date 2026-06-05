@@ -17,6 +17,7 @@ out/
 *.swp
 
 # Android/desktop packaging outputs
+local.properties
 *.apk
 *.aab
 *.jks
