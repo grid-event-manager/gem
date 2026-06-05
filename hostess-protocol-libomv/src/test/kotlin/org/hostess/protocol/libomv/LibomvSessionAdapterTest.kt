@@ -1,18 +1,24 @@
 package org.hostess.protocol.libomv
 
-import org.hostess.core.domain.HostessInstant
 import org.hostess.core.domain.AccountLabel
 import org.hostess.core.domain.CoreFailureReason
+import org.hostess.core.domain.HostessDelay
+import org.hostess.core.domain.HostessInstant
 import org.hostess.core.domain.HostessSession
 import org.hostess.core.domain.SessionId
+import org.hostess.core.ports.ClockPort
 import org.hostess.core.ports.CredentialHandle
 import org.hostess.core.ports.LoginRequest
 import org.hostess.core.ports.SessionLoginResult
 import org.hostess.core.ports.SessionLogoutResult
+import org.hostess.protocol.libomv.runtime.HostessMachineIdentity
+import org.hostess.protocol.libomv.runtime.HostessMachineIdentityProvider
 import org.hostess.protocol.libomv.runtime.HostessHostIdentity
 import org.hostess.protocol.libomv.runtime.HostessPlatformIdentity
 import org.hostess.protocol.libomv.runtime.HostessViewerIdentity
 import org.hostess.protocol.libomv.runtime.HostessViewerIdentityProvider
+import org.hostess.protocol.libomv.runtime.JvmMd5DigestPort
+import org.hostess.protocol.libomv.runtime.LoginSecretResolver
 import org.hostess.protocol.libomv.runtime.ProtocolLoginRuntime
 import org.hostess.protocol.libomv.transport.ProtocolHttpClient
 import org.hostess.protocol.libomv.transport.ProtocolHttpRequest
@@ -27,7 +33,7 @@ class LibomvSessionAdapterTest {
         val clientSession = LibomvClientSession.inactive()
         val adapter = LibomvSessionAdapter(
             clientSession = clientSession,
-            loginRuntime = ProtocolLoginRuntime(
+            loginRuntime = protocolLoginRuntime(
                 clientSession = clientSession,
                 httpClient = FailsIfCalledHttpClient,
                 viewerIdentityProvider = viewerIdentityProvider(),
@@ -47,7 +53,7 @@ class LibomvSessionAdapterTest {
         val clientSession = LibomvClientSession.active(session)
         val adapter = LibomvSessionAdapter(
             clientSession = clientSession,
-            loginRuntime = ProtocolLoginRuntime(
+            loginRuntime = protocolLoginRuntime(
                 clientSession = clientSession,
                 httpClient = FailsIfCalledHttpClient,
                 viewerIdentityProvider = viewerIdentityProvider(),
@@ -72,6 +78,23 @@ class LibomvSessionAdapterTest {
         isActive = true,
     )
 
+    private fun protocolLoginRuntime(
+        clientSession: LibomvClientSession,
+        httpClient: ProtocolHttpClient,
+        viewerIdentityProvider: HostessViewerIdentityProvider,
+    ): ProtocolLoginRuntime =
+        ProtocolLoginRuntime(
+            clientSession = clientSession,
+            httpClient = httpClient,
+            viewerIdentityProvider = viewerIdentityProvider,
+            secretResolver = LoginSecretResolver.unavailable(),
+            clockPort = NoopClockPort,
+            machineIdentityProvider = HostessMachineIdentityProvider {
+                HostessMachineIdentity("08:00:27:DC:4A:9E", "08:00:27:DC:4A:9E")
+            },
+            digestPort = JvmMd5DigestPort,
+        )
+
     private fun viewerIdentityProvider(): HostessViewerIdentityProvider = HostessViewerIdentityProvider {
         HostessViewerIdentity(
             channel = "Hostess",
@@ -90,5 +113,11 @@ class LibomvSessionAdapterTest {
         override fun execute(request: ProtocolHttpRequest): ProtocolHttpResponse {
             error("HTTP must not be called by this adapter route proof")
         }
+    }
+
+    private object NoopClockPort : ClockPort {
+        override fun now(): HostessInstant = HostessInstant.EPOCH
+
+        override fun pause(duration: HostessDelay) = Unit
     }
 }

@@ -4,24 +4,16 @@ import org.hostess.core.ports.GroupPort
 import org.hostess.core.ports.InventoryPort
 import org.hostess.core.ports.NoticePort
 import org.hostess.core.ports.SessionPort
-import org.hostess.protocol.libomv.runtime.AttachmentPayloadResult
-import org.hostess.protocol.libomv.runtime.AttachmentPayloadSource
-import org.hostess.protocol.libomv.runtime.DefaultHostessMachineIdentityProvider
-import org.hostess.protocol.libomv.runtime.DefaultHostessViewerIdentityProvider
-import org.hostess.protocol.libomv.runtime.EnvironmentLoginSecretResolver
-import org.hostess.protocol.libomv.runtime.HostessMachineIdentityProvider
-import org.hostess.protocol.libomv.runtime.HostessViewerIdentityProvider
-import org.hostess.protocol.libomv.runtime.LoginSecretResolver
+import org.hostess.protocol.libomv.runtime.CurrentGroupsSource
+import org.hostess.protocol.libomv.runtime.DefaultLibomvPlatformAdapterBundle
+import org.hostess.protocol.libomv.runtime.LibomvPlatformAdapterBundle
 import org.hostess.protocol.libomv.runtime.ProtocolCurrentGroupsSource
 import org.hostess.protocol.libomv.runtime.ProtocolGroupRuntime
 import org.hostess.protocol.libomv.runtime.ProtocolInventoryRuntime
 import org.hostess.protocol.libomv.runtime.ProtocolLoginRuntime
 import org.hostess.protocol.libomv.runtime.ProtocolNoticeRuntime
 import org.hostess.protocol.libomv.transport.AgentDataUpdateRequestTransport
-import org.hostess.protocol.libomv.transport.BoundedSimulatorCircuitClient
 import org.hostess.protocol.libomv.transport.EventQueueGetClient
-import org.hostess.protocol.libomv.transport.OkHttpProtocolHttpClient
-import org.hostess.protocol.libomv.transport.ProtocolHttpClient
 
 data class LibomvProtocolRuntime(
     val sessionPort: SessionPort,
@@ -40,64 +32,47 @@ data class LibomvProtocolLoadState(
 )
 
 object ProtocolLibomvModule {
-    fun liveRuntime(): LibomvProtocolRuntime = liveRuntime(OkHttpProtocolHttpClient())
+    fun liveRuntime(): LibomvProtocolRuntime =
+        liveRuntime(DefaultLibomvPlatformAdapterBundle.create())
 
-    internal fun liveRuntime(httpClient: ProtocolHttpClient): LibomvProtocolRuntime =
-        liveRuntime(httpClient, EnvironmentLoginSecretResolver())
-
-    internal fun liveRuntime(
-        httpClient: ProtocolHttpClient,
-        secretResolver: LoginSecretResolver,
-    ): LibomvProtocolRuntime =
-        liveRuntime(httpClient, secretResolver, DefaultHostessViewerIdentityProvider)
-
-    internal fun liveRuntime(
-        httpClient: ProtocolHttpClient,
-        secretResolver: LoginSecretResolver,
-        viewerIdentityProvider: HostessViewerIdentityProvider,
-    ): LibomvProtocolRuntime =
-        liveRuntime(
-            httpClient = httpClient,
-            secretResolver = secretResolver,
-            viewerIdentityProvider = viewerIdentityProvider,
-            machineIdentityProvider = DefaultHostessMachineIdentityProvider,
-        )
-
-    internal fun liveRuntime(
-        httpClient: ProtocolHttpClient,
-        secretResolver: LoginSecretResolver,
-        viewerIdentityProvider: HostessViewerIdentityProvider,
-        machineIdentityProvider: HostessMachineIdentityProvider,
-    ): LibomvProtocolRuntime {
-        val clientSession = LibomvClientSession.inactive()
-        val eventQueueGetClient = EventQueueGetClient(httpClient)
-        val currentGroupsSource = ProtocolCurrentGroupsSource(
-            eventQueueGetClient = eventQueueGetClient,
-            requestTransport = AgentDataUpdateRequestTransport(),
-        )
-        val groupRuntime = ProtocolGroupRuntime(clientSession, currentGroupsSource)
-        val inventoryRuntime = ProtocolInventoryRuntime(clientSession)
-        val loginRuntime = ProtocolLoginRuntime(
-            clientSession = clientSession,
-            httpClient = httpClient,
-            viewerIdentityProvider = viewerIdentityProvider,
-            secretResolver = secretResolver,
-            machineIdentityProvider = machineIdentityProvider,
-        )
-        val noticeRuntime = ProtocolNoticeRuntime(clientSession)
+    internal fun liveRuntime(bundle: LibomvPlatformAdapterBundle): LibomvProtocolRuntime {
+        val clientSession = if (bundle.adapterLoad) LibomvClientSession.inactive() else LibomvClientSession.unavailable()
+        val runtimeReady = bundle.adapterLoad && bundle.runtimeLoad
+        val currentGroupsSource = if (bundle.transportLoad) {
+            ProtocolCurrentGroupsSource(
+                eventQueueGetClient = EventQueueGetClient(bundle.httpClient),
+                requestTransport = AgentDataUpdateRequestTransport(bundle.circuitSender),
+            )
+        } else {
+            CurrentGroupsSource.unavailable()
+        }
+        val groupRuntime = if (runtimeReady) ProtocolGroupRuntime(clientSession, currentGroupsSource) else null
+        val inventoryRuntime = if (runtimeReady) ProtocolInventoryRuntime(clientSession) else null
+        val loginRuntime = if (runtimeReady) {
+            ProtocolLoginRuntime(
+                clientSession = clientSession,
+                httpClient = bundle.httpClient,
+                viewerIdentityProvider = bundle.viewerIdentityProvider,
+                secretResolver = bundle.secretResolver,
+                clockPort = bundle.clockPort,
+                machineIdentityProvider = bundle.machineIdentityProvider,
+                digestPort = bundle.md5DigestPort,
+            )
+        } else {
+            null
+        }
+        val noticeRuntime = if (runtimeReady) ProtocolNoticeRuntime(clientSession) else null
         return runtimeFor(
             clientSession = clientSession,
             groupRuntime = groupRuntime,
             inventoryRuntime = inventoryRuntime,
             loginRuntime = loginRuntime,
             noticeRuntime = noticeRuntime,
-            transportLoad = listOf(
-                ProtocolHttpClient::class.java,
-                httpClient::class.java,
-                EventQueueGetClient::class.java,
-                AgentDataUpdateRequestTransport::class.java,
-                BoundedSimulatorCircuitClient::class.java,
-            ).classesLoaded(),
+            loadState = LibomvProtocolLoadState(
+                adapterLoad = bundle.adapterLoad,
+                runtimeLoad = bundle.runtimeLoad,
+                transportLoad = bundle.transportLoad,
+            ),
         )
     }
 
@@ -107,7 +82,7 @@ object ProtocolLibomvModule {
         inventoryRuntime: ProtocolInventoryRuntime?,
         loginRuntime: ProtocolLoginRuntime?,
         noticeRuntime: ProtocolNoticeRuntime?,
-        transportLoad: Boolean,
+        loadState: LibomvProtocolLoadState,
     ): LibomvProtocolRuntime {
         val sessionAdapter = LibomvSessionAdapter(clientSession, loginRuntime)
         val groupAdapter = LibomvGroupAdapter(clientSession, groupRuntime)
@@ -120,27 +95,7 @@ object ProtocolLibomvModule {
             noticePort = noticeAdapter,
             clientSession = clientSession,
             protocolAvailable = clientSession.isProtocolAvailable(),
-            loadState = LibomvProtocolLoadState(
-                adapterLoad = listOf(
-                    clientSession::class.java,
-                    sessionAdapter::class.java,
-                    groupAdapter::class.java,
-                    inventoryAdapter::class.java,
-                    noticeAdapter::class.java,
-                ).classesLoaded(),
-                runtimeLoad = listOf(
-                    loginRuntime?.let { it::class.java },
-                    groupRuntime?.let { it::class.java },
-                    ProtocolCurrentGroupsSource::class.java,
-                    inventoryRuntime?.let { it::class.java },
-                    noticeRuntime?.let { it::class.java },
-                    AttachmentPayloadSource::class.java,
-                    AttachmentPayloadResult::class.java,
-                ).classesLoaded(),
-                transportLoad = transportLoad,
-            ),
+            loadState = loadState,
         )
     }
-
-    private fun List<Class<*>?>.classesLoaded(): Boolean = all { it?.name?.isNotBlank() == true }
 }

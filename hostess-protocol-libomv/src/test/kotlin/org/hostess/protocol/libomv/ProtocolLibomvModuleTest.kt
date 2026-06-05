@@ -13,6 +13,7 @@ import org.hostess.core.domain.HostessSession
 import org.hostess.core.domain.NoticeDraft
 import org.hostess.core.domain.SessionId
 import org.hostess.core.domain.TargetSelectionResult
+import org.hostess.core.ports.ClockPort
 import org.hostess.core.ports.CredentialHandle
 import org.hostess.core.ports.GroupListResult
 import org.hostess.core.ports.LoginRequest
@@ -22,13 +23,19 @@ import org.hostess.protocol.libomv.runtime.EnvironmentLoginSecretResolver
 import org.hostess.protocol.libomv.runtime.HostessMachineIdentity
 import org.hostess.protocol.libomv.runtime.HostessMachineIdentityProvider
 import org.hostess.protocol.libomv.runtime.HostessHostIdentity
+import org.hostess.protocol.libomv.runtime.JvmMd5DigestPort
+import org.hostess.protocol.libomv.runtime.LibomvPlatformAdapterBundle
+import org.hostess.protocol.libomv.runtime.LoginSecretResolver
+import org.hostess.protocol.libomv.runtime.Md5DigestPort
 import org.hostess.protocol.libomv.runtime.HostessPlatformIdentity
 import org.hostess.protocol.libomv.runtime.HostessViewerIdentity
 import org.hostess.protocol.libomv.runtime.HostessViewerIdentityProvider
+import org.hostess.protocol.libomv.transport.BoundedSimulatorCircuitSender
 import org.hostess.protocol.libomv.transport.ProtocolHttpBody
 import org.hostess.protocol.libomv.transport.ProtocolHttpClient
 import org.hostess.protocol.libomv.transport.ProtocolHttpRequest
 import org.hostess.protocol.libomv.transport.ProtocolHttpResponse
+import org.hostess.protocol.libomv.transport.SimulatorCircuitSendResult
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
@@ -90,10 +97,12 @@ class ProtocolLibomvModuleTest {
             }
         }
         val runtime = ProtocolLibomvModule.liveRuntime(
-            httpClient,
-            resolver,
-            viewerIdentityProvider(),
-            machineIdentityProvider(),
+            platformBundle(
+                httpClient = httpClient,
+                secretResolver = resolver,
+                viewerIdentityProvider = viewerIdentityProvider(),
+                machineIdentityProvider = machineIdentityProvider(),
+            ),
         )
 
         val login = runtime.sessionPort.login(
@@ -144,7 +153,7 @@ class ProtocolLibomvModuleTest {
     @Test
     fun `live runtime group adapter reaches current groups source`() {
         val httpClient = RecordingHttpClient(body = ByteArray(0), statusCode = 503)
-        val runtime = ProtocolLibomvModule.liveRuntime(httpClient)
+        val runtime = ProtocolLibomvModule.liveRuntime(platformBundle(httpClient = httpClient))
         val session = fakeActiveUuidSession()
         runtime.clientSession.activate(
             session = session,
@@ -162,6 +171,40 @@ class ProtocolLibomvModuleTest {
         assertContains(groups.failure.redactedMessage.orEmpty(), "current groups transport unavailable")
         assertContains(groups.failure.redactedMessage.orEmpty(), "http_status=503")
         assertEquals(secureUrl("caps.example", "/seed"), httpClient.capturedRequest?.url)
+    }
+
+    @Test
+    fun `injected bundle booleans drive load state and fail closed`() {
+        val runtimeBlocked = ProtocolLibomvModule.liveRuntime(
+            platformBundle(
+                runtimeLoad = false,
+                transportLoad = false,
+            ),
+        )
+
+        assertTrue(runtimeBlocked.loadState.adapterLoad)
+        assertFalse(runtimeBlocked.loadState.runtimeLoad)
+        assertFalse(runtimeBlocked.loadState.transportLoad)
+        val login = assertIs<SessionLoginResult.Failure>(runtimeBlocked.sessionPort.login(loginRequest()))
+        assertEquals("protocol runtime unavailable", login.failure.redactedMessage)
+
+        val transportBlocked = ProtocolLibomvModule.liveRuntime(platformBundle(transportLoad = false))
+        val session = fakeActiveUuidSession()
+        transportBlocked.clientSession.activate(
+            session = session,
+            agentId = "11111111-1111-1111-1111-111111111111",
+            seedCapability = secureUrl("caps.example", "/seed"),
+            simulatorIp = "203.0.113.8",
+            simulatorPort = 13000,
+            regionHandle = 123456789L,
+            circuitCode = 987654321L,
+        )
+
+        val groups = assertIs<GroupListResult.Failure>(transportBlocked.groupPort.currentGroups(session))
+
+        assertTrue(transportBlocked.loadState.runtimeLoad)
+        assertFalse(transportBlocked.loadState.transportLoad)
+        assertEquals("current groups unavailable", groups.failure.redactedMessage)
     }
 
     private fun loginRequest(): LoginRequest = LoginRequest(
@@ -259,6 +302,39 @@ class ProtocolLibomvModuleTest {
             mac = "08:00:27:DC:4A:9E",
             id0 = "08:00:27:DC:4A:9E",
         )
+    }
+
+    private fun platformBundle(
+        httpClient: ProtocolHttpClient = RecordingHttpClient(ByteArray(0)),
+        secretResolver: LoginSecretResolver = LoginSecretResolver.unavailable(),
+        viewerIdentityProvider: HostessViewerIdentityProvider = viewerIdentityProvider(),
+        machineIdentityProvider: HostessMachineIdentityProvider = machineIdentityProvider(),
+        clockPort: ClockPort = FixedClockPort,
+        md5DigestPort: Md5DigestPort = JvmMd5DigestPort,
+        circuitSender: BoundedSimulatorCircuitSender = BoundedSimulatorCircuitSender {
+            SimulatorCircuitSendResult.Sent
+        },
+        adapterLoad: Boolean = true,
+        runtimeLoad: Boolean = true,
+        transportLoad: Boolean = true,
+    ): LibomvPlatformAdapterBundle =
+        LibomvPlatformAdapterBundle(
+            httpClient = httpClient,
+            secretResolver = secretResolver,
+            viewerIdentityProvider = viewerIdentityProvider,
+            machineIdentityProvider = machineIdentityProvider,
+            clockPort = clockPort,
+            md5DigestPort = md5DigestPort,
+            circuitSender = circuitSender,
+            adapterLoad = adapterLoad,
+            runtimeLoad = runtimeLoad,
+            transportLoad = transportLoad,
+        )
+
+    private object FixedClockPort : ClockPort {
+        override fun now(): HostessInstant = HostessInstant.EPOCH
+
+        override fun pause(duration: HostessDelay) = Unit
     }
 
     private companion object {

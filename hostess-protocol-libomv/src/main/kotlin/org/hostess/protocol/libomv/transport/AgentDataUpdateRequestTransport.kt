@@ -7,7 +7,7 @@ internal fun interface AgentDataUpdateRequester {
 }
 
 internal class AgentDataUpdateRequestTransport(
-    private val circuitSender: BoundedSimulatorCircuitSender = BoundedSimulatorCircuitClient(),
+    private val circuitSender: BoundedSimulatorCircuitSender,
 ) : AgentDataUpdateRequester {
     override fun send(identity: LibomvSessionIdentity): AgentDataUpdateRequestResult {
         val circuit = SimulatorCircuit(

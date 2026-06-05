@@ -3,8 +3,6 @@ package org.hostess.protocol.libomv.runtime
 import java.nio.charset.StandardCharsets
 import org.hostess.core.domain.CoreFailure
 import org.hostess.core.domain.CoreFailureReason
-import org.hostess.core.domain.HostessDelay
-import org.hostess.core.domain.HostessInstant
 import org.hostess.core.domain.HostessSession
 import org.hostess.core.ports.ClockPort
 import org.hostess.core.ports.CredentialHandle
@@ -32,13 +30,14 @@ class ProtocolLoginRuntime private constructor(
     private val loginPackageBuilder: LoginPackageBuilder,
     private val loginPackageSerializer: LoginPackageSerializer,
 ) {
-    constructor(
+    internal constructor(
         clientSession: LibomvClientSession,
         httpClient: ProtocolHttpClient,
         viewerIdentityProvider: HostessViewerIdentityProvider,
-        secretResolver: LoginSecretResolver = LoginSecretResolver.unavailable(),
-        clockPort: ClockPort = JvmSystemClockPort,
-        machineIdentityProvider: HostessMachineIdentityProvider = DefaultHostessMachineIdentityProvider,
+        secretResolver: LoginSecretResolver,
+        clockPort: ClockPort,
+        machineIdentityProvider: HostessMachineIdentityProvider,
+        digestPort: Md5DigestPort,
     ) : this(
         clientSession = clientSession,
         httpClient = httpClient,
@@ -46,7 +45,7 @@ class ProtocolLoginRuntime private constructor(
         secretResolver = secretResolver,
         clockPort = clockPort,
         machineIdentityProvider = machineIdentityProvider,
-        loginPackageBuilder = LoginPackageBuilder(),
+        loginPackageBuilder = LoginPackageBuilder(digestPort),
         loginPackageSerializer = LoginPackageSerializer,
     )
 
@@ -157,12 +156,3 @@ data class LoginSecret(
     val sharedSecret: String,
     val startLocation: String = "last",
 )
-
-private object JvmSystemClockPort : ClockPort {
-    override fun now(): HostessInstant =
-        HostessInstant(System.currentTimeMillis())
-
-    override fun pause(duration: HostessDelay) {
-        Thread.sleep(duration.milliseconds)
-    }
-}
