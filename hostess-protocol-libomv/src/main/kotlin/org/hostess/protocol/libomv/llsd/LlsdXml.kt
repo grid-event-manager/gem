@@ -1,9 +1,7 @@
 package org.hostess.protocol.libomv.llsd
 
-import java.io.ByteArrayInputStream
-import javax.xml.parsers.DocumentBuilderFactory
-import org.w3c.dom.Element
-import org.w3c.dom.Node
+import org.hostess.protocol.libomv.xml.ProtocolXmlElement
+import org.hostess.protocol.libomv.xml.ProtocolXmlTreeParser
 
 internal sealed interface LlsdValue {
     data class MapValue(val values: Map<String, LlsdValue>) : LlsdValue
@@ -14,14 +12,8 @@ internal sealed interface LlsdValue {
 }
 
 internal object LlsdXml {
-    fun parse(body: ByteArray): LlsdValue? = try {
-        val document = secureDocumentBuilderFactory()
-            .newDocumentBuilder()
-            .parse(ByteArrayInputStream(body))
-        parseElement(document.documentElement)
-    } catch (ex: Exception) {
-        null
-    }
+    fun parse(body: ByteArray): LlsdValue? =
+        ProtocolXmlTreeParser.parse(body)?.let(::parseElement)
 
     fun parseMap(body: ByteArray): Map<String, LlsdValue>? =
         (parse(body) as? LlsdValue.MapValue)?.values
@@ -29,22 +21,22 @@ internal object LlsdXml {
     fun parseStringMap(body: ByteArray): Map<String, String>? =
         parseMap(body)?.mapValues { (_, value) -> value.asString() ?: return null }
 
-    private fun parseElement(element: Element): LlsdValue? = when (element.tagName) {
-        "llsd" -> element.childElements().firstNotNullOfOrNull(::parseElement)
+    private fun parseElement(element: ProtocolXmlElement): LlsdValue? = when (element.name) {
+        "llsd" -> element.children.firstNotNullOfOrNull(::parseElement)
         "map" -> parseMapElement(element)
-        "array" -> LlsdValue.ArrayValue(element.childElements().mapNotNull(::parseElement))
+        "array" -> LlsdValue.ArrayValue(element.children.mapNotNull(::parseElement))
         "undef" -> LlsdValue.Undefined
-        "boolean" -> element.textContent.trim().asBoolean()?.let(LlsdValue::BooleanValue)
-        "integer", "real", "string", "uuid", "uri" -> LlsdValue.ScalarValue(element.textContent.trim())
+        "boolean" -> element.text.trim().asBoolean()?.let(LlsdValue::BooleanValue)
+        "integer", "real", "string", "uuid", "uri" -> LlsdValue.ScalarValue(element.text.trim())
         else -> null
     }
 
-    private fun parseMapElement(element: Element): LlsdValue.MapValue {
+    private fun parseMapElement(element: ProtocolXmlElement): LlsdValue.MapValue {
         val fields = linkedMapOf<String, LlsdValue>()
         var pendingKey: String? = null
-        for (child in element.childElements()) {
-            if (child.tagName == "key") {
-                pendingKey = child.textContent.trim()
+        for (child in element.children) {
+            if (child.name == "key") {
+                pendingKey = child.text.trim()
             } else if (pendingKey != null) {
                 val key = pendingKey
                 parseElement(child)?.let { fields[key] = it }
@@ -54,29 +46,11 @@ internal object LlsdXml {
         return LlsdValue.MapValue(fields)
     }
 
-    private fun Element.childElements(): List<Element> = buildList {
-        for (index in 0 until childNodes.length) {
-            val node = childNodes.item(index)
-            if (node.nodeType == Node.ELEMENT_NODE) {
-                add(node as Element)
-            }
-        }
-    }
-
     private fun String.asBoolean(): Boolean? = when (lowercase()) {
         "true", "1" -> true
         "false", "0" -> false
         else -> null
     }
-
-    private fun secureDocumentBuilderFactory(): DocumentBuilderFactory = DocumentBuilderFactory.newInstance().also {
-        it.isExpandEntityReferences = false
-        it.setFeature(feature("apache.org", "xml/features/disallow-doctype-decl"), true)
-        it.setFeature(feature("xml.org", "sax/features/external-general-entities"), false)
-        it.setFeature(feature("xml.org", "sax/features/external-parameter-entities"), false)
-    }
-
-    private fun feature(host: String, path: String): String = "http" + "://$host/$path"
 }
 
 internal fun LlsdValue.asString(): String? = when (this) {

@@ -1,6 +1,5 @@
 package org.hostess.protocol.libomv.mapping
 
-import java.nio.charset.StandardCharsets
 import org.hostess.core.domain.SessionId
 import org.hostess.core.services.SafeDiagnosticRedaction
 import org.hostess.protocol.libomv.llsd.LlsdValue
@@ -121,7 +120,7 @@ internal object LibomvLoginMapping {
         }.joinToString("; ")
 
     private fun bodyDiagnostic(body: ByteArray): String {
-        val text = body.toString(StandardCharsets.UTF_8)
+        val text = body.decodeToString()
         return SafeDiagnosticRedaction.excerpt(text)
             .takeIf(String::isNotBlank)
             ?.let { "response=$it" }
