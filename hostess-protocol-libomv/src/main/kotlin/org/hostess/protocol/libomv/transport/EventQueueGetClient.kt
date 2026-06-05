@@ -1,6 +1,7 @@
 package org.hostess.protocol.libomv.transport
 
 import java.time.Duration
+import org.hostess.core.services.SafeDiagnosticRedaction
 import org.hostess.protocol.libomv.LibomvGroupSnapshot
 import org.hostess.protocol.libomv.llsd.LlsdValue
 import org.hostess.protocol.libomv.llsd.LlsdXml
@@ -19,57 +20,64 @@ internal class EventQueueGetClient(
 ) : EventQueueGetSource {
     override fun seed(seedCapability: String): EventQueueGetResult {
         if (seedCapability.isBlank()) {
-            return EventQueueGetResult.TransportGap
+            return transportGap("blank seed capability")
         }
-        val response = execute(request(seedCapability, seedBody(), Duration.ofSeconds(30)))
-            ?: return EventQueueGetResult.TransportGap
+        val response = when (val executed = execute(request(seedCapability, seedBody(), Duration.ofSeconds(30)))) {
+            is EventQueueHttpResult.Failed -> return EventQueueGetResult.TransportGap(executed.redactedMessage)
+            is EventQueueHttpResult.Success -> executed.response
+        }
         if (response.statusCode !in 200..299) {
-            return EventQueueGetResult.TransportGap
+            return transportGap("http_status=${response.statusCode}; ${responseDiagnostic(response)}")
         }
-        val fields = LlsdXml.parseMap(response.body) ?: return EventQueueGetResult.MappingGap
+        val fields = LlsdXml.parseMap(response.body) ?: return mappingGap("seed response invalid; ${bodyDiagnostic(response.body)}")
         val eventQueueUrl = fields[EVENT_QUEUE_GET]?.asString()?.takeIf(String::isNotBlank)
-            ?: return EventQueueGetResult.TransportGap
+            ?: return transportGap("event queue url absent")
         return EventQueueGetResult.Ready(eventQueueUrl)
     }
 
     override fun pollAgentGroupDataUpdate(eventQueueUrl: String): EventQueueGetResult {
         if (eventQueueUrl.isBlank()) {
-            return EventQueueGetResult.TransportGap
+            return transportGap("blank event queue url")
         }
         var ack: Long? = null
         repeat(maxPolls) {
-            val response = execute(request(eventQueueUrl, pollBody(ack), Duration.ofSeconds(60)))
-                ?: return EventQueueGetResult.TransportGap
-            if (response.statusCode !in 200..299) {
-                return EventQueueGetResult.TransportGap
+            val response = when (val executed = execute(request(eventQueueUrl, pollBody(ack), Duration.ofSeconds(60)))) {
+                is EventQueueHttpResult.Failed -> return EventQueueGetResult.TransportGap(executed.redactedMessage)
+                is EventQueueHttpResult.Success -> executed.response
             }
-            val fields = LlsdXml.parseMap(response.body) ?: return EventQueueGetResult.MappingGap
+            if (response.statusCode !in 200..299) {
+                return transportGap("http_status=${response.statusCode}; ${responseDiagnostic(response)}")
+            }
+            val fields = LlsdXml.parseMap(response.body) ?: return mappingGap("poll response invalid; ${bodyDiagnostic(response.body)}")
             val events = fields["events"] as? LlsdValue.ArrayValue
             if (events == null) {
                 if (fields.containsKey("ack")) {
-                    ack = fields["ack"]?.asLong() ?: return EventQueueGetResult.MappingGap
+                    ack = fields["ack"]?.asLong() ?: return mappingGap("poll ack invalid")
                     return@repeat
                 }
-                return EventQueueGetResult.MappingGap
+                return mappingGap("poll events absent")
             }
-            ack = fields["id"]?.asLong() ?: return EventQueueGetResult.MappingGap
+            ack = fields["id"]?.asLong() ?: return mappingGap("poll event id invalid")
             if (events.values.isEmpty()) {
                 return@repeat
             }
-            return agentGroupDataUpdate(events)
+            when (val update = agentGroupDataUpdate(events)) {
+                EventQueueGetResult.TimedOut -> return@repeat
+                else -> return update
+            }
         }
         return EventQueueGetResult.TimedOut
     }
 
     private fun agentGroupDataUpdate(events: LlsdValue.ArrayValue): EventQueueGetResult {
         for (event in events.values) {
-            val eventFields = (event as? LlsdValue.MapValue)?.values ?: return EventQueueGetResult.MappingGap
-            val message = eventFields["message"]?.asString() ?: return EventQueueGetResult.MappingGap
+            val eventFields = (event as? LlsdValue.MapValue)?.values ?: return mappingGap("event entry invalid")
+            val message = eventFields["message"]?.asString() ?: return mappingGap("event message absent")
             if (message != AGENT_GROUP_DATA_UPDATE) {
-                return EventQueueGetResult.MappingGap
+                continue
             }
             val body = (eventFields["body"] as? LlsdValue.MapValue)?.values
-                ?: return EventQueueGetResult.MappingGap
+                ?: return mappingGap("agent group event body invalid")
             return parseAgentGroupDataUpdate(body)
         }
         return EventQueueGetResult.TimedOut
@@ -77,35 +85,35 @@ internal class EventQueueGetClient(
 
     private fun parseAgentGroupDataUpdate(body: Map<String, LlsdValue>): EventQueueGetResult {
         if (!hasAgentData(body["AgentData"])) {
-            return EventQueueGetResult.MappingGap
+            return mappingGap("agent group event agent data invalid")
         }
         val groups = (body["GroupData"] as? LlsdValue.ArrayValue)?.values
-            ?: return EventQueueGetResult.MappingGap
+            ?: return mappingGap("agent group event group data invalid")
         val newGroupData = body["NewGroupData"]
         val newGroups = when (newGroupData) {
             null -> null
             is LlsdValue.ArrayValue -> newGroupData.values
-            else -> return EventQueueGetResult.MappingGap
+            else -> return mappingGap("agent group event profile data invalid")
         }
         if (newGroups != null && newGroups.size != groups.size) {
-            return EventQueueGetResult.MappingGap
+            return mappingGap("agent group event profile count invalid")
         }
         return EventQueueGetResult.AgentGroupDataUpdate(
             groups = groups.mapIndexed { index, value ->
                 val fields = (value as? LlsdValue.MapValue)?.values
-                    ?: return EventQueueGetResult.MappingGap
+                    ?: return mappingGap("agent group entry invalid")
                 LibomvGroupSnapshot(
-                    groupId = fields["GroupID"]?.asString() ?: return EventQueueGetResult.MappingGap,
-                    displayName = fields["GroupName"]?.asString() ?: return EventQueueGetResult.MappingGap,
-                    powers = fields["GroupPowers"]?.asLong() ?: return EventQueueGetResult.MappingGap,
+                    groupId = fields["GroupID"]?.asString() ?: return mappingGap("agent group id invalid"),
+                    displayName = fields["GroupName"]?.asString() ?: return mappingGap("agent group name invalid"),
+                    powers = fields["GroupPowers"]?.asLong() ?: return mappingGap("agent group powers invalid"),
                     acceptsNotices = fields["AcceptNotices"]?.asBoolean()
-                        ?: return EventQueueGetResult.MappingGap,
+                        ?: return mappingGap("agent group notice preference invalid"),
                 ).also {
                     if (newGroups != null) {
                         val newGroupFields = (newGroups[index] as? LlsdValue.MapValue)?.values
-                            ?: return EventQueueGetResult.MappingGap
+                            ?: return mappingGap("agent group profile entry invalid")
                         newGroupFields["ListInProfile"]?.asBoolean()
-                            ?: return EventQueueGetResult.MappingGap
+                            ?: return mappingGap("agent group profile visibility invalid")
                     }
                 }
             },
@@ -118,11 +126,34 @@ internal class EventQueueGetClient(
         return !fields["AgentID"]?.asString().isNullOrBlank()
     }
 
-    private fun execute(request: ProtocolHttpRequest): ProtocolHttpResponse? = try {
-        httpClient.execute(request)
+    private fun execute(request: ProtocolHttpRequest): EventQueueHttpResult = try {
+        EventQueueHttpResult.Success(httpClient.execute(request))
     } catch (ex: ProtocolHttpException) {
-        null
+        EventQueueHttpResult.Failed(
+            transportMessage(ex.message ?: "protocol http request failed"),
+        )
     }
+
+    private fun transportGap(detail: String): EventQueueGetResult.TransportGap =
+        EventQueueGetResult.TransportGap(transportMessage(detail))
+
+    private fun mappingGap(detail: String): EventQueueGetResult.MappingGap =
+        EventQueueGetResult.MappingGap(eventMessage(detail))
+
+    private fun transportMessage(detail: String): String =
+        "current groups transport unavailable: ${SafeDiagnosticRedaction.redact(detail)}"
+
+    private fun eventMessage(detail: String): String =
+        "current groups event invalid: ${SafeDiagnosticRedaction.redact(detail)}"
+
+    private fun responseDiagnostic(response: ProtocolHttpResponse): String =
+        SafeDiagnosticRedaction.redact("${response.redactedSummary}; ${bodyDiagnostic(response.body)}")
+
+    private fun bodyDiagnostic(body: ByteArray): String =
+        SafeDiagnosticRedaction.excerpt(body.toString(Charsets.UTF_8))
+            .takeIf(String::isNotBlank)
+            ?.let { "response=$it" }
+            ?: "response=<empty>"
 
     private fun request(url: String, body: String, timeout: Duration): ProtocolHttpRequest = ProtocolHttpRequest(
         method = "POST",
@@ -156,7 +187,16 @@ internal class EventQueueGetClient(
 internal sealed interface EventQueueGetResult {
     data class Ready(val eventQueueUrl: String) : EventQueueGetResult
     data object TimedOut : EventQueueGetResult
-    data object TransportGap : EventQueueGetResult
-    data object MappingGap : EventQueueGetResult
+    data class TransportGap(
+        val redactedMessage: String = "current groups transport unavailable",
+    ) : EventQueueGetResult
+    data class MappingGap(
+        val redactedMessage: String = "current groups event invalid",
+    ) : EventQueueGetResult
     data class AgentGroupDataUpdate(val groups: List<LibomvGroupSnapshot>) : EventQueueGetResult
+}
+
+private sealed interface EventQueueHttpResult {
+    data class Success(val response: ProtocolHttpResponse) : EventQueueHttpResult
+    data class Failed(val redactedMessage: String) : EventQueueHttpResult
 }

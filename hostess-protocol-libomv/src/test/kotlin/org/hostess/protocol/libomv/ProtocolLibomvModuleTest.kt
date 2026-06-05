@@ -30,6 +30,7 @@ import org.hostess.protocol.libomv.transport.ProtocolHttpClient
 import org.hostess.protocol.libomv.transport.ProtocolHttpRequest
 import org.hostess.protocol.libomv.transport.ProtocolHttpResponse
 import kotlin.test.Test
+import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
@@ -158,7 +159,8 @@ class ProtocolLibomvModuleTest {
         val groups = assertIs<GroupListResult.Failure>(runtime.groupPort.currentGroups(session))
 
         assertEquals(CoreFailureReason.GROUP_LIST_FAILED, groups.failure.reason)
-        assertEquals("current groups transport unavailable", groups.failure.redactedMessage)
+        assertContains(groups.failure.redactedMessage.orEmpty(), "current groups transport unavailable")
+        assertContains(groups.failure.redactedMessage.orEmpty(), "http_status=503")
         assertEquals(secureUrl("caps.example", "/seed"), httpClient.capturedRequest?.url)
     }
 

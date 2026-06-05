@@ -2,6 +2,7 @@ package org.hostess.protocol.libomv.transport
 
 import org.hostess.protocol.libomv.LibomvMapping
 import kotlin.test.Test
+import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
@@ -81,21 +82,66 @@ class EventQueueGetClientTest {
     fun `transport failure returns transport gap`() {
         val client = EventQueueGetClient(ThrowingHttpClient())
 
-        assertEquals(EventQueueGetResult.TransportGap, client.seed(seedUrl()))
+        val result = assertIs<EventQueueGetResult.TransportGap>(client.seed(seedUrl()))
+
+        assertContains(result.redactedMessage, "current groups transport unavailable")
+        assertContains(result.redactedMessage, "redacted transport failure")
     }
 
     @Test
-    fun `unrelated event is a mapping gap not a broad event handler`() {
-        val client = EventQueueGetClient(RecordingHttpClient(unrelatedEventResponse()))
+    fun `unrelated event before group event is ignored`() {
+        val client = EventQueueGetClient(RecordingHttpClient(unrelatedThenGroupEventResponse()))
 
-        assertEquals(EventQueueGetResult.MappingGap, client.pollAgentGroupDataUpdate(eventUrl()))
+        val result = assertIs<EventQueueGetResult.AgentGroupDataUpdate>(
+            client.pollAgentGroupDataUpdate(eventUrl()),
+        )
+
+        assertEquals("Music Room", result.groups.single().displayName)
+    }
+
+    @Test
+    fun `unrelated event advances ack and times out without group event`() {
+        val httpClient = RecordingHttpClient(
+            mutableListOf(
+                unrelatedEventResponse(),
+                response(emptyEventsResponse(9)),
+            ),
+        )
+        val client = EventQueueGetClient(httpClient, maxPolls = 2)
+
+        assertEquals(EventQueueGetResult.TimedOut, client.pollAgentGroupDataUpdate(eventUrl()))
+
+        val secondBody = assertIs<ProtocolHttpBody.TextBody>(httpClient.requests[1].body).content
+        assertTrue(secondBody.contains("<key>ack</key><integer>8</integer>"))
     }
 
     @Test
     fun `malformed group event returns mapping gap`() {
         val client = EventQueueGetClient(RecordingHttpClient(malformedGroupEventResponse()))
 
-        assertEquals(EventQueueGetResult.MappingGap, client.pollAgentGroupDataUpdate(eventUrl()))
+        val result = assertIs<EventQueueGetResult.MappingGap>(client.pollAgentGroupDataUpdate(eventUrl()))
+
+        assertContains(result.redactedMessage, "current groups event invalid")
+        assertContains(result.redactedMessage, "agent group event agent data invalid")
+    }
+
+    @Test
+    fun `non success response returns redacted transport detail`() {
+        val client = EventQueueGetClient(
+            RecordingHttpClient(
+                response(
+                    body = "<llsd>${secureUrl("secret.example", "/seed")}</llsd>".encodeToByteArray(),
+                    statusCode = 503,
+                    redactedSummary = "POST ${secureUrl("secret.example", "/seed")} -> 503",
+                ),
+            ),
+        )
+
+        val result = assertIs<EventQueueGetResult.TransportGap>(client.seed(seedUrl()))
+
+        assertContains(result.redactedMessage, "http_status=503")
+        assertContains(result.redactedMessage, "[redacted-url]")
+        assertFalse(result.redactedMessage.contains("secret.example"))
     }
 
     private class RecordingHttpClient(
@@ -170,6 +216,46 @@ class EventQueueGetClientTest {
         """.trimIndent().encodeToByteArray(),
     )
 
+    private fun unrelatedThenGroupEventResponse(): ProtocolHttpResponse = response(
+        """
+        <llsd>
+          <map>
+            <key>events</key>
+            <array>
+              <map>
+                <key>message</key><string>TeleportFinish</string>
+                <key>body</key><map></map>
+              </map>
+              <map>
+                <key>message</key><string>AgentGroupDataUpdate</string>
+                <key>body</key>
+                <map>
+                  <key>AgentData</key>
+                  <array>
+                    <map>
+                      <key>AgentID</key><uuid>$AGENT_ID</uuid>
+                    </map>
+                  </array>
+                  <key>GroupData</key>
+                  <array>
+                    <map>
+                      <key>AcceptNotices</key><boolean>true</boolean>
+                      <key>Contribution</key><integer>0</integer>
+                      <key>GroupID</key><uuid>$GROUP_ID</uuid>
+                      <key>GroupName</key><string>Music Room</string>
+                      <key>GroupTitle</key><string>Host</string>
+                      <key>GroupPowers</key><integer>${LibomvMapping.SEND_NOTICES_POWER}</integer>
+                    </map>
+                  </array>
+                </map>
+              </map>
+            </array>
+            <key>id</key><integer>8</integer>
+          </map>
+        </llsd>
+        """.trimIndent().encodeToByteArray(),
+    )
+
     private fun emptyEventsResponse(id: Long): ByteArray = """
         <llsd>
           <map>
@@ -231,11 +317,15 @@ class EventQueueGetClientTest {
         """.trimIndent().encodeToByteArray(),
     )
 
-    private fun response(body: ByteArray): ProtocolHttpResponse = ProtocolHttpResponse(
-        statusCode = 200,
+    private fun response(
+        body: ByteArray,
+        statusCode: Int = 200,
+        redactedSummary: String = "POST <redacted> -> $statusCode",
+    ): ProtocolHttpResponse = ProtocolHttpResponse(
+        statusCode = statusCode,
         headers = emptyMap(),
         body = body,
-        redactedSummary = "POST <redacted> -> 200",
+        redactedSummary = redactedSummary,
     )
 
     private companion object {

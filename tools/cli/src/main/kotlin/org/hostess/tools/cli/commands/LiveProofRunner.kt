@@ -133,7 +133,7 @@ internal class LiveProofRunner(
         when (val result = runtime.groupDirectoryService.currentGroups(session)) {
             is GroupListResult.Success -> {
                 statusFields["currentGroupsStatus"] = "passed"
-                steps += LiveProofStep.passed("current-groups", "groups=${result.groups.size}")
+                steps += LiveProofStep.passed("current-groups", currentGroupsDetail(result.groups))
                 result.groups
             }
             is GroupListResult.Failure -> {
@@ -146,6 +146,17 @@ internal class LiveProofRunner(
                 null
             }
         }
+
+    private fun currentGroupsDetail(groups: List<GroupMembership>): String {
+        if (inputs.proofScope != LiveProofScope.READ_GROUPS || groups.isEmpty()) {
+            return "groups=${groups.size}"
+        }
+        val displayNames = groups
+            .map { it.displayName.value }
+            .sortedWith(compareBy<String> { it.lowercase() }.thenBy { it })
+            .joinToString("|")
+        return "groups=${groups.size}; displayNames=$displayNames"
+    }
 
     private fun markSendProofStepsNotRun(detail: String) {
         listOf(

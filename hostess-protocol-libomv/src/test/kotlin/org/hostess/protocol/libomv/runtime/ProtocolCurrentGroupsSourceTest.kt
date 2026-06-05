@@ -33,14 +33,16 @@ class ProtocolCurrentGroupsSourceTest {
 
     @Test
     fun `seed transport gap stops before packet request`() {
-        val eventSource = RecordingEventQueueSource(seedResult = EventQueueGetResult.TransportGap)
+        val eventSource = RecordingEventQueueSource(
+            seedResult = EventQueueGetResult.TransportGap("current groups transport unavailable: http_status=503"),
+        )
         val requester = RecordingRequester(AgentDataUpdateRequestResult.Sent)
         val source = ProtocolCurrentGroupsSource(eventSource, requester)
 
         val failure = assertIs<CurrentGroupsFetchResult.Failure>(source.currentGroups(identity()))
 
         assertEquals(CurrentGroupsFailureStatus.TRANSPORT_GAP, failure.status)
-        assertEquals("current groups transport unavailable", failure.redactedMessage)
+        assertEquals("current groups transport unavailable: http_status=503", failure.redactedMessage)
         assertNull(requester.capturedIdentity)
         assertNull(eventSource.polledUrl)
     }
@@ -56,7 +58,7 @@ class ProtocolCurrentGroupsSourceTest {
         val failure = assertIs<CurrentGroupsFetchResult.Failure>(source.currentGroups(identity()))
 
         assertEquals(CurrentGroupsFailureStatus.PACKET_GAP, failure.status)
-        assertEquals("bounded simulator send failed", failure.redactedMessage)
+        assertEquals("current groups transport packet failed: bounded simulator send failed", failure.redactedMessage)
         assertNull(eventSource.polledUrl)
     }
 
@@ -79,7 +81,7 @@ class ProtocolCurrentGroupsSourceTest {
     fun `poll mapping gap is a proof gap with invalid event message`() {
         val eventSource = RecordingEventQueueSource(
             seedResult = EventQueueGetResult.Ready(EVENT_URL),
-            pollResult = EventQueueGetResult.MappingGap,
+            pollResult = EventQueueGetResult.MappingGap("current groups event invalid: malformed group data"),
         )
         val requester = RecordingRequester(AgentDataUpdateRequestResult.Sent)
         val source = ProtocolCurrentGroupsSource(eventSource, requester)
@@ -87,7 +89,7 @@ class ProtocolCurrentGroupsSourceTest {
         val failure = assertIs<CurrentGroupsFetchResult.Failure>(source.currentGroups(identity()))
 
         assertEquals(CurrentGroupsFailureStatus.PROOF_GAP, failure.status)
-        assertEquals("current groups event invalid", failure.redactedMessage)
+        assertEquals("current groups event invalid: malformed group data", failure.redactedMessage)
     }
 
     private class RecordingEventQueueSource(

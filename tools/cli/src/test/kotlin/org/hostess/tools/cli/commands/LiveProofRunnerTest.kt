@@ -76,11 +76,13 @@ class LiveProofRunnerTest {
             assertContains(report, "\"loginComplianceStatus\": \"passed\"")
             assertContains(report, "\"loginStatus\": \"passed\"")
             assertContains(report, "\"currentGroupsStatus\": \"passed\"")
+            assertContains(report, "\"detail\": \"groups=2; displayNames=Event Notices|Venue Hosts\"")
             assertContains(report, "\"logoutStatus\": \"passed\"")
             assertContains(report, "\"plainNoticeStatus\": \"not_run\"")
             assertContains(report, "\"landmarkAttachmentStatus\": \"not_run\"")
             assertContains(report, "\"textureAttachmentStatus\": \"not_run\"")
             assertContains(report, "\"bulkNoticeStatus\": \"not_run\"")
+            assertFalse(RAW_UUID.containsMatchIn(report))
             assertEquals(1, ports.sessionPort.loginCalls)
             assertEquals(1, ports.sessionPort.logoutCalls)
             assertEquals(1, ports.groupPort.currentGroupsCalls)
@@ -95,7 +97,10 @@ class LiveProofRunnerTest {
             val ports = Ports(
                 groupPort = RecordingGroupPort(
                     GroupListResult.Failure(
-                        CoreFailure(CoreFailureReason.GROUP_LIST_FAILED, "current groups transport unavailable"),
+                        CoreFailure(
+                            CoreFailureReason.GROUP_LIST_FAILED,
+                            "current groups transport packet failed: bounded simulator send failed",
+                        ),
                     ),
                 ),
             )
@@ -116,6 +121,7 @@ class LiveProofRunnerTest {
             assertEquals(CommandResult.UNAVAILABLE, exit)
             assertContains(report, "\"status\": \"transport_gap\"")
             assertContains(report, "\"currentGroupsStatus\": \"transport_gap\"")
+            assertContains(report, "current groups transport packet failed")
             assertContains(report, "\"logoutStatus\": \"passed\"")
             assertContains(report, "\"plainNoticeStatus\": \"not_run\"")
             assertEquals(1, ports.sessionPort.logoutCalls)
