@@ -16,6 +16,10 @@ PROTOCOL_PREFIX='Protocol'
 RUNTIME_SUFFIX='Runtime'
 TRACK_B_OKHTTP_PATTERN="(^|[^[:alnum:]_.])okhttp3\.|(^|[^[:alnum:]_.])${OK_HTTP_CLIENT_SYMBOL}([^[:alnum:]_]|$)"
 TRACK_B_RUNTIME_PATTERN="(^|[^[:alnum:]_.])(${PROTOCOL_PREFIX}Login${RUNTIME_SUFFIX}|${PROTOCOL_PREFIX}Group${RUNTIME_SUFFIX}|${PROTOCOL_PREFIX}Inventory${RUNTIME_SUFFIX}|${PROTOCOL_PREFIX}Notice${RUNTIME_SUFFIX}|${PROTOCOL_PREFIX}HttpClient)([^[:alnum:]_]|$)"
+TRACK_C_RUNTIME_PATTERN='EnvironmentLoginSecretResolver|BoundedSimulatorCircuitClient|AgentDataUpdateRequestTransport|EventQueueGetClient'
+TRACK_C_ENV_PATTERN='System(::|\.)getenv'
+TRACK_C_FILE_ROUTE_PATTERN='credential-file'
+TRACK_C_UNSUPPORTED_SECRET_PATTERN='keychain|Keychain|KeyStore|plaintext|plain-text|plain text'
 
 add_existing() {
     local -n target="$1"
@@ -153,6 +157,41 @@ add_existing track_b_runtime_forbidden_targets \
     "apps/desktop/src/main" \
     "apps/android/src/main"
 
+track_c_runtime_forbidden_targets=()
+add_existing track_c_runtime_forbidden_targets \
+    "hostess-core/src/main" \
+    "tools/cli/src/main" \
+    "apps/desktop/src/main" \
+    "apps/android/src/main"
+
+track_c_env_forbidden_targets=()
+while IFS= read -r path; do
+    case "$path" in
+        *"/EnvironmentLoginSecretResolver.kt") ;;
+        *) track_c_env_forbidden_targets+=("$path") ;;
+    esac
+done < <(find \
+    "hostess-core/src/main" \
+    "hostess-protocol-libomv/src/main" \
+    "tools/cli/src/main" \
+    "apps/desktop/src/main" \
+    "apps/android/src/main" \
+    -type f 2>/dev/null || true)
+
+track_c_file_route_forbidden_targets=()
+while IFS= read -r path; do
+    case "$path" in
+        *"/LiveProofInputs.kt") ;;
+        *) track_c_file_route_forbidden_targets+=("$path") ;;
+    esac
+done < <(find \
+    "hostess-core/src/main" \
+    "hostess-protocol-libomv/src/main" \
+    "tools/cli/src/main" \
+    "apps/desktop/src/main" \
+    "apps/android/src/main" \
+    -type f 2>/dev/null || true)
+
 check_no_hits \
     "hostess-core forbidden dependencies" \
     "$CORE_FORBIDDEN_PATTERN" \
@@ -187,6 +226,26 @@ check_no_hits \
     "Track B runtime/transport direct calls outside protocol module" \
     "$TRACK_B_RUNTIME_PATTERN" \
     "${track_b_runtime_forbidden_targets[@]}"
+
+check_no_hits \
+    "Track C direct runtime/transport calls outside protocol module" \
+    "$TRACK_C_RUNTIME_PATTERN" \
+    "${track_c_runtime_forbidden_targets[@]}"
+
+check_no_hits \
+    "Track C raw env reads outside resolver" \
+    "$TRACK_C_ENV_PATTERN" \
+    "${track_c_env_forbidden_targets[@]}"
+
+check_no_hits \
+    "Track C unsupported file route outside blocking parser" \
+    "$TRACK_C_FILE_ROUTE_PATTERN" \
+    "${track_c_file_route_forbidden_targets[@]}"
+
+check_no_hits \
+    "Track C unsupported secret stores" \
+    "$TRACK_C_UNSUPPORTED_SECRET_PATTERN" \
+    "${production_targets[@]}"
 
 check_pattern_matches \
     "self-test core forbidden dependency pattern" \
@@ -227,6 +286,26 @@ check_pattern_matches \
     "self-test Track B stale platform pattern" \
     "$FORBIDDEN_PLATFORM_PATTERN" \
     'org.apache.http.client.HttpClient'
+
+check_pattern_matches \
+    "self-test Track C direct runtime pattern" \
+    "$TRACK_C_RUNTIME_PATTERN" \
+    'EventQueueGetClient()'
+
+check_pattern_matches \
+    "self-test Track C raw env pattern" \
+    "$TRACK_C_ENV_PATTERN" \
+    'System.getenv("HOSTESS_SECRET")'
+
+check_pattern_matches \
+    "self-test Track C file route pattern" \
+    "$TRACK_C_FILE_ROUTE_PATTERN" \
+    '--credential-file'
+
+check_pattern_matches \
+    "self-test Track C unsupported secret store pattern" \
+    "$TRACK_C_UNSUPPORTED_SECRET_PATTERN" \
+    'keychain lookup'
 
 if [[ "$failures" -ne 0 ]]; then
     exit 1

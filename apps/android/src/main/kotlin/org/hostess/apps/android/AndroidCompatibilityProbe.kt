@@ -15,8 +15,9 @@ class AndroidCompatibilityProbe {
         val adapterLoad = loadState?.adapterLoad ?: false
         val runtimeLoad = loadState?.runtimeLoad ?: false
         val transportLoad = loadState?.transportLoad ?: false
+        val trackCClassLoad = runtimeLoad && transportLoad
 
-        return if (coreCompile && adapterLoad && runtimeLoad && transportLoad) {
+        return if (coreCompile && adapterLoad && runtimeLoad && transportLoad && trackCClassLoad) {
             AndroidCompatibilityResult.passed()
         } else {
             AndroidCompatibilityResult.androidGap(
@@ -24,7 +25,15 @@ class AndroidCompatibilityProbe {
                 adapterLoad = adapterLoad,
                 runtimeLoad = runtimeLoad,
                 transportLoad = transportLoad,
-                reason = blockedReason(coreCompile, adapterLoad, runtimeLoad, transportLoad, runtimeResult.exceptionOrNull()),
+                trackCClassLoad = trackCClassLoad,
+                reason = blockedReason(
+                    coreCompile,
+                    adapterLoad,
+                    runtimeLoad,
+                    transportLoad,
+                    trackCClassLoad,
+                    runtimeResult.exceptionOrNull(),
+                ),
             )
         }
     }
@@ -51,6 +60,7 @@ class AndroidCompatibilityProbe {
         adapterLoad: Boolean,
         runtimeLoad: Boolean,
         transportLoad: Boolean,
+        trackCClassLoad: Boolean,
         failure: Throwable?,
     ): String {
         val failedLanes = listOfNotNull(
@@ -58,6 +68,7 @@ class AndroidCompatibilityProbe {
             "adapterLoad".takeUnless { adapterLoad },
             "runtimeLoad".takeUnless { runtimeLoad },
             "transportLoad".takeUnless { transportLoad },
+            "trackCClassLoad".takeUnless { trackCClassLoad },
         )
         val cause = failure?.let { " cause=${it::class.java.simpleName}" }.orEmpty()
         return "Android compatibility probe failed lanes=${failedLanes.joinToString(",")}$cause"
@@ -74,6 +85,7 @@ data class AndroidCompatibilityResult(
     val adapterLoad: Boolean,
     val runtimeLoad: Boolean,
     val transportLoad: Boolean,
+    val trackCClassLoad: Boolean,
     val forbiddenApiScan: String,
     val blockedReason: String?,
 ) {
@@ -84,6 +96,7 @@ data class AndroidCompatibilityResult(
             adapterLoad = true,
             runtimeLoad = true,
             transportLoad = true,
+            trackCClassLoad = true,
             forbiddenApiScan = "external_guard_required",
             blockedReason = null,
         )
@@ -93,6 +106,7 @@ data class AndroidCompatibilityResult(
             adapterLoad: Boolean,
             runtimeLoad: Boolean,
             transportLoad: Boolean,
+            trackCClassLoad: Boolean,
             reason: String,
         ): AndroidCompatibilityResult = AndroidCompatibilityResult(
             status = "android_gap",
@@ -100,6 +114,7 @@ data class AndroidCompatibilityResult(
             adapterLoad = adapterLoad,
             runtimeLoad = runtimeLoad,
             transportLoad = transportLoad,
+            trackCClassLoad = trackCClassLoad,
             forbiddenApiScan = "external_guard_required",
             blockedReason = reason,
         )

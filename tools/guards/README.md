@@ -15,6 +15,13 @@ Track B owner rules:
 - Runtime and transport composition belongs inside `:hostess-protocol-libomv`; app and proof shells must use the existing core service/port/adapter path.
 - Legacy HTTP/TLS, private-reference, GUI, METAbolt, and WinForms names remain forbidden in production source.
 
+Track C owner rules:
+
+- Current-groups runtime and transport classes remain inside `:hostess-protocol-libomv`; core, CLI, desktop, and Android source must not call them directly.
+- Raw environment reads are allowed only in the protocol env resolver.
+- The CLI may mention `--credential-file` only at the blocking parser point that rejects the unsupported route.
+- Keychain/plaintext secret-store routes remain forbidden in production source.
+
 Non-production proof allowlist for broad source scans:
 
 - `README.md`: public repo-split documentation may mention `../private` to explain where private Hostess workbench material lives.
