@@ -25,6 +25,7 @@ import org.hostess.core.ports.SessionLogoutResult
 import org.hostess.core.ports.SessionPort
 import org.hostess.core.services.AttachmentService
 import org.hostess.core.services.GroupDirectoryService
+import org.hostess.core.services.LoginComplianceService
 import org.hostess.core.services.NoticeDispatchService
 import org.hostess.core.services.NoticeDraftService
 import org.hostess.core.services.SessionService
@@ -48,7 +49,7 @@ class CliCompositionRoot(
         val inventoryPort = FakeProofInventoryPort()
         val noticePort = FakeProofNoticePort()
         return CliRuntime(
-            sessionService = SessionService(sessionPort, CliRedactionPort),
+            sessionService = SessionService(sessionPort, LoginComplianceService(), CliRedactionPort),
             groupDirectoryService = GroupDirectoryService(groupPort),
             targetSelectionService = TargetSelectionService(),
             noticeDraftService = NoticeDraftService(),
@@ -63,7 +64,7 @@ class CliCompositionRoot(
     private fun liveRuntime(): CliRuntime {
         val protocolRuntime = ProtocolLibomvModule.liveRuntime()
         return CliRuntime(
-            sessionService = SessionService(protocolRuntime.sessionPort, CliRedactionPort),
+            sessionService = SessionService(protocolRuntime.sessionPort, LoginComplianceService(), CliRedactionPort),
             groupDirectoryService = GroupDirectoryService(protocolRuntime.groupPort),
             targetSelectionService = TargetSelectionService(),
             noticeDraftService = NoticeDraftService(),

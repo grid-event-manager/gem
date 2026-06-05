@@ -93,16 +93,18 @@ internal class LiveProofRunner(
             credentialHandle = CredentialHandle(inputs.credentialHandle.orEmpty()),
         )
         statusFields["credentialStatus"] = "passed"
-        return when (val login = runtime.sessionService.login(loginRequest)) {
+        statusFields += inputs.loginComplianceStatusFields()
+        return when (val login = runtime.sessionService.login(loginRequest, inputs.loginComplianceRequest())) {
             is SessionLoginResult.Success -> {
                 statusFields["loginStatus"] = "passed"
                 steps += LiveProofStep.passed("login")
                 login.session
             }
             is SessionLoginResult.Failure -> {
+                val detail = login.failure.redactedMessage ?: "login unavailable"
                 statusFields["loginStatus"] = "blocked"
-                steps += LiveProofStep("login", "blocked", "login unavailable")
-                steps += LiveProofStep.notRunPlan("login unavailable", "current-groups")
+                steps += LiveProofStep("login", "blocked", detail)
+                steps += LiveProofStep.notRunPlan(detail, "current-groups")
                 null
             }
         }

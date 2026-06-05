@@ -93,6 +93,8 @@ class LiveProofCommandTest {
             assertContains(report, "\"step\": \"validate-inputs\"")
             assertContains(report, "\"state\": \"blocked\"")
             assertContains(report, "grid")
+            assertContains(report, "proof-account-attested")
+            assertContains(report, "scripted-agent-attested")
             assertContains(report, "\"cleanupStatus\": \"not_applicable\"")
             assertFalse(RAW_UUID.containsMatchIn(report))
         } finally {
@@ -122,6 +124,12 @@ class LiveProofCommandTest {
                     "venue-proof",
                     "--credential-env",
                     "HOSTESS_PROOF_CREDENTIAL",
+                    "--proof-account-attested",
+                    "--scripted-agent-attested",
+                    "--operator",
+                    "test-operator",
+                    "--proof-account-label",
+                    "test-proof-account",
                 ),
                 output,
             )
@@ -237,6 +245,12 @@ class LiveProofCommandTest {
                     "venue-proof",
                     "--credential-env",
                     "HOSTESS_PROOF_CREDENTIAL",
+                    "--proof-account-attested",
+                    "--scripted-agent-attested",
+                    "--operator",
+                    "test-operator",
+                    "--proof-account-label",
+                    "test-proof-account",
                     "--target",
                     "Venue Hosts",
                     "--subject",
@@ -251,6 +265,7 @@ class LiveProofCommandTest {
             assertEquals(3, exitCode)
             assertTrue(output.lines.any { it == "live-proof live blocked: login blocked" })
             assertContains(report, "\"status\": \"blocked\"")
+            assertContains(report, "\"loginComplianceStatus\": \"passed\"")
             assertContains(report, "\"loginStatus\": \"blocked\"")
             assertContains(report, "\"plainNoticeStatus\": \"not_run\"")
             assertContains(report, "\"account\": \"[redacted]\"")
@@ -287,6 +302,12 @@ class LiveProofCommandTest {
                     "venue-proof",
                     "--credential-env",
                     "HOSTESS_PROOF_CREDENTIAL",
+                    "--proof-account-attested",
+                    "--scripted-agent-attested",
+                    "--operator",
+                    "test-operator",
+                    "--proof-account-label",
+                    "test-proof-account",
                     "--target",
                     "Venue Hosts",
                     "--subject",

@@ -6,7 +6,10 @@ import org.hostess.core.domain.AttachmentRequest
 import org.hostess.core.domain.CreateLandmarkAttachment
 import org.hostess.core.domain.ExistingInventoryAttachment
 import org.hostess.core.domain.InventoryItemId
+import org.hostess.core.domain.LoginComplianceRequest
 import org.hostess.core.domain.LocalPosition
+import org.hostess.core.domain.OperatorLabel
+import org.hostess.core.domain.ScriptedAgentEvidenceSource
 import org.hostess.core.domain.UploadTextureAttachment
 import org.hostess.tools.cli.CommandArguments
 import org.hostess.tools.cli.CommandMode
@@ -17,6 +20,11 @@ internal data class LiveProofInputs(
     val account: String?,
     val credentialHandle: String?,
     val credentialFile: String? = null,
+    val proofAccountAttested: Boolean,
+    val scriptedAgentAttested: Boolean,
+    val automatedUse: Boolean,
+    val operator: String?,
+    val proofAccountLabel: String?,
     val targetDisplayNames: List<String>,
     val subject: String?,
     val body: String?,
@@ -46,6 +54,10 @@ internal data class LiveProofInputs(
         } else if (credentialHandle.isNullOrBlank()) {
             add("credential-env")
         }
+        if (!proofAccountAttested) add("proof-account-attested")
+        if (automatedUse && !scriptedAgentAttested) add("scripted-agent-attested")
+        if (operator.isNullOrBlank()) add("operator")
+        if (proofAccountLabel.isNullOrBlank()) add("proof-account-label")
         if (proofScope == LiveProofScope.FULL) {
             if (!authorisedLiveSend) add("authorised-live-send")
             if (targetDisplayNames.isEmpty()) add("target display name")
@@ -65,6 +77,7 @@ internal data class LiveProofInputs(
         if (!credentialFile.isNullOrBlank()) {
             put("credentialFilePresent", "true")
         }
+        putAll(loginComplianceReportInputs())
         put("targetCount", targetDisplayNames.size.toString())
         put("targetDisplayNames", targetDisplayNames.joinToString("|"))
         put("subject", subject.orEmpty())
@@ -96,7 +109,32 @@ internal data class LiveProofInputs(
             if (!credentialFile.isNullOrBlank() || credentialHandle.isNullOrBlank()) {
                 fields["credentialStatus"] = "blocked"
             }
+            fields += loginComplianceStatusFields()
         }
+
+    fun loginComplianceRequest(): LoginComplianceRequest = LoginComplianceRequest(
+        proofAccountAttested = proofAccountAttested,
+        scriptedAgentAttested = scriptedAgentAttested,
+        automatedUse = automatedUse,
+        operatorLabel = OperatorLabel(operator.orEmpty().trim()),
+        proofAccountLabel = proofAccountLabel.orEmpty().trim(),
+        evidenceSource = if (scriptedAgentAttested) {
+            ScriptedAgentEvidenceSource.OPERATOR_ATTESTED
+        } else {
+            ScriptedAgentEvidenceSource.ABSENT
+        },
+    )
+
+    fun loginComplianceStatusFields(): Map<String, String> {
+        val evidencePresent = scriptedAgentAttested
+        val complete = proofAccountAttested && evidencePresent && !operator.isNullOrBlank() && !proofAccountLabel.isNullOrBlank()
+        return mapOf(
+            "loginComplianceStatus" to if (complete) "passed" else "blocked",
+            "proofAccountStatus" to if (proofAccountAttested) "passed" else "blocked",
+            "scriptedAgentStatus" to if (evidencePresent) "passed" else "blocked",
+            "operatorStatus" to if (!operator.isNullOrBlank()) "passed" else "blocked",
+        )
+    }
 
     private fun existingRequest(kind: AttachmentKind): AttachmentRequest? {
         val requestedKind = when (existingAttachmentKind?.lowercase()) {
@@ -151,29 +189,37 @@ internal data class LiveProofInputs(
             ?: "texture-upload"
 
     companion object {
-        fun from(arguments: CommandArguments): LiveProofInputs = LiveProofInputs(
-            proofScope = LiveProofScope.parse(arguments.option("proof-scope")),
-            grid = arguments.option("grid"),
-            account = arguments.option("account"),
-            credentialHandle = arguments.option("credential-env"),
-            credentialFile = arguments.option("credential-file"),
-            targetDisplayNames = targetDisplayNames(arguments),
-            subject = arguments.option("subject"),
-            body = arguments.option("body"),
-            authorisedLiveSend = arguments.has("authorised-live-send"),
-            existingAttachmentKind = arguments.option("existing-attachment-kind"),
-            existingAttachmentId = arguments.option("existing-attachment-id"),
-            landmarkVenue = arguments.option("landmark-venue"),
-            landmarkRegionId = arguments.option("landmark-region-id"),
-            landmarkLocalPosition = arguments.option("landmark-local-pos"),
-            textureFileName = arguments.option("texture-file-name"),
-            texturePayloadHandle = arguments.option("texture-payload-handle"),
-            textureDigest = arguments.option("texture-digest"),
-            bulkLimit = arguments.option("bulk-limit")?.toIntOrNull(),
-            bulkDelayMs = arguments.option("bulk-delay-ms")?.toLongOrNull(),
-            cleanupMode = arguments.option("cleanup-mode"),
-            retentionNote = arguments.option("retention-note"),
-        )
+        fun from(arguments: CommandArguments): LiveProofInputs {
+            val compliance = LoginComplianceArguments(arguments, CommandMode.LIVE)
+            return LiveProofInputs(
+                proofScope = LiveProofScope.parse(arguments.option("proof-scope")),
+                grid = arguments.option("grid"),
+                account = arguments.option("account"),
+                credentialHandle = arguments.option("credential-env"),
+                credentialFile = arguments.option("credential-file"),
+                proofAccountAttested = compliance.proofAccountAttested(),
+                scriptedAgentAttested = compliance.scriptedAgentAttested(),
+                automatedUse = compliance.automatedUse(defaultAutomatedUse = true),
+                operator = compliance.operatorLabel(),
+                proofAccountLabel = compliance.proofAccountLabel(),
+                targetDisplayNames = targetDisplayNames(arguments),
+                subject = arguments.option("subject"),
+                body = arguments.option("body"),
+                authorisedLiveSend = arguments.has("authorised-live-send"),
+                existingAttachmentKind = arguments.option("existing-attachment-kind"),
+                existingAttachmentId = arguments.option("existing-attachment-id"),
+                landmarkVenue = arguments.option("landmark-venue"),
+                landmarkRegionId = arguments.option("landmark-region-id"),
+                landmarkLocalPosition = arguments.option("landmark-local-pos"),
+                textureFileName = arguments.option("texture-file-name"),
+                texturePayloadHandle = arguments.option("texture-payload-handle"),
+                textureDigest = arguments.option("texture-digest"),
+                bulkLimit = arguments.option("bulk-limit")?.toIntOrNull(),
+                bulkDelayMs = arguments.option("bulk-delay-ms")?.toLongOrNull(),
+                cleanupMode = arguments.option("cleanup-mode"),
+                retentionNote = arguments.option("retention-note"),
+            )
+        }
 
         private fun targetDisplayNames(arguments: CommandArguments): List<String> =
             arguments.optionValues("target")
@@ -187,6 +233,20 @@ internal data class LiveProofInputs(
                         .orEmpty()
                 }
     }
+
+    private fun loginComplianceReportInputs(): Map<String, String> =
+        mapOf(
+            "proofAccountLabel" to proofAccountLabel.orEmpty(),
+            "operator" to operator.orEmpty(),
+            "proofAccountAttested" to proofAccountAttested.toString(),
+            "scriptedAgentAttested" to scriptedAgentAttested.toString(),
+            "automatedUse" to automatedUse.toString(),
+            "scriptedAgentEvidenceSource" to if (scriptedAgentAttested) {
+                ScriptedAgentEvidenceSource.OPERATOR_ATTESTED.reportValue
+            } else {
+                ScriptedAgentEvidenceSource.ABSENT.reportValue
+            },
+        )
 }
 
 internal enum class LiveProofScope(val wireValue: String) {

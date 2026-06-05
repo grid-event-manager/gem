@@ -21,16 +21,35 @@ class LoginCommand(
         val mode = arguments.mode()
         val request = loginRequest(arguments, mode)
             ?: return usage(output, "missing account or credential handle")
-
+        val complianceArguments = LoginComplianceArguments(arguments, mode)
+        val missingCompliance = complianceArguments.missingRequiredFields(forLiveProof = false)
         val runtime = compositionRoot.runtime(mode)
-        return when (val result = runtime.sessionService.login(request)) {
+        if (missingCompliance.isNotEmpty()) {
+            val reason = "missing login compliance input: ${missingCompliance.joinToString(", ")}"
+            runtime.proofReportWriter.writeIfRequested(
+                reportPath = arguments.option("report"),
+                command = name,
+                mode = mode.label(),
+                status = ProofReportStatus.BLOCKED,
+                statusFields = complianceArguments.statusFields(),
+                inputs = mapOf("account" to request.accountLabel.value) + complianceArguments.reportInputs(),
+                results = emptyList(),
+                blockedReason = reason,
+            )
+            output.line("login ${mode.label()} blocked: $reason")
+            return usage(output, reason)
+        }
+
+        val compliance = complianceArguments.request(request.accountLabel.value)
+        return when (val result = runtime.sessionService.login(request, compliance)) {
             is SessionLoginResult.Success -> {
                 runtime.proofReportWriter.writeIfRequested(
                     reportPath = arguments.option("report"),
                     command = name,
                     mode = mode.label(),
                     status = ProofReportStatus.PASSED,
-                    inputs = mapOf("account" to request.accountLabel.value),
+                    statusFields = complianceArguments.statusFields(),
+                    inputs = mapOf("account" to request.accountLabel.value) + complianceArguments.reportInputs(),
                     results = listOf(mapOf("session" to "created")),
                 )
                 output.line("login ${mode.label()} ready for ${result.session.accountLabel.value}")
@@ -42,7 +61,8 @@ class LoginCommand(
                     command = name,
                     mode = mode.label(),
                     status = ProofReportStatus.FAILED,
-                    inputs = mapOf("account" to request.accountLabel.value),
+                    statusFields = complianceArguments.statusFields(),
+                    inputs = mapOf("account" to request.accountLabel.value) + complianceArguments.reportInputs(),
                     results = emptyList(),
                     blockedReason = result.failure.redactedMessage,
                 )
@@ -61,7 +81,11 @@ class LoginCommand(
 
     private fun usage(output: CliOutput, reason: String): CommandResult {
         output.line("login usage error: $reason")
-        output.line("usage: login --mode fake|live --account <label> --credential-env <name> --report <path>")
+        output.line(
+            "usage: login --mode fake|live --account <label> --credential-env <name> --report <path> " +
+                "--proof-account-attested --scripted-agent-attested --operator <label> " +
+                "--proof-account-label <label> --automated-use true|false",
+        )
         return CommandResult.USAGE_ERROR
     }
 }

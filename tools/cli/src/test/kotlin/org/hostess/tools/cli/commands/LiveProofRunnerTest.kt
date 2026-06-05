@@ -35,6 +35,7 @@ import org.hostess.core.ports.SessionLogoutResult
 import org.hostess.core.ports.SessionPort
 import org.hostess.core.services.AttachmentService
 import org.hostess.core.services.GroupDirectoryService
+import org.hostess.core.services.LoginComplianceService
 import org.hostess.core.services.NoticeDispatchService
 import org.hostess.core.services.NoticeDraftService
 import org.hostess.core.services.SessionService
@@ -67,6 +68,7 @@ class LiveProofRunnerTest {
             assertContains(report, "\"status\": \"passed\"")
             assertContains(report, "\"proofScope\": \"read-groups\"")
             assertContains(report, "\"cr\\u0065dentialStatus\": \"passed\"")
+            assertContains(report, "\"loginComplianceStatus\": \"passed\"")
             assertContains(report, "\"loginStatus\": \"passed\"")
             assertContains(report, "\"currentGroupsStatus\": \"passed\"")
             assertContains(report, "\"logoutStatus\": \"passed\"")
@@ -230,6 +232,11 @@ class LiveProofRunnerTest {
         account = "venue-proof",
         credentialHandle = "HOSTESS_PROOF_CREDENTIAL",
         credentialFile = null,
+        proofAccountAttested = true,
+        scriptedAgentAttested = true,
+        automatedUse = true,
+        operator = "test-operator",
+        proofAccountLabel = "test-proof-account",
         targetDisplayNames = targets,
         subject = subject,
         body = body,
@@ -265,7 +272,7 @@ class LiveProofRunnerTest {
         private val clock: RecordingClockPort = RecordingClockPort(),
     ) {
         fun runtime(): CliRuntime = CliRuntime(
-            sessionService = SessionService(sessionPort, Redactor),
+            sessionService = SessionService(sessionPort, LoginComplianceService(), Redactor),
             groupDirectoryService = GroupDirectoryService(groupPort),
             targetSelectionService = TargetSelectionService(),
             noticeDraftService = NoticeDraftService(),

@@ -84,21 +84,27 @@ class LiveProofCommand(
             LiveProofStep.statusFields().toMutableMap().also {
                 it["credentialStatus"] = "blocked"
                 it["loginStatus"] = "runtime_gap"
+                it += inputs.loginComplianceStatusFields()
             }
         } else {
-            LiveProofStep.statusFields("blocked")
+            LiveProofStep.statusFields("blocked").toMutableMap().also {
+                it += inputs.loginComplianceStatusFields()
+            }
         }
 
     private fun usage(output: CliOutput, scope: LiveProofScope) {
         if (scope == LiveProofScope.READ_GROUPS) {
             output.line(
                 "usage: live-proof --mode live --proof-scope read-groups --report <path> " +
-                    "--grid <name> --account <label> --credential-env <name>",
+                    "--grid <name> --account <label> --credential-env <name> --proof-account-attested " +
+                    "--scripted-agent-attested --operator <label> --proof-account-label <label>",
             )
         } else {
             output.line(
                 "usage: live-proof --report <path> --authorised-live-send --grid <name> --account <label> " +
-                    "--credential-env <name> --target <display-name> --subject <subject> --body <body>",
+                    "--credential-env <name> --proof-account-attested --scripted-agent-attested " +
+                    "--operator <label> --proof-account-label <label> --target <display-name> " +
+                    "--subject <subject> --body <body>",
             )
         }
     }
