@@ -1,7 +1,5 @@
 package org.hostess.protocol.libomv.runtime
 
-import org.hostess.core.domain.HostessInstant
-import java.util.UUID
 import org.hostess.core.domain.AccountLabel
 import org.hostess.core.domain.AttachmentKind
 import org.hostess.core.domain.AttachmentOwnerId
@@ -12,6 +10,7 @@ import org.hostess.core.domain.GroupId
 import org.hostess.core.domain.GroupMembership
 import org.hostess.core.domain.GroupSendState
 import org.hostess.core.domain.GroupTargetSet
+import org.hostess.core.domain.HostessInstant
 import org.hostess.core.domain.HostessSession
 import org.hostess.core.domain.InventoryItemId
 import org.hostess.core.domain.NoticeDraft
@@ -50,7 +49,7 @@ class ProtocolNoticeRuntimeTest {
         assertEquals("Gig tonight|Doors at 8", packet.message)
         assertEquals(LibomvNoticeMapping.GROUP_NOTICE_DIALOG, packet.dialog)
         assertEquals(LibomvNoticeMapping.ONLINE, packet.offline)
-        assertEquals(xorUuid(GROUP_ID, AGENT_ID), packet.instantMessageId)
+        assertEquals(EXPECTED_INSTANT_MESSAGE_ID, packet.instantMessageId)
         assertEquals(LibomvNoticeMapping.PARENT_ESTATE_ID, packet.parentEstateId)
         assertEquals(LibomvNoticeMapping.TIMESTAMP, packet.timestamp)
         assertEquals(LibomvNoticeMapping.ZERO_UUID, packet.regionId)
@@ -145,6 +144,22 @@ class ProtocolNoticeRuntimeTest {
     }
 
     @Test
+    fun `invalid notice group uuid fails before source call`() {
+        val source = RecordingNoticeRuntimeSource()
+
+        val status = runtime(hostessSession(), source).sendGroupNotice(
+            session = hostessSession(),
+            group = group(id = "not-a-uuid"),
+            draft = draft(),
+            attachment = null,
+        )
+
+        assertEquals(GroupSendState.FAILED, status.state)
+        assertEquals("notice request invalid", status.detail)
+        assertTrue(source.packets.isEmpty())
+    }
+
+    @Test
     fun `protocol failure is redacted and does not leak group UUID`() {
         val source = RecordingNoticeRuntimeSource(
             result = NoticeRuntimeResult.Failed("packet rejected for $GROUP_ID"),
@@ -223,8 +238,11 @@ class ProtocolNoticeRuntimeTest {
         kind = kind,
     )
 
-    private fun group(canSendNotices: Boolean = true): GroupMembership = GroupMembership(
-        groupId = GroupId(GROUP_ID),
+    private fun group(
+        id: String = GROUP_ID,
+        canSendNotices: Boolean = true,
+    ): GroupMembership = GroupMembership(
+        groupId = GroupId(id),
         displayName = GroupDisplayName("Music Room"),
         canSendNotices = canSendNotices,
         acceptsNotices = true,
@@ -255,14 +273,6 @@ class ProtocolNoticeRuntimeTest {
         const val OTHER_SESSION_ID = "44444444-4444-4444-4444-444444444444"
         const val ITEM_ID = "55555555-5555-5555-5555-555555555555"
         const val OWNER_ID = "66666666-6666-6666-6666-666666666666"
-
-        fun xorUuid(left: String, right: String): String {
-            val leftUuid = UUID.fromString(left)
-            val rightUuid = UUID.fromString(right)
-            return UUID(
-                leftUuid.mostSignificantBits xor rightUuid.mostSignificantBits,
-                leftUuid.leastSignificantBits xor rightUuid.leastSignificantBits,
-            ).toString()
-        }
+        const val EXPECTED_INSTANT_MESSAGE_ID = "22222222-2222-2222-2222-222222222222"
     }
 }

@@ -129,8 +129,7 @@ internal class EventQueueGetClient(
 
     private fun LlsdValue.asUnsignedLongBits(): Long? {
         val text = asString()?.takeIf(String::isNotBlank) ?: return null
-        return text.toLongOrNull()
-            ?: runCatching { java.lang.Long.parseUnsignedLong(text) }.getOrNull()
+        return UnsignedLongBitsParser.parse(text)
     }
 
     private fun execute(request: ProtocolHttpRequest): EventQueueHttpResult = try {

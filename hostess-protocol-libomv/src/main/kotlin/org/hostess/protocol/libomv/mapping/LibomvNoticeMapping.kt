@@ -1,6 +1,5 @@
 package org.hostess.protocol.libomv.mapping
 
-import java.util.UUID
 import org.hostess.core.domain.AttachmentKind
 import org.hostess.core.domain.AttachmentRef
 import org.hostess.core.domain.GroupMembership
@@ -52,7 +51,7 @@ internal object LibomvNoticeMapping {
     const val ONLINE: Int = 0
     const val PARENT_ESTATE_ID: Int = 0
     const val TIMESTAMP: Int = 0
-    const val ZERO_UUID: String = "00000000-0000-0000-0000-000000000000"
+    const val ZERO_UUID: String = LibomvUuidCodec.ZERO_UUID
 
     fun noticePacket(
         identity: LibomvSessionIdentity,
@@ -64,24 +63,26 @@ internal object LibomvNoticeMapping {
         if (draft.subject.isBlank() || draft.attachments.size > 1) {
             return LibomvNoticeMappingResult.Failure
         }
-        val agentId = uuidOrNull(identity.agentId) ?: return LibomvNoticeMappingResult.Failure
-        val sessionId = uuidOrNull(identity.sessionId) ?: return LibomvNoticeMappingResult.Failure
-        val targetGroupId = uuidOrNull(group.groupId.value) ?: return LibomvNoticeMappingResult.Failure
+        val agentId = LibomvUuidCodec.canonicalOrNull(identity.agentId) ?: return LibomvNoticeMappingResult.Failure
+        val sessionId = LibomvUuidCodec.canonicalOrNull(identity.sessionId) ?: return LibomvNoticeMappingResult.Failure
+        val targetGroupId = LibomvUuidCodec.canonicalOrNull(group.groupId.value)
+            ?: return LibomvNoticeMappingResult.Failure
         val noticeAttachment = attachment?.let(::noticeAttachment)
             ?: if (attachment == null) null else return LibomvNoticeMappingResult.Failure
         val bucket = noticeAttachment?.let(::attachmentBucket) ?: ByteArray(0)
 
         return LibomvNoticeMappingResult.Success(
             LibomvNoticePacket(
-                agentId = agentId.toString(),
-                sessionId = sessionId.toString(),
+                agentId = agentId,
+                sessionId = sessionId,
                 fromGroup = false,
-                targetGroupId = targetGroupId.toString(),
+                targetGroupId = targetGroupId,
                 fromAgentName = session.accountLabel.value,
                 message = "${draft.subject}|${draft.message}",
                 dialog = GROUP_NOTICE_DIALOG,
                 offline = ONLINE,
-                instantMessageId = xorUuid(targetGroupId, agentId).toString(),
+                instantMessageId = LibomvUuidCodec.xor(targetGroupId, agentId)
+                    ?: return LibomvNoticeMappingResult.Failure,
                 parentEstateId = PARENT_ESTATE_ID,
                 timestamp = TIMESTAMP,
                 regionId = ZERO_UUID,
@@ -93,11 +94,11 @@ internal object LibomvNoticeMapping {
     }
 
     private fun noticeAttachment(attachment: AttachmentRef): LibomvNoticeAttachment? {
-        val itemId = uuidOrNull(attachment.attachmentId.value) ?: return null
-        val ownerId = uuidOrNull(attachment.ownerId.value) ?: return null
+        val itemId = LibomvUuidCodec.canonicalOrNull(attachment.attachmentId.value) ?: return null
+        val ownerId = LibomvUuidCodec.canonicalOrNull(attachment.ownerId.value) ?: return null
         return LibomvNoticeAttachment(
-            itemId = itemId.toString(),
-            ownerId = ownerId.toString(),
+            itemId = itemId,
+            ownerId = ownerId,
             kind = attachment.kind,
         )
     }
@@ -108,15 +109,4 @@ internal object LibomvNoticeMapping {
         append("<key>owner_id</key><uuid>").append(attachment.ownerId).append("</uuid>")
         append("</map></llsd>")
     }.encodeToByteArray()
-
-    private fun uuidOrNull(value: String): UUID? = try {
-        UUID.fromString(value)
-    } catch (ex: IllegalArgumentException) {
-        null
-    }
-
-    private fun xorUuid(left: UUID, right: UUID): UUID = UUID(
-        left.mostSignificantBits xor right.mostSignificantBits,
-        left.leastSignificantBits xor right.leastSignificantBits,
-    )
 }

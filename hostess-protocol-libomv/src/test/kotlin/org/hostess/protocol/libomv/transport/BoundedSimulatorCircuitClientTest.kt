@@ -1,7 +1,6 @@
 package org.hostess.protocol.libomv.transport
 
 import java.io.IOException
-import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
@@ -14,7 +13,7 @@ class BoundedSimulatorCircuitClientTest {
         val sender = RecordingDatagramSender()
         val client = BoundedSimulatorCircuitClient(
             datagramSender = sender,
-            sequence = AtomicInteger(0),
+            sequence = SimulatorPacketSequence(0),
         )
 
         val result = client.sendCurrentGroupsRequest(circuit())

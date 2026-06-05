@@ -59,6 +59,18 @@ class EventQueueGetClientTest {
     }
 
     @Test
+    fun `poll rejects unsigned group powers overflow`() {
+        val httpClient = RecordingHttpClient(groupEventResponse(groupPowers = "18446744073709551616"))
+        val client = EventQueueGetClient(httpClient)
+
+        val result = assertIs<EventQueueGetResult.MappingGap>(
+            client.pollAgentGroupDataUpdate(eventUrl()),
+        )
+
+        assertContains(result.redactedMessage, "agent group powers invalid")
+    }
+
+    @Test
     fun `poll advances ack and times out without group event`() {
         val httpClient = RecordingHttpClient(
             mutableListOf(
