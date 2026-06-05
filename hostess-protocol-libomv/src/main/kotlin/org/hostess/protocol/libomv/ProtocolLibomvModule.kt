@@ -6,8 +6,10 @@ import org.hostess.core.ports.NoticePort
 import org.hostess.core.ports.SessionPort
 import org.hostess.protocol.libomv.runtime.AttachmentPayloadResult
 import org.hostess.protocol.libomv.runtime.AttachmentPayloadSource
+import org.hostess.protocol.libomv.runtime.DefaultHostessMachineIdentityProvider
 import org.hostess.protocol.libomv.runtime.DefaultHostessViewerIdentityProvider
 import org.hostess.protocol.libomv.runtime.EnvironmentLoginSecretResolver
+import org.hostess.protocol.libomv.runtime.HostessMachineIdentityProvider
 import org.hostess.protocol.libomv.runtime.HostessViewerIdentityProvider
 import org.hostess.protocol.libomv.runtime.LoginSecretResolver
 import org.hostess.protocol.libomv.runtime.ProtocolCurrentGroupsSource
@@ -53,6 +55,19 @@ object ProtocolLibomvModule {
         httpClient: ProtocolHttpClient,
         secretResolver: LoginSecretResolver,
         viewerIdentityProvider: HostessViewerIdentityProvider,
+    ): LibomvProtocolRuntime =
+        liveRuntime(
+            httpClient = httpClient,
+            secretResolver = secretResolver,
+            viewerIdentityProvider = viewerIdentityProvider,
+            machineIdentityProvider = DefaultHostessMachineIdentityProvider,
+        )
+
+    internal fun liveRuntime(
+        httpClient: ProtocolHttpClient,
+        secretResolver: LoginSecretResolver,
+        viewerIdentityProvider: HostessViewerIdentityProvider,
+        machineIdentityProvider: HostessMachineIdentityProvider,
     ): LibomvProtocolRuntime {
         val clientSession = LibomvClientSession.inactive()
         val eventQueueGetClient = EventQueueGetClient(httpClient)
@@ -67,6 +82,7 @@ object ProtocolLibomvModule {
             httpClient = httpClient,
             viewerIdentityProvider = viewerIdentityProvider,
             secretResolver = secretResolver,
+            machineIdentityProvider = machineIdentityProvider,
         )
         val noticeRuntime = ProtocolNoticeRuntime(clientSession)
         return runtimeFor(

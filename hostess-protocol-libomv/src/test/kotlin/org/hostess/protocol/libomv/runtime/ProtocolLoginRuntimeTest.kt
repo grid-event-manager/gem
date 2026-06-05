@@ -1,6 +1,7 @@
 package org.hostess.protocol.libomv.runtime
 
 import java.time.Clock
+import java.time.Duration
 import java.time.Instant
 import java.time.ZoneOffset
 import org.hostess.core.domain.AccountLabel
@@ -55,6 +56,7 @@ class ProtocolLoginRuntimeTest {
             viewerIdentityProvider = viewerIdentityProvider(),
             secretResolver = LoginSecretResolver { resolvedSecret() },
             clock = Clock.fixed(Instant.parse("2026-06-04T20:00:00Z"), ZoneOffset.UTC),
+            machineIdentityProvider = machineIdentityProvider(),
         )
 
         val result = runtime.login(loginRequest("proof-handle"))
@@ -76,29 +78,40 @@ class ProtocolLoginRuntimeTest {
         val request = httpClient.capturedRequest ?: error("login request was not captured")
         assertEquals("POST", request.method)
         assertEquals(loginUrl(), request.url)
+        assertEquals("text/xml", request.headers["Content-Type"])
+        assertEquals(Duration.ofSeconds(120), request.timeout)
         val body = assertIs<ProtocolHttpBody.TextBody>(request.body)
-        assertTrue(body.content.contains("<key>${LoginKeys.SECRET}</key>"))
-        assertTrue(body.content.contains("<key>first</key><string>Venue</string>"))
-        assertTrue(body.content.contains("<key>last</key><string>Host</string>"))
-        assertTrue(body.content.contains("<key>start</key><string>last</string>"))
-        assertTrue(body.content.contains("<key>${LoginKeys.CHANNEL}</key><string>Hostess</string>"))
-        assertTrue(body.content.contains("<key>${LoginKeys.VERSION}</key><string>0.1.0.0</string>"))
-        assertTrue(body.content.contains("<key>${LoginKeys.PLATFORM}</key><string>Linux</string>"))
-        assertTrue(body.content.contains("<key>${LoginKeys.PLATFORM_VERSION}</key><string>6.8.0</string>"))
-        assertTrue(body.content.contains("<key>${LoginKeys.PLATFORM_STRING}</key><string>Linux 6.8.0 amd64 Test Runtime 17</string>"))
-        assertTrue(body.content.contains("<key>${LoginKeys.MAC}</key><string>00000000000000000000000000000001</string>"))
-        assertTrue(body.content.contains("<key>${LoginKeys.ID0}</key><string>00000000000000000000000000000002</string>"))
-        assertTrue(body.content.contains("<key>${LoginKeys.HOST_ID}</key><string>00000000000000000000000000000003</string>"))
-        assertTrue(body.content.contains("<key>${LoginKeys.TOKEN}</key><string></string>"))
-        assertTrue(body.content.contains("<key>${LoginKeys.AGREE_TO_TOS}</key><boolean>0</boolean>"))
-        assertTrue(body.content.contains("<key>${LoginKeys.READ_CRITICAL}</key><boolean>0</boolean>"))
-        assertTrue(body.content.contains("<key>${LoginKeys.EXTENDED_ERRORS}</key><boolean>1</boolean>"))
-        assertTrue(body.content.contains("<string>max-agent-groups</string>"))
+        assertEquals("text/xml", body.contentType)
+        val normalized = LoginPackageCaptureNormalizer.normalize(body.content)
+        assertEquals("login_to_simulator", normalized.methodName)
+        assertEquals(NormalizedLoginString("string", "Venue"), normalized.fields["first"])
+        assertEquals(NormalizedLoginString("string", "Host"), normalized.fields["last"])
+        assertEquals(NormalizedLoginString("string", "last"), normalized.fields["start"])
+        assertEquals(NormalizedLoginString("string", "Hostess"), normalized.fields[LoginKeys.CHANNEL])
+        assertEquals(NormalizedLoginString("string", "0.1.0.0"), normalized.fields[LoginKeys.VERSION])
+        assertEquals(
+            NormalizedLoginString("string", "Linux 6.8.0 amd64 Test Runtime 17"),
+            normalized.fields[LoginKeys.PLATFORM],
+        )
+        assertTrue(assertIs<NormalizedLoginString>(normalized.fields[LoginKeys.SECRET]).value.matches(SECOND_LIFE_HASH_PATTERN))
+        assertEquals(NormalizedLoginString("string", "08:00:27:DC:4A:9E"), normalized.fields[LoginKeys.MAC])
+        assertEquals(NormalizedLoginString("string", "08:00:27:DC:4A:9E"), normalized.fields[LoginKeys.ID0])
+        assertEquals(NormalizedLoginString("string", "true"), normalized.fields[LoginKeys.AGREE_TO_TOS])
+        assertEquals(NormalizedLoginString("string", "true"), normalized.fields[LoginKeys.READ_CRITICAL])
+        assertEquals(NormalizedLoginInteger("i4", 0), normalized.fields["last_exec_event"])
+        assertTrue(assertIs<NormalizedLoginStringArray>(normalized.fields["options"]).value.contains("adult_compliant"))
+        assertFalse(body.content.contains("<llsd>"))
+        assertFalse("platform_version" in normalized.fields)
+        assertFalse("platform_string" in normalized.fields)
+        assertFalse(LoginKeys.HOST_ID in normalized.fields)
+        assertFalse(LoginKeys.TOKEN in normalized.fields)
+        assertFalse(LoginKeys.EXTENDED_ERRORS in normalized.fields)
+        assertFalse("max-agent-groups" in assertIs<NormalizedLoginStringArray>(normalized.fields["options"]).value)
         assertTrue(LoginKeys.SECRET in request.redactionKeys)
         assertTrue(LoginKeys.MAC in request.redactionKeys)
         assertTrue(LoginKeys.ID0 in request.redactionKeys)
-        assertTrue(LoginKeys.HOST_ID in request.redactionKeys)
-        assertTrue(LoginKeys.TOKEN in request.redactionKeys)
+        assertFalse(LoginKeys.HOST_ID in request.redactionKeys)
+        assertFalse(LoginKeys.TOKEN in request.redactionKeys)
         assertFalse(body.content.contains("proof-handle"))
     }
 
@@ -110,6 +123,7 @@ class ProtocolLoginRuntimeTest {
             httpClient = httpClient,
             viewerIdentityProvider = HostessViewerIdentityProvider { throw IllegalStateException("host identity unavailable") },
             secretResolver = LoginSecretResolver { resolvedSecret() },
+            machineIdentityProvider = machineIdentityProvider(),
         )
 
         val result = runtime.login(loginRequest("proof-handle"))
@@ -122,12 +136,52 @@ class ProtocolLoginRuntimeTest {
     }
 
     @Test
+    fun `login fails closed when machine identity cannot resolve`() {
+        val httpClient = RecordingHttpClient(successBody("live-session"))
+        val runtime = ProtocolLoginRuntime(
+            clientSession = LibomvClientSession.inactive(),
+            httpClient = httpClient,
+            viewerIdentityProvider = viewerIdentityProvider(),
+            secretResolver = LoginSecretResolver { resolvedSecret() },
+            machineIdentityProvider = HostessMachineIdentityProvider { throw IllegalStateException("host identity unavailable") },
+        )
+
+        val result = runtime.login(loginRequest("proof-handle"))
+
+        assertIs<SessionLoginResult.Failure>(result)
+        assertEquals(CoreFailureReason.LOGIN_FAILED, result.failure.reason)
+        assertEquals("viewer identity unavailable", result.failure.redactedMessage)
+        assertFalse(httpClient.called)
+        assertFalse(result.failure.redactedMessage.orEmpty().contains("host identity unavailable"))
+    }
+
+    @Test
+    fun `login fails closed when shared secret cannot become login package`() {
+        val httpClient = RecordingHttpClient(successBody("live-session"))
+        val runtime = ProtocolLoginRuntime(
+            clientSession = LibomvClientSession.inactive(),
+            httpClient = httpClient,
+            viewerIdentityProvider = viewerIdentityProvider(),
+            secretResolver = LoginSecretResolver { resolvedSecret(sharedSecret = "\$1\$not-md5") },
+            machineIdentityProvider = machineIdentityProvider(),
+        )
+
+        val result = runtime.login(loginRequest("proof-handle"))
+
+        assertIs<SessionLoginResult.Failure>(result)
+        assertEquals(CoreFailureReason.LOGIN_FAILED, result.failure.reason)
+        assertEquals("login secret invalid", result.failure.redactedMessage)
+        assertFalse(httpClient.called)
+    }
+
+    @Test
     fun `login maps transport failure to redacted failure`() {
         val runtime = ProtocolLoginRuntime(
             clientSession = LibomvClientSession.inactive(),
             httpClient = ThrowingHttpClient(),
             viewerIdentityProvider = viewerIdentityProvider(),
             secretResolver = LoginSecretResolver { resolvedSecret() },
+            machineIdentityProvider = machineIdentityProvider(),
         )
 
         val result = runtime.login(loginRequest("proof-handle"))
@@ -147,6 +201,7 @@ class ProtocolLoginRuntimeTest {
             ),
             viewerIdentityProvider = viewerIdentityProvider(),
             secretResolver = LoginSecretResolver { resolvedSecret() },
+            machineIdentityProvider = machineIdentityProvider(),
         )
 
         val result = runtime.login(loginRequest("proof-handle"))
@@ -168,6 +223,7 @@ class ProtocolLoginRuntimeTest {
             httpClient = RecordingHttpClient("<llsd><map>".encodeToByteArray()),
             viewerIdentityProvider = viewerIdentityProvider(),
             secretResolver = LoginSecretResolver { resolvedSecret() },
+            machineIdentityProvider = machineIdentityProvider(),
         )
 
         val result = runtime.login(loginRequest("proof-handle"))
@@ -184,6 +240,7 @@ class ProtocolLoginRuntimeTest {
             httpClient = RecordingHttpClient(failureBody("Terms of Service requires agree_to_tos")),
             viewerIdentityProvider = viewerIdentityProvider(),
             secretResolver = LoginSecretResolver { resolvedSecret() },
+            machineIdentityProvider = machineIdentityProvider(),
         )
 
         val result = runtime.login(loginRequest("proof-handle"))
@@ -205,6 +262,7 @@ class ProtocolLoginRuntimeTest {
             httpClient = RecordingHttpClient(successBody("live-session", includeSimulatorFields = false)),
             viewerIdentityProvider = viewerIdentityProvider(),
             secretResolver = LoginSecretResolver { resolvedSecret() },
+            machineIdentityProvider = machineIdentityProvider(),
         )
 
         val login = runtime.login(loginRequest("proof-handle"))
@@ -250,11 +308,11 @@ class ProtocolLoginRuntimeTest {
         credentialHandle = CredentialHandle(handle),
     )
 
-    private fun resolvedSecret(): LoginSecret = LoginSecret(
+    private fun resolvedSecret(sharedSecret: String = "resolved-secret"): LoginSecret = LoginSecret(
         loginUri = loginUrl(),
         firstName = "Venue",
         lastName = "Host",
-        sharedSecret = "resolved-secret",
+        sharedSecret = sharedSecret,
     )
 
     private fun viewerIdentityProvider(): HostessViewerIdentityProvider = HostessViewerIdentityProvider {
@@ -272,6 +330,13 @@ class ProtocolLoginRuntimeTest {
                 id0 = "00000000000000000000000000000002",
                 hostId = "00000000000000000000000000000003",
             ),
+        )
+    }
+
+    private fun machineIdentityProvider(): HostessMachineIdentityProvider = HostessMachineIdentityProvider {
+        HostessMachineIdentity(
+            mac = "08:00:27:DC:4A:9E",
+            id0 = "08:00:27:DC:4A:9E",
         )
     }
 
@@ -348,6 +413,8 @@ class ProtocolLoginRuntimeTest {
     }
 
     private companion object {
+        val SECOND_LIFE_HASH_PATTERN = Regex("\\$1\\$[0-9a-f]{32}")
+
         fun loginUrl(): String = secureUrl("login.example", "/agent")
 
         fun secureUrl(host: String, path: String): String = "https" + "://$host$path"

@@ -8,7 +8,7 @@ import kotlin.test.assertTrue
 class LoginPackageCaptureNormalizerTest {
     @Test
     fun `generated Hostess xml rpc package matches retained canonical shape with approved identity differences`() {
-        val loginPackage = LoginPackageBuilder.build(
+        val loginPackage = LoginPackageBuilder().build(
             secret = LoginSecret(
                 loginUri = "https://login.example/cgi-bin/login.cgi",
                 firstName = "Venue",

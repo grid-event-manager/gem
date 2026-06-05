@@ -2,7 +2,6 @@ package org.hostess.protocol.libomv.runtime
 
 import java.nio.charset.StandardCharsets
 import java.time.Clock
-import java.time.Duration
 import org.hostess.core.domain.CoreFailure
 import org.hostess.core.domain.CoreFailureReason
 import org.hostess.core.domain.HostessSession
@@ -21,13 +20,34 @@ import org.hostess.protocol.libomv.transport.ProtocolHttpClient
 import org.hostess.protocol.libomv.transport.ProtocolHttpException
 import org.hostess.protocol.libomv.transport.ProtocolHttpRequest
 
-class ProtocolLoginRuntime(
+class ProtocolLoginRuntime private constructor(
     private val clientSession: LibomvClientSession,
     private val httpClient: ProtocolHttpClient,
     private val viewerIdentityProvider: HostessViewerIdentityProvider,
-    private val secretResolver: LoginSecretResolver = LoginSecretResolver.unavailable(),
-    private val clock: Clock = Clock.systemUTC(),
+    private val secretResolver: LoginSecretResolver,
+    private val clock: Clock,
+    private val machineIdentityProvider: HostessMachineIdentityProvider,
+    private val loginPackageBuilder: LoginPackageBuilder,
+    private val loginPackageSerializer: LoginPackageSerializer,
 ) {
+    constructor(
+        clientSession: LibomvClientSession,
+        httpClient: ProtocolHttpClient,
+        viewerIdentityProvider: HostessViewerIdentityProvider,
+        secretResolver: LoginSecretResolver = LoginSecretResolver.unavailable(),
+        clock: Clock = Clock.systemUTC(),
+        machineIdentityProvider: HostessMachineIdentityProvider = DefaultHostessMachineIdentityProvider,
+    ) : this(
+        clientSession = clientSession,
+        httpClient = httpClient,
+        viewerIdentityProvider = viewerIdentityProvider,
+        secretResolver = secretResolver,
+        clock = clock,
+        machineIdentityProvider = machineIdentityProvider,
+        loginPackageBuilder = LoginPackageBuilder(),
+        loginPackageSerializer = LoginPackageSerializer,
+    )
+
     fun login(request: LoginRequest): SessionLoginResult {
         val secret = secretResolver.resolve(request.credentialHandle)
             ?: return loginFailure("login secret unavailable")
@@ -36,8 +56,15 @@ class ProtocolLoginRuntime(
         } catch (ex: RuntimeException) {
             return loginFailure("viewer identity unavailable")
         }
+        val machineIdentity = try {
+            machineIdentityProvider.resolve()
+        } catch (ex: RuntimeException) {
+            return loginFailure("viewer identity unavailable")
+        }
+        val loginPackage = loginPackageBuilder.build(secret, viewerIdentity, machineIdentity)
+            ?: return loginFailure("login secret invalid")
         val response = try {
-            httpClient.execute(loginHttpRequest(secret, viewerIdentity))
+            httpClient.execute(loginHttpRequest(loginPackage))
         } catch (ex: ProtocolHttpException) {
             return loginFailure(transportFailure(ex.message))
         }
@@ -82,65 +109,14 @@ class ProtocolLoginRuntime(
         return SessionLogoutResult.LoggedOut
     }
 
-    private fun loginHttpRequest(secret: LoginSecret, viewerIdentity: HostessViewerIdentity): ProtocolHttpRequest = ProtocolHttpRequest(
+    private fun loginHttpRequest(loginPackage: LoginPackage): ProtocolHttpRequest = ProtocolHttpRequest(
         method = "POST",
-        url = secret.loginUri,
-        headers = mapOf("Content-Type" to "application/llsd+xml"),
-        body = ProtocolHttpBody.TextBody(loginBody(secret, viewerIdentity), "application/llsd+xml"),
-        timeout = Duration.ofSeconds(30),
-        redactionKeys = setOf(LoginKeys.SECRET, LoginKeys.MAC, LoginKeys.ID0, LoginKeys.HOST_ID, LoginKeys.TOKEN),
+        url = loginPackage.loginUri,
+        headers = mapOf("Content-Type" to "text/xml"),
+        body = ProtocolHttpBody.TextBody(loginPackageSerializer.toXmlRpc(loginPackage), "text/xml"),
+        timeout = loginPackage.timeout,
+        redactionKeys = setOf(LoginKeys.SECRET, LoginKeys.MAC, LoginKeys.ID0),
     )
-
-    private fun loginBody(secret: LoginSecret, viewerIdentity: HostessViewerIdentity): String = buildString {
-        append("<llsd><map>")
-        field("first", secret.firstName)
-        field("last", secret.lastName)
-        field(LoginKeys.SECRET, secret.sharedSecret)
-        field("start", secret.startLocation)
-        field(LoginKeys.CHANNEL, viewerIdentity.channel)
-        field(LoginKeys.VERSION, viewerIdentity.version)
-        field(LoginKeys.PLATFORM, viewerIdentity.platform.platform)
-        field(LoginKeys.PLATFORM_VERSION, viewerIdentity.platform.platformVersion)
-        field(LoginKeys.PLATFORM_STRING, viewerIdentity.platform.platformString)
-        field(LoginKeys.MAC, viewerIdentity.host.mac)
-        field(LoginKeys.ID0, viewerIdentity.host.id0)
-        field(LoginKeys.HOST_ID, viewerIdentity.host.hostId)
-        field(LoginKeys.TOKEN, "")
-        booleanField(LoginKeys.AGREE_TO_TOS, false)
-        booleanField(LoginKeys.READ_CRITICAL, false)
-        booleanField(LoginKeys.EXTENDED_ERRORS, true)
-        append("<key>options</key><array>")
-        option("inventory-root")
-        option("inventory-skeleton")
-        option("initial-outfit")
-        option("gestures")
-        option("max-agent-groups")
-        append("</array>")
-        append("</map></llsd>")
-    }
-
-    private fun StringBuilder.field(key: String, value: String) {
-        append("<key>").append(escapeXml(key)).append("</key><string>")
-            .append(escapeXml(value))
-            .append("</string>")
-    }
-
-    private fun StringBuilder.option(value: String) {
-        append("<string>").append(escapeXml(value)).append("</string>")
-    }
-
-    private fun StringBuilder.booleanField(key: String, value: Boolean) {
-        append("<key>").append(escapeXml(key)).append("</key><boolean>")
-            .append(if (value) "1" else "0")
-            .append("</boolean>")
-    }
-
-    private fun escapeXml(value: String): String = value
-        .replace("&", "&amp;")
-        .replace("<", "&lt;")
-        .replace(">", "&gt;")
-        .replace("\"", "&quot;")
-        .replace("'", "&apos;")
 
     private fun transportFailure(diagnostic: String?): String {
         val redacted = diagnostic

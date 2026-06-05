@@ -1,6 +1,7 @@
 package org.hostess.protocol.libomv
 
 import java.time.Instant
+import java.time.Duration
 import org.hostess.core.domain.AccountLabel
 import org.hostess.core.domain.CoreFailureReason
 import org.hostess.core.domain.GroupDisplayName
@@ -18,6 +19,8 @@ import org.hostess.core.ports.LoginRequest
 import org.hostess.core.ports.SessionLoginResult
 import org.hostess.protocol.libomv.mapping.LoginKeys
 import org.hostess.protocol.libomv.runtime.EnvironmentLoginSecretResolver
+import org.hostess.protocol.libomv.runtime.HostessMachineIdentity
+import org.hostess.protocol.libomv.runtime.HostessMachineIdentityProvider
 import org.hostess.protocol.libomv.runtime.HostessHostIdentity
 import org.hostess.protocol.libomv.runtime.HostessPlatformIdentity
 import org.hostess.protocol.libomv.runtime.HostessViewerIdentity
@@ -85,7 +88,12 @@ class ProtocolLibomvModuleTest {
                 else -> null
             }
         }
-        val runtime = ProtocolLibomvModule.liveRuntime(httpClient, resolver, viewerIdentityProvider())
+        val runtime = ProtocolLibomvModule.liveRuntime(
+            httpClient,
+            resolver,
+            viewerIdentityProvider(),
+            machineIdentityProvider(),
+        )
 
         val login = runtime.sessionPort.login(
             LoginRequest(
@@ -99,11 +107,16 @@ class ProtocolLibomvModuleTest {
         val request = httpClient.capturedRequest
         assertEquals("POST", request?.method)
         assertEquals(secureUrl("login.example", "/cgi-bin/login.cgi"), request?.url)
+        assertEquals("text/xml", request?.headers?.get("Content-Type"))
+        assertEquals(Duration.ofSeconds(120), request?.timeout)
         val body = assertIs<ProtocolHttpBody.TextBody>(request?.body).content
-        assertTrue(body.contains("<key>${LoginKeys.SECRET}</key>"))
-        assertTrue(body.contains("<key>first</key><string>Venue</string>"))
-        assertTrue(body.contains("<key>${LoginKeys.CHANNEL}</key><string>Hostess</string>"))
-        assertTrue(body.contains("<key>${LoginKeys.HOST_ID}</key><string>00000000000000000000000000000003</string>"))
+        assertTrue(body.contains("<methodName>login_to_simulator</methodName>"))
+        assertTrue(body.contains("<name>${LoginKeys.SECRET}</name>"))
+        assertTrue(body.contains("<name>first</name><value><string>Venue</string></value>"))
+        assertTrue(body.contains("<name>${LoginKeys.CHANNEL}</name><value><string>Hostess</string></value>"))
+        assertTrue(body.contains("<name>${LoginKeys.MAC}</name><value><string>08:00:27:DC:4A:9E</string></value>"))
+        assertFalse(body.contains("<llsd>"))
+        assertFalse(body.contains(LoginKeys.HOST_ID))
         assertFalse(body.contains("HOSTESS_SL_SECRET"))
     }
 
@@ -205,7 +218,7 @@ class ProtocolLibomvModuleTest {
           "loginUri": "${secureUrl("login.example", "/cgi-bin/login.cgi")}",
           "firstName": "Venue",
           "lastName": "Host",
-          "sharedSecret": "${"$"}1${"$"}source-ready",
+          "sharedSecret": "secret12",
           "startLocation": "last"
         }
     """.trimIndent()
@@ -236,6 +249,13 @@ class ProtocolLibomvModuleTest {
                 id0 = "00000000000000000000000000000002",
                 hostId = "00000000000000000000000000000003",
             ),
+        )
+    }
+
+    private fun machineIdentityProvider(): HostessMachineIdentityProvider = HostessMachineIdentityProvider {
+        HostessMachineIdentity(
+            mac = "08:00:27:DC:4A:9E",
+            id0 = "08:00:27:DC:4A:9E",
         )
     }
 

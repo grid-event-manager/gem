@@ -2,7 +2,7 @@ package org.hostess.protocol.libomv.runtime
 
 import java.time.Duration
 
-internal object LoginPackageBuilder {
+internal class LoginPackageBuilder {
     fun build(
         secret: LoginSecret,
         viewerIdentity: HostessViewerIdentity,
@@ -28,26 +28,28 @@ internal object LoginPackageBuilder {
         )
     }
 
-    private val LOGIN_TIMEOUT: Duration = Duration.ofSeconds(120)
-    private const val RESIDENT_LAST_NAME = "Resident"
-    private const val TRUE_STRING = "true"
+    private companion object {
+        val LOGIN_TIMEOUT: Duration = Duration.ofSeconds(120)
+        const val RESIDENT_LAST_NAME = "Resident"
+        const val TRUE_STRING = "true"
 
-    private val DEFAULT_OPTIONS = listOf(
-        "inventory-root",
-        "inventory-skeleton",
-        "inventory-lib-root",
-        "inventory-lib-owner",
-        "inventory-skel-lib",
-        "initial-outfit",
-        "gestures",
-        "event_categories",
-        "event_notifications",
-        "classified_categories",
-        "buddy-list",
-        "ui-config",
-        "tutorial_settings",
-        "login-flags",
-        "global-textures",
-        "adult_compliant",
-    )
+        val DEFAULT_OPTIONS = listOf(
+            "inventory-root",
+            "inventory-skeleton",
+            "inventory-lib-root",
+            "inventory-lib-owner",
+            "inventory-skel-lib",
+            "initial-outfit",
+            "gestures",
+            "event_categories",
+            "event_notifications",
+            "classified_categories",
+            "buddy-list",
+            "ui-config",
+            "tutorial_settings",
+            "login-flags",
+            "global-textures",
+            "adult_compliant",
+        )
+    }
 }

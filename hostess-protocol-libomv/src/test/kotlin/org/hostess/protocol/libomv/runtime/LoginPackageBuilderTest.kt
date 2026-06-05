@@ -8,7 +8,7 @@ import kotlin.test.assertNull
 class LoginPackageBuilderTest {
     @Test
     fun `builder emits canonical Hostess login package fields`() {
-        val loginPackage = LoginPackageBuilder.build(
+        val loginPackage = LoginPackageBuilder().build(
             secret = loginSecret(lastName = ""),
             viewerIdentity = viewerIdentity(),
             machineIdentity = machineIdentity(),
@@ -53,7 +53,7 @@ class LoginPackageBuilderTest {
 
     @Test
     fun `builder rejects invalid shared secret without logging input`() {
-        val loginPackage = LoginPackageBuilder.build(
+        val loginPackage = LoginPackageBuilder().build(
             secret = loginSecret(sharedSecret = "\$1\$not-md5"),
             viewerIdentity = viewerIdentity(),
             machineIdentity = machineIdentity(),
