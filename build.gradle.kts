@@ -1,6 +1,8 @@
 plugins {
     alias(libs.plugins.android.application) apply false
+    alias(libs.plugins.android.kotlin.multiplatform.library) apply false
     alias(libs.plugins.kotlin.jvm) apply false
+    alias(libs.plugins.kotlin.multiplatform) apply false
 }
 
 val checkHostessBoundaries by tasks.registering(Exec::class) {
@@ -25,6 +27,12 @@ subprojects {
         }
     }
 
+    plugins.withId("org.jetbrains.kotlin.multiplatform") {
+        tasks.named("check") {
+            dependsOn(checkHostessBoundaries)
+        }
+    }
+
     plugins.withType<JavaPlugin> {
         extensions.configure<JavaPluginExtension> {
             sourceCompatibility = JavaVersion.VERSION_17
@@ -32,7 +40,18 @@ subprojects {
         }
     }
 
+    tasks.withType<JavaCompile>().configureEach {
+        sourceCompatibility = JavaVersion.VERSION_17.toString()
+        targetCompatibility = JavaVersion.VERSION_17.toString()
+    }
+
     plugins.withId("com.android.application") {
+        tasks.named("check") {
+            dependsOn(checkHostessBoundaries)
+        }
+    }
+
+    plugins.withId("com.android.kotlin.multiplatform.library") {
         tasks.named("check") {
             dependsOn(checkHostessBoundaries)
         }

@@ -1,11 +1,12 @@
 import java.security.MessageDigest
 
 plugins {
-    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.kotlin.multiplatform)
+    alias(libs.plugins.android.kotlin.multiplatform.library)
 }
 
 val libomvPacketTemplate = layout.projectDirectory.file("src/protocol-bootstrap/message_template.msg")
-val generatedLibomvPackets = layout.buildDirectory.dir("generated/sources/libomvPackets/java/main")
+val generatedLibomvPackets = layout.buildDirectory.dir("generated/sources/libomvPackets/java/jvmMain")
 
 val generateLibomvPacketCatalog by tasks.registering {
     group = "build"
@@ -102,26 +103,69 @@ val generateLibomvPacketCatalog by tasks.registering {
     }
 }
 
-sourceSets {
-    named("main") {
+kotlin {
+    jvm {
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+        }
+    }
+
+    android {
+        namespace = "org.hostess.protocol.libomv"
+        compileSdk = 36
+        minSdk = 26
+        withJava()
+        withHostTestBuilder {}.configure {}
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+        }
+    }
+
+    sourceSets {
+        commonTest {
+            dependencies {
+                implementation(kotlin("test"))
+            }
+        }
+        jvmMain {
+            // HS001-F-09 deletion gate: temporary old source root until protocol files move to common/platform source sets.
+            kotlin.srcDir("src/main/kotlin")
+            dependencies {
+                implementation(project(":hostess-core"))
+                implementation(libs.okhttp)
+            }
+        }
+        androidMain {
+            // HS001-F-09 deletion gate: temporary old source root until protocol files move to common/platform source sets.
+            kotlin.srcDir("src/main/kotlin")
+            dependencies {
+                implementation(project(":hostess-core"))
+                implementation(libs.okhttp)
+            }
+        }
+        jvmTest {
+            // HS001-F-09 deletion gate: temporary old test root until protocol tests move to common/platform test source sets.
+            kotlin.srcDir("src/test/kotlin")
+            dependencies {
+                implementation(kotlin("test"))
+            }
+        }
+    }
+}
+
+extensions.configure<SourceSetContainer> {
+    named("jvmMain") {
+        // HS001-F-09 deletion gate: generated Java packet catalog is temporary until Kotlin common output lands.
         java.srcDir(generatedLibomvPackets)
     }
 }
 
-dependencies {
-    implementation(project(":hostess-core"))
-    implementation(libs.okhttp)
-    testImplementation(kotlin("test"))
-}
-
-tasks.named<JavaCompile>("compileJava") {
+tasks.matching {
+    it.name == "compileJvmMainJava" || it.name == "compileKotlinJvm" || it.name == "compileTestKotlinJvm"
+}.configureEach {
     dependsOn(generateLibomvPacketCatalog)
 }
 
-tasks.named("compileKotlin") {
-    dependsOn(generateLibomvPacketCatalog)
-}
-
-tasks.test {
+tasks.withType<Test>().configureEach {
     useJUnitPlatform()
 }
