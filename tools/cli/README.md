@@ -17,4 +17,4 @@ Examples:
 ./gradlew :tools:cli:run --args="live-proof --mode live --account venue-proof --credential-env HOSTESS_PROOF_CREDENTIAL"
 ```
 
-Live mode uses credential handles such as environment variable names or credential-file paths. Do not place raw credentials in command arguments.
+Live mode uses credential handles that name environment variables. Do not place raw credentials in command arguments.

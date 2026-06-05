@@ -55,7 +55,6 @@ class LoginCommand(
     private fun loginRequest(arguments: CommandArguments, mode: CommandMode): LoginRequest? {
         val account = arguments.option("account") ?: if (mode == CommandMode.FAKE) "fake-account" else return null
         val credentialHandle = arguments.option("credential-env")
-            ?: arguments.option("credential-file")
             ?: if (mode == CommandMode.FAKE) "fake-credential" else return null
         return LoginRequest(AccountLabel(account), CredentialHandle(credentialHandle))
     }

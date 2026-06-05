@@ -6,6 +6,8 @@ import org.hostess.core.ports.NoticePort
 import org.hostess.core.ports.SessionPort
 import org.hostess.protocol.libomv.runtime.AttachmentPayloadResult
 import org.hostess.protocol.libomv.runtime.AttachmentPayloadSource
+import org.hostess.protocol.libomv.runtime.EnvironmentLoginSecretResolver
+import org.hostess.protocol.libomv.runtime.LoginSecretResolver
 import org.hostess.protocol.libomv.runtime.ProtocolGroupRuntime
 import org.hostess.protocol.libomv.runtime.ProtocolInventoryRuntime
 import org.hostess.protocol.libomv.runtime.ProtocolLoginRuntime
@@ -32,11 +34,21 @@ data class LibomvProtocolLoadState(
 object ProtocolLibomvModule {
     fun liveRuntime(): LibomvProtocolRuntime = liveRuntime(OkHttpProtocolHttpClient())
 
-    internal fun liveRuntime(httpClient: ProtocolHttpClient): LibomvProtocolRuntime {
+    internal fun liveRuntime(httpClient: ProtocolHttpClient): LibomvProtocolRuntime =
+        liveRuntime(httpClient, EnvironmentLoginSecretResolver())
+
+    internal fun liveRuntime(
+        httpClient: ProtocolHttpClient,
+        secretResolver: LoginSecretResolver,
+    ): LibomvProtocolRuntime {
         val clientSession = LibomvClientSession.inactive()
         val groupRuntime = ProtocolGroupRuntime(clientSession)
         val inventoryRuntime = ProtocolInventoryRuntime(clientSession)
-        val loginRuntime = ProtocolLoginRuntime(clientSession, httpClient)
+        val loginRuntime = ProtocolLoginRuntime(
+            clientSession = clientSession,
+            httpClient = httpClient,
+            secretResolver = secretResolver,
+        )
         val noticeRuntime = ProtocolNoticeRuntime(clientSession)
         return runtimeFor(
             clientSession = clientSession,

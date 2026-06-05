@@ -16,6 +16,12 @@ import org.hostess.core.ports.CredentialHandle
 import org.hostess.core.ports.GroupListResult
 import org.hostess.core.ports.LoginRequest
 import org.hostess.core.ports.SessionLoginResult
+import org.hostess.protocol.libomv.mapping.LoginKeys
+import org.hostess.protocol.libomv.runtime.EnvironmentLoginSecretResolver
+import org.hostess.protocol.libomv.transport.ProtocolHttpBody
+import org.hostess.protocol.libomv.transport.ProtocolHttpClient
+import org.hostess.protocol.libomv.transport.ProtocolHttpRequest
+import org.hostess.protocol.libomv.transport.ProtocolHttpResponse
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -67,6 +73,35 @@ class ProtocolLibomvModuleTest {
     }
 
     @Test
+    fun `live runtime composes env resolver inside protocol module`() {
+        val httpClient = RecordingHttpClient(successBody("composed-session"))
+        val resolver = EnvironmentLoginSecretResolver { name ->
+            when (name) {
+                "HOSTESS_SL_SECRET" -> envSecretJson()
+                else -> null
+            }
+        }
+        val runtime = ProtocolLibomvModule.liveRuntime(httpClient, resolver)
+
+        val login = runtime.sessionPort.login(
+            LoginRequest(
+                accountLabel = AccountLabel("venue-proof"),
+                credentialHandle = CredentialHandle("HOSTESS_SL_SECRET"),
+            ),
+        )
+
+        val session = assertIs<SessionLoginResult.Success>(login).session
+        assertEquals("composed-session", session.sessionId.value)
+        val request = httpClient.capturedRequest
+        assertEquals("POST", request?.method)
+        assertEquals(secureUrl("login.example", "/cgi-bin/login.cgi"), request?.url)
+        val body = assertIs<ProtocolHttpBody.TextBody>(request?.body).content
+        assertTrue(body.contains("<key>${LoginKeys.SECRET}</key>"))
+        assertTrue(body.contains("<key>first</key><string>Venue</string>"))
+        assertFalse(body.contains("HOSTESS_SL_SECRET"))
+    }
+
+    @Test
     fun `live runtime notice adapter reaches protocol runtime source`() {
         val runtime = ProtocolLibomvModule.liveRuntime()
         val session = fakeActiveUuidSession()
@@ -111,4 +146,45 @@ class ProtocolLibomvModuleTest {
         canSendNotices = true,
         acceptsNotices = true,
     )
+
+    private class RecordingHttpClient(
+        private val body: ByteArray,
+    ) : ProtocolHttpClient {
+        var capturedRequest: ProtocolHttpRequest? = null
+
+        override fun execute(request: ProtocolHttpRequest): ProtocolHttpResponse {
+            capturedRequest = request
+            return ProtocolHttpResponse(
+                statusCode = 200,
+                headers = emptyMap(),
+                body = body,
+                redactedSummary = "POST <redacted> -> 200",
+            )
+        }
+    }
+
+    private fun envSecretJson(): String = """
+        {
+          "loginUri": "${secureUrl("login.example", "/cgi-bin/login.cgi")}",
+          "firstName": "Venue",
+          "lastName": "Host",
+          "sharedSecret": "${"$"}1${"$"}source-ready",
+          "startLocation": "last"
+        }
+    """.trimIndent()
+
+    private fun successBody(sessionValue: String): ByteArray = """
+        <llsd>
+          <map>
+            <key>${LoginKeys.LOGIN}</key><string>true</string>
+            <key>${LoginKeys.AGENT_ID}</key><string>agent-id</string>
+            <key>${LoginKeys.SESSION_ID}</key><string>$sessionValue</string>
+            <key>${LoginKeys.PRIVATE_ENDPOINT}</key><string>${secureUrl("caps.example", "/private")}</string>
+          </map>
+        </llsd>
+    """.trimIndent().encodeToByteArray()
+
+    private companion object {
+        fun secureUrl(host: String, path: String): String = "https" + "://$host$path"
+    }
 }

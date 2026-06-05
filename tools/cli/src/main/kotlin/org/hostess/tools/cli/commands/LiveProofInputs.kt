@@ -129,7 +129,7 @@ internal data class LiveProofInputs(
         fun from(arguments: CommandArguments): LiveProofInputs = LiveProofInputs(
             grid = arguments.option("grid"),
             account = arguments.option("account"),
-            credentialHandle = arguments.option("credential-env") ?: arguments.option("credential-file"),
+            credentialHandle = arguments.option("credential-env"),
             targetDisplayNames = targetDisplayNames(arguments),
             subject = arguments.option("subject"),
             body = arguments.option("body"),
