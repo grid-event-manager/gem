@@ -34,6 +34,9 @@ class ProtocolLibomvModuleTest {
         assertSame(runtime.clientSession, (runtime.groupPort as LibomvGroupAdapter).clientSession)
         assertSame(runtime.clientSession, (runtime.inventoryPort as LibomvInventoryAdapter).clientSession)
         assertSame(runtime.clientSession, (runtime.noticePort as LibomvNoticeAdapter).clientSession)
+        assertTrue(runtime.loadState.adapterLoad)
+        assertTrue(runtime.loadState.runtimeLoad)
+        assertTrue(runtime.loadState.transportLoad)
     }
 
     @Test
