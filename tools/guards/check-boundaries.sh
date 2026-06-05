@@ -31,6 +31,9 @@ TRACK_D_NOTICE_TIME_PATTERN='Instant\.now|LocalDate\.now|Clock\.system|System\.c
 TRACK_D_RAW_REPORT_KEY_PATTERN='("(mac|id0|host_id|seedCapability|credentialHandle|ledgerPath)"[[:space:]]+to|put\("(mac|id0|host_id|seedCapability|credentialHandle|ledgerPath)")'
 TRACK_D_UUID_TARGET_PATTERN='--group-id|--group-uuid|group uuid|uuid target'
 TRACK_D_CLI_CAP_LITERAL_PATTERN='(^|[^[:alnum:]_])(4500|4_500|5000|5_000)([^[:alnum:]_]|$)'
+TRACK_DS_OLD_LOGIN_LLSD_PATTERN='application/llsd\+xml|fun[[:space:]]+loginBody\('
+TRACK_DS_DIRECT_OWNER_PATTERN='LoginPackage|SecondLifePasswordHash|HostessMachineIdentity|LoginPackageSerializer'
+TRACK_DS_STALE_LOGIN_FIELD_PATTERN='platform_version|platform_string|host_id|token|extended_errors|max-agent-groups|viewer_digest|user_agent'
 
 add_existing() {
     local -n target="$1"
@@ -316,6 +319,29 @@ add_existing track_d_cap_forbidden_targets \
     "tools/cli/src/main/kotlin/org/hostess/tools/cli/commands/SendNoticeCommand.kt" \
     "tools/cli/src/main/kotlin/org/hostess/tools/cli/commands/LiveProofRunner.kt"
 
+track_ds_direct_owner_forbidden_targets=()
+while IFS= read -r path; do
+    case "$path" in
+        # DS Android no-UI load probe may mention Track DS owner class names only.
+        "apps/android/src/main/kotlin/org/hostess/apps/android/AndroidCompatibilityProbe.kt") ;;
+        *) track_ds_direct_owner_forbidden_targets+=("$path") ;;
+    esac
+done < <(find \
+    "hostess-core/src/main" \
+    "tools/cli/src/main" \
+    "apps/desktop/src/main" \
+    "apps/android/src/main" \
+    -type f -name '*.kt' 2>/dev/null || true)
+
+track_ds_login_package_targets=()
+add_existing track_ds_login_package_targets \
+    "hostess-protocol-libomv/src/main/kotlin/org/hostess/protocol/libomv/runtime/ProtocolLoginRuntime.kt"
+while IFS= read -r path; do
+    track_ds_login_package_targets+=("$path")
+done < <(find \
+    "hostess-protocol-libomv/src/main/kotlin/org/hostess/protocol/libomv/runtime" \
+    -maxdepth 1 -type f -name 'LoginPackage*.kt' 2>/dev/null || true)
+
 check_no_hits \
     "hostess-core forbidden dependencies" \
     "$CORE_FORBIDDEN_PATTERN" \
@@ -405,6 +431,21 @@ check_no_hits \
     "Track D spoofed viewer channel names" \
     "$TRACK_D_SPOOFED_CHANNEL_PATTERN" \
     "${production_targets[@]}"
+
+check_no_hits \
+    "Track DS old LLSD login route" \
+    "$TRACK_DS_OLD_LOGIN_LLSD_PATTERN" \
+    "hostess-protocol-libomv/src/main/kotlin/org/hostess/protocol/libomv/runtime/ProtocolLoginRuntime.kt"
+
+check_no_hits \
+    "Track DS direct package owners outside protocol module" \
+    "$TRACK_DS_DIRECT_OWNER_PATTERN" \
+    "${track_ds_direct_owner_forbidden_targets[@]}"
+
+check_no_hits \
+    "Track DS stale login package fields" \
+    "$TRACK_DS_STALE_LOGIN_FIELD_PATTERN" \
+    "${track_ds_login_package_targets[@]}"
 
 check_no_hits \
     "Track D viewer identity provider outside protocol module" \
@@ -545,6 +586,21 @@ check_pattern_matches \
     "self-test Track D CLI cap literal pattern" \
     "$TRACK_D_CLI_CAP_LITERAL_PATTERN" \
     'if (count > 4_500) return blocked'
+
+check_pattern_matches \
+    "self-test Track DS old LLSD login route pattern" \
+    "$TRACK_DS_OLD_LOGIN_LLSD_PATTERN" \
+    'body = ProtocolHttpBody.TextBody(loginBody(secret), "application/llsd+xml")'
+
+check_pattern_matches \
+    "self-test Track DS direct package owner pattern" \
+    "$TRACK_DS_DIRECT_OWNER_PATTERN" \
+    'LoginPackageBuilder().build(secret, viewer, machine)'
+
+check_pattern_matches \
+    "self-test Track DS stale login field pattern" \
+    "$TRACK_DS_STALE_LOGIN_FIELD_PATTERN" \
+    'field("platform_string", value)'
 
 if [[ "$failures" -ne 0 ]]; then
     exit 1

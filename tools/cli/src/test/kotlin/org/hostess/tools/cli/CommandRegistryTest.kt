@@ -35,6 +35,25 @@ class CommandRegistryTest {
         assertEquals(2, exitCode)
         assertTrue(output.lines.any { it.contains("Unknown mode") })
     }
+
+    @Test
+    fun `registry returns command result exit code unchanged`() {
+        val output = RecordingCliOutput()
+        val registry = CommandRegistry(
+            listOf(
+                object : CliCommand {
+                    override val name: String = "blocked"
+
+                    override fun execute(arguments: CommandArguments, output: CliOutput): CommandResult =
+                        CommandResult.UNAVAILABLE
+                },
+            ),
+        )
+
+        val exitCode = registry.execute(listOf("blocked"), output)
+
+        assertEquals(3, exitCode)
+    }
 }
 
 class RecordingCliOutput : CliOutput {

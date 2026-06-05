@@ -17,6 +17,7 @@ class AndroidCompatibilityProbeTest {
         assertTrue(result.transportLoad)
         assertTrue(result.trackCClassLoad)
         assertTrue(result.trackDComplianceLoad)
+        assertTrue(result.trackDsLoginPackageLoad)
         assertEquals("external_guard_required", result.forbiddenApiScan)
         assertNull(result.blockedReason)
     }

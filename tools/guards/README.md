@@ -22,6 +22,12 @@ Track C owner rules:
 - The CLI may mention `--credential-file` only at the blocking parser point that rejects the unsupported route.
 - Keychain/plaintext secret-store routes remain forbidden in production source.
 
+Track DS owner rules:
+
+- Login package, hash, machine identity, and XML-RPC serialization owners remain inside `:hostess-protocol-libomv`.
+- Android may mention Track DS owner class names only in `AndroidCompatibilityProbe.kt` for no-UI class-load proof.
+- The old inline LLSD login body, stale Track DS login fields, and spoofed viewer names remain forbidden in production source.
+
 Non-production proof allowlist for broad source scans:
 
 - `README.md`: public repo-split documentation may mention `../private` to explain where private Hostess workbench material lives.
