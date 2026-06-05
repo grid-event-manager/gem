@@ -1,10 +1,11 @@
 package org.hostess.protocol.libomv.runtime
 
-import java.security.MessageDigest
-
 object DefaultHostessViewerIdentityProvider : HostessViewerIdentityProvider {
     override fun resolve(): HostessViewerIdentity =
-        resolve(System::getProperty, DefaultHostessHardwareAddressSource)
+        resolve(
+            systemProperty = System::getProperty,
+            hardwareAddressSource = DefaultHostessHardwareAddressSource,
+        )
 
     internal fun resolve(
         systemProperty: (String) -> String?,
@@ -20,69 +21,16 @@ object DefaultHostessViewerIdentityProvider : HostessViewerIdentityProvider {
     internal fun resolve(
         systemProperty: (String) -> String?,
         hardwareAddressSource: HostessHardwareAddressSource,
-    ): HostessViewerIdentity {
-        val hardwareBytes = hardwareAddressSource.candidates()
-            .sortedBy { it.interfaceName }
-            .firstOrNull()
-            ?.bytes
-            ?: throw HostessHostIdentityUnavailableException()
-
-        return HostessViewerIdentity(
-            channel = CHANNEL,
-            version = VERSION,
-            author = AUTHOR,
-            platform = platformIdentity(systemProperty),
-            host = HostessHostIdentity(
-                mac = md5Hex(hardwareBytes),
-                id0 = md5Hex(ID0_PREFIX, hardwareBytes),
-                hostId = md5Hex(HOST_ID_PREFIX, hardwareBytes),
+        digestPort: Md5DigestPort = JvmMd5DigestPort,
+    ): HostessViewerIdentity =
+        HostessViewerIdentityBuilder(digestPort).build(
+            systemIdentity = HostessSystemIdentity(
+                osName = systemProperty("os.name").orEmpty(),
+                osVersion = systemProperty("os.version").orEmpty(),
+                osArch = systemProperty("os.arch").orEmpty(),
+                runtimeName = systemProperty("java.runtime.name").orEmpty(),
+                runtimeVersion = systemProperty("java.runtime.version").orEmpty(),
             ),
+            hardwareCandidates = hardwareAddressSource.candidates(),
         )
-    }
-
-    private fun platformIdentity(systemProperty: (String) -> String?): HostessPlatformIdentity {
-        val osName = systemProperty("os.name").orEmpty()
-        val osVersion = systemProperty("os.version").orEmpty()
-        val osArch = systemProperty("os.arch").orEmpty()
-        val runtimeName = systemProperty("java.runtime.name").orEmpty()
-        val runtimeVersion = systemProperty("java.runtime.version").orEmpty()
-        return HostessPlatformIdentity(
-            platform = normalizedPlatform(osName),
-            platformVersion = osVersion,
-            platformString = listOf(osName, osVersion, osArch, runtimeName, runtimeVersion).joinToString(" "),
-        )
-    }
-
-    private fun normalizedPlatform(osName: String): String {
-        val lower = osName.lowercase()
-        return when {
-            "android" in lower -> "Android"
-            "linux" in lower -> "Linux"
-            "mac" in lower || "darwin" in lower -> "Mac"
-            "windows" in lower -> "Win"
-            osName.isNotBlank() -> osName
-            else -> "Unknown"
-        }
-    }
-
-    private fun md5Hex(bytes: ByteArray): String =
-        MessageDigest.getInstance("MD5").digest(bytes).toHex()
-
-    private fun md5Hex(prefix: ByteArray, bytes: ByteArray): String {
-        val digest = MessageDigest.getInstance("MD5")
-        digest.update(prefix)
-        digest.update(bytes)
-        return digest.digest().toHex()
-    }
-
-    private fun ByteArray.toHex(): String =
-        joinToString("") { "%02x".format(it.toInt() and 0xff) }
-
-    private class HostessHostIdentityUnavailableException : IllegalStateException("host identity unavailable")
-
-    private const val CHANNEL = "Hostess"
-    private const val VERSION = "0.1.0.0"
-    private const val AUTHOR = "Hostess"
-    private val ID0_PREFIX = "Hostess:id0:v1".encodeToByteArray()
-    private val HOST_ID_PREFIX = "Hostess:host_id:v1".encodeToByteArray()
 }

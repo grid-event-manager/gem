@@ -63,6 +63,31 @@ class HostessViewerIdentityProviderTest {
     }
 
     @Test
+    fun `host identity digest derivation uses supplied digest port`() {
+        val identity = DefaultHostessViewerIdentityProvider.resolve(
+            systemProperty = mapOf(
+                "os.name" to "Linux",
+                "os.version" to "",
+                "os.arch" to "",
+                "java.runtime.name" to "",
+                "java.runtime.version" to "",
+            )::get,
+            hardwareAddressSource = HostessHardwareAddressSource {
+                listOf(HostessHardwareAddress("eth0", byteArrayOf(0x01, 0x02, 0x03)))
+            },
+            digestPort = SequencedDigestPort(
+                "00000000000000000000000000000001",
+                "00000000000000000000000000000002",
+                "00000000000000000000000000000003",
+            ),
+        )
+
+        assertEquals("00000000000000000000000000000001", identity.host.mac)
+        assertEquals("00000000000000000000000000000002", identity.host.id0)
+        assertEquals("00000000000000000000000000000003", identity.host.hostId)
+    }
+
+    @Test
     fun `host identity rejects non-redacted values`() {
         assertFailsWith<IllegalArgumentException> {
             HostessHostIdentity(
@@ -87,5 +112,14 @@ class HostessViewerIdentityProviderTest {
 
     private companion object {
         val DIGEST_PATTERN = Regex("[0-9a-f]{32}")
+    }
+
+    private class SequencedDigestPort(
+        private vararg val digests: String,
+    ) : Md5DigestPort {
+        private var index = 0
+
+        override fun md5Hex(vararg chunks: ByteArray): String =
+            digests[index++]
     }
 }

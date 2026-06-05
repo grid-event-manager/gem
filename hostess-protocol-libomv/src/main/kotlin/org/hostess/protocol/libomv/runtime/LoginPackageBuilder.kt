@@ -2,13 +2,15 @@ package org.hostess.protocol.libomv.runtime
 
 import org.hostess.core.domain.HostessDelay
 
-internal class LoginPackageBuilder {
+internal class LoginPackageBuilder(
+    private val digestPort: Md5DigestPort = JvmMd5DigestPort,
+) {
     fun build(
         secret: LoginSecret,
         viewerIdentity: HostessViewerIdentity,
         machineIdentity: HostessMachineIdentity,
     ): LoginPackage? {
-        val passwordHash = SecondLifePasswordHash.fromSharedSecret(secret.sharedSecret) ?: return null
+        val passwordHash = SecondLifePasswordHash.fromSharedSecret(secret.sharedSecret, digestPort) ?: return null
         return LoginPackage(
             loginUri = secret.loginUri,
             first = secret.firstName,

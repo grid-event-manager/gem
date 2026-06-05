@@ -1,15 +1,15 @@
 package org.hostess.protocol.libomv.runtime
 
-import java.nio.charset.StandardCharsets
-import java.security.MessageDigest
-
 internal class SecondLifePasswordHash private constructor(
     val wireValue: String,
 ) {
     companion object {
         private val HASH_PATTERN = Regex("\\$1\\$[0-9a-fA-F]{32}")
 
-        fun fromSharedSecret(value: String): SecondLifePasswordHash? {
+        fun fromSharedSecret(
+            value: String,
+            digestPort: Md5DigestPort = JvmMd5DigestPort,
+        ): SecondLifePasswordHash? {
             if (value.isBlank()) {
                 return null
             }
@@ -22,13 +22,8 @@ internal class SecondLifePasswordHash private constructor(
             if (value.length !in RAW_PASSWORD_LENGTH || value.any { it.code > ASCII_MAX }) {
                 return null
             }
-            return SecondLifePasswordHash("\$1\$${md5AsciiHex(value)}")
+            return SecondLifePasswordHash("\$1\$${digestPort.md5Hex(value.encodeToByteArray())}")
         }
-
-        private fun md5AsciiHex(value: String): String =
-            MessageDigest.getInstance("MD5")
-                .digest(value.toByteArray(StandardCharsets.US_ASCII))
-                .joinToString("") { "%02x".format(it.toInt() and 0xff) }
 
         private val RAW_PASSWORD_LENGTH = 1..16
         private const val ASCII_MAX = 0x7f
