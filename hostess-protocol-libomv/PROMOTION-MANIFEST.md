@@ -45,6 +45,7 @@ Local modifications:
 - HS001-B-06 reuses retained `GroupManager.java` and `CapsMessage.java` evidence for current-groups field mapping. The live packet/CAPS source remains fail-closed until field-complete runtime promotion lands; no upstream group source was copied into production.
 - HS001-B-08 reimplements source-derived attachment reference mapping and landmark asset byte encoding from retained inventory/asset evidence. The live CAPS/packet upload source remains fail-closed until field-complete runtime promotion lands; no upstream inventory or asset source was copied into production.
 - HS001-B-09 reimplements source-derived group notice request mapping, dialog/online constants, XOR instant-message ID derivation, and attachment OSD/XML bucket encoding from retained `GroupManager.java:389-412`, `GroupManager.java:1624-1628`, and `AgentManager.java:2863-2912` evidence. The live UDP packet sender remains fail-closed until field-complete packet transport promotion lands; no upstream notice source was copied into production.
+- HS001-C-01 is evidence-only. It proves the Track C login, simulator circuit, EventQueueGet, current-groups event, mapping, cleanup, and Android no-UI source anchors in private evidence `evidence/HS001-C-01/live-read-source-proof.md`. No retained source or generated runtime code was copied into production.
 
 Maintenance notes:
 
