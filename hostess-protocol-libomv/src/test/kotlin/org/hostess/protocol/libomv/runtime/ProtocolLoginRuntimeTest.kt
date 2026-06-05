@@ -47,7 +47,7 @@ class ProtocolLoginRuntimeTest {
     }
 
     @Test
-    fun `login posts source-derived LLSD and activates session on success`() {
+    fun `login posts source-derived xml rpc request and activates session from llsd response`() {
         val clientSession = LibomvClientSession.inactive()
         val httpClient = RecordingHttpClient(successBody("live-session"))
         val runtime = ProtocolLoginRuntime(
@@ -113,6 +113,31 @@ class ProtocolLoginRuntimeTest {
         assertFalse(LoginKeys.HOST_ID in request.redactionKeys)
         assertFalse(LoginKeys.TOKEN in request.redactionKeys)
         assertFalse(body.content.contains("proof-handle"))
+    }
+
+    @Test
+    fun `login activates session from xml rpc response`() {
+        val clientSession = LibomvClientSession.inactive()
+        val runtime = ProtocolLoginRuntime(
+            clientSession = clientSession,
+            httpClient = RecordingHttpClient(xmlRpcSuccessBody("live-session")),
+            viewerIdentityProvider = viewerIdentityProvider(),
+            secretResolver = LoginSecretResolver { resolvedSecret() },
+            machineIdentityProvider = machineIdentityProvider(),
+        )
+
+        val session = assertIs<SessionLoginResult.Success>(
+            runtime.login(loginRequest("proof-handle")),
+        ).session
+        val identity = assertIs<LibomvSessionIdentityResult.Success>(clientSession.requireIdentity(session)).identity
+
+        assertEquals("live-session", session.sessionId.value)
+        assertEquals("agent-id", identity.agentId)
+        assertEquals(secureUrl("caps.example", "/private"), identity.seedCapability)
+        assertEquals("203.0.113.8", identity.simulatorIp)
+        assertEquals(13000, identity.simulatorPort)
+        assertEquals((1024L shl 32) or 2048L, identity.regionHandle)
+        assertEquals(123456789L, identity.circuitCode)
     }
 
     @Test
@@ -366,6 +391,20 @@ class ProtocolLoginRuntimeTest {
         append("</map></llsd>")
     }.encodeToByteArray()
 
+    private fun xmlRpcSuccessBody(sessionValue: String): ByteArray = buildString {
+        append("<methodResponse><params><param><value><struct>")
+        xmlRpcMember(LoginKeys.LOGIN, xmlRpcString("true"))
+        xmlRpcMember(LoginKeys.AGENT_ID, xmlRpcString("agent-id"))
+        xmlRpcMember(LoginKeys.SESSION_ID, xmlRpcString(sessionValue))
+        xmlRpcMember(LoginKeys.SEED_CAPABILITY, xmlRpcString(secureUrl("caps.example", "/private")))
+        xmlRpcMember(LoginKeys.SIM_IP, xmlRpcString("203.0.113.8"))
+        xmlRpcMember(LoginKeys.SIM_PORT, xmlRpcInt("13000"))
+        xmlRpcMember(LoginKeys.REGION_X, xmlRpcInt("1024"))
+        xmlRpcMember(LoginKeys.REGION_Y, xmlRpcInt("2048"))
+        xmlRpcMember(LoginKeys.CIRCUIT_CODE, xmlRpcInt("123456789"))
+        append("</struct></value></param></params></methodResponse>")
+    }.encodeToByteArray()
+
     private fun failureBody(message: String): ByteArray = buildString {
         append("<llsd><map>")
         field(LoginKeys.LOGIN, "false")
@@ -380,6 +419,16 @@ class ProtocolLoginRuntimeTest {
     private fun StringBuilder.integer(key: String, value: String) {
         append("<key>").append(key).append("</key><integer>").append(value).append("</integer>")
     }
+
+    private fun StringBuilder.xmlRpcMember(key: String, value: String) {
+        append("<member><name>").append(key).append("</name><value>")
+        append(value)
+        append("</value></member>")
+    }
+
+    private fun xmlRpcString(value: String): String = "<string>$value</string>"
+
+    private fun xmlRpcInt(value: String): String = "<i4>$value</i4>"
 
     private class RecordingHttpClient(
         private val body: ByteArray = ByteArray(0),

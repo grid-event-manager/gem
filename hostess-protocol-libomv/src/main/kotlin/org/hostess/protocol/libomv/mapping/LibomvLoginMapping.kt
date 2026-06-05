@@ -39,12 +39,12 @@ internal sealed interface LibomvLoginMappingResult {
 
 internal object LibomvLoginMapping {
     fun parse(body: ByteArray): LibomvLoginMappingResult {
-        val parsedFields = LlsdXml.parseMap(body)
+        val fields = LlsdXml.parseMap(body)?.stringFields()
+            ?: XmlRpcLoginResponseParser.parseFields(body)
             ?: return failure(
                 LibomvLoginFailureKind.MALFORMED_RESPONSE,
                 bodyDiagnostic(body),
             )
-        val fields = parsedFields.stringFields()
         val loginValue = fields[LoginKeys.LOGIN]?.lowercase()
         if (loginValue == "true" || loginValue == "success" || loginValue == "1") {
             val sessionId = fields[LoginKeys.SESSION_ID]?.takeIf(String::isNotBlank)
