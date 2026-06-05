@@ -13,6 +13,8 @@ class AndroidCompatibilityProbeTest {
         assertEquals("passed", result.status)
         assertTrue(result.coreCompile)
         assertTrue(result.adapterLoad)
+        assertTrue(result.runtimeLoad)
+        assertTrue(result.transportLoad)
         assertEquals("external_guard_required", result.forbiddenApiScan)
         assertNull(result.blockedReason)
     }
