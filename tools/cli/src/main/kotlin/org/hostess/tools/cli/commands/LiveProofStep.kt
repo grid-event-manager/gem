@@ -37,6 +37,14 @@ internal data class LiveProofStep(
             "bulkNoticeStatus",
             "androidProbeStatus",
         )
+        private val noticeComplianceDefaultFields = mapOf(
+            "noticeComplianceStatus" to "not_run",
+            "recipientProjectionStatus" to "not_run",
+            "recipientDeliveryProjected" to "0",
+            "recipientDeliveryLedgerTotal" to "0",
+            "recipientDeliveryHardCap" to "4500",
+            "noticeLedgerConfigured" to "false",
+        )
 
         fun passed(name: String, detail: String? = null): LiveProofStep = LiveProofStep(name, "passed", detail)
 
@@ -49,7 +57,7 @@ internal data class LiveProofStep(
             orderedSteps.dropWhile { it != startAt }.map { LiveProofStep(it, "not_run", detail) }
 
         fun statusFields(default: String = "not_run"): Map<String, String> =
-            statusFieldNames.associateWith { default }
+            statusFieldNames.associateWith { default } + noticeComplianceDefaultFields.copyWithStatus(default)
 
         fun after(step: String): String {
             val index = orderedSteps.indexOf(step)
@@ -57,3 +65,9 @@ internal data class LiveProofStep(
         }
     }
 }
+
+private fun Map<String, String>.copyWithStatus(default: String): Map<String, String> =
+    this + mapOf(
+        "noticeComplianceStatus" to default,
+        "recipientProjectionStatus" to default,
+    )

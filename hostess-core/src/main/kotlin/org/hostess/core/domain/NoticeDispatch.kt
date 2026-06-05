@@ -29,8 +29,21 @@ data class NoticeSendPlan(
 }
 
 sealed interface NoticeDispatchResult {
-    data class Sent(val result: NoticeSendResult) : NoticeDispatchResult
+    data class Sent(
+        val result: NoticeSendResult,
+        val complianceReceipt: NoticeComplianceReceipt,
+    ) : NoticeDispatchResult
+
     data class Rejected(val validation: NoticeDraftValidation) : NoticeDispatchResult
+
+    data class ComplianceRejected(
+        val decision: NoticeComplianceDecision.Denied,
+    ) : NoticeDispatchResult
+
+    data class ComplianceRecordFailed(
+        val result: NoticeSendResult,
+        val complianceReceipt: NoticeComplianceReceipt,
+    ) : NoticeDispatchResult
 }
 
 class NoticeSendResult(

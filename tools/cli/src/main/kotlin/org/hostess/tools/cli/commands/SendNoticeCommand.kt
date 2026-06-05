@@ -24,23 +24,27 @@ class SendNoticeCommand(
 
     override fun execute(arguments: CommandArguments, output: CliOutput): CommandResult {
         val mode = arguments.mode()
+        val complianceArguments = NoticeComplianceArguments(arguments, mode)
         val subject = arguments.option("subject") ?: return usage(output, "missing subject")
         val targetNames = arguments.optionValues("target")
         if (targetNames.isEmpty()) {
             return usage(output, "missing target display name")
         }
 
-        val runtime = compositionRoot.runtime(mode)
+        val runtime = compositionRoot.runtime(mode, complianceArguments.ledgerPath())
         val session = runtime.sessionProvider()
         val groups = when (val result = runtime.groupDirectoryService.currentGroups(session)) {
             is GroupListResult.Success -> result.groups
             is GroupListResult.Failure -> {
+                val inputs = sendInputs(mode.label(), targetNames, subject, arguments.option("body").orEmpty()) +
+                    complianceArguments.reportInputs()
                 runtime.proofReportWriter.writeIfRequested(
                     reportPath = arguments.option("report"),
                     command = name,
                     mode = mode.label(),
                     status = ProofReportStatus.FAILED,
-                    inputs = sendInputs(mode.label(), targetNames, subject, arguments.option("body").orEmpty()),
+                    statusFields = complianceArguments.reportStatusFields(null),
+                    inputs = inputs,
                     blockedReason = result.failure.redactedMessage,
                 )
                 output.line("send-notice ${mode.label()} failed: ${result.failure.redactedMessage ?: "groups unavailable"}")
@@ -62,6 +66,16 @@ class SendNoticeCommand(
             }
         }
 
+        val missingCompliance = complianceArguments.missingRequiredFields(sendMayOccur = true)
+        if (missingCompliance.isNotEmpty()) {
+            return usage(output, "missing notice compliance input: ${missingCompliance.joinToString(", ")}")
+        }
+        val complianceRequest = try {
+            complianceArguments.request(targetSet)
+        } catch (exception: IllegalArgumentException) {
+            return usage(output, exception.message ?: "notice compliance invalid")
+        }
+
         val draft = runtime.noticeDraftService.createDraft(
             subject = subject,
             message = arguments.option("body").orEmpty(),
@@ -74,37 +88,70 @@ class SendNoticeCommand(
 
         return when (
             val dispatch = runtime.noticeDispatchService.dispatch(
-                session,
-                draft,
+                session = session,
+                draft = draft,
+                compliance = complianceRequest,
                 attachment = (attachmentResult as AttachmentCommandResult.Valid).attachment,
             )
         ) {
             is NoticeDispatchResult.Rejected -> {
+                val inputs = sendInputs(mode.label(), targetNames, subject, arguments.option("body").orEmpty()) +
+                    complianceArguments.reportInputs()
                 runtime.proofReportWriter.writeIfRequested(
                     reportPath = arguments.option("report"),
                     command = name,
                     mode = mode.label(),
                     status = ProofReportStatus.FAILED,
-                    inputs = sendInputs(mode.label(), targetNames, subject, arguments.option("body").orEmpty()),
+                    statusFields = complianceArguments.reportStatusFields(null),
+                    inputs = inputs,
                     blockedReason = dispatch.validation.toString(),
                 )
                 output.line("send-notice ${mode.label()} rejected: ${dispatch.validation}")
                 CommandResult.USAGE_ERROR
             }
+            is NoticeDispatchResult.ComplianceRejected -> {
+                val receipt = dispatch.decision.receipt
+                val inputs = sendInputs(mode.label(), targetNames, subject, arguments.option("body").orEmpty()) +
+                    complianceArguments.reportInputs()
+                runtime.proofReportWriter.writeIfRequested(
+                    reportPath = arguments.option("report"),
+                    command = name,
+                    mode = mode.label(),
+                    status = ProofReportStatus.BLOCKED,
+                    statusFields = complianceArguments.reportStatusFields(receipt),
+                    inputs = inputs,
+                    blockedReason = receipt.reasonCode,
+                )
+                output.line("send-notice ${mode.label()} blocked: ${receipt.reasonCode}")
+                CommandResult.UNAVAILABLE
+            }
+            is NoticeDispatchResult.ComplianceRecordFailed -> {
+                val inputs = sendInputs(mode.label(), targetNames, subject, arguments.option("body").orEmpty()) +
+                    complianceArguments.reportInputs()
+                runtime.proofReportWriter.writeIfRequested(
+                    reportPath = arguments.option("report"),
+                    command = name,
+                    mode = mode.label(),
+                    status = ProofReportStatus.FAILED,
+                    statusFields = complianceArguments.reportStatusFields(dispatch.complianceReceipt),
+                    inputs = inputs,
+                    results = dispatch.result.statuses.toReportRows(),
+                    blockedReason = dispatch.complianceReceipt.reasonCode,
+                )
+                output.line("send-notice ${mode.label()} failed: ${dispatch.complianceReceipt.reasonCode}")
+                CommandResult.UNAVAILABLE
+            }
             is NoticeDispatchResult.Sent -> {
+                val inputs = sendInputs(mode.label(), targetNames, subject, arguments.option("body").orEmpty()) +
+                    complianceArguments.reportInputs()
                 runtime.proofReportWriter.writeIfRequested(
                     reportPath = arguments.option("report"),
                     command = name,
                     mode = mode.label(),
                     status = ProofReportStatus.PASSED,
-                    inputs = sendInputs(mode.label(), targetNames, subject, arguments.option("body").orEmpty()),
-                    results = dispatch.result.statuses.map { status ->
-                        mapOf(
-                            "displayName" to status.group.displayName.value,
-                            "state" to status.state.name.lowercase(),
-                            "detail" to status.detail.orEmpty(),
-                        )
-                    },
+                    statusFields = complianceArguments.reportStatusFields(dispatch.complianceReceipt),
+                    inputs = inputs,
+                    results = dispatch.result.statuses.toReportRows(),
                 )
                 output.line("send-notice ${mode.label()} attempted=${dispatch.result.statuses.size}")
                 dispatch.result.statuses.forEach { status ->
@@ -151,7 +198,11 @@ class SendNoticeCommand(
 
     private fun usage(output: CliOutput, reason: String): CommandResult {
         output.line("send-notice usage error: $reason")
-        output.line("usage: send-notice --mode fake|live --target <display-name> --subject <subject> --body <body> --report <path>")
+        output.line(
+            "usage: send-notice --mode fake|live --target <display-name> --subject <subject> --body <body> " +
+                "--operator <label> --recipient-count <display-name=count> " +
+                "--recipient-count-source operator-acknowledged|authoritative --ledger <path> --report <path>",
+        )
         return CommandResult.USAGE_ERROR
     }
 
@@ -166,6 +217,15 @@ class SendNoticeCommand(
         "subject" to subject,
         "bodyLength" to body.length.toString(),
     )
+
+    private fun List<org.hostess.core.domain.GroupSendStatus>.toReportRows(): List<Map<String, String>> =
+        map { status ->
+            mapOf(
+                "displayName" to status.group.displayName.value,
+                "state" to status.state.name.lowercase(),
+                "detail" to status.detail.orEmpty(),
+            )
+        }
 
     private sealed interface AttachmentCommandResult {
         data class Valid(val attachment: AttachmentRef?) : AttachmentCommandResult

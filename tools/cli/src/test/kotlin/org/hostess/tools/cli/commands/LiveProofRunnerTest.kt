@@ -21,6 +21,8 @@ import org.hostess.core.domain.GroupSendStatus
 import org.hostess.core.domain.HostessSession
 import org.hostess.core.domain.InventoryItemId
 import org.hostess.core.domain.NoticeDraft
+import org.hostess.core.domain.NoticeCompliancePolicy
+import org.hostess.core.domain.NoticeDeliveryDay
 import org.hostess.core.domain.SessionId
 import org.hostess.core.ports.AttachmentResolutionResult
 import org.hostess.core.ports.ClockPort
@@ -36,6 +38,8 @@ import org.hostess.core.ports.SessionPort
 import org.hostess.core.services.AttachmentService
 import org.hostess.core.services.GroupDirectoryService
 import org.hostess.core.services.LoginComplianceService
+import org.hostess.core.services.NoticeComplianceClock
+import org.hostess.core.services.NoticeComplianceService
 import org.hostess.core.services.NoticeDispatchService
 import org.hostess.core.services.NoticeDraftService
 import org.hostess.core.services.SessionService
@@ -43,6 +47,7 @@ import org.hostess.core.services.TargetSelectionService
 import org.hostess.tools.cli.CommandResult
 import org.hostess.tools.cli.RecordingCliOutput
 import org.hostess.tools.cli.composition.CliRuntime
+import org.hostess.tools.cli.composition.InMemoryNoticeComplianceLedgerPort
 import org.hostess.tools.cli.report.ProofReportWriter
 
 class LiveProofRunnerTest {
@@ -253,6 +258,9 @@ class LiveProofRunnerTest {
         bulkDelayMs = bulkDelayMs,
         cleanupMode = cleanupMode,
         retentionNote = retentionNote,
+        recipientCountValues = targets.map { "$it=1" },
+        recipientCountSource = "operator-acknowledged",
+        noticeLedgerPath = "configured-test-ledger",
     )
 
     private fun withReport(assertion: (java.nio.file.Path) -> Unit) {
@@ -277,7 +285,15 @@ class LiveProofRunnerTest {
             targetSelectionService = TargetSelectionService(),
             noticeDraftService = NoticeDraftService(),
             attachmentService = AttachmentService(inventoryPort),
-            noticeDispatchService = NoticeDispatchService(noticePort, clock),
+            noticeDispatchService = NoticeDispatchService(
+                noticePort = noticePort,
+                clockPort = clock,
+                noticeComplianceService = NoticeComplianceService(
+                    policy = NoticeCompliancePolicy(),
+                    ledger = InMemoryNoticeComplianceLedgerPort(),
+                    clock = NoticeComplianceClock { NoticeDeliveryDay("2026-06-05") },
+                ),
+            ),
             proofReportWriter = ProofReportWriter(),
             protocolAvailable = true,
             sessionProvider = { SESSION },

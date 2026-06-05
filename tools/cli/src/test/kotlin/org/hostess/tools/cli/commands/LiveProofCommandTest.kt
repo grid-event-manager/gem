@@ -257,6 +257,12 @@ class LiveProofCommandTest {
                     "Tonight",
                     "--body",
                     "Doors at eight",
+                    "--recipient-count",
+                    "Venue Hosts=1",
+                    "--recipient-count-source",
+                    "operator-acknowledged",
+                    "--ledger",
+                    directory.resolve("notice-ledger.tsv").toString(),
                 ),
                 output,
             )
@@ -277,6 +283,7 @@ class LiveProofCommandTest {
             assertContains(report, "\"state\": \"not_run\"")
             assertFalse(report.contains("venue-proof"))
             assertFalse(report.contains("HOSTESS_PROOF_CREDENTIAL"))
+            assertFalse(report.contains("notice-ledger.tsv"))
             assertFalse(RAW_UUID.containsMatchIn(report))
         } finally {
             directory.toFile().deleteRecursively()
@@ -314,6 +321,12 @@ class LiveProofCommandTest {
                     "Tonight",
                     "--body",
                     "Doors at eight",
+                    "--recipient-count",
+                    "Venue Hosts=1",
+                    "--recipient-count-source",
+                    "operator-acknowledged",
+                    "--ledger",
+                    directory.resolve("notice-ledger.tsv").toString(),
                     "--texture-file-name",
                     "/home/user/private/poster.png",
                     "--texture-payload-handle",
@@ -330,6 +343,7 @@ class LiveProofCommandTest {
             assertContains(report, "\"textureDigest\": \"sha256:abc\"")
             assertFalse(report.contains("texturePayloadHandle"))
             assertFalse(report.contains("/home/user/private/poster.png"))
+            assertFalse(report.contains("notice-ledger.tsv"))
             assertFalse(RAW_UUID.containsMatchIn(report))
         } finally {
             directory.toFile().deleteRecursively()

@@ -33,6 +33,7 @@ internal class LiveProofRunner(
 ) {
     private val steps = mutableListOf(LiveProofStep.passed("validate-inputs"))
     private val statusFields = LiveProofStep.statusFields().toMutableMap()
+    private val noticeCompliance = LiveProofNoticeCompliance(inputs)
     private var cleanupStatus = "not_applicable"
     private var terminalFailure = false
 
@@ -43,6 +44,7 @@ internal class LiveProofRunner(
     }
 
     private fun runFullProof(): CommandResult {
+        statusFields += noticeCompliance.reportStatusFields(null)
         val session = login() ?: return finish(ProofReportStatus.BLOCKED, "login blocked")
         val groups = currentGroups(session) ?: return finish(terminalStatus(), "current groups unavailable")
         val targetSet = selectTargets(groups) ?: return finish(ProofReportStatus.FAILED, "target selection failed")
@@ -166,7 +168,7 @@ internal class LiveProofRunner(
     }
 
     private fun sendPlainNotice(session: HostessSession, targetSet: GroupTargetSet): Boolean {
-        val detail = dispatchFailure(session, noticeDraft(targetSet), attachment = null)
+        val detail = dispatchFailure(session, noticeDraft(targetSet), targetSet, attachment = null)
         if (detail == null) {
             statusFields["plainNoticeStatus"] = "passed"
             steps += LiveProofStep.passed("plain-notice")
@@ -206,7 +208,7 @@ internal class LiveProofRunner(
                 return
             }
         }
-        val detail = dispatchFailure(session, noticeDraft(targetSet), attachment)
+        val detail = dispatchFailure(session, noticeDraft(targetSet), targetSet, attachment)
         if (detail == null) {
             statusFields[statusKey] = "passed"
             steps += LiveProofStep.passed(sendStep)
@@ -227,6 +229,7 @@ internal class LiveProofRunner(
         val detail = dispatchFailure(
             session = session,
             draft = noticeDraft(bulkTargetSet),
+            targetSet = bulkTargetSet,
             attachment = null,
             pacingPolicy = PacingPolicy(Duration.ofMillis(inputs.bulkDelayMs?.coerceAtLeast(0L) ?: 0L)),
         )
@@ -282,14 +285,43 @@ internal class LiveProofRunner(
     private fun dispatchFailure(
         session: HostessSession,
         draft: NoticeDraft,
+        targetSet: GroupTargetSet,
         attachment: AttachmentRef? = null,
         pacingPolicy: PacingPolicy = PacingPolicy.NONE,
-    ): String? =
-        when (val result = runtime.noticeDispatchService.dispatch(session, draft, pacingPolicy, attachment)) {
-            is NoticeDispatchResult.Rejected -> "notice draft rejected"
-            is NoticeDispatchResult.Sent ->
-                result.result.statuses.firstOrNull { it.state != GroupSendState.SENT }?.detail
+    ): String? {
+        val complianceRequest = try {
+            noticeCompliance.request(targetSet)
+        } catch (exception: IllegalArgumentException) {
+            return "blocked: ${exception.message ?: "notice compliance invalid"}"
         }
+
+        return when (
+            val result = runtime.noticeDispatchService.dispatch(
+                session = session,
+                draft = draft,
+                compliance = complianceRequest,
+                pacingPolicy = pacingPolicy,
+                attachment = attachment,
+            )
+        ) {
+            is NoticeDispatchResult.Rejected -> "notice draft rejected"
+            is NoticeDispatchResult.ComplianceRejected -> {
+                statusFields += noticeCompliance.reportStatusFields(result.decision.receipt)
+                "blocked: ${result.decision.receipt.reasonCode}"
+            }
+            is NoticeDispatchResult.ComplianceRecordFailed -> {
+                statusFields += noticeCompliance.reportStatusFields(result.complianceReceipt)
+                result.complianceReceipt.reasonCode
+            }
+            is NoticeDispatchResult.Sent ->
+                result.result.statuses
+                    .firstOrNull { it.state != GroupSendState.SENT }
+                    ?.let { it.detail ?: it.state.name.lowercase() }
+                    .also {
+                        statusFields += noticeCompliance.reportStatusFields(result.complianceReceipt)
+                    }
+        }
+    }
 
     private fun noticeDraft(targetSet: GroupTargetSet): NoticeDraft =
         NoticeDraft(inputs.subject.orEmpty(), inputs.body.orEmpty(), targetSet)

@@ -2,6 +2,7 @@ package org.hostess.tools.cli.composition
 
 import java.time.Duration
 import java.time.Instant
+import java.nio.file.Path
 import org.hostess.core.domain.AccountLabel
 import org.hostess.core.domain.AttachmentKind
 import org.hostess.core.domain.AttachmentOwnerId
@@ -24,8 +25,11 @@ import org.hostess.core.ports.SessionLoginResult
 import org.hostess.core.ports.SessionLogoutResult
 import org.hostess.core.ports.SessionPort
 import org.hostess.core.services.AttachmentService
+import org.hostess.core.services.DefaultNoticeComplianceClock
 import org.hostess.core.services.GroupDirectoryService
 import org.hostess.core.services.LoginComplianceService
+import org.hostess.core.domain.NoticeCompliancePolicy
+import org.hostess.core.services.NoticeComplianceService
 import org.hostess.core.services.NoticeDispatchService
 import org.hostess.core.services.NoticeDraftService
 import org.hostess.core.services.SessionService
@@ -37,9 +41,9 @@ import org.hostess.tools.cli.report.ProofReportWriter
 class CliCompositionRoot(
     private val fakeGroups: List<GroupMembership> = defaultFakeGroups(),
 ) {
-    fun runtime(mode: CommandMode): CliRuntime = when (mode) {
+    fun runtime(mode: CommandMode, noticeLedgerPath: String? = null): CliRuntime = when (mode) {
         CommandMode.FAKE -> fakeRuntime()
-        CommandMode.LIVE -> liveRuntime()
+        CommandMode.LIVE -> liveRuntime(noticeLedgerPath)
     }
 
     private fun fakeRuntime(): CliRuntime {
@@ -54,22 +58,43 @@ class CliCompositionRoot(
             targetSelectionService = TargetSelectionService(),
             noticeDraftService = NoticeDraftService(),
             attachmentService = AttachmentService(inventoryPort),
-            noticeDispatchService = NoticeDispatchService(noticePort, NoopClockPort),
+            noticeDispatchService = NoticeDispatchService(
+                noticePort = noticePort,
+                clockPort = NoopClockPort,
+                noticeComplianceService = NoticeComplianceService(
+                    policy = NoticeCompliancePolicy(),
+                    ledger = InMemoryNoticeComplianceLedgerPort(),
+                    clock = DefaultNoticeComplianceClock(),
+                ),
+            ),
             proofReportWriter = ProofReportWriter(),
             protocolAvailable = true,
             sessionProvider = { session },
         )
     }
 
-    private fun liveRuntime(): CliRuntime {
+    private fun liveRuntime(noticeLedgerPath: String?): CliRuntime {
         val protocolRuntime = ProtocolLibomvModule.liveRuntime()
+        val noticeLedger = noticeLedgerPath
+            ?.trim()
+            ?.takeIf(String::isNotBlank)
+            ?.let { FileNoticeComplianceLedgerPort(Path.of(it)) }
+            ?: UnavailableNoticeComplianceLedgerPort()
         return CliRuntime(
             sessionService = SessionService(protocolRuntime.sessionPort, LoginComplianceService(), CliRedactionPort),
             groupDirectoryService = GroupDirectoryService(protocolRuntime.groupPort),
             targetSelectionService = TargetSelectionService(),
             noticeDraftService = NoticeDraftService(),
             attachmentService = AttachmentService(protocolRuntime.inventoryPort),
-            noticeDispatchService = NoticeDispatchService(protocolRuntime.noticePort, NoopClockPort),
+            noticeDispatchService = NoticeDispatchService(
+                noticePort = protocolRuntime.noticePort,
+                clockPort = NoopClockPort,
+                noticeComplianceService = NoticeComplianceService(
+                    policy = NoticeCompliancePolicy(),
+                    ledger = noticeLedger,
+                    clock = DefaultNoticeComplianceClock(),
+                ),
+            ),
             proofReportWriter = ProofReportWriter(),
             protocolAvailable = protocolRuntime.protocolAvailable,
             sessionProvider = { fakeSession(active = false) },

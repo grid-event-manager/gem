@@ -41,6 +41,9 @@ internal data class LiveProofInputs(
     val bulkDelayMs: Long?,
     val cleanupMode: String?,
     val retentionNote: String?,
+    val recipientCountValues: List<String> = emptyList(),
+    val recipientCountSource: String? = null,
+    val noticeLedgerPath: String? = null,
 ) {
     fun missingRequiredFields(): List<String> = buildList {
         if (proofScope == LiveProofScope.UNSUPPORTED) {
@@ -63,6 +66,7 @@ internal data class LiveProofInputs(
             if (targetDisplayNames.isEmpty()) add("target display name")
             if (subject.isNullOrBlank()) add("subject")
             if (body.isNullOrBlank()) add("body")
+            addAll(noticeComplianceArguments().missingRequiredFields(sendMayOccur = true))
         }
     }
 
@@ -83,6 +87,9 @@ internal data class LiveProofInputs(
         put("subject", subject.orEmpty())
         put("bodyLength", body.orEmpty().length.toString())
         put("authorisedLiveSend", authorisedLiveSend.toString())
+        if (proofScope == LiveProofScope.FULL) {
+            putAll(noticeComplianceArguments().reportInputs())
+        }
         existingAttachmentKind?.let { put("existingAttachmentKind", it) }
         existingAttachmentId?.let { put("existingAttachmentId", it) }
         landmarkVenue?.let { put("landmarkVenue", it) }
@@ -110,6 +117,9 @@ internal data class LiveProofInputs(
                 fields["credentialStatus"] = "blocked"
             }
             fields += loginComplianceStatusFields()
+            if (proofScope == LiveProofScope.FULL) {
+                fields += noticeComplianceArguments().reportStatusFields(null)
+            }
         }
 
     fun loginComplianceRequest(): LoginComplianceRequest = LoginComplianceRequest(
@@ -135,6 +145,15 @@ internal data class LiveProofInputs(
             "operatorStatus" to if (!operator.isNullOrBlank()) "passed" else "blocked",
         )
     }
+
+    fun noticeComplianceArguments(): NoticeComplianceArguments =
+        NoticeComplianceArguments.fromValues(
+            mode = CommandMode.LIVE,
+            operator = operator,
+            recipientCountValues = recipientCountValues,
+            recipientCountSource = recipientCountSource,
+            ledgerPath = noticeLedgerPath,
+        )
 
     private fun existingRequest(kind: AttachmentKind): AttachmentRequest? {
         val requestedKind = when (existingAttachmentKind?.lowercase()) {
@@ -218,6 +237,9 @@ internal data class LiveProofInputs(
                 bulkDelayMs = arguments.option("bulk-delay-ms")?.toLongOrNull(),
                 cleanupMode = arguments.option("cleanup-mode"),
                 retentionNote = arguments.option("retention-note"),
+                recipientCountValues = arguments.optionValues("recipient-count"),
+                recipientCountSource = arguments.option("recipient-count-source"),
+                noticeLedgerPath = arguments.option("ledger"),
             )
         }
 
