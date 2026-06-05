@@ -10,6 +10,7 @@ import org.hostess.core.ports.LoginRequest
 import org.hostess.core.ports.SessionLoginResult
 import org.hostess.core.ports.SessionLogoutResult
 import org.hostess.protocol.libomv.LibomvClientSession
+import org.hostess.protocol.libomv.mapping.LibomvLoginFailureKind
 import org.hostess.protocol.libomv.mapping.LibomvLoginMapping
 import org.hostess.protocol.libomv.mapping.LibomvLoginMappingResult
 import org.hostess.protocol.libomv.mapping.LoginKeys
@@ -36,11 +37,11 @@ class ProtocolLoginRuntime(
         val response = try {
             httpClient.execute(loginHttpRequest(secret, viewerIdentity))
         } catch (ex: ProtocolHttpException) {
-            return loginFailure("login transport failed")
+            return loginFailure(LibomvLoginFailureKind.TRANSPORT_FAILURE.redactedMessage)
         }
 
         if (response.statusCode !in 200..299) {
-            return loginFailure("login transport failed")
+            return loginFailure(LibomvLoginFailureKind.TRANSPORT_FAILURE.redactedMessage)
         }
 
         return when (val mapped = LibomvLoginMapping.parse(response.body)) {
@@ -62,7 +63,7 @@ class ProtocolLoginRuntime(
                 )
                 SessionLoginResult.Success(session)
             }
-            is LibomvLoginMappingResult.Failure -> loginFailure("login failed")
+            is LibomvLoginMappingResult.Failure -> loginFailure(mapped.value.redactedMessage)
         }
     }
 

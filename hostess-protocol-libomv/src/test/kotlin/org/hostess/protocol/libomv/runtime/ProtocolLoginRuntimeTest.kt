@@ -150,7 +150,24 @@ class ProtocolLoginRuntimeTest {
 
         assertIs<SessionLoginResult.Failure>(result)
         assertEquals(CoreFailureReason.LOGIN_FAILED, result.failure.reason)
-        assertEquals("login failed", result.failure.redactedMessage)
+        assertEquals("login response malformed", result.failure.redactedMessage)
+    }
+
+    @Test
+    fun `login blocks challenge response without leaking raw server text`() {
+        val runtime = ProtocolLoginRuntime(
+            clientSession = LibomvClientSession.inactive(),
+            httpClient = RecordingHttpClient(failureBody("Terms of Service requires agree_to_tos")),
+            viewerIdentityProvider = viewerIdentityProvider(),
+            secretResolver = LoginSecretResolver { resolvedSecret() },
+        )
+
+        val result = runtime.login(loginRequest("proof-handle"))
+
+        assertIs<SessionLoginResult.Failure>(result)
+        assertEquals(CoreFailureReason.LOGIN_FAILED, result.failure.reason)
+        assertEquals("login blocked: terms of service required", result.failure.redactedMessage)
+        assertFalse(result.failure.redactedMessage.orEmpty().contains("agree_to_tos"))
     }
 
     @Test
@@ -254,6 +271,13 @@ class ProtocolLoginRuntimeTest {
             integer(LoginKeys.REGION_Y, "2048")
             integer(LoginKeys.CIRCUIT_CODE, "123456789")
         }
+        append("</map></llsd>")
+    }.encodeToByteArray()
+
+    private fun failureBody(message: String): ByteArray = buildString {
+        append("<llsd><map>")
+        field(LoginKeys.LOGIN, "false")
+        field(LoginKeys.MESSAGE, message)
         append("</map></llsd>")
     }.encodeToByteArray()
 

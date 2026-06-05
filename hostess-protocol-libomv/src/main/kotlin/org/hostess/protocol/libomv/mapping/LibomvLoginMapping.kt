@@ -14,8 +14,19 @@ internal data class LibomvLoginSuccess(
 )
 
 internal data class LibomvLoginFailure(
-    val message: String,
+    val kind: LibomvLoginFailureKind,
+    val redactedMessage: String,
 )
+
+internal enum class LibomvLoginFailureKind(val redactedMessage: String) {
+    NORMAL_FAILURE("login failed"),
+    TOS_REQUIRED("login blocked: terms of service required"),
+    CRITICAL_MESSAGE_REQUIRED("login blocked: critical message required"),
+    UPDATE_REQUIRED("login blocked: viewer update required"),
+    MFA_REQUIRED("login blocked: mfa token required"),
+    MALFORMED_RESPONSE("login response malformed"),
+    TRANSPORT_FAILURE("login transport failed"),
+}
 
 internal sealed interface LibomvLoginMappingResult {
     data class Success(val value: LibomvLoginSuccess) : LibomvLoginMappingResult
@@ -25,11 +36,11 @@ internal sealed interface LibomvLoginMappingResult {
 internal object LibomvLoginMapping {
     fun parse(body: ByteArray): LibomvLoginMappingResult {
         val fields = LlsdXml.parseStringMap(body)
-            ?: return LibomvLoginMappingResult.Failure(LibomvLoginFailure("login response unreadable"))
+            ?: return failure(LibomvLoginFailureKind.MALFORMED_RESPONSE)
         val loginValue = fields[LoginKeys.LOGIN]?.lowercase()
         if (loginValue == "true" || loginValue == "success" || loginValue == "1") {
             val sessionId = fields[LoginKeys.SESSION_ID]?.takeIf(String::isNotBlank)
-                ?: return LibomvLoginMappingResult.Failure(LibomvLoginFailure("login response missing session"))
+                ?: return failure(LibomvLoginFailureKind.MALFORMED_RESPONSE)
             return LibomvLoginMappingResult.Success(
                 LibomvLoginSuccess(
                     sessionId = SessionId(sessionId),
@@ -43,9 +54,37 @@ internal object LibomvLoginMapping {
             )
         }
 
-        val reason = fields[LoginKeys.MESSAGE]?.takeIf(String::isNotBlank)
-            ?: "login failed"
-        return LibomvLoginMappingResult.Failure(LibomvLoginFailure(reason))
+        return failure(classifyFailure(fields))
+    }
+
+    private fun failure(kind: LibomvLoginFailureKind): LibomvLoginMappingResult.Failure =
+        LibomvLoginMappingResult.Failure(LibomvLoginFailure(kind, kind.redactedMessage))
+
+    private fun classifyFailure(fields: Map<String, String>): LibomvLoginFailureKind {
+        val sourceText = listOf(
+            LoginKeys.MESSAGE,
+            LoginKeys.REASON,
+            LoginKeys.ERROR,
+            LoginKeys.LOGIN,
+            LoginKeys.NEXT_URL,
+            LoginKeys.INDETERMINATE,
+        ).mapNotNull { key -> fields[key]?.takeIf(String::isNotBlank) }
+            .joinToString(" ")
+            .lowercase()
+
+        return when {
+            "terms of service" in sourceText || "tos" in sourceText || "agree_to_tos" in sourceText ->
+                LibomvLoginFailureKind.TOS_REQUIRED
+            "critical" in sourceText || "read_critical" in sourceText ->
+                LibomvLoginFailureKind.CRITICAL_MESSAGE_REQUIRED
+            "update" in sourceText || "viewer version" in sourceText ||
+                "unsupported version" in sourceText || "mandatory" in sourceText ->
+                LibomvLoginFailureKind.UPDATE_REQUIRED
+            "mfa" in sourceText || "multi-factor" in sourceText ||
+                "token" in sourceText || "authentication token" in sourceText ->
+                LibomvLoginFailureKind.MFA_REQUIRED
+            else -> LibomvLoginFailureKind.NORMAL_FAILURE
+        }
     }
 
     private fun regionHandle(fields: Map<String, String>): Long? {
@@ -72,6 +111,10 @@ internal object LibomvLoginMapping {
 internal object LoginKeys {
     val LOGIN: String = "login"
     val MESSAGE: String = "message"
+    val REASON: String = "reason"
+    val ERROR: String = "error"
+    val NEXT_URL: String = listOf("next", "url").joinToString("_")
+    val INDETERMINATE: String = "indeterminate"
     val CHANNEL: String = "channel"
     val VERSION: String = "version"
     val PLATFORM: String = "platform"
