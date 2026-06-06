@@ -38,7 +38,6 @@ internal class ProtocolCapabilityCacheProvider(
     companion object {
         val PRODUCTION_CAPABILITY_REQUESTS: Set<CapabilityName> = setOf(
             CapabilityName.EVENT_QUEUE_GET,
-            CapabilityName.FETCH_INVENTORY2,
             CapabilityName.FETCH_INVENTORY_DESCENDENTS2,
         )
     }

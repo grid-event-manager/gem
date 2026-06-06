@@ -17,7 +17,6 @@ class ProtocolCapabilitySeedClientTest {
         )
 
         assertEquals(eventUrl(), result.urls[CapabilityName.EVENT_QUEUE_GET])
-        assertEquals(fetchInventoryUrl(), result.urls[CapabilityName.FETCH_INVENTORY2])
         assertEquals(fetchDescendentsUrl(), result.urls[CapabilityName.FETCH_INVENTORY_DESCENDENTS2])
         val request = httpClient.requests.single()
         assertEquals("POST", request.method)
@@ -27,7 +26,6 @@ class ProtocolCapabilitySeedClientTest {
         assertEquals(
             "<llsd><array>" +
                 "<string>EventQueueGet</string>" +
-                "<string>FetchInventory2</string>" +
                 "<string>FetchInventoryDescendents2</string>" +
                 "</array></llsd>",
             body,
@@ -127,7 +125,6 @@ class ProtocolCapabilitySeedClientTest {
         buildString {
             append("<llsd><map>")
             append("<key>EventQueueGet</key><uri>").append(eventUrl().value).append("</uri>")
-            append("<key>FetchInventory2</key><uri>").append(fetchInventoryUrl().value).append("</uri>")
             append("<key>FetchInventoryDescendents2</key><uri>").append(fetchDescendentsUrl().value).append("</uri>")
             if (includeUnknown) {
                 append("<key>GroupProposalBallot</key><uri>").append(secureUrl("caps.example", "/ballot")).append("</uri>")
@@ -151,8 +148,6 @@ class ProtocolCapabilitySeedClientTest {
         fun seedUrl(): String = secureUrl("caps.example", "/seed")
 
         fun eventUrl(): CapabilityUrl = CapabilityUrl(secureUrl("caps.example", "/event"))
-
-        fun fetchInventoryUrl(): CapabilityUrl = CapabilityUrl(secureUrl("caps.example", "/fetch-inventory"))
 
         fun fetchDescendentsUrl(): CapabilityUrl = CapabilityUrl(secureUrl("caps.example", "/fetch-descendents"))
 

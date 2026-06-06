@@ -340,7 +340,6 @@ class ProtocolLibomvModuleTest {
         <llsd>
           <map>
             <key>EventQueueGet</key><uri>${secureUrl("caps.example", "/event")}</uri>
-            <key>FetchInventory2</key><uri>${secureUrl("caps.example", "/fetch-inventory")}</uri>
             <key>FetchInventoryDescendents2</key><uri>${secureUrl("caps.example", "/fetch-descendents")}</uri>
           </map>
         </llsd>

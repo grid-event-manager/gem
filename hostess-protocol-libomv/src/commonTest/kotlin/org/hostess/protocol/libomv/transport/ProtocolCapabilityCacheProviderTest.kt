@@ -45,11 +45,11 @@ class ProtocolCapabilityCacheProviderTest {
             provider.requireUrl(identity(), CapabilityName.EVENT_QUEUE_GET),
         )
         val inventoryResult = assertIs<CapabilityUrlResult.Ready>(
-            provider.requireUrl(identity(), CapabilityName.FETCH_INVENTORY2),
+            provider.requireUrl(identity(), CapabilityName.FETCH_INVENTORY_DESCENDENTS2),
         )
 
         assertEquals(eventUrl(), eventResult.url)
-        assertEquals(fetchInventoryUrl(), inventoryResult.url)
+        assertEquals(fetchDescendentsUrl(), inventoryResult.url)
         assertEquals(1, httpClient.requests.size)
     }
 
@@ -169,7 +169,6 @@ class ProtocolCapabilityCacheProviderTest {
             if (includeEventQueue) {
                 append("<key>EventQueueGet</key><uri>").append(eventUrl().value).append("</uri>")
             }
-            append("<key>FetchInventory2</key><uri>").append(fetchInventoryUrl().value).append("</uri>")
             append("<key>FetchInventoryDescendents2</key><uri>").append(fetchDescendentsUrl().value).append("</uri>")
             append("</map></llsd>")
         }.encodeToByteArray(),
@@ -192,8 +191,6 @@ class ProtocolCapabilityCacheProviderTest {
         fun seedUrl(): String = secureUrl("caps.example", "/seed")
 
         fun eventUrl(): CapabilityUrl = CapabilityUrl(secureUrl("caps.example", "/event"))
-
-        fun fetchInventoryUrl(): CapabilityUrl = CapabilityUrl(secureUrl("caps.example", "/fetch-inventory"))
 
         fun fetchDescendentsUrl(): CapabilityUrl = CapabilityUrl(secureUrl("caps.example", "/fetch-descendents"))
 
