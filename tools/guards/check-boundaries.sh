@@ -34,6 +34,12 @@ TRACK_D_CLI_CAP_LITERAL_PATTERN='(^|[^[:alnum:]_])(4500|4_500|5000|5_000)([^[:al
 TRACK_DS_OLD_LOGIN_LLSD_PATTERN='application/llsd\+xml|fun[[:space:]]+loginBody\('
 TRACK_DS_DIRECT_OWNER_PATTERN='LoginPackage|SecondLifePasswordHash|HostessMachineIdentity|LoginPackageSerializer'
 TRACK_DS_STALE_LOGIN_FIELD_PATTERN='platform_version|platform_string|host_id|token|extended_errors|max-agent-groups|viewer_digest|user_agent'
+TRACK_E_STALE_ATTACHMENT_PATTERN='CreateLandmarkAttachment|UploadTextureAttachment|AttachmentPayloadHandle|LocalPosition|createLandmarkAttachment|uploadTextureAttachment|landmarkAssetBytes|AttachmentPayloadSource|InventoryUploadResult|beginTextureUpload|completeTextureUpload|landmarkRequest|textureRequest|createdLandmarkRequest|uploadTextureRequest|landmarkVenue|landmarkRegionId|landmarkLocalPosition|texturePayloadHandle|textureDigest|textureFileName|safeTextureFileName'
+TRACK_E_FORBIDDEN_OWNER_FILE_PATTERN='(LandmarkAttachmentService|TextureUploadService|AttachmentUploadManager|InventoryUtils|AttachmentHelpers|CommonAttachment|BulkSender)\.kt$'
+TRACK_E_FORBIDDEN_OWNER_DECL_PATTERN='(^|[^[:alnum:]_])((data[[:space:]]+)?class|object|interface)[[:space:]]+(LandmarkAttachmentService|TextureUploadService|AttachmentUploadManager|InventoryUtils|AttachmentHelpers|CommonAttachment|BulkSender)([^[:alnum:]_]|$)'
+TRACK_E_IMPLICIT_FAKE_PATTERN='null,[[:space:]]*"fake"|option\("mode"\)[[:space:]]*\?:[[:space:]]*"fake"|CommandMode\.parse\(null\)'
+TRACK_E_LOCAL_HTTP_PATTERN='local test servers|isLocalTestServer|127\.0\.0\.1|localhost|::1'
+TRACK_E_ANDROID_PROBE_PATTERN='AndroidCompatibilityProbe[[:space:]]+internal[[:space:]]+constructor|protocolLoadProbe|forbiddenApiScan[[:space:]]*=[[:space:]]*"external_guard_required"|external_guard_required'
 TRACK_F_COMMON_FORBIDDEN_PATTERN='java\.|javax\.|okhttp|android\.|System\.|MessageDigest|NetworkInterface|Datagram|ByteBuffer|UUID|Class\.forName|::class\.java'
 TRACK_F_PARALLEL_PATH_PATTERN='hostess-core-kmp|hostess-protocol-android|AndroidProtocolLibomvModule|JvmProtocolLibomvModule|GroupReader|CurrentGroupsClient|LoginRuntimeAndroid|Manager|Utils|Helpers|Common'
 TRACK_F_PLATFORM_API_PATTERN='okhttp3\.|OkHttpClient|System(::|\.)getenv|NetworkInterface|java\.net\.Datagram|Datagram(Packet|Socket)|javax\.xml|org\.xml\.sax|DocumentBuilderFactory|java\.util\.UUID|MessageDigest|java\.nio\.ByteBuffer'
@@ -141,6 +147,41 @@ check_no_forbidden_files() {
         printf '%s\n' "${matches[@]}"
         failures=1
     fi
+}
+
+check_no_file_path_hits() {
+    local label="$1"
+    local pattern="$2"
+    shift 2
+
+    if [[ "$#" -eq 0 ]]; then
+        echo "ERROR: $label has no scan targets"
+        failures=1
+        return
+    fi
+
+    local output
+    local status
+    set +e
+    output="$(find "$@" -type f -name '*.kt' 2>/dev/null | rg -n -- "$pattern" 2>&1)"
+    status="$?"
+    set -e
+
+    case "$status" in
+        0)
+            echo "FAIL: $label"
+            echo "$output"
+            failures=1
+            ;;
+        1)
+            echo "PASS: $label"
+            ;;
+        *)
+            echo "ERROR: $label scan failed"
+            echo "$output"
+            failures=1
+            ;;
+    esac
 }
 
 check_no_old_shared_roots() {
@@ -577,6 +618,28 @@ add_existing track_ds_old_login_targets \
     "hostess-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/runtime/ProtocolLoginRuntime.kt" \
     "hostess-protocol-libomv/src/main/kotlin/org/hostess/protocol/libomv/runtime/ProtocolLoginRuntime.kt"
 
+track_e_kotlin_targets=()
+add_existing track_e_kotlin_targets \
+    "hostess-core/src" \
+    "hostess-protocol-libomv/src" \
+    "tools/cli/src" \
+    "apps/desktop/src" \
+    "apps/android/src"
+
+track_e_fake_default_targets=()
+add_existing track_e_fake_default_targets \
+    "tools/cli/src/main" \
+    "tools/cli/src/test"
+
+track_e_local_http_targets=()
+add_existing track_e_local_http_targets \
+    "hostess-protocol-libomv/src/commonMain" \
+    "hostess-protocol-libomv/src/jvmAndroidMain"
+
+track_e_android_probe_targets=()
+add_existing track_e_android_probe_targets \
+    "apps/android/src/main"
+
 check_no_hits \
     "hostess-core forbidden dependencies" \
     "$CORE_FORBIDDEN_PATTERN" \
@@ -719,6 +782,36 @@ check_no_hits \
     "Track DS stale login package fields" \
     "$TRACK_DS_STALE_LOGIN_FIELD_PATTERN" \
     "${track_ds_login_package_targets[@]}"
+
+check_no_hits \
+    "Track E stale create/upload symbols" \
+    "$TRACK_E_STALE_ATTACHMENT_PATTERN" \
+    "${track_e_kotlin_targets[@]}"
+
+check_no_file_path_hits \
+    "Track E forbidden attachment owner file names" \
+    "$TRACK_E_FORBIDDEN_OWNER_FILE_PATTERN" \
+    "${track_e_kotlin_targets[@]}"
+
+check_no_hits \
+    "Track E forbidden attachment owner declarations" \
+    "$TRACK_E_FORBIDDEN_OWNER_DECL_PATTERN" \
+    "${track_e_kotlin_targets[@]}"
+
+check_no_hits \
+    "Track E implicit fake defaults" \
+    "$TRACK_E_IMPLICIT_FAKE_PATTERN" \
+    "${track_e_fake_default_targets[@]}"
+
+check_no_hits \
+    "Track E production local HTTP allowance" \
+    "$TRACK_E_LOCAL_HTTP_PATTERN" \
+    "${track_e_local_http_targets[@]}"
+
+check_no_hits \
+    "Track E Android probe injection/status leakage" \
+    "$TRACK_E_ANDROID_PROBE_PATTERN" \
+    "${track_e_android_probe_targets[@]}"
 
 check_no_hits \
     "Track D viewer identity provider outside protocol module" \
@@ -889,6 +982,36 @@ check_pattern_matches \
     "self-test Track DS stale login field pattern" \
     "$TRACK_DS_STALE_LOGIN_FIELD_PATTERN" \
     'field("platform_string", value)'
+
+check_pattern_matches \
+    "self-test Track E stale create upload pattern" \
+    "$TRACK_E_STALE_ATTACHMENT_PATTERN" \
+    'CreateLandmarkAttachment(request)'
+
+check_pattern_matches \
+    "self-test Track E forbidden owner file pattern" \
+    "$TRACK_E_FORBIDDEN_OWNER_FILE_PATTERN" \
+    'src/main/kotlin/org/hostess/core/AttachmentUploadManager.kt'
+
+check_pattern_matches \
+    "self-test Track E forbidden owner declaration pattern" \
+    "$TRACK_E_FORBIDDEN_OWNER_DECL_PATTERN" \
+    'class LandmarkAttachmentService'
+
+check_pattern_matches \
+    "self-test Track E implicit fake default pattern" \
+    "$TRACK_E_IMPLICIT_FAKE_PATTERN" \
+    'CommandMode.parse(null)'
+
+check_pattern_matches \
+    "self-test Track E production local HTTP pattern" \
+    "$TRACK_E_LOCAL_HTTP_PATTERN" \
+    'fun isLocalTestServer() = host == "127.0.0.1"'
+
+check_pattern_matches \
+    "self-test Track E Android probe hook pattern" \
+    "$TRACK_E_ANDROID_PROBE_PATTERN" \
+    'class AndroidCompatibilityProbe internal constructor(private val protocolLoadProbe: () -> State)'
 
 if [[ "$failures" -ne 0 ]]; then
     exit 1
