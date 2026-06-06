@@ -14,13 +14,20 @@ import org.hostess.core.domain.GroupSendStatus
 import org.hostess.core.domain.HostessDelay
 import org.hostess.core.domain.HostessInstant
 import org.hostess.core.domain.HostessSession
+import org.hostess.core.domain.InventoryAssetId
+import org.hostess.core.domain.InventoryFolderId
+import org.hostess.core.domain.InventoryItemDescriptor
+import org.hostess.core.domain.InventoryItemDisplayName
 import org.hostess.core.domain.InventoryItemId
+import org.hostess.core.domain.InventoryItemKind
+import org.hostess.core.domain.InventoryItemQuery
 import org.hostess.core.domain.NoticeDraft
 import org.hostess.core.domain.SessionId
 import org.hostess.core.ports.AttachmentResolutionResult
 import org.hostess.core.ports.ClockPort
 import org.hostess.core.ports.GroupListResult
 import org.hostess.core.ports.GroupPort
+import org.hostess.core.ports.InventoryItemListResult
 import org.hostess.core.ports.InventoryPort
 import org.hostess.core.ports.LoginRequest
 import org.hostess.core.ports.NoticePort
@@ -60,8 +67,10 @@ class FakeGroupPort(
 
 class FakeInventoryPort(
     var existingResult: AttachmentResolutionResult = AttachmentResolutionResult.Resolved(defaultAttachment()),
+    var listResult: InventoryItemListResult = InventoryItemListResult.Success(emptyList()),
 ) : InventoryPort {
     val existingRequests = mutableListOf<ExistingInventoryAttachment>()
+    val listRequests = mutableListOf<InventoryItemQuery>()
 
     override fun resolveExistingAttachment(
         session: HostessSession,
@@ -69,6 +78,14 @@ class FakeInventoryPort(
     ): AttachmentResolutionResult {
         existingRequests += request
         return existingResult
+    }
+
+    override fun listItems(
+        session: HostessSession,
+        query: InventoryItemQuery,
+    ): InventoryItemListResult {
+        listRequests += query
+        return listResult
     }
 }
 
@@ -133,6 +150,14 @@ fun defaultAttachment(): AttachmentRef = AttachmentRef(
     attachmentId = InventoryItemId("attachment"),
     ownerId = AttachmentOwnerId("owner"),
     kind = AttachmentKind.LANDMARK,
+)
+
+fun defaultInventoryItem(): InventoryItemDescriptor = InventoryItemDescriptor(
+    itemId = InventoryItemId("landmark"),
+    parentFolderId = InventoryFolderId("folder"),
+    assetId = InventoryAssetId("asset"),
+    displayName = InventoryItemDisplayName("Venue Landmark"),
+    kind = InventoryItemKind.LANDMARK,
 )
 
 fun failure(reason: CoreFailureReason, message: String): CoreFailure =

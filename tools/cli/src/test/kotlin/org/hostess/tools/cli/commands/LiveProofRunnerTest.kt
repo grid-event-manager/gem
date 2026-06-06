@@ -20,6 +20,7 @@ import org.hostess.core.domain.HostessDelay
 import org.hostess.core.domain.HostessInstant
 import org.hostess.core.domain.HostessSession
 import org.hostess.core.domain.InventoryItemId
+import org.hostess.core.domain.InventoryItemQuery
 import org.hostess.core.domain.NoticeDraft
 import org.hostess.core.domain.NoticeCompliancePolicy
 import org.hostess.core.domain.NoticeDeliveryDay
@@ -28,6 +29,7 @@ import org.hostess.core.ports.AttachmentResolutionResult
 import org.hostess.core.ports.ClockPort
 import org.hostess.core.ports.GroupListResult
 import org.hostess.core.ports.GroupPort
+import org.hostess.core.ports.InventoryItemListResult
 import org.hostess.core.ports.InventoryPort
 import org.hostess.core.ports.LoginRequest
 import org.hostess.core.ports.NoticePort
@@ -419,6 +421,11 @@ class LiveProofRunnerTest {
             calls += 1
             return AttachmentResolutionResult.Resolved(fakeAttachment(request.kind))
         }
+
+        override fun listItems(
+            session: HostessSession,
+            query: InventoryItemQuery,
+        ): InventoryItemListResult = InventoryItemListResult.Success(emptyList())
 
         private fun fakeAttachment(kind: AttachmentKind): AttachmentRef = AttachmentRef(
             attachmentId = InventoryItemId("attachment-${kind.name.lowercase()}"),

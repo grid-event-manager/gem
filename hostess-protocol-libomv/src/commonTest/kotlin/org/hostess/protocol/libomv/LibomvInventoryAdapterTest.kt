@@ -7,8 +7,10 @@ import org.hostess.core.domain.ExistingInventoryAttachment
 import org.hostess.core.domain.HostessInstant
 import org.hostess.core.domain.HostessSession
 import org.hostess.core.domain.InventoryItemId
+import org.hostess.core.domain.InventoryItemQuery
 import org.hostess.core.domain.SessionId
 import org.hostess.core.ports.AttachmentResolutionResult
+import org.hostess.core.ports.InventoryItemListResult
 import org.hostess.protocol.libomv.mapping.LibomvAttachmentSnapshot
 import org.hostess.protocol.libomv.runtime.InventoryRuntimeResult
 import org.hostess.protocol.libomv.runtime.InventoryRuntimeSource
@@ -70,6 +72,18 @@ class LibomvInventoryAdapterTest {
         ).failure
 
         assertEquals(CoreFailureReason.ATTACHMENT_NOT_FOUND, failure.reason)
+        assertEquals("protocol runtime unavailable", failure.redactedMessage)
+    }
+
+    @Test
+    fun `inventory list fails closed until protocol catalogue runtime lands`() {
+        val adapter = LibomvInventoryAdapter(clientSession = LibomvClientSession.active(hostessSession()))
+
+        val failure = assertIs<InventoryItemListResult.Failure>(
+            adapter.listItems(hostessSession(), InventoryItemQuery()),
+        ).failure
+
+        assertEquals(CoreFailureReason.INVENTORY_LIST_FAILED, failure.reason)
         assertEquals("protocol runtime unavailable", failure.redactedMessage)
     }
 
