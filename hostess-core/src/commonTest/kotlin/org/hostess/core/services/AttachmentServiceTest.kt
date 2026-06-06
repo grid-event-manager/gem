@@ -13,7 +13,6 @@ import org.hostess.core.domain.NoticeDraft
 import org.hostess.core.domain.NoticeDraftInvalidReason
 import org.hostess.core.domain.NoticeDraftValidation
 import org.hostess.core.domain.TargetSelectionResult
-import org.hostess.core.domain.UploadTextureAttachment
 import org.hostess.core.ports.AttachmentResolutionResult
 import org.hostess.core.testing.FakeInventoryPort
 import org.hostess.core.testing.defaultSession
@@ -40,21 +39,23 @@ class AttachmentServiceTest {
     @Test
     fun `preserves adapter failure mapping from inventory port`() {
         val inventoryPort = FakeInventoryPort(
-            textureResult = AttachmentResolutionResult.Failed(
-                failure(CoreFailureReason.ATTACHMENT_UPLOAD_FAILED, "upload rejected"),
+            existingResult = AttachmentResolutionResult.Failed(
+                failure(CoreFailureReason.ATTACHMENT_NOT_FOUND, "attachment rejected"),
             ),
         )
         val service = AttachmentService(inventoryPort)
+        val request = ExistingInventoryAttachment(AttachmentKind.TEXTURE, InventoryItemId("texture-item"))
 
         val result = assertIs<AttachmentResolutionResult.Failed>(
             service.resolveAttachment(
                 defaultSession(),
-                textureUpload(),
+                request,
             ),
         )
 
-        assertEquals(CoreFailureReason.ATTACHMENT_UPLOAD_FAILED, result.failure.reason)
-        assertEquals("upload rejected", result.failure.redactedMessage)
+        assertEquals(listOf(request), inventoryPort.existingRequests)
+        assertEquals(CoreFailureReason.ATTACHMENT_NOT_FOUND, result.failure.reason)
+        assertEquals("attachment rejected", result.failure.redactedMessage)
     }
 
     @Test
@@ -66,7 +67,7 @@ class AttachmentServiceTest {
             targetSet = selectedTargets(),
             attachments = listOf(
                 ExistingInventoryAttachment(AttachmentKind.LANDMARK, InventoryItemId("landmark")),
-                textureUpload(),
+                ExistingInventoryAttachment(AttachmentKind.TEXTURE, InventoryItemId("texture")),
             ),
         )
 
@@ -74,7 +75,6 @@ class AttachmentServiceTest {
 
         assertTrue(NoticeDraftInvalidReason.TOO_MANY_ATTACHMENTS in validation.reasons)
         assertTrue(inventoryPort.existingRequests.isEmpty())
-        assertTrue(inventoryPort.textureRequests.isEmpty())
     }
 
     @Test
@@ -93,11 +93,5 @@ class AttachmentServiceTest {
         displayName = GroupDisplayName(displayName),
         canSendNotices = true,
         acceptsNotices = null,
-    )
-
-    private fun textureUpload(): UploadTextureAttachment = UploadTextureAttachment(
-        fileName = "poster.png",
-        contentDigest = "sha256:abc",
-        payloadHandle = AttachmentPayloadHandle("texture-handle"),
     )
 }

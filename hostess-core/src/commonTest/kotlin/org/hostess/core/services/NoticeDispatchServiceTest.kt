@@ -1,6 +1,9 @@
 package org.hostess.core.services
 
 import org.hostess.core.domain.AccountLabel
+import org.hostess.core.domain.AttachmentKind
+import org.hostess.core.domain.AttachmentOwnerId
+import org.hostess.core.domain.AttachmentRef
 import org.hostess.core.domain.GroupDisplayName
 import org.hostess.core.domain.GroupId
 import org.hostess.core.domain.GroupMembership
@@ -9,6 +12,7 @@ import org.hostess.core.domain.GroupSendState
 import org.hostess.core.domain.HostessDelay
 import org.hostess.core.domain.HostessInstant
 import org.hostess.core.domain.HostessSession
+import org.hostess.core.domain.InventoryItemId
 import org.hostess.core.domain.NoticeComplianceDecision
 import org.hostess.core.domain.NoticeComplianceLedgerResult
 import org.hostess.core.domain.NoticeCompliancePolicy
@@ -135,6 +139,33 @@ class NoticeDispatchServiceTest {
         assertEquals("ledger_record_failed", result.complianceReceipt.reasonCode)
         assertEquals(listOf(GroupSendState.SENT, GroupSendState.SENT), result.result.statuses.map { it.state })
         assertEquals(listOf(RecordCall(NoticeDeliveryCount(30), NoticeDeliveryCount(30))), ledger.recordCalls)
+    }
+
+    @Test
+    fun `dispatch forwards resolved attachment to each selected group`() {
+        val noticePort = FakeNoticePort()
+        val service = service(noticePort, FakeClockPort())
+        val attachment = AttachmentRef(
+            attachmentId = InventoryItemId("landmark-item"),
+            ownerId = AttachmentOwnerId("owner"),
+            kind = AttachmentKind.LANDMARK,
+        )
+        val draft = NoticeDraft(
+            subject = "Opening set",
+            message = "Tonight at 8",
+            targetSet = selectedTargets(),
+        )
+
+        assertIs<NoticeDispatchResult.Sent>(
+            service.dispatch(
+                session = session(),
+                draft = draft,
+                compliance = request(),
+                attachment = attachment,
+            ),
+        )
+
+        assertEquals(listOf(attachment, attachment), noticePort.calls.map { it.attachment })
     }
 
     private fun selectedTargets() = assertIs<TargetSelectionResult.Changed>(

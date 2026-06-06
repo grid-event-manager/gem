@@ -26,19 +26,21 @@ class ProtocolInventoryRuntimeTest {
     @Test
     fun `existing item resolves when kind matches`() {
         val session = hostessSession()
+        val request = ExistingInventoryAttachment(AttachmentKind.LANDMARK, InventoryItemId("landmark-item"))
         val source = FakeInventoryRuntimeSource().apply {
             existingResult = InventoryRuntimeResult.Success(snapshot("landmark-item", "owner", AttachmentKind.LANDMARK))
         }
 
         val result = runtime(session, source).resolveExistingAttachment(
             session,
-            ExistingInventoryAttachment(AttachmentKind.LANDMARK, InventoryItemId("landmark-item")),
+            request,
         )
 
         val attachment = assertIs<AttachmentResolutionResult.Resolved>(result).attachment
         assertEquals("landmark-item", attachment.attachmentId.value)
         assertEquals("owner", attachment.ownerId.value)
         assertEquals(AttachmentKind.LANDMARK, attachment.kind)
+        assertEquals(listOf(request), source.existingRequests)
     }
 
     @Test
@@ -226,6 +228,7 @@ class ProtocolInventoryRuntimeTest {
             CoreFailureReason.ATTACHMENT_UPLOAD_FAILED,
             "texture upload unavailable",
         )
+        val existingRequests = mutableListOf<ExistingInventoryAttachment>()
         val landmarkAssetBytes = mutableListOf<ByteArray>()
         val textureBeginRequests = mutableListOf<UploadTextureAttachment>()
         val textureCompleteEndpoints = mutableListOf<String>()
@@ -233,7 +236,10 @@ class ProtocolInventoryRuntimeTest {
         override fun resolveExistingAttachment(
             session: HostessSession,
             request: ExistingInventoryAttachment,
-        ): InventoryRuntimeResult = existingResult
+        ): InventoryRuntimeResult {
+            existingRequests += request
+            return existingResult
+        }
 
         override fun createLandmarkAttachment(
             session: HostessSession,

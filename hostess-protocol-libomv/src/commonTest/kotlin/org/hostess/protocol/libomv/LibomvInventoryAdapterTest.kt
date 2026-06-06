@@ -28,6 +28,7 @@ class LibomvInventoryAdapterTest {
     @Test
     fun `existing attachment routes through protocol runtime`() {
         val session = hostessSession()
+        val request = ExistingInventoryAttachment(AttachmentKind.LANDMARK, InventoryItemId("landmark-item"))
         val adapter = adapter(
             session = session,
             source = source(
@@ -37,10 +38,34 @@ class LibomvInventoryAdapterTest {
 
         val result = adapter.resolveExistingAttachment(
             session,
-            ExistingInventoryAttachment(AttachmentKind.LANDMARK, InventoryItemId("landmark-item")),
+            request,
         )
 
         assertEquals("landmark-item", assertIs<AttachmentResolutionResult.Resolved>(result).attachment.attachmentId.value)
+    }
+
+    @Test
+    fun `existing attachment source failure maps through adapter`() {
+        val session = hostessSession()
+        val adapter = adapter(
+            session = session,
+            source = source(
+                existing = InventoryRuntimeResult.Failed(
+                    CoreFailureReason.ATTACHMENT_NOT_FOUND,
+                    "attachment unavailable",
+                ),
+            ),
+        )
+
+        val failure = assertIs<AttachmentResolutionResult.Failed>(
+            adapter.resolveExistingAttachment(
+                session,
+                ExistingInventoryAttachment(AttachmentKind.TEXTURE, InventoryItemId("texture-item")),
+            ),
+        ).failure
+
+        assertEquals(CoreFailureReason.ATTACHMENT_NOT_FOUND, failure.reason)
+        assertEquals("attachment unavailable", failure.redactedMessage)
     }
 
     @Test
