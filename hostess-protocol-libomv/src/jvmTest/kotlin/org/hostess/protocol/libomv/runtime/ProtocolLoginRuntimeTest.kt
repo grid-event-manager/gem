@@ -13,6 +13,7 @@ import org.hostess.core.ports.SessionLoginResult
 import org.hostess.core.ports.SessionLogoutResult
 import org.hostess.protocol.libomv.LibomvClientSession
 import org.hostess.protocol.libomv.LibomvSessionIdentityResult
+import org.hostess.protocol.libomv.mapping.LoginInventoryRootsResult
 import org.hostess.protocol.libomv.mapping.LoginKeys
 import org.hostess.protocol.libomv.transport.ProtocolHttpBody
 import org.hostess.protocol.libomv.transport.ProtocolHttpClient
@@ -73,6 +74,9 @@ class ProtocolLoginRuntimeTest {
         assertEquals(13000, identity.simulatorPort)
         assertEquals((1024L shl 32) or 2048L, identity.regionHandle)
         assertEquals(123456789L, identity.circuitCode)
+        val roots = assertIs<LoginInventoryRootsResult.Success>(clientSession.inventoryRoots(session)).roots
+        assertEquals("inventory-root-id", roots.inventoryRootId)
+        assertEquals("landmarks-folder-id", roots.inventorySkeleton.single().folderId)
 
         val request = httpClient.capturedRequest ?: error("login request was not captured")
         assertEquals("POST", request.method)
@@ -137,6 +141,9 @@ class ProtocolLoginRuntimeTest {
         assertEquals(13000, identity.simulatorPort)
         assertEquals((1024L shl 32) or 2048L, identity.regionHandle)
         assertEquals(123456789L, identity.circuitCode)
+        val roots = assertIs<LoginInventoryRootsResult.Success>(clientSession.inventoryRoots(session)).roots
+        assertEquals("xml-inventory-root-id", roots.inventoryRootId)
+        assertEquals("xml-landmarks-folder-id", roots.inventorySkeleton.single().folderId)
     }
 
     @Test
@@ -414,6 +421,10 @@ class ProtocolLoginRuntimeTest {
             integer(LoginKeys.REGION_Y, "2048")
             integer(LoginKeys.CIRCUIT_CODE, "123456789")
         }
+        mappedUuid(LoginKeys.INVENTORY_ROOT, LoginKeys.FOLDER_ID, "inventory-root-id")
+        append("<key>").append(LoginKeys.INVENTORY_SKELETON).append("</key><array>")
+        folder("landmarks-folder-id", "inventory-root-id", "Landmarks", 3, 42)
+        append("</array>")
         append("</map></llsd>")
     }.encodeToByteArray()
 
@@ -428,6 +439,11 @@ class ProtocolLoginRuntimeTest {
         xmlRpcMember(LoginKeys.REGION_X, xmlRpcInt("1024"))
         xmlRpcMember(LoginKeys.REGION_Y, xmlRpcInt("2048"))
         xmlRpcMember(LoginKeys.CIRCUIT_CODE, xmlRpcInt("123456789"))
+        xmlRpcMember(LoginKeys.INVENTORY_ROOT, xmlRpcMappedUuid(LoginKeys.FOLDER_ID, "xml-inventory-root-id"))
+        xmlRpcMember(
+            LoginKeys.INVENTORY_SKELETON,
+            xmlRpcFolderArray(xmlRpcFolder("xml-landmarks-folder-id", "xml-inventory-root-id", "Landmarks", 3, 42)),
+        )
         append("</struct></value></param></params></methodResponse>")
     }.encodeToByteArray()
 
@@ -446,6 +462,28 @@ class ProtocolLoginRuntimeTest {
         append("<key>").append(key).append("</key><integer>").append(value).append("</integer>")
     }
 
+    private fun StringBuilder.mappedUuid(key: String, fieldName: String, value: String) {
+        append("<key>").append(key).append("</key><array><map>")
+        field(fieldName, value)
+        append("</map></array>")
+    }
+
+    private fun StringBuilder.folder(
+        folderId: String,
+        parentId: String,
+        name: String,
+        typeDefault: Int,
+        version: Int,
+    ) {
+        append("<map>")
+        field(LoginKeys.FOLDER_ID, folderId)
+        field(LoginKeys.PARENT_ID, parentId)
+        field(LoginKeys.NAME, name)
+        append("<key>").append(LoginKeys.TYPE_DEFAULT).append("</key><integer>").append(typeDefault).append("</integer>")
+        append("<key>").append(LoginKeys.VERSION_FIELD).append("</key><integer>").append(version).append("</integer>")
+        append("</map>")
+    }
+
     private fun StringBuilder.xmlRpcMember(key: String, value: String) {
         append("<member><name>").append(key).append("</name><value>")
         append(value)
@@ -455,6 +493,44 @@ class ProtocolLoginRuntimeTest {
     private fun xmlRpcString(value: String): String = "<string>$value</string>"
 
     private fun xmlRpcInt(value: String): String = "<i4>$value</i4>"
+
+    private fun xmlRpcMappedUuid(fieldName: String, value: String): String =
+        xmlRpcArray(xmlRpcStruct(fieldName to xmlRpcString(value)))
+
+    private fun xmlRpcFolderArray(vararg folders: String): String =
+        xmlRpcArray(*folders)
+
+    private fun xmlRpcFolder(
+        folderId: String,
+        parentId: String,
+        name: String,
+        typeDefault: Int,
+        version: Int,
+    ): String = xmlRpcStruct(
+        LoginKeys.FOLDER_ID to xmlRpcString(folderId),
+        LoginKeys.PARENT_ID to xmlRpcString(parentId),
+        LoginKeys.NAME to xmlRpcString(name),
+        LoginKeys.TYPE_DEFAULT to xmlRpcInt(typeDefault.toString()),
+        LoginKeys.VERSION_FIELD to xmlRpcInt(version.toString()),
+    )
+
+    private fun xmlRpcStruct(vararg members: Pair<String, String>): String = buildString {
+        append("<struct>")
+        members.forEach { (name, value) ->
+            append("<member><name>").append(name).append("</name><value>")
+            append(value)
+            append("</value></member>")
+        }
+        append("</struct>")
+    }
+
+    private fun xmlRpcArray(vararg values: String): String = buildString {
+        append("<array><data>")
+        values.forEach { value ->
+            append("<value>").append(value).append("</value>")
+        }
+        append("</data></array>")
+    }
 
     private class RecordingHttpClient(
         private val body: ByteArray = ByteArray(0),

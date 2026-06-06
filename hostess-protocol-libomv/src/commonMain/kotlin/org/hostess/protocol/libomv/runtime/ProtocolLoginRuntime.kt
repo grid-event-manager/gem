@@ -93,6 +93,7 @@ class ProtocolLoginRuntime private constructor(
                     simulatorPort = mapped.value.simulatorPort,
                     regionHandle = mapped.value.regionHandle,
                     circuitCode = mapped.value.circuitCode,
+                    inventoryRoots = mapped.value.inventoryRoots,
                 )
                 SessionLoginResult.Success(session)
             }

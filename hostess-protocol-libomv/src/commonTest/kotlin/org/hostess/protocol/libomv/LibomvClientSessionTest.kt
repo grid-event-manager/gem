@@ -5,6 +5,9 @@ import org.hostess.core.domain.AccountLabel
 import org.hostess.core.domain.CoreFailureReason
 import org.hostess.core.domain.HostessSession
 import org.hostess.core.domain.SessionId
+import org.hostess.protocol.libomv.mapping.LoginInventoryFolder
+import org.hostess.protocol.libomv.mapping.LoginInventoryRoots
+import org.hostess.protocol.libomv.mapping.LoginInventoryRootsResult
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -26,6 +29,19 @@ class LibomvClientSessionTest {
         assertEquals(13000, identity.simulatorPort)
         assertEquals(123456789L, identity.regionHandle)
         assertEquals(987654321L, identity.circuitCode)
+        val roots = assertIs<LoginInventoryRootsResult.Success>(clientSession.inventoryRoots(session)).roots
+        assertEquals("inventory-root-id", roots.inventoryRootId)
+        assertEquals(
+            LoginInventoryFolder(
+                folderId = "landmarks-folder-id",
+                parentId = "inventory-root-id",
+                ownerId = "agent-id",
+                name = "Landmarks",
+                typeDefault = 3,
+                version = 42,
+            ),
+            roots.inventorySkeleton.single(),
+        )
     }
 
     @Test
@@ -72,6 +88,10 @@ class LibomvClientSessionTest {
             clientSession.requireIdentity(newSession),
         ).failure
         assertEquals("protocol seed identity unavailable", failure.redactedMessage)
+        assertEquals(
+            LoginInventoryRoots.empty(),
+            assertIs<LoginInventoryRootsResult.Success>(clientSession.inventoryRoots(newSession)).roots,
+        )
     }
 
     @Test
@@ -83,6 +103,12 @@ class LibomvClientSessionTest {
         assertEquals("hostess session mismatch", failure?.redactedMessage)
         assertFalse(failure?.redactedMessage.orEmpty().contains("live-session"))
         assertFalse(failure?.redactedMessage.orEmpty().contains("other-session"))
+        assertEquals(
+            "hostess session mismatch",
+            assertIs<LoginInventoryRootsResult.Failure>(
+                clientSession.inventoryRoots(hostessSession("other-session")),
+            ).failure.redactedMessage,
+        )
     }
 
     @Test
@@ -117,5 +143,21 @@ class LibomvClientSessionTest {
         simulatorPort = 13000,
         regionHandle = 123456789L,
         circuitCode = 987654321L,
+        inventoryRoots = LoginInventoryRoots(
+            inventoryRootId = "inventory-root-id",
+            inventorySkeleton = listOf(
+                LoginInventoryFolder(
+                    folderId = "landmarks-folder-id",
+                    parentId = "inventory-root-id",
+                    ownerId = "agent-id",
+                    name = "Landmarks",
+                    typeDefault = 3,
+                    version = 42,
+                ),
+            ),
+            libraryRootId = null,
+            libraryOwnerId = null,
+            librarySkeleton = emptyList(),
+        ),
     )
 }

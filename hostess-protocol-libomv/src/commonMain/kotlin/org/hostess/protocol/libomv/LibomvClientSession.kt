@@ -3,6 +3,8 @@ package org.hostess.protocol.libomv
 import org.hostess.core.domain.CoreFailure
 import org.hostess.core.domain.CoreFailureReason
 import org.hostess.core.domain.HostessSession
+import org.hostess.protocol.libomv.mapping.LoginInventoryRoots
+import org.hostess.protocol.libomv.mapping.LoginInventoryRootsResult
 
 class LibomvClientSession private constructor(
     private val protocolAvailable: Boolean,
@@ -13,6 +15,7 @@ class LibomvClientSession private constructor(
     private var simulatorPort: Int?,
     private var regionHandle: Long?,
     private var circuitCode: Long?,
+    private var inventoryRoots: LoginInventoryRoots,
 ) {
     fun unavailable(reason: CoreFailureReason): CoreFailure =
         CoreFailure(reason, redactedMessage = if (protocolAvailable) {
@@ -31,6 +34,7 @@ class LibomvClientSession private constructor(
         simulatorPort: Int? = null,
         regionHandle: Long? = null,
         circuitCode: Long? = null,
+        inventoryRoots: LoginInventoryRoots = LoginInventoryRoots.empty(),
     ) {
         activeSession = session
         this.agentId = agentId
@@ -39,6 +43,7 @@ class LibomvClientSession private constructor(
         this.simulatorPort = simulatorPort
         this.regionHandle = regionHandle
         this.circuitCode = circuitCode
+        this.inventoryRoots = inventoryRoots
     }
 
     internal fun clear() {
@@ -49,6 +54,7 @@ class LibomvClientSession private constructor(
         simulatorPort = null
         regionHandle = null
         circuitCode = null
+        inventoryRoots = LoginInventoryRoots.empty()
     }
 
     internal fun requireSession(session: HostessSession): CoreFailure? {
@@ -108,6 +114,14 @@ class LibomvClientSession private constructor(
         )
     }
 
+    internal fun inventoryRoots(session: HostessSession): LoginInventoryRootsResult {
+        val bindingFailure = requireSession(session)
+        if (bindingFailure != null) {
+            return LoginInventoryRootsResult.Failure(bindingFailure)
+        }
+        return LoginInventoryRootsResult.Success(inventoryRoots)
+    }
+
     companion object {
         fun unavailable(): LibomvClientSession = LibomvClientSession(
             protocolAvailable = false,
@@ -118,6 +132,7 @@ class LibomvClientSession private constructor(
             simulatorPort = null,
             regionHandle = null,
             circuitCode = null,
+            inventoryRoots = LoginInventoryRoots.empty(),
         )
 
         fun inactive(): LibomvClientSession = LibomvClientSession(
@@ -129,6 +144,7 @@ class LibomvClientSession private constructor(
             simulatorPort = null,
             regionHandle = null,
             circuitCode = null,
+            inventoryRoots = LoginInventoryRoots.empty(),
         )
 
         internal fun active(
@@ -139,6 +155,7 @@ class LibomvClientSession private constructor(
             simulatorPort: Int? = null,
             regionHandle: Long? = null,
             circuitCode: Long? = null,
+            inventoryRoots: LoginInventoryRoots = LoginInventoryRoots.empty(),
         ): LibomvClientSession = LibomvClientSession(
             protocolAvailable = true,
             activeSession = session,
@@ -148,6 +165,7 @@ class LibomvClientSession private constructor(
             simulatorPort = simulatorPort,
             regionHandle = regionHandle,
             circuitCode = circuitCode,
+            inventoryRoots = inventoryRoots,
         )
     }
 }

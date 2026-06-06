@@ -14,6 +14,31 @@ class LibomvLoginMappingTest {
         ).value
 
         assertEquals("live-session", success.sessionId.value)
+        assertEquals("inventory-root-id", success.inventoryRoots.inventoryRootId)
+        assertEquals("library-root-id", success.inventoryRoots.libraryRootId)
+        assertEquals("library-owner-id", success.inventoryRoots.libraryOwnerId)
+        assertEquals(
+            LoginInventoryFolder(
+                folderId = "landmarks-folder-id",
+                parentId = "inventory-root-id",
+                ownerId = "agent-id",
+                name = "Landmarks",
+                typeDefault = 3,
+                version = 42,
+            ),
+            success.inventoryRoots.inventorySkeleton.single(),
+        )
+        assertEquals(
+            LoginInventoryFolder(
+                folderId = "library-folder-id",
+                parentId = "library-root-id",
+                ownerId = "library-owner-id",
+                name = "Library Landmarks",
+                typeDefault = 3,
+                version = 7,
+            ),
+            success.inventoryRoots.librarySkeleton.single(),
+        )
     }
 
     @Test
@@ -29,6 +54,78 @@ class LibomvLoginMappingTest {
         assertEquals(13000, success.simulatorPort)
         assertEquals((1024L shl 32) or 2048L, success.regionHandle)
         assertEquals(123456789L, success.circuitCode)
+        assertEquals("xml-inventory-root-id", success.inventoryRoots.inventoryRootId)
+        assertEquals("xml-library-root-id", success.inventoryRoots.libraryRootId)
+        assertEquals("xml-library-owner-id", success.inventoryRoots.libraryOwnerId)
+        assertEquals(
+            LoginInventoryFolder(
+                folderId = "xml-landmarks-folder-id",
+                parentId = "xml-inventory-root-id",
+                ownerId = "agent-id",
+                name = "Landmarks",
+                typeDefault = 3,
+                version = 43,
+            ),
+            success.inventoryRoots.inventorySkeleton.single(),
+        )
+        assertEquals(
+            LoginInventoryFolder(
+                folderId = "xml-library-folder-id",
+                parentId = "xml-library-root-id",
+                ownerId = "xml-library-owner-id",
+                name = "Library Landmarks",
+                typeDefault = 3,
+                version = 8,
+            ),
+            success.inventoryRoots.librarySkeleton.single(),
+        )
+    }
+
+    @Test
+    fun `successful login with absent inventory fields keeps empty roots`() {
+        val success = assertIs<LibomvLoginMappingResult.Success>(
+            LibomvLoginMapping.parse(
+                buildString {
+                    append("<llsd><map>")
+                    field(LoginKeys.LOGIN, "true")
+                    field(LoginKeys.SESSION_ID, "live-session")
+                    append("</map></llsd>")
+                }.encodeToByteArray(),
+            ),
+        ).value
+
+        assertEquals(LoginInventoryRoots.empty(), success.inventoryRoots)
+    }
+
+    @Test
+    fun `successful login skips malformed skeleton folders`() {
+        val success = assertIs<LibomvLoginMappingResult.Success>(
+            LibomvLoginMapping.parse(
+                buildString {
+                    append("<llsd><map>")
+                    field(LoginKeys.LOGIN, "true")
+                    field(LoginKeys.AGENT_ID, "agent-id")
+                    field(LoginKeys.SESSION_ID, "live-session")
+                    append("<key>").append(LoginKeys.INVENTORY_SKELETON).append("</key><array>")
+                    append("<map><key>name</key><string>Missing ID</string></map>")
+                    folder("usable-folder-id", "parent-folder-id", "Usable", 5, 9)
+                    append("</array>")
+                    append("</map></llsd>")
+                }.encodeToByteArray(),
+            ),
+        ).value
+
+        assertEquals(
+            LoginInventoryFolder(
+                folderId = "usable-folder-id",
+                parentId = "parent-folder-id",
+                ownerId = "agent-id",
+                name = "Usable",
+                typeDefault = 5,
+                version = 9,
+            ),
+            success.inventoryRoots.inventorySkeleton.single(),
+        )
     }
 
     @Test
@@ -206,7 +303,17 @@ class LibomvLoginMappingTest {
     private fun successBody(): ByteArray = buildString {
         append("<llsd><map>")
         field(LoginKeys.LOGIN, "true")
+        field(LoginKeys.AGENT_ID, "agent-id")
         field(LoginKeys.SESSION_ID, "live-session")
+        mappedUuid(LoginKeys.INVENTORY_ROOT, LoginKeys.FOLDER_ID, "inventory-root-id")
+        mappedUuid(LoginKeys.INVENTORY_LIB_ROOT, LoginKeys.FOLDER_ID, "library-root-id")
+        mappedUuid(LoginKeys.INVENTORY_LIB_OWNER, LoginKeys.AGENT_ID, "library-owner-id")
+        append("<key>").append(LoginKeys.INVENTORY_SKELETON).append("</key><array>")
+        folder("landmarks-folder-id", "inventory-root-id", "Landmarks", 3, 42)
+        append("</array>")
+        append("<key>").append(LoginKeys.INVENTORY_SKEL_LIB).append("</key><array>")
+        folder("library-folder-id", "library-root-id", "Library Landmarks", 3, 7)
+        append("</array>")
         append("</map></llsd>")
     }.encodeToByteArray()
 
@@ -220,11 +327,41 @@ class LibomvLoginMappingTest {
         LoginKeys.REGION_X to xmlRpcInt("1024"),
         LoginKeys.REGION_Y to xmlRpcInt("2048"),
         LoginKeys.CIRCUIT_CODE to xmlRpcInt("123456789"),
-        "inventory-skeleton" to "<array><data><value><string>ignored</string></value></data></array>",
+        LoginKeys.INVENTORY_ROOT to xmlRpcMappedUuid(LoginKeys.FOLDER_ID, "xml-inventory-root-id"),
+        LoginKeys.INVENTORY_LIB_ROOT to xmlRpcMappedUuid(LoginKeys.FOLDER_ID, "xml-library-root-id"),
+        LoginKeys.INVENTORY_LIB_OWNER to xmlRpcMappedUuid(LoginKeys.AGENT_ID, "xml-library-owner-id"),
+        LoginKeys.INVENTORY_SKELETON to xmlRpcFolderArray(
+            xmlRpcFolder("xml-landmarks-folder-id", "xml-inventory-root-id", "Landmarks", 3, 43),
+        ),
+        LoginKeys.INVENTORY_SKEL_LIB to xmlRpcFolderArray(
+            xmlRpcFolder("xml-library-folder-id", "xml-library-root-id", "Library Landmarks", 3, 8),
+        ),
     )
 
     private fun StringBuilder.field(key: String, value: String) {
         append("<key>").append(key).append("</key><string>").append(value).append("</string>")
+    }
+
+    private fun StringBuilder.mappedUuid(key: String, fieldName: String, value: String) {
+        append("<key>").append(key).append("</key><array><map>")
+        field(fieldName, value)
+        append("</map></array>")
+    }
+
+    private fun StringBuilder.folder(
+        folderId: String,
+        parentId: String,
+        name: String,
+        typeDefault: Int,
+        version: Int,
+    ) {
+        append("<map>")
+        field(LoginKeys.FOLDER_ID, folderId)
+        field(LoginKeys.PARENT_ID, parentId)
+        field(LoginKeys.NAME, name)
+        append("<key>").append(LoginKeys.TYPE_DEFAULT).append("</key><integer>").append(typeDefault).append("</integer>")
+        append("<key>").append(LoginKeys.VERSION_FIELD).append("</key><integer>").append(version).append("</integer>")
+        append("</map>")
     }
 
     private fun xmlRpcResponse(vararg members: Pair<String, String>): ByteArray = buildString {
@@ -249,4 +386,42 @@ class LibomvLoginMappingTest {
     private fun xmlRpcString(value: String): String = "<string>$value</string>"
 
     private fun xmlRpcInt(value: String): String = "<i4>$value</i4>"
+
+    private fun xmlRpcMappedUuid(fieldName: String, value: String): String =
+        xmlRpcArray(xmlRpcStruct(fieldName to xmlRpcString(value)))
+
+    private fun xmlRpcFolderArray(vararg folders: String): String =
+        xmlRpcArray(*folders)
+
+    private fun xmlRpcFolder(
+        folderId: String,
+        parentId: String,
+        name: String,
+        typeDefault: Int,
+        version: Int,
+    ): String = xmlRpcStruct(
+        LoginKeys.FOLDER_ID to xmlRpcString(folderId),
+        LoginKeys.PARENT_ID to xmlRpcString(parentId),
+        LoginKeys.NAME to xmlRpcString(name),
+        LoginKeys.TYPE_DEFAULT to xmlRpcInt(typeDefault.toString()),
+        LoginKeys.VERSION_FIELD to xmlRpcInt(version.toString()),
+    )
+
+    private fun xmlRpcStruct(vararg members: Pair<String, String>): String = buildString {
+        append("<struct>")
+        members.forEach { (name, value) ->
+            append("<member><name>").append(name).append("</name><value>")
+            append(value)
+            append("</value></member>")
+        }
+        append("</struct>")
+    }
+
+    private fun xmlRpcArray(vararg values: String): String = buildString {
+        append("<array><data>")
+        values.forEach { value ->
+            append("<value>").append(value).append("</value>")
+        }
+        append("</data></array>")
+    }
 }

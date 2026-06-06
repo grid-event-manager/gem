@@ -14,6 +14,7 @@ internal data class LibomvLoginSuccess(
     val simulatorPort: Int?,
     val regionHandle: Long?,
     val circuitCode: Long?,
+    val inventoryRoots: LoginInventoryRoots,
 )
 
 internal data class LibomvLoginFailure(
@@ -38,7 +39,8 @@ internal sealed interface LibomvLoginMappingResult {
 
 internal object LibomvLoginMapping {
     fun parse(body: ByteArray): LibomvLoginMappingResult {
-        val fields = LlsdXml.parseMap(body)?.stringFields()
+        val llsdFields = LlsdXml.parseMap(body)
+        val fields = llsdFields?.stringFields()
             ?: XmlRpcLoginResponseParser.parseFields(body)
             ?: return failure(
                 LibomvLoginFailureKind.MALFORMED_RESPONSE,
@@ -60,6 +62,7 @@ internal object LibomvLoginMapping {
                     simulatorPort = fields[LoginKeys.SIM_PORT]?.toSimulatorPortOrNull(),
                     regionHandle = regionHandle(fields),
                     circuitCode = fields[LoginKeys.CIRCUIT_CODE]?.toUnsignedPositiveLongOrNull(),
+                    inventoryRoots = inventoryRoots(body, fields, llsdFields),
                 ),
             )
         }
@@ -111,6 +114,20 @@ internal object LibomvLoginMapping {
                 ?.takeIf(String::isNotBlank)
                 ?.let { key to it }
         }.toMap()
+
+    private fun inventoryRoots(
+        body: ByteArray,
+        fields: Map<String, String>,
+        llsdFields: Map<String, LlsdValue>?,
+    ): LoginInventoryRoots =
+        if (llsdFields != null) {
+            LoginInventoryRoots.fromLlsd(
+                fields = llsdFields,
+                agentId = fields[LoginKeys.AGENT_ID],
+            )
+        } else {
+            XmlRpcLoginResponseParser.parseInventoryRoots(body.decodeToString())
+        }
 
     private fun sourceDiagnostics(fields: Map<String, String>): String =
         diagnosticKeys.mapNotNull { key ->
@@ -186,5 +203,15 @@ internal object LoginKeys {
     val REGION_X: String = listOf("region", "x").joinToString("_")
     val REGION_Y: String = listOf("region", "y").joinToString("_")
     val CIRCUIT_CODE: String = listOf("circuit", "code").joinToString("_")
+    val INVENTORY_ROOT: String = "inventory-root"
+    val INVENTORY_SKELETON: String = "inventory-skeleton"
+    val INVENTORY_LIB_ROOT: String = "inventory-lib-root"
+    val INVENTORY_LIB_OWNER: String = "inventory-lib-owner"
+    val INVENTORY_SKEL_LIB: String = "inventory-skel-lib"
+    val FOLDER_ID: String = listOf("folder", "id").joinToString("_")
+    val PARENT_ID: String = listOf("parent", "id").joinToString("_")
+    val NAME: String = "name"
+    val TYPE_DEFAULT: String = listOf("type", "default").joinToString("_")
+    val VERSION_FIELD: String = "version"
     val SECRET: String = listOf("pass", "wd").joinToString("")
 }
