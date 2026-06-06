@@ -10,15 +10,18 @@ import org.hostess.core.domain.GroupMembership
 import org.hostess.core.domain.GroupSendState
 import org.hostess.core.domain.GroupTargetSet
 import org.hostess.core.domain.HostessSession
+import org.hostess.core.domain.InventoryItemQuery
 import org.hostess.core.domain.NoticeDraft
 import org.hostess.core.domain.SessionId
 import org.hostess.core.domain.TargetSelectionResult
 import org.hostess.core.ports.ClockPort
 import org.hostess.core.ports.CredentialHandle
 import org.hostess.core.ports.GroupListResult
+import org.hostess.core.ports.InventoryItemListResult
 import org.hostess.core.ports.LoginRequest
 import org.hostess.core.ports.SessionLoginResult
 import org.hostess.protocol.libomv.mapping.LoginKeys
+import org.hostess.protocol.libomv.mapping.LoginInventoryRoots
 import org.hostess.protocol.libomv.runtime.EnvironmentLoginSecretResolver
 import org.hostess.protocol.libomv.runtime.HostessMachineIdentity
 import org.hostess.protocol.libomv.runtime.HostessMachineIdentityProvider
@@ -174,6 +177,43 @@ class ProtocolLibomvModuleTest {
     }
 
     @Test
+    fun `live runtime inventory adapter reaches inventory catalogue source`() {
+        val httpClient = SequencedHttpClient(
+            listOf(
+                seedCapabilitiesBody().encodeToByteArray(),
+                inventoryFolderBody().encodeToByteArray(),
+            ),
+        )
+        val runtime = ProtocolLibomvModule.liveRuntime(platformBundle(httpClient = httpClient))
+        val session = fakeActiveUuidSession()
+        runtime.clientSession.activate(
+            session = session,
+            agentId = "11111111-1111-1111-1111-111111111111",
+            seedCapability = secureUrl("caps.example", "/seed"),
+            simulatorIp = "203.0.113.8",
+            simulatorPort = 13000,
+            regionHandle = 123456789L,
+            circuitCode = 987654321L,
+            inventoryRoots = LoginInventoryRoots(
+                inventoryRootId = "44444444-4444-4444-4444-444444444444",
+                inventorySkeleton = emptyList(),
+                libraryRootId = null,
+                libraryOwnerId = null,
+                librarySkeleton = emptyList(),
+            ),
+        )
+
+        val result = assertIs<InventoryItemListResult.Success>(
+            runtime.inventoryPort.listItems(session, InventoryItemQuery()),
+        )
+
+        assertEquals(listOf("Venue Landmark"), result.items.map { it.displayName.value })
+        assertEquals(2, httpClient.requests.size)
+        assertEquals(secureUrl("caps.example", "/seed"), httpClient.requests[0].url)
+        assertEquals(secureUrl("caps.example", "/fetch-descendents"), httpClient.requests[1].url)
+    }
+
+    @Test
     fun `injected bundle booleans drive load state and fail closed`() {
         val runtimeBlocked = ProtocolLibomvModule.liveRuntime(
             platformBundle(
@@ -258,6 +298,23 @@ class ProtocolLibomvModuleTest {
         }
     }
 
+    private class SequencedHttpClient(
+        private val bodies: List<ByteArray>,
+    ) : ProtocolHttpClient {
+        val requests = mutableListOf<ProtocolHttpRequest>()
+
+        override fun execute(request: ProtocolHttpRequest): ProtocolHttpResponse {
+            requests += request
+            val index = (requests.size - 1).coerceAtMost(bodies.lastIndex)
+            return ProtocolHttpResponse(
+                statusCode = 200,
+                headers = emptyMap(),
+                body = bodies[index],
+                redactedSummary = "POST <redacted> -> 200",
+            )
+        }
+    }
+
     private fun envSecretJson(): String = """
         {
           "loginUri": "${secureUrl("login.example", "/cgi-bin/login.cgi")}",
@@ -278,6 +335,40 @@ class ProtocolLibomvModuleTest {
           </map>
         </llsd>
     """.trimIndent().encodeToByteArray()
+
+    private fun seedCapabilitiesBody(): String = """
+        <llsd>
+          <map>
+            <key>EventQueueGet</key><uri>${secureUrl("caps.example", "/event")}</uri>
+            <key>FetchInventory2</key><uri>${secureUrl("caps.example", "/fetch-inventory")}</uri>
+            <key>FetchInventoryDescendents2</key><uri>${secureUrl("caps.example", "/fetch-descendents")}</uri>
+          </map>
+        </llsd>
+    """.trimIndent()
+
+    private fun inventoryFolderBody(): String = """
+        <llsd>
+          <map>
+            <key>folders</key>
+            <array>
+              <map>
+                <key>categories</key><array />
+                <key>items</key>
+                <array>
+                  <map>
+                    <key>item_id</key><uuid>55555555-5555-5555-5555-555555555555</uuid>
+                    <key>agent_id</key><uuid>11111111-1111-1111-1111-111111111111</uuid>
+                    <key>parent_id</key><uuid>44444444-4444-4444-4444-444444444444</uuid>
+                    <key>asset_id</key><uuid>66666666-6666-6666-6666-666666666666</uuid>
+                    <key>name</key><string>Venue Landmark</string>
+                    <key>inv_type</key><integer>3</integer>
+                  </map>
+                </array>
+              </map>
+            </array>
+          </map>
+        </llsd>
+    """.trimIndent()
 
     private fun viewerIdentityProvider(): HostessViewerIdentityProvider = HostessViewerIdentityProvider {
         HostessViewerIdentity(

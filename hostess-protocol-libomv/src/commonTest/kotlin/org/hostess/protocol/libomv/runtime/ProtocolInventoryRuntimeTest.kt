@@ -7,10 +7,20 @@ import org.hostess.core.domain.ExistingInventoryAttachment
 import org.hostess.core.domain.HostessInstant
 import org.hostess.core.domain.HostessSession
 import org.hostess.core.domain.InventoryItemId
+import org.hostess.core.domain.InventoryItemKind
+import org.hostess.core.domain.InventoryItemQuery
 import org.hostess.core.domain.SessionId
 import org.hostess.core.ports.AttachmentResolutionResult
+import org.hostess.core.ports.InventoryItemListResult
 import org.hostess.protocol.libomv.LibomvClientSession
+import org.hostess.protocol.libomv.LibomvSessionIdentity
 import org.hostess.protocol.libomv.mapping.LibomvAttachmentSnapshot
+import org.hostess.protocol.libomv.mapping.LibomvInventoryItemSnapshot
+import org.hostess.protocol.libomv.mapping.LoginInventoryRoots
+import org.hostess.protocol.libomv.transport.CapabilityName
+import org.hostess.protocol.libomv.transport.CapabilityUrl
+import org.hostess.protocol.libomv.transport.CapabilityUrlProvider
+import org.hostess.protocol.libomv.transport.CapabilityUrlResult
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -75,7 +85,8 @@ class ProtocolInventoryRuntimeTest {
     @Test
     fun `attachment runtime rejects mismatched session without calling source`() {
         val runtime = ProtocolInventoryRuntime(
-            clientSession = LibomvClientSession.active(hostessSession("live-session")),
+            clientSession = activeClientSession(hostessSession("live-session")),
+            capabilityUrlProvider = readyCapabilityProvider(),
             inventorySource = FakeInventoryRuntimeSource(),
         )
 
@@ -91,11 +102,87 @@ class ProtocolInventoryRuntimeTest {
         assertFalse(failure.redactedMessage.orEmpty().contains("other-session"))
     }
 
+    @Test
+    fun `inventory list maps descriptors and filters query kinds`() {
+        val session = hostessSession()
+        val source = FakeInventoryRuntimeSource().apply {
+            listResult = InventoryRuntimeItemListResult.Success(
+                listOf(
+                    inventorySnapshot("z-landmark", "Zoo Landmark", inventoryType = 3),
+                    inventorySnapshot("a-landmark", "Alpha Landmark", inventoryType = 3),
+                    inventorySnapshot("notecard", "Venue Notes", inventoryType = 7),
+                    inventorySnapshot("object", "Object", inventoryType = 6),
+                ),
+            )
+        }
+
+        val result = assertIs<InventoryItemListResult.Success>(
+            runtime(session, source).listItems(
+                session,
+                InventoryItemQuery(kinds = setOf(InventoryItemKind.LANDMARK)),
+            ),
+        )
+
+        assertEquals(listOf("Alpha Landmark", "Zoo Landmark"), result.items.map { it.displayName.value })
+        assertEquals(listOf(InventoryItemQuery(kinds = setOf(InventoryItemKind.LANDMARK))), source.listRequests)
+    }
+
+    @Test
+    fun `inventory list inactive session returns inventory list failure without source call`() {
+        val runtime = ProtocolInventoryRuntime(
+            clientSession = LibomvClientSession.inactive(),
+            capabilityUrlProvider = readyCapabilityProvider(),
+            inventorySource = FakeInventoryRuntimeSource(),
+        )
+
+        val failure = assertIs<InventoryItemListResult.Failure>(
+            runtime.listItems(hostessSession(), InventoryItemQuery()),
+        ).failure
+
+        assertEquals(CoreFailureReason.INVENTORY_LIST_FAILED, failure.reason)
+        assertEquals("protocol session inactive", failure.redactedMessage)
+    }
+
+    @Test
+    fun `inventory list missing roots returns inventory list failure`() {
+        val session = hostessSession()
+        val runtime = ProtocolInventoryRuntime(
+            clientSession = activeClientSession(session, inventoryRoots = LoginInventoryRoots.empty()),
+            capabilityUrlProvider = readyCapabilityProvider(),
+            inventorySource = FakeInventoryRuntimeSource(),
+        )
+
+        val failure = assertIs<InventoryItemListResult.Failure>(
+            runtime.listItems(session, InventoryItemQuery()),
+        ).failure
+
+        assertEquals(CoreFailureReason.INVENTORY_LIST_FAILED, failure.reason)
+        assertEquals("inventory root unavailable", failure.redactedMessage)
+    }
+
+    @Test
+    fun `inventory list missing capability returns inventory list failure`() {
+        val session = hostessSession()
+        val runtime = ProtocolInventoryRuntime(
+            clientSession = activeClientSession(session),
+            capabilityUrlProvider = CapabilityUrlProvider { _, _ -> CapabilityUrlResult.TransportGap("inventory cap unavailable") },
+            inventorySource = FakeInventoryRuntimeSource(),
+        )
+
+        val failure = assertIs<InventoryItemListResult.Failure>(
+            runtime.listItems(session, InventoryItemQuery()),
+        ).failure
+
+        assertEquals(CoreFailureReason.INVENTORY_LIST_FAILED, failure.reason)
+        assertEquals("inventory cap unavailable", failure.redactedMessage)
+    }
+
     private fun runtime(
         session: HostessSession,
         source: FakeInventoryRuntimeSource,
     ): ProtocolInventoryRuntime = ProtocolInventoryRuntime(
-        clientSession = LibomvClientSession.active(session),
+        clientSession = activeClientSession(session),
+        capabilityUrlProvider = readyCapabilityProvider(),
         inventorySource = source,
     )
 
@@ -104,6 +191,47 @@ class ProtocolInventoryRuntimeTest {
         ownerId: String,
         kind: AttachmentKind,
     ): LibomvAttachmentSnapshot = LibomvAttachmentSnapshot(itemId, ownerId, kind)
+
+    private fun inventorySnapshot(
+        itemId: String,
+        name: String,
+        inventoryType: Int,
+    ): LibomvInventoryItemSnapshot = LibomvInventoryItemSnapshot(
+        itemId = itemId,
+        ownerId = AGENT_ID,
+        parentFolderId = ROOT_FOLDER_ID,
+        assetId = "asset-$itemId",
+        name = name,
+        inventoryType = inventoryType,
+    )
+
+    private fun activeClientSession(
+        session: HostessSession,
+        inventoryRoots: LoginInventoryRoots = LoginInventoryRoots(
+            inventoryRootId = ROOT_FOLDER_ID,
+            inventorySkeleton = emptyList(),
+            libraryRootId = null,
+            libraryOwnerId = null,
+            librarySkeleton = emptyList(),
+        ),
+    ): LibomvClientSession = LibomvClientSession.active(
+        session = session,
+        agentId = AGENT_ID,
+        seedCapability = "https://caps.example/seed",
+        simulatorIp = "203.0.113.8",
+        simulatorPort = 13000,
+        regionHandle = 123456789L,
+        circuitCode = 987654321L,
+        inventoryRoots = inventoryRoots,
+    )
+
+    private fun readyCapabilityProvider(): CapabilityUrlProvider = CapabilityUrlProvider { _, name ->
+        if (name == CapabilityName.FETCH_INVENTORY_DESCENDENTS2) {
+            CapabilityUrlResult.Ready(CapabilityUrl("https://caps.example/inventory"))
+        } else {
+            CapabilityUrlResult.MappingGap("unexpected capability")
+        }
+    }
 
     private fun hostessSession(id: String = "live-session"): HostessSession = HostessSession(
         sessionId = SessionId(id),
@@ -117,14 +245,33 @@ class ProtocolInventoryRuntimeTest {
             CoreFailureReason.ATTACHMENT_NOT_FOUND,
             "attachment unavailable",
         )
+        var listResult: InventoryRuntimeItemListResult = InventoryRuntimeItemListResult.Failed("inventory unavailable")
         val existingRequests = mutableListOf<ExistingInventoryAttachment>()
+        val listRequests = mutableListOf<InventoryItemQuery>()
 
         override fun resolveExistingAttachment(
-            session: HostessSession,
+            identity: LibomvSessionIdentity,
+            roots: LoginInventoryRoots,
+            capabilityUrl: CapabilityUrl,
             request: ExistingInventoryAttachment,
         ): InventoryRuntimeResult {
             existingRequests += request
             return existingResult
         }
+
+        override fun listItems(
+            identity: LibomvSessionIdentity,
+            roots: LoginInventoryRoots,
+            capabilityUrl: CapabilityUrl,
+            query: InventoryItemQuery,
+        ): InventoryRuntimeItemListResult {
+            listRequests += query
+            return listResult
+        }
+    }
+
+    private companion object {
+        const val AGENT_ID = "11111111-1111-1111-1111-111111111111"
+        const val ROOT_FOLDER_ID = "22222222-2222-2222-2222-222222222222"
     }
 }

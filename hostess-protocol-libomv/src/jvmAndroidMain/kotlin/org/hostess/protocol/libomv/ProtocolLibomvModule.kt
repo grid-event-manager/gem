@@ -6,9 +6,11 @@ import org.hostess.core.ports.NoticePort
 import org.hostess.core.ports.SessionPort
 import org.hostess.protocol.libomv.runtime.CurrentGroupsSource
 import org.hostess.protocol.libomv.runtime.DefaultLibomvPlatformAdapterBundle
+import org.hostess.protocol.libomv.runtime.InventoryRuntimeSource
 import org.hostess.protocol.libomv.runtime.LibomvPlatformAdapterBundle
 import org.hostess.protocol.libomv.runtime.ProtocolCurrentGroupsSource
 import org.hostess.protocol.libomv.runtime.ProtocolGroupRuntime
+import org.hostess.protocol.libomv.runtime.ProtocolInventoryHttpSource
 import org.hostess.protocol.libomv.runtime.ProtocolInventoryRuntime
 import org.hostess.protocol.libomv.runtime.ProtocolLoginRuntime
 import org.hostess.protocol.libomv.runtime.ProtocolNoticeRuntime
@@ -40,13 +42,17 @@ object ProtocolLibomvModule {
     internal fun liveRuntime(bundle: LibomvPlatformAdapterBundle): LibomvProtocolRuntime {
         val clientSession = if (bundle.adapterLoad) LibomvClientSession.inactive() else LibomvClientSession.unavailable()
         val runtimeReady = bundle.adapterLoad && bundle.runtimeLoad
+        val capabilityProvider = if (bundle.transportLoad) {
+            ProtocolCapabilityCacheProvider(
+                clientSession = clientSession,
+                seedClient = ProtocolCapabilitySeedClient(bundle.httpClient),
+            )
+        } else {
+            null
+        }
         val currentGroupsSource = if (bundle.transportLoad) {
-            val capabilitySeedClient = ProtocolCapabilitySeedClient(bundle.httpClient)
             ProtocolCurrentGroupsSource(
-                capabilityUrlProvider = ProtocolCapabilityCacheProvider(
-                    clientSession = clientSession,
-                    seedClient = capabilitySeedClient,
-                ),
+                capabilityUrlProvider = requireNotNull(capabilityProvider),
                 eventQueueGetClient = EventQueueGetClient(bundle.httpClient),
                 requestTransport = AgentDataUpdateRequestTransport(bundle.circuitSender),
             )
@@ -54,7 +60,19 @@ object ProtocolLibomvModule {
             CurrentGroupsSource.unavailable()
         }
         val groupRuntime = if (runtimeReady) ProtocolGroupRuntime(clientSession, currentGroupsSource) else null
-        val inventoryRuntime = if (runtimeReady) ProtocolInventoryRuntime(clientSession) else null
+        val inventoryRuntime = if (runtimeReady) {
+            ProtocolInventoryRuntime(
+                clientSession = clientSession,
+                capabilityUrlProvider = capabilityProvider,
+                inventorySource = if (capabilityProvider != null) {
+                    ProtocolInventoryHttpSource(bundle.httpClient)
+                } else {
+                    InventoryRuntimeSource.unavailable()
+                },
+            )
+        } else {
+            null
+        }
         val loginRuntime = if (runtimeReady) {
             ProtocolLoginRuntime(
                 clientSession = clientSession,

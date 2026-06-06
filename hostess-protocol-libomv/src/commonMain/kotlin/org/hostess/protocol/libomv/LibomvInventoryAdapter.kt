@@ -24,5 +24,6 @@ class LibomvInventoryAdapter(
         session: HostessSession,
         query: InventoryItemQuery,
     ): InventoryItemListResult =
-        InventoryItemListResult.Failure(clientSession.unavailable(CoreFailureReason.INVENTORY_LIST_FAILED))
+        inventoryRuntime?.listItems(session, query)
+            ?: InventoryItemListResult.Failure(clientSession.unavailable(CoreFailureReason.INVENTORY_LIST_FAILED))
 }
