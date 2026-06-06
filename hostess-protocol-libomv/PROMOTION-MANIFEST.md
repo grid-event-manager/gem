@@ -24,11 +24,11 @@ Generated packet output policy:
 
 - Gradle task: `:hostess-protocol-libomv:generateLibomvPacketCatalog`.
 - Input: `hostess-protocol-libomv/src/protocol-bootstrap/message_template.msg`.
-- Output: `hostess-protocol-libomv/build/generated/sources/libomvPackets/java/main/libomv/packets/`.
-- Output shape: `Packet.java`, `PacketType.java`, `PacketCatalog.java`, and one packet skeleton class per top-level packet definition.
-- Generated output count: 479 Java files from 476 packet definitions.
+- Output: `hostess-protocol-libomv/build/generated/sources/libomvPackets/kotlin/commonTest/libomv/packets/`.
+- Output shape: `Packet.kt`, `PacketType.kt`, `PacketCatalog.kt`, and one packet skeleton class per top-level packet definition.
+- Generated output count: 479 Kotlin files from 476 packet definitions.
 - Generated outputs are build artifacts and are not committed.
-- This is a compile-boundary packet bootstrap, not a field-complete libomv runtime packet implementation.
+- This is a test-only compile-boundary packet bootstrap, not a production source set and not a field-complete libomv runtime packet implementation.
 
 Dependency jars:
 
@@ -43,7 +43,7 @@ Local modifications:
 - HS001-B-01 is evidence-only. It classifies the required Track B protocol surface from private reference source; no production source or generated output was promoted.
 - HS001-B-05 reimplements login request and response mapping from retained `LoginManager.java:1032-1155` evidence behind Hostess-owned transport. No upstream login source was copied into production.
 - HS001-B-06 reuses retained `GroupManager.java` and `CapsMessage.java` evidence for current-groups field mapping. The live packet/CAPS source remains fail-closed until field-complete runtime promotion lands; no upstream group source was copied into production.
-- HS001-B-08 reimplements source-derived attachment reference mapping and landmark asset byte encoding from retained inventory/asset evidence. The live CAPS/packet upload source remains fail-closed until field-complete runtime promotion lands; no upstream inventory or asset source was copied into production.
+- HS001-B-08 reimplemented source-derived attachment reference mapping and landmark asset byte encoding from retained inventory/asset evidence. Track E later removed the active landmark creation and texture upload route, preserving only existing-inventory attachment mapping; no upstream inventory or asset source was copied into production.
 - HS001-B-09 reimplements source-derived group notice request mapping, dialog/online constants, XOR instant-message ID derivation, and attachment OSD/XML bucket encoding from retained `GroupManager.java:389-412`, `GroupManager.java:1624-1628`, and `AgentManager.java:2863-2912` evidence. The live UDP packet sender remains fail-closed until field-complete packet transport promotion lands; no upstream notice source was copied into production.
 - HS001-C-01 is evidence-only. It proves the Track C login, simulator circuit, EventQueueGet, current-groups event, mapping, cleanup, and Android no-UI source anchors in private evidence `evidence/HS001-C-01/live-read-source-proof.md`. No retained source or generated runtime code was copied into production.
 - HS001-C-04 adds a Hostess-owned bounded low-frequency packet codec for `UseCircuitCode`, `CompleteAgentMovement`, and `AgentDataUpdateRequest`, derived from retained `message_template.msg`, `mapgenerator.java`, `template.java.txt`, `PacketHeader.java`, `PacketFrequency.java`, `Simulator.java`, and `Helpers.java` evidence. No generator expansion was required, generated packet skeletons remain uncommitted build artifacts, and no upstream UDP/runtime source was copied into production.

@@ -8,7 +8,6 @@ object SafeDiagnosticRedaction {
     )
     private val bearerPattern = Regex("Bearer\\s+[^\\s]+", RegexOption.IGNORE_CASE)
     private val seedCapPattern = Regex("seed[_-]?cap=[^\\s&]+", RegexOption.IGNORE_CASE)
-    private val uploadUrlPattern = Regex("upload_url=[^\\s&]+", RegexOption.IGNORE_CASE)
     private val urlPattern = Regex("https?://[^\\s<>\"']+", RegexOption.IGNORE_CASE)
     private val sensitiveAssignmentPattern = Regex(
         "\\b(passwd|password|secret|token|session[_-]?id|seed[_-]?capability|mac|id0|host[_-]?id)" +
@@ -18,8 +17,6 @@ object SafeDiagnosticRedaction {
     private val sensitiveKeys = setOf(
         "account",
         "accountLabel",
-        "attachmentPayloadHandle",
-        "attachmentSource",
         "circuitCode",
         "credential",
         "credentialHandle",
@@ -34,7 +31,6 @@ object SafeDiagnosticRedaction {
         "ledgerPath",
         "localPath",
         "mac",
-        "payloadHandle",
         "password",
         "passwd",
         "rawLoginUri",
@@ -48,8 +44,6 @@ object SafeDiagnosticRedaction {
         "simulatorEndpoint",
         "simulatorIp",
         "simulatorPort",
-        "upload_url",
-        "uploadUrl",
         "token",
     )
 
@@ -63,7 +57,6 @@ object SafeDiagnosticRedaction {
         return rawValue
             .replace(bearerPattern, "Bearer $REDACTED")
             .replace(seedCapPattern, "seed_cap=$REDACTED")
-            .replace(uploadUrlPattern, "upload_url=$REDACTED")
             .replace(sensitiveAssignmentPattern) { match ->
                 val name = match.groupValues[1]
                 "$name=$REDACTED"

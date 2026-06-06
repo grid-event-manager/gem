@@ -6,7 +6,7 @@ plugins {
 }
 
 val libomvPacketTemplate = layout.projectDirectory.file("src/protocol-bootstrap/message_template.msg")
-val generatedLibomvPackets = layout.buildDirectory.dir("generated/sources/libomvPackets/kotlin/commonMain")
+val generatedLibomvPackets = layout.buildDirectory.dir("generated/sources/libomvPackets/kotlin/commonTest")
 
 val generateLibomvPacketCatalog by tasks.registering {
     group = "build"
@@ -118,7 +118,6 @@ kotlin {
 
     sourceSets {
         val commonMain by getting {
-            kotlin.srcDir(generatedLibomvPackets)
             dependencies {
                 implementation(project(":hostess-core"))
             }
@@ -130,6 +129,7 @@ kotlin {
             }
         }
         commonTest {
+            kotlin.srcDir(generatedLibomvPackets)
             dependencies {
                 implementation(kotlin("test"))
             }
@@ -145,12 +145,11 @@ kotlin {
 
 tasks.matching {
     it.name in setOf(
-        "compileCommonMainKotlinMetadata",
-        "compileKotlinJvm",
-        "compileAndroidMain",
         "compileTestKotlinJvm",
         "compileCommonTestKotlinMetadata",
         "compileAndroidHostTest",
+        "generateAndroidHostTestLintModel",
+        "lintAnalyzeAndroidHostTest",
     )
 }.configureEach {
     dependsOn(generateLibomvPacketCatalog)

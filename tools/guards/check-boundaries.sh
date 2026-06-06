@@ -34,12 +34,14 @@ TRACK_D_CLI_CAP_LITERAL_PATTERN='(^|[^[:alnum:]_])(4500|4_500|5000|5_000)([^[:al
 TRACK_DS_OLD_LOGIN_LLSD_PATTERN='application/llsd\+xml|fun[[:space:]]+loginBody\('
 TRACK_DS_DIRECT_OWNER_PATTERN='LoginPackage|SecondLifePasswordHash|HostessMachineIdentity|LoginPackageSerializer'
 TRACK_DS_STALE_LOGIN_FIELD_PATTERN='platform_version|platform_string|host_id|token|extended_errors|max-agent-groups|viewer_digest|user_agent'
-TRACK_E_STALE_ATTACHMENT_PATTERN='CreateLandmarkAttachment|UploadTextureAttachment|AttachmentPayloadHandle|LocalPosition|createLandmarkAttachment|uploadTextureAttachment|landmarkAssetBytes|AttachmentPayloadSource|InventoryUploadResult|beginTextureUpload|completeTextureUpload|landmarkRequest|textureRequest|createdLandmarkRequest|uploadTextureRequest|landmarkVenue|landmarkRegionId|landmarkLocalPosition|texturePayloadHandle|textureDigest|textureFileName|safeTextureFileName'
+TRACK_E_STALE_ATTACHMENT_PATTERN='CreateLandmarkAttachment|UploadTextureAttachment|AttachmentPayloadHandle|LocalPosition|createLandmarkAttachment|uploadTextureAttachment|landmarkAssetBytes|AttachmentPayloadSource|InventoryUploadResult|beginTextureUpload|completeTextureUpload|landmarkRequest|textureRequest|createdLandmarkRequest|uploadTextureRequest|landmarkVenue|landmarkRegionId|landmarkLocalPosition|texturePayloadHandle|textureDigest|textureFileName|safeTextureFileName|BinaryUploadBody|application/octet-stream|upload_url|uploadUrl|attachmentPayloadHandle|attachmentSource|payloadHandle|AssetUploadRequest|AssetUploadComplete|CreateLandmarkForEvent'
 TRACK_E_FORBIDDEN_OWNER_FILE_PATTERN='(LandmarkAttachmentService|TextureUploadService|AttachmentUploadManager|InventoryUtils|AttachmentHelpers|CommonAttachment|BulkSender)\.kt$'
 TRACK_E_FORBIDDEN_OWNER_DECL_PATTERN='(^|[^[:alnum:]_])((data[[:space:]]+)?class|object|interface)[[:space:]]+(LandmarkAttachmentService|TextureUploadService|AttachmentUploadManager|InventoryUtils|AttachmentHelpers|CommonAttachment|BulkSender)([^[:alnum:]_]|$)'
 TRACK_E_IMPLICIT_FAKE_PATTERN='null,[[:space:]]*"fake"|option\("mode"\)[[:space:]]*\?:[[:space:]]*"fake"|CommandMode\.parse\(null\)'
 TRACK_E_LOCAL_HTTP_PATTERN='local test servers|isLocalTestServer|127\.0\.0\.1|localhost|::1'
 TRACK_E_ANDROID_PROBE_PATTERN='AndroidCompatibilityProbe[[:space:]]+internal[[:space:]]+constructor|protocolLoadProbe|forbiddenApiScan[[:space:]]*=[[:space:]]*"external_guard_required"|external_guard_required'
+TRACK_E_GENERATED_PACKET_COMMONMAIN_PATTERN='generated/sources/libomvPackets/kotlin/commonMain'
+TRACK_E_PRODUCTION_PACKET_IMPORT_PATTERN='(^|[^[:alnum:]_.])libomv\.packets'
 TRACK_G_FORBIDDEN_OWNER_PATTERN='(^|[^[:alnum:]_])(NotecardService|NotecardPort|ProtocolNotecardRuntime|LibomvNotecardAdapter|LibomvNotecardTextParser|NotecardAssetReader|BulkSender|NoticeSender|InventoryCataloguePort|InventoryLookupPort|InventoryBrowserService|ProtocolInventoryAssetSource)([^[:alnum:]_]|$)'
 TRACK_G_EVENT_QUEUE_SEED_PATTERN='fun[[:space:]]+seed[[:space:]]*\(|seedBody|seedCapability'
 TRACK_G_CLI_DIRECT_PROTOCOL_PATTERN='(^|[^[:alnum:]_])(ProtocolInventoryRuntime|ProtocolCurrentGroupsSource|ProtocolCapabilitySeedClient|EventQueueGetClient)([^[:alnum:]_]|$)'
@@ -624,11 +626,27 @@ add_existing track_ds_old_login_targets \
 
 track_e_kotlin_targets=()
 add_existing track_e_kotlin_targets \
-    "hostess-core/src" \
-    "hostess-protocol-libomv/src" \
-    "tools/cli/src" \
-    "apps/desktop/src" \
-    "apps/android/src"
+    "hostess-core/src/commonMain" \
+    "hostess-core/src/commonTest" \
+    "hostess-core/src/jvmMain" \
+    "hostess-core/src/jvmTest" \
+    "hostess-core/src/androidMain" \
+    "hostess-core/src/androidTest" \
+    "hostess-core/src/jvmAndroidMain" \
+    "hostess-protocol-libomv/src/commonMain" \
+    "hostess-protocol-libomv/src/commonTest" \
+    "hostess-protocol-libomv/src/jvmMain" \
+    "hostess-protocol-libomv/src/jvmTest" \
+    "hostess-protocol-libomv/src/androidMain" \
+    "hostess-protocol-libomv/src/androidTest" \
+    "hostess-protocol-libomv/src/jvmAndroidMain" \
+    "tools/cli/src/main" \
+    "tools/cli/src/test" \
+    "apps/desktop/src/main" \
+    "apps/desktop/src/test" \
+    "apps/android/src/main" \
+    "apps/android/src/test" \
+    "apps/android/src/androidTest"
 
 track_e_fake_default_targets=()
 add_existing track_e_fake_default_targets \
@@ -642,6 +660,26 @@ add_existing track_e_local_http_targets \
 
 track_e_android_probe_targets=()
 add_existing track_e_android_probe_targets \
+    "apps/android/src/main"
+
+track_e_packet_generation_targets=()
+add_existing track_e_packet_generation_targets \
+    "hostess-protocol-libomv/build.gradle.kts"
+
+track_e_production_packet_import_targets=()
+add_existing track_e_production_packet_import_targets \
+    "hostess-core/src/commonMain" \
+    "hostess-core/src/jvmMain" \
+    "hostess-core/src/androidMain" \
+    "hostess-core/src/jvmAndroidMain" \
+    "hostess-core/src/main" \
+    "hostess-protocol-libomv/src/commonMain" \
+    "hostess-protocol-libomv/src/jvmMain" \
+    "hostess-protocol-libomv/src/androidMain" \
+    "hostess-protocol-libomv/src/jvmAndroidMain" \
+    "hostess-protocol-libomv/src/main" \
+    "tools/cli/src/main" \
+    "apps/desktop/src/main" \
     "apps/android/src/main"
 
 track_g_main_targets=()
@@ -842,6 +880,16 @@ check_no_hits \
     "${track_e_android_probe_targets[@]}"
 
 check_no_hits \
+    "Track E generated packet catalogue not wired to commonMain" \
+    "$TRACK_E_GENERATED_PACKET_COMMONMAIN_PATTERN" \
+    "${track_e_packet_generation_targets[@]}"
+
+check_no_hits \
+    "Track E generated packet imports absent from production source" \
+    "$TRACK_E_PRODUCTION_PACKET_IMPORT_PATTERN" \
+    "${track_e_production_packet_import_targets[@]}"
+
+check_no_hits \
     "Track G forbidden capability/notecard owner names" \
     "$TRACK_G_FORBIDDEN_OWNER_PATTERN" \
     "${track_g_main_targets[@]}"
@@ -1039,7 +1087,7 @@ check_pattern_matches \
 check_pattern_matches \
     "self-test Track E stale create upload pattern" \
     "$TRACK_E_STALE_ATTACHMENT_PATTERN" \
-    'CreateLandmarkAttachment(request)'
+    'body = ProtocolHttpBody.BinaryUploadBody(bytes, "application/octet-stream")'
 
 check_pattern_matches \
     "self-test Track E forbidden owner file pattern" \
@@ -1065,6 +1113,16 @@ check_pattern_matches \
     "self-test Track E Android probe hook pattern" \
     "$TRACK_E_ANDROID_PROBE_PATTERN" \
     'class AndroidCompatibilityProbe internal constructor(private val protocolLoadProbe: () -> State)'
+
+check_pattern_matches \
+    "self-test Track E generated packet commonMain pattern" \
+    "$TRACK_E_GENERATED_PACKET_COMMONMAIN_PATTERN" \
+    'generated/sources/libomvPackets/kotlin/commonMain'
+
+check_pattern_matches \
+    "self-test Track E production generated packet import pattern" \
+    "$TRACK_E_PRODUCTION_PACKET_IMPORT_PATTERN" \
+    'import libomv.packets.AssetUploadRequestPacket'
 
 check_pattern_matches \
     "self-test Track G forbidden owner pattern" \

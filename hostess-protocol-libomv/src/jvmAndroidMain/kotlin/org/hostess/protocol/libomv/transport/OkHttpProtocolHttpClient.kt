@@ -65,7 +65,6 @@ class OkHttpProtocolHttpClient internal constructor(
                 null
             }
             is ProtocolHttpBody.TextBody -> content.encodeToByteArray().toRequestBody(contentType.toMediaType())
-            is ProtocolHttpBody.BinaryUploadBody -> bytes.toRequestBody(contentType.toMediaType())
         }
     }
 }

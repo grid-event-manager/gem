@@ -124,42 +124,6 @@ class OkHttpProtocolHttpClientTest {
     }
 
     @Test
-    fun `maps binary upload body`() {
-        val uploaded = byteArrayOf(9, 8, 7, 6)
-        val client = OkHttpProtocolHttpClient(
-            OkHttpClient.Builder()
-                .addInterceptor { chain ->
-                    val request = chain.request()
-                    val body = Buffer().also { request.body?.writeTo(it) }.readByteArray()
-
-                    assertEquals("PUT", request.method)
-                    assertEquals("application/octet-stream", request.body?.contentType().toString())
-                    assertContentEquals(uploaded, body)
-
-                    Response.Builder()
-                        .request(request)
-                        .protocol(Protocol.HTTP_1_1)
-                        .code(200)
-                        .message("OK")
-                        .body("uploaded".toResponseBody())
-                        .build()
-                }
-                .build(),
-        )
-
-        val response = client.execute(
-            ProtocolHttpRequest(
-                method = "PUT",
-                url = gridUrl("/upload"),
-                body = ProtocolHttpBody.BinaryUploadBody(uploaded),
-            ),
-        )
-
-        assertEquals(200, response.statusCode)
-        assertContentEquals("uploaded".encodeToByteArray(), response.body)
-    }
-
-    @Test
     fun `redacted summary hides URL path query header values and bodies`() {
         val client = OkHttpProtocolHttpClient(
             OkHttpClient.Builder()

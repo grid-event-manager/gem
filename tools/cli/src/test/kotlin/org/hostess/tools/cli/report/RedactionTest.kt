@@ -20,8 +20,6 @@ class RedactionTest {
             "simulatorIp" to "203.0.113.8",
             "simulatorPort" to "13000",
             "circuitCode" to "123456789",
-            "attachmentPayloadHandle" to "/home/user/poster.png",
-            "attachmentSource" to "/home/user/poster.png",
         )
 
         assertEquals(
@@ -34,12 +32,12 @@ class RedactionTest {
     fun `redacts token URL and UUID shaped values in ordinary fields`() {
         val redacted = RedactedText.from(
             "detail",
-            "Bearer token-123 seed_cap=abc upload_url=https://example.invalid/upload " +
+            "Bearer token-123 seed_cap=abc https://example.invalid/path " +
                 "12345678-1234-1234-1234-123456789abc",
         ).value
 
         assertEquals(
-            "Bearer [redacted] seed_cap=[redacted] upload_url=[redacted] [redacted-id]",
+            "Bearer [redacted] seed_cap=[redacted] [redacted-url] [redacted-id]",
             redacted,
         )
     }

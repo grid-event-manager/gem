@@ -18,11 +18,6 @@ sealed interface ProtocolHttpBody {
         val content: String,
         val contentType: String = "application/xml; charset=utf-8",
     ) : ProtocolHttpBody
-
-    data class BinaryUploadBody(
-        val bytes: ByteArray,
-        val contentType: String = "application/octet-stream",
-    ) : ProtocolHttpBody
 }
 
 data class ProtocolHttpResponse(
