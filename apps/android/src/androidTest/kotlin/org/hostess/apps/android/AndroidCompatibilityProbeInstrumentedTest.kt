@@ -18,6 +18,7 @@ class AndroidCompatibilityProbeInstrumentedTest {
         assertTrue(result.trackCClassLoad)
         assertTrue(result.trackDComplianceLoad)
         assertTrue(result.trackDsLoginPackageLoad)
+        assertTrue(result.trackGGridLoad)
         assertTrue(result.noLiveGridContact)
         assertTrue(result.noUiSurface)
         assertNull(result.blockedReason)

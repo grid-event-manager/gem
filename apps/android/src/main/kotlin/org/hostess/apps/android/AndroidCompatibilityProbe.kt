@@ -23,6 +23,7 @@ class AndroidCompatibilityProbe {
         val trackCClassLoad = runtimeLoad && transportLoad
         val trackDComplianceLoad = probeTrackDComplianceLoad()
         val trackDsLoginPackageLoad = probeTrackDsLoginPackageLoad()
+        val trackGGridLoad = probeTrackGGridLoad()
 
         return if (
             coreCompile &&
@@ -31,7 +32,8 @@ class AndroidCompatibilityProbe {
             transportLoad &&
             trackCClassLoad &&
             trackDComplianceLoad &&
-            trackDsLoginPackageLoad
+            trackDsLoginPackageLoad &&
+            trackGGridLoad
         ) {
             AndroidCompatibilityResult.passed()
         } else {
@@ -43,6 +45,7 @@ class AndroidCompatibilityProbe {
                 trackCClassLoad = trackCClassLoad,
                 trackDComplianceLoad = trackDComplianceLoad,
                 trackDsLoginPackageLoad = trackDsLoginPackageLoad,
+                trackGGridLoad = trackGGridLoad,
                 reason = blockedReason(
                     coreCompile,
                     adapterLoad,
@@ -51,6 +54,7 @@ class AndroidCompatibilityProbe {
                     trackCClassLoad,
                     trackDComplianceLoad,
                     trackDsLoginPackageLoad,
+                    trackGGridLoad,
                     runtimeResult.exceptionOrNull(),
                 ),
             )
@@ -89,6 +93,12 @@ class AndroidCompatibilityProbe {
                 .getOrDefault(false)
         }
 
+    private fun probeTrackGGridLoad(): Boolean =
+        TRACK_G_GRID_CLASSES.all { className ->
+            runCatching { Class.forName(className, false, javaClass.classLoader).name.isNotBlank() }
+                .getOrDefault(false)
+        }
+
     private fun blockedReason(
         coreCompile: Boolean,
         adapterLoad: Boolean,
@@ -97,6 +107,7 @@ class AndroidCompatibilityProbe {
         trackCClassLoad: Boolean,
         trackDComplianceLoad: Boolean,
         trackDsLoginPackageLoad: Boolean,
+        trackGGridLoad: Boolean,
         failure: Throwable?,
     ): String {
         val failedLanes = listOfNotNull(
@@ -107,6 +118,7 @@ class AndroidCompatibilityProbe {
             "trackCClassLoad".takeUnless { trackCClassLoad },
             "trackDComplianceLoad".takeUnless { trackDComplianceLoad },
             "trackDsLoginPackageLoad".takeUnless { trackDsLoginPackageLoad },
+            "trackGGridLoad".takeUnless { trackGGridLoad },
         )
         val cause = failure?.let { " cause=${it::class.java.simpleName}" }.orEmpty()
         return "Android compatibility probe failed lanes=${failedLanes.joinToString(",")}$cause"
@@ -133,6 +145,16 @@ class AndroidCompatibilityProbe {
             "org.hostess.protocol.libomv.runtime.HostessMachineIdentityProvider",
             "org.hostess.protocol.libomv.runtime.DefaultHostessMachineIdentityProvider",
         )
+        val TRACK_G_GRID_CLASSES = listOf(
+            "org.hostess.core.services.InventoryDirectoryService",
+            "org.hostess.core.domain.InventoryItemDescriptor",
+            "org.hostess.core.domain.InventoryItemQuery",
+            "org.hostess.protocol.libomv.mapping.LoginInventoryRoots",
+            "org.hostess.protocol.libomv.transport.ProtocolCapabilitySeedClient",
+            "org.hostess.protocol.libomv.transport.ProtocolCapabilityCacheProvider",
+            "org.hostess.protocol.libomv.runtime.ProtocolInventoryHttpSource",
+            "org.hostess.protocol.libomv.mapping.LibomvInventoryItemMapping",
+        )
     }
 }
 
@@ -151,6 +173,7 @@ data class AndroidCompatibilityResult(
     val trackCClassLoad: Boolean,
     val trackDComplianceLoad: Boolean,
     val trackDsLoginPackageLoad: Boolean,
+    val trackGGridLoad: Boolean,
     val noLiveGridContact: Boolean,
     val noUiSurface: Boolean,
     val blockedReason: String?,
@@ -165,6 +188,7 @@ data class AndroidCompatibilityResult(
             trackCClassLoad = true,
             trackDComplianceLoad = true,
             trackDsLoginPackageLoad = true,
+            trackGGridLoad = true,
             noLiveGridContact = true,
             noUiSurface = true,
             blockedReason = null,
@@ -178,6 +202,7 @@ data class AndroidCompatibilityResult(
             trackCClassLoad: Boolean,
             trackDComplianceLoad: Boolean,
             trackDsLoginPackageLoad: Boolean,
+            trackGGridLoad: Boolean,
             reason: String,
         ): AndroidCompatibilityResult = AndroidCompatibilityResult(
             status = "android_gap",
@@ -188,6 +213,7 @@ data class AndroidCompatibilityResult(
             trackCClassLoad = trackCClassLoad,
             trackDComplianceLoad = trackDComplianceLoad,
             trackDsLoginPackageLoad = trackDsLoginPackageLoad,
+            trackGGridLoad = trackGGridLoad,
             noLiveGridContact = true,
             noUiSurface = true,
             blockedReason = reason,
