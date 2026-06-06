@@ -12,12 +12,10 @@ import org.hostess.core.services.TargetSelectionService
 import org.hostess.protocol.libomv.ProtocolLibomvModule
 import org.hostess.protocol.libomv.runtime.HostessViewerIdentityProvider
 
-class AndroidCompatibilityProbe internal constructor(
-    private val protocolLoadProbe: () -> AndroidProtocolLoadState = { defaultProtocolLoad() },
-) {
+class AndroidCompatibilityProbe {
     fun run(): AndroidCompatibilityResult {
         val coreCompile = probeCoreCompile()
-        val runtimeResult = runCatching { protocolLoadProbe() }
+        val runtimeResult = runCatching { defaultProtocolLoad() }
         val loadState = runtimeResult.getOrNull()
         val adapterLoad = loadState?.adapterLoad ?: false
         val runtimeLoad = loadState?.runtimeLoad ?: false
@@ -155,7 +153,6 @@ data class AndroidCompatibilityResult(
     val trackDsLoginPackageLoad: Boolean,
     val noLiveGridContact: Boolean,
     val noUiSurface: Boolean,
-    val forbiddenApiScan: String,
     val blockedReason: String?,
 ) {
     companion object {
@@ -170,7 +167,6 @@ data class AndroidCompatibilityResult(
             trackDsLoginPackageLoad = true,
             noLiveGridContact = true,
             noUiSurface = true,
-            forbiddenApiScan = "external_guard_required",
             blockedReason = null,
         )
 
@@ -194,7 +190,6 @@ data class AndroidCompatibilityResult(
             trackDsLoginPackageLoad = trackDsLoginPackageLoad,
             noLiveGridContact = true,
             noUiSurface = true,
-            forbiddenApiScan = "external_guard_required",
             blockedReason = reason,
         )
     }

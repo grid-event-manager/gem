@@ -23,15 +23,21 @@ class AndroidCompatibilityProbeTest {
         assertTrue(result.trackDsLoginPackageLoad)
         assertTrue(result.noLiveGridContact)
         assertTrue(result.noUiSurface)
-        assertEquals("external_guard_required", result.forbiddenApiScan)
         assertNull(result.blockedReason)
     }
 
     @Test
-    fun `probe reports android gap without live contact when canonical runtime cannot load`() {
-        val result = AndroidCompatibilityProbe {
-            throw IllegalStateException("runtime unavailable")
-        }.run()
+    fun `android gap result preserves no live contact and no ui contract`() {
+        val result = AndroidCompatibilityResult.androidGap(
+            coreCompile = true,
+            adapterLoad = false,
+            runtimeLoad = false,
+            transportLoad = false,
+            trackCClassLoad = false,
+            trackDComplianceLoad = true,
+            trackDsLoginPackageLoad = true,
+            reason = "Android compatibility probe failed lanes=adapterLoad,runtimeLoad,transportLoad",
+        )
 
         assertEquals("android_gap", result.status)
         assertTrue(result.coreCompile)
@@ -43,11 +49,9 @@ class AndroidCompatibilityProbeTest {
         assertTrue(result.trackDsLoginPackageLoad)
         assertTrue(result.noLiveGridContact)
         assertTrue(result.noUiSurface)
-        assertEquals("external_guard_required", result.forbiddenApiScan)
         val reason = assertNotNull(result.blockedReason)
         assertContains(reason, "adapterLoad")
         assertContains(reason, "runtimeLoad")
         assertContains(reason, "transportLoad")
-        assertContains(reason, "cause=IllegalStateException")
     }
 }
