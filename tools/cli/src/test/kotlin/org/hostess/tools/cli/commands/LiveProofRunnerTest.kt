@@ -208,7 +208,7 @@ class LiveProofRunnerTest {
     }
 
     @Test
-    fun `plain notice uses core dispatch and missing kind fixtures stay blocked`() {
+    fun `plain notice uses core dispatch and missing existing attachment stays blocked`() {
         withReport { reportPath ->
             val ports = Ports()
 
@@ -218,33 +218,9 @@ class LiveProofRunnerTest {
             assertEquals(CommandResult.UNAVAILABLE, exit)
             assertEquals(listOf<AttachmentRef?>(null), ports.noticePort.attachments)
             assertContains(report, "\"plainNoticeStatus\": \"passed\"")
-            assertContains(report, "\"landmarkAttachmentStatus\": \"blocked\"")
-            assertContains(report, "\"textureAttachmentStatus\": \"blocked\"")
+            assertContains(report, "\"existingAttachmentStatus\": \"blocked\"")
             assertContains(report, "\"bulkNoticeStatus\": \"blocked\"")
             assertFalse(RAW_UUID.containsMatchIn(report))
-        }
-    }
-
-    @Test
-    fun `texture fixture can pass while landmark fixture remains blocked`() {
-        withReport { reportPath ->
-            val ports = Ports()
-
-            val exit = runner(
-                ports.runtime(),
-                reportPath,
-                inputs(
-                    textureFileName = "poster.png",
-                    texturePayloadHandle = "opaque-texture-handle",
-                    textureDigest = "sha256:abc",
-                ),
-            ).run()
-
-            val report = reportPath.readText()
-            assertEquals(CommandResult.UNAVAILABLE, exit)
-            assertContains(report, "\"landmarkAttachmentStatus\": \"blocked\"")
-            assertContains(report, "\"textureAttachmentStatus\": \"passed\"")
-            assertEquals(AttachmentKind.TEXTURE, ports.noticePort.attachments.filterNotNull().single().kind)
         }
     }
 
@@ -308,9 +284,6 @@ class LiveProofRunnerTest {
         subject: String? = "Tonight",
         body: String? = "Doors at eight",
         authorisedLiveSend: Boolean = true,
-        textureFileName: String? = null,
-        texturePayloadHandle: String? = null,
-        textureDigest: String? = null,
         bulkLimit: Int? = null,
         bulkDelayMs: Long? = null,
         cleanupMode: String? = "delete-created",
@@ -332,12 +305,6 @@ class LiveProofRunnerTest {
         authorisedLiveSend = authorisedLiveSend,
         existingAttachmentKind = null,
         existingAttachmentId = null,
-        landmarkVenue = null,
-        landmarkRegionId = null,
-        landmarkLocalPosition = null,
-        textureFileName = textureFileName,
-        texturePayloadHandle = texturePayloadHandle,
-        textureDigest = textureDigest,
         bulkLimit = bulkLimit,
         bulkDelayMs = bulkDelayMs,
         cleanupMode = cleanupMode,
@@ -453,22 +420,6 @@ class LiveProofRunnerTest {
         ): AttachmentResolutionResult {
             calls += 1
             return AttachmentResolutionResult.Resolved(fakeAttachment(request.kind))
-        }
-
-        override fun createLandmarkAttachment(
-            session: HostessSession,
-            request: org.hostess.core.domain.CreateLandmarkAttachment,
-        ): AttachmentResolutionResult {
-            calls += 1
-            return AttachmentResolutionResult.Resolved(fakeAttachment(AttachmentKind.LANDMARK))
-        }
-
-        override fun uploadTextureAttachment(
-            session: HostessSession,
-            request: org.hostess.core.domain.UploadTextureAttachment,
-        ): AttachmentResolutionResult {
-            calls += 1
-            return AttachmentResolutionResult.Resolved(fakeAttachment(AttachmentKind.TEXTURE))
         }
 
         private fun fakeAttachment(kind: AttachmentKind): AttachmentRef = AttachmentRef(

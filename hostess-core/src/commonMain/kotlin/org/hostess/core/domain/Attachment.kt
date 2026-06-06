@@ -14,47 +14,8 @@ data class ExistingInventoryAttachment(
     val itemId: InventoryItemId,
 ) : AttachmentRequest
 
-data class CreateLandmarkAttachment(
-    val venueLabel: String,
-    val regionId: String,
-    val localPosition: LocalPosition,
-) : AttachmentRequest {
-    init {
-        require(venueLabel.isNotBlank()) { "Venue label cannot be blank." }
-        require(regionId.isNotBlank()) { "Region ID cannot be blank." }
-    }
-
-    override val kind: AttachmentKind = AttachmentKind.LANDMARK
-}
-
-data class UploadTextureAttachment(
-    val fileName: String,
-    val contentDigest: String,
-    val payloadHandle: AttachmentPayloadHandle,
-) : AttachmentRequest {
-    init {
-        require(fileName.isNotBlank()) { "Texture file name cannot be blank." }
-        require(contentDigest.isNotBlank()) { "Texture content digest cannot be blank." }
-    }
-
-    override val kind: AttachmentKind = AttachmentKind.TEXTURE
-}
-
-@JvmInline
-value class AttachmentPayloadHandle(val value: String) {
-    init {
-        require(value.isNotBlank()) { "Attachment payload handle cannot be blank." }
-    }
-}
-
 data class AttachmentRef(
     val attachmentId: InventoryItemId,
     val ownerId: AttachmentOwnerId,
     val kind: AttachmentKind,
-)
-
-data class LocalPosition(
-    val x: Double,
-    val y: Double,
-    val z: Double,
 )

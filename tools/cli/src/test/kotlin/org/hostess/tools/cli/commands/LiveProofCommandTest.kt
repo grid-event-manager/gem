@@ -429,66 +429,6 @@ class LiveProofCommandTest {
         }
     }
 
-    @Test
-    fun `texture live proof report omits payload handle and keeps digest fields`() {
-        val directory = Files.createTempDirectory("hostess-live-proof-texture")
-        try {
-            val reportPath = directory.resolve("live-proof.json")
-            val output = RecordingCliOutput()
-
-            val exitCode = CommandRegistry.default(CliCompositionRoot()).execute(
-                listOf(
-                    "live-proof",
-                    "--report",
-                    reportPath.toString(),
-                    "--authorised-live-send",
-                    "--grid",
-                    "second-life",
-                    "--account",
-                    "venue-proof",
-                    "--credential-env",
-                    "HOSTESS_PROOF_CREDENTIAL",
-                    "--proof-account-attested",
-                    "--scripted-agent-attested",
-                    "--operator",
-                    "test-operator",
-                    "--proof-account-label",
-                    "test-proof-account",
-                    "--target",
-                    "Venue Hosts",
-                    "--subject",
-                    "Tonight",
-                    "--body",
-                    "Doors at eight",
-                    "--recipient-count",
-                    "Venue Hosts=1",
-                    "--recipient-count-source",
-                    "operator-acknowledged",
-                    "--ledger",
-                    directory.resolve("notice-ledger.tsv").toString(),
-                    "--texture-file-name",
-                    "/home/user/private/poster.png",
-                    "--texture-payload-handle",
-                    "/home/user/private/poster.png",
-                    "--texture-digest",
-                    "sha256:abc",
-                ),
-                output,
-            )
-
-            val report = reportPath.readText()
-            assertEquals(3, exitCode)
-            assertContains(report, "\"textureFileName\": \"poster.png\"")
-            assertContains(report, "\"textureDigest\": \"sha256:abc\"")
-            assertFalse(report.contains("texturePayloadHandle"))
-            assertFalse(report.contains("/home/user/private/poster.png"))
-            assertFalse(report.contains("notice-ledger.tsv"))
-            assertFalse(RAW_UUID.containsMatchIn(report))
-        } finally {
-            directory.toFile().deleteRecursively()
-        }
-    }
-
     private companion object {
         val RAW_UUID = Regex(
             "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}",

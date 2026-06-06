@@ -12,7 +12,6 @@ class RedactionTest {
             "session_id" to "session-material",
             "credentialHandle" to "HOSTESS_PROOF_CREDENTIAL",
             "existingAttachmentId" to "12345678-1234-1234-1234-123456789abc",
-            "landmarkRegionId" to "12345678-1234-1234-1234-123456789abc",
             "password" to "secret",
             "retentionNote" to "keep this private",
             "seedCapability" to "https://caps.example/seed",
@@ -23,7 +22,6 @@ class RedactionTest {
             "circuitCode" to "123456789",
             "attachmentPayloadHandle" to "/home/user/poster.png",
             "attachmentSource" to "/home/user/poster.png",
-            "texturePayloadHandle" to "/home/user/poster.png",
         )
 
         assertEquals(

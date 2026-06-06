@@ -1,7 +1,6 @@
 package org.hostess.core.services
 
 import org.hostess.core.domain.AttachmentKind
-import org.hostess.core.domain.AttachmentPayloadHandle
 import org.hostess.core.domain.CoreFailureReason
 import org.hostess.core.domain.ExistingInventoryAttachment
 import org.hostess.core.domain.GroupDisplayName
@@ -19,7 +18,6 @@ import org.hostess.core.testing.defaultSession
 import org.hostess.core.testing.failure
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
@@ -75,13 +73,6 @@ class AttachmentServiceTest {
 
         assertTrue(NoticeDraftInvalidReason.TOO_MANY_ATTACHMENTS in validation.reasons)
         assertTrue(inventoryPort.existingRequests.isEmpty())
-    }
-
-    @Test
-    fun `texture upload requires opaque payload handle`() {
-        assertFailsWith<IllegalArgumentException> {
-            AttachmentPayloadHandle(" ")
-        }
     }
 
     private fun selectedTargets(): GroupTargetSet = assertIs<TargetSelectionResult.Changed>(

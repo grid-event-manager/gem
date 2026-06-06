@@ -1,7 +1,7 @@
 package org.hostess.tools.cli.commands
 
 import org.hostess.core.domain.AttachmentRef
-import org.hostess.core.domain.AttachmentRequest
+import org.hostess.core.domain.ExistingInventoryAttachment
 import org.hostess.core.domain.GroupMembership
 import org.hostess.core.domain.GroupSendState
 import org.hostess.core.domain.GroupTargetSet
@@ -54,20 +54,11 @@ internal class LiveProofRunner(
         }
 
         runAttachmentProof(
-            statusKey = "landmarkAttachmentStatus",
-            resolveStep = "landmark-attachment",
-            sendStep = "landmark-notice",
-            missingReason = "landmark fixture unavailable",
-            request = inputs.landmarkRequest(),
-            session = session,
-            targetSet = targetSet,
-        )
-        runAttachmentProof(
-            statusKey = "textureAttachmentStatus",
-            resolveStep = "texture-attachment",
-            sendStep = "texture-notice",
-            missingReason = "texture fixture unavailable",
-            request = inputs.textureRequest(),
+            statusKey = "existingAttachmentStatus",
+            resolveStep = "existing-attachment",
+            sendStep = "existing-attachment-notice",
+            missingReason = "existing attachment fixture unavailable",
+            request = inputs.existingAttachmentRequest(),
             session = session,
             targetSet = targetSet,
         )
@@ -228,7 +219,7 @@ internal class LiveProofRunner(
         resolveStep: String,
         sendStep: String,
         missingReason: String,
-        request: AttachmentRequest?,
+        request: ExistingInventoryAttachment?,
         session: HostessSession,
         targetSet: GroupTargetSet,
     ) {

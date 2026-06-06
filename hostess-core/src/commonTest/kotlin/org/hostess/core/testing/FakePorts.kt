@@ -6,7 +6,6 @@ import org.hostess.core.domain.AttachmentKind
 import org.hostess.core.domain.AttachmentOwnerId
 import org.hostess.core.domain.CoreFailure
 import org.hostess.core.domain.CoreFailureReason
-import org.hostess.core.domain.CreateLandmarkAttachment
 import org.hostess.core.domain.ExistingInventoryAttachment
 import org.hostess.core.domain.GroupId
 import org.hostess.core.domain.GroupMembership
@@ -18,7 +17,6 @@ import org.hostess.core.domain.HostessSession
 import org.hostess.core.domain.InventoryItemId
 import org.hostess.core.domain.NoticeDraft
 import org.hostess.core.domain.SessionId
-import org.hostess.core.domain.UploadTextureAttachment
 import org.hostess.core.ports.AttachmentResolutionResult
 import org.hostess.core.ports.ClockPort
 import org.hostess.core.ports.GroupListResult
@@ -62,12 +60,8 @@ class FakeGroupPort(
 
 class FakeInventoryPort(
     var existingResult: AttachmentResolutionResult = AttachmentResolutionResult.Resolved(defaultAttachment()),
-    var landmarkResult: AttachmentResolutionResult = AttachmentResolutionResult.Resolved(defaultAttachment()),
-    var textureResult: AttachmentResolutionResult = AttachmentResolutionResult.Resolved(defaultAttachment()),
 ) : InventoryPort {
     val existingRequests = mutableListOf<ExistingInventoryAttachment>()
-    val landmarkRequests = mutableListOf<CreateLandmarkAttachment>()
-    val textureRequests = mutableListOf<UploadTextureAttachment>()
 
     override fun resolveExistingAttachment(
         session: HostessSession,
@@ -75,22 +69,6 @@ class FakeInventoryPort(
     ): AttachmentResolutionResult {
         existingRequests += request
         return existingResult
-    }
-
-    override fun createLandmarkAttachment(
-        session: HostessSession,
-        request: CreateLandmarkAttachment,
-    ): AttachmentResolutionResult {
-        landmarkRequests += request
-        return landmarkResult
-    }
-
-    override fun uploadTextureAttachment(
-        session: HostessSession,
-        request: UploadTextureAttachment,
-    ): AttachmentResolutionResult {
-        textureRequests += request
-        return textureResult
     }
 }
 

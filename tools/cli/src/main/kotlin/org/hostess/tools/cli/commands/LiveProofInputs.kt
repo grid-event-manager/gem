@@ -1,16 +1,11 @@
 package org.hostess.tools.cli.commands
 
 import org.hostess.core.domain.AttachmentKind
-import org.hostess.core.domain.AttachmentPayloadHandle
-import org.hostess.core.domain.AttachmentRequest
-import org.hostess.core.domain.CreateLandmarkAttachment
 import org.hostess.core.domain.ExistingInventoryAttachment
 import org.hostess.core.domain.InventoryItemId
 import org.hostess.core.domain.LoginComplianceRequest
-import org.hostess.core.domain.LocalPosition
 import org.hostess.core.domain.OperatorLabel
 import org.hostess.core.domain.ScriptedAgentEvidenceSource
-import org.hostess.core.domain.UploadTextureAttachment
 import org.hostess.tools.cli.CommandArguments
 import org.hostess.tools.cli.CommandMode
 
@@ -31,12 +26,6 @@ internal data class LiveProofInputs(
     val authorisedLiveSend: Boolean,
     val existingAttachmentKind: String?,
     val existingAttachmentId: String?,
-    val landmarkVenue: String?,
-    val landmarkRegionId: String?,
-    val landmarkLocalPosition: String?,
-    val textureFileName: String?,
-    val texturePayloadHandle: String?,
-    val textureDigest: String?,
     val bulkLimit: Int?,
     val bulkDelayMs: Long?,
     val cleanupMode: String?,
@@ -90,22 +79,21 @@ internal data class LiveProofInputs(
         }
         existingAttachmentKind?.let { put("existingAttachmentKind", it) }
         existingAttachmentId?.let { put("existingAttachmentId", it) }
-        landmarkVenue?.let { put("landmarkVenue", it) }
-        landmarkRegionId?.let { put("landmarkRegionId", it) }
-        landmarkLocalPosition?.let { put("landmarkLocalPos", it) }
-        textureFileName?.let { put("textureFileName", safeTextureFileName()) }
-        textureDigest?.let { put("textureDigest", it) }
         bulkLimit?.let { put("bulkLimit", it.toString()) }
         bulkDelayMs?.let { put("bulkDelayMs", it.toString()) }
         cleanupMode?.let { put("cleanupMode", it) }
         retentionNote?.let { put("retentionNote", it) }
     }
 
-    fun landmarkRequest(): AttachmentRequest? =
-        existingRequest(AttachmentKind.LANDMARK) ?: createdLandmarkRequest()
-
-    fun textureRequest(): AttachmentRequest? =
-        existingRequest(AttachmentKind.TEXTURE) ?: uploadTextureRequest()
+    fun existingAttachmentRequest(): ExistingInventoryAttachment? {
+        val kind = when (existingAttachmentKind?.lowercase()) {
+            "landmark" -> AttachmentKind.LANDMARK
+            "texture" -> AttachmentKind.TEXTURE
+            else -> return null
+        }
+        val itemId = existingAttachmentId?.takeIf(String::isNotBlank) ?: return null
+        return ExistingInventoryAttachment(kind, InventoryItemId(itemId))
+    }
 
     fun cleanupModeValue(): String = cleanupMode?.lowercase() ?: "delete-created"
 
@@ -153,58 +141,6 @@ internal data class LiveProofInputs(
             ledgerPath = noticeLedgerPath,
         )
 
-    private fun existingRequest(kind: AttachmentKind): AttachmentRequest? {
-        val requestedKind = when (existingAttachmentKind?.lowercase()) {
-            "landmark" -> AttachmentKind.LANDMARK
-            "texture" -> AttachmentKind.TEXTURE
-            else -> return null
-        }
-        if (requestedKind != kind) {
-            return null
-        }
-        val itemId = existingAttachmentId?.takeIf(String::isNotBlank) ?: return null
-        return ExistingInventoryAttachment(kind, InventoryItemId(itemId))
-    }
-
-    private fun createdLandmarkRequest(): AttachmentRequest? {
-        val venue = landmarkVenue?.takeIf(String::isNotBlank) ?: return null
-        val regionId = landmarkRegionId?.takeIf(String::isNotBlank) ?: return null
-        val position = localPosition() ?: return null
-        return CreateLandmarkAttachment(
-            venueLabel = venue,
-            regionId = regionId,
-            localPosition = position,
-        )
-    }
-
-    private fun uploadTextureRequest(): AttachmentRequest? {
-        val handle = texturePayloadHandle?.takeIf(String::isNotBlank) ?: return null
-        val digest = textureDigest?.takeIf(String::isNotBlank) ?: return null
-        return UploadTextureAttachment(
-            fileName = safeTextureFileName(),
-            contentDigest = digest,
-            payloadHandle = AttachmentPayloadHandle(handle),
-        )
-    }
-
-    private fun localPosition(): LocalPosition? {
-        val parts = landmarkLocalPosition?.split(",")?.map(String::trim) ?: return null
-        if (parts.size != 3) {
-            return null
-        }
-        val x = parts[0].toDoubleOrNull() ?: return null
-        val y = parts[1].toDoubleOrNull() ?: return null
-        val z = parts[2].toDoubleOrNull() ?: return null
-        return LocalPosition(x, y, z)
-    }
-
-    private fun safeTextureFileName(): String =
-        textureFileName
-            ?.replace('\\', '/')
-            ?.substringAfterLast('/')
-            ?.takeIf(String::isNotBlank)
-            ?: "texture-upload"
-
     companion object {
         fun from(arguments: CommandArguments): LiveProofInputs {
             val compliance = LoginComplianceArguments(arguments, CommandMode.LIVE)
@@ -225,12 +161,6 @@ internal data class LiveProofInputs(
                 authorisedLiveSend = arguments.has("authorised-live-send"),
                 existingAttachmentKind = arguments.option("existing-attachment-kind"),
                 existingAttachmentId = arguments.option("existing-attachment-id"),
-                landmarkVenue = arguments.option("landmark-venue"),
-                landmarkRegionId = arguments.option("landmark-region-id"),
-                landmarkLocalPosition = arguments.option("landmark-local-pos"),
-                textureFileName = arguments.option("texture-file-name"),
-                texturePayloadHandle = arguments.option("texture-payload-handle"),
-                textureDigest = arguments.option("texture-digest"),
                 bulkLimit = arguments.option("bulk-limit")?.toIntOrNull(),
                 bulkDelayMs = arguments.option("bulk-delay-ms")?.toLongOrNull(),
                 cleanupMode = arguments.option("cleanup-mode"),

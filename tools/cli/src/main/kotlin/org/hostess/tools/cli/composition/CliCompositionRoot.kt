@@ -2,7 +2,6 @@ package org.hostess.tools.cli.composition
 
 import java.nio.file.Path
 import org.hostess.core.domain.AccountLabel
-import org.hostess.core.domain.AttachmentKind
 import org.hostess.core.domain.AttachmentOwnerId
 import org.hostess.core.domain.AttachmentRef
 import org.hostess.core.domain.GroupMembership
@@ -143,19 +142,6 @@ private class FakeProofInventoryPort : InventoryPort {
     ): AttachmentResolutionResult = AttachmentResolutionResult.Resolved(
         AttachmentRef(request.itemId, AttachmentOwnerId("fake-owner"), request.kind),
     )
-
-    override fun createLandmarkAttachment(
-        session: HostessSession,
-        request: org.hostess.core.domain.CreateLandmarkAttachment,
-    ): AttachmentResolutionResult = AttachmentResolutionResult.Resolved(fakeAttachment(AttachmentKind.LANDMARK))
-
-    override fun uploadTextureAttachment(
-        session: HostessSession,
-        request: org.hostess.core.domain.UploadTextureAttachment,
-    ): AttachmentResolutionResult = AttachmentResolutionResult.Resolved(fakeAttachment(AttachmentKind.TEXTURE))
-
-    private fun fakeAttachment(kind: AttachmentKind): AttachmentRef =
-        AttachmentRef(InventoryItemId("fake-attachment-${kind.name.lowercase()}"), AttachmentOwnerId("fake-owner"), kind)
 }
 
 private class FakeProofNoticePort : NoticePort {
