@@ -99,6 +99,8 @@ class LoginCommandTest {
             assertContains(report, "\"account\": \"[redacted]\"")
             assertFalse(report.contains("venue-proof"))
             assertFalse(report.contains("HOSTESS_PROOF_CREDENTIAL"))
+            assertFalse(report.contains("fake-proof-account"))
+            assertFalse(report.contains("fake-operator"))
         } finally {
             directory.toFile().deleteRecursively()
         }

@@ -46,6 +46,7 @@ class CliCompositionRoot(
     }
 
     private fun fakeRuntime(): CliRuntime {
+        // Explicit non-live developer mode; never use this runtime as live proof.
         val session = fakeSession()
         val sessionPort = FakeProofSessionPort(session)
         val groupPort = FakeProofGroupPort(fakeGroups)
