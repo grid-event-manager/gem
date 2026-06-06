@@ -25,8 +25,7 @@ class ProofReportWriterTest {
                     "currentGroupsStatus" to "passed",
                     "logoutStatus" to "passed",
                     "plainNoticeStatus" to "not_run",
-                    "landmarkAttachmentStatus" to "not_run",
-                    "textureAttachmentStatus" to "not_run",
+                    "existingAttachmentStatus" to "not_run",
                     "bulkNoticeStatus" to "not_run",
                     "androidProbeStatus" to "not_run",
                 ),
@@ -64,8 +63,7 @@ class ProofReportWriterTest {
             assertContains(json, "\"currentGroupsStatus\": \"passed\"")
             assertContains(json, "\"logoutStatus\": \"passed\"")
             assertContains(json, "\"plainNoticeStatus\": \"not_run\"")
-            assertContains(json, "\"landmarkAttachmentStatus\": \"not_run\"")
-            assertContains(json, "\"textureAttachmentStatus\": \"not_run\"")
+            assertContains(json, "\"existingAttachmentStatus\": \"not_run\"")
             assertContains(json, "\"bulkNoticeStatus\": \"not_run\"")
             assertContains(json, "\"androidProbeStatus\": \"not_run\"")
             assertContains(json, "\"startedAt\"")

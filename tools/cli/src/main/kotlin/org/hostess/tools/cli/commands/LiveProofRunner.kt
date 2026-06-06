@@ -153,10 +153,8 @@ internal class LiveProofRunner(
         listOf(
             "select-targets",
             "plain-notice",
-            "landmark-attachment",
-            "landmark-notice",
-            "texture-attachment",
-            "texture-notice",
+            "existing-attachment",
+            "existing-attachment-notice",
             "bulk-notice",
         ).forEach { step -> steps += LiveProofStep(step, "not_run", detail) }
     }
@@ -170,10 +168,8 @@ internal class LiveProofRunner(
             "current-groups",
             "select-targets",
             "plain-notice",
-            "landmark-attachment",
-            "landmark-notice",
-            "texture-attachment",
-            "texture-notice",
+            "existing-attachment",
+            "existing-attachment-notice",
             "bulk-notice",
             "cleanup",
         ).filterNotNull().forEach { step -> steps += LiveProofStep(step, "not_run", detail) }
@@ -210,7 +206,7 @@ internal class LiveProofRunner(
         }
         statusFields["plainNoticeStatus"] = classifyStatus(detail)
         steps += LiveProofStep("plain-notice", statusFields.getValue("plainNoticeStatus"), detail)
-        steps += LiveProofStep.notRunPlan(detail, "landmark-attachment")
+        steps += LiveProofStep.notRunPlan(detail, "existing-attachment")
         return false
     }
 
