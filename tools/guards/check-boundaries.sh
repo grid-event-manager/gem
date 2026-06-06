@@ -40,6 +40,10 @@ TRACK_E_FORBIDDEN_OWNER_DECL_PATTERN='(^|[^[:alnum:]_])((data[[:space:]]+)?class
 TRACK_E_IMPLICIT_FAKE_PATTERN='null,[[:space:]]*"fake"|option\("mode"\)[[:space:]]*\?:[[:space:]]*"fake"|CommandMode\.parse\(null\)'
 TRACK_E_LOCAL_HTTP_PATTERN='local test servers|isLocalTestServer|127\.0\.0\.1|localhost|::1'
 TRACK_E_ANDROID_PROBE_PATTERN='AndroidCompatibilityProbe[[:space:]]+internal[[:space:]]+constructor|protocolLoadProbe|forbiddenApiScan[[:space:]]*=[[:space:]]*"external_guard_required"|external_guard_required'
+TRACK_G_FORBIDDEN_OWNER_PATTERN='(^|[^[:alnum:]_])(NotecardService|NotecardPort|ProtocolNotecardRuntime|LibomvNotecardAdapter|LibomvNotecardTextParser|NotecardAssetReader|BulkSender|NoticeSender|InventoryCataloguePort|InventoryLookupPort|InventoryBrowserService|ProtocolInventoryAssetSource)([^[:alnum:]_]|$)'
+TRACK_G_EVENT_QUEUE_SEED_PATTERN='fun[[:space:]]+seed[[:space:]]*\(|seedBody|seedCapability'
+TRACK_G_CLI_DIRECT_PROTOCOL_PATTERN='(^|[^[:alnum:]_])(ProtocolInventoryRuntime|ProtocolCurrentGroupsSource|ProtocolCapabilitySeedClient|EventQueueGetClient)([^[:alnum:]_]|$)'
+TRACK_G_CLI_RAW_CAPABILITY_PATTERN='seedCapability|capabilityUrl|EventQueueGet|FetchInventory2|FetchInventoryDescendents2'
 TRACK_F_COMMON_FORBIDDEN_PATTERN='java\.|javax\.|okhttp|android\.|System\.|MessageDigest|NetworkInterface|Datagram|ByteBuffer|UUID|Class\.forName|::class\.java'
 TRACK_F_PARALLEL_PATH_PATTERN='hostess-core-kmp|hostess-protocol-android|AndroidProtocolLibomvModule|JvmProtocolLibomvModule|GroupReader|CurrentGroupsClient|LoginRuntimeAndroid|Manager|Utils|Helpers|Common'
 TRACK_F_PLATFORM_API_PATTERN='okhttp3\.|OkHttpClient|System(::|\.)getenv|NetworkInterface|java\.net\.Datagram|Datagram(Packet|Socket)|javax\.xml|org\.xml\.sax|DocumentBuilderFactory|java\.util\.UUID|MessageDigest|java\.nio\.ByteBuffer'
@@ -640,6 +644,30 @@ track_e_android_probe_targets=()
 add_existing track_e_android_probe_targets \
     "apps/android/src/main"
 
+track_g_main_targets=()
+add_existing track_g_main_targets \
+    "hostess-core/src/commonMain" \
+    "hostess-core/src/jvmMain" \
+    "hostess-core/src/androidMain" \
+    "hostess-core/src/jvmAndroidMain" \
+    "hostess-core/src/main" \
+    "hostess-protocol-libomv/src/commonMain" \
+    "hostess-protocol-libomv/src/jvmMain" \
+    "hostess-protocol-libomv/src/androidMain" \
+    "hostess-protocol-libomv/src/jvmAndroidMain" \
+    "hostess-protocol-libomv/src/main" \
+    "tools/cli/src/main" \
+    "apps/desktop/src/main" \
+    "apps/android/src/main"
+
+track_g_event_queue_targets=()
+add_existing track_g_event_queue_targets \
+    "hostess-protocol-libomv/src/commonMain/kotlin/org/hostess/protocol/libomv/transport/EventQueueGetClient.kt"
+
+track_g_cli_targets=()
+add_existing track_g_cli_targets \
+    "tools/cli/src/main"
+
 check_no_hits \
     "hostess-core forbidden dependencies" \
     "$CORE_FORBIDDEN_PATTERN" \
@@ -812,6 +840,31 @@ check_no_hits \
     "Track E Android probe injection/status leakage" \
     "$TRACK_E_ANDROID_PROBE_PATTERN" \
     "${track_e_android_probe_targets[@]}"
+
+check_no_hits \
+    "Track G forbidden capability/notecard owner names" \
+    "$TRACK_G_FORBIDDEN_OWNER_PATTERN" \
+    "${track_g_main_targets[@]}"
+
+check_no_hits \
+    "Track G old EventQueue seed route" \
+    "$TRACK_G_EVENT_QUEUE_SEED_PATTERN" \
+    "${track_g_event_queue_targets[@]}"
+
+check_no_hits \
+    "Track G CLI direct protocol route" \
+    "$TRACK_G_CLI_DIRECT_PROTOCOL_PATTERN" \
+    "${track_g_cli_targets[@]}"
+
+check_no_hits \
+    "Track G CLI raw capability evidence labels" \
+    "$TRACK_G_CLI_RAW_CAPABILITY_PATTERN" \
+    "${track_g_cli_targets[@]}"
+
+check_exact_owner_count "Track G single InventoryPort owner" "InventoryPort" 1 "${track_g_main_targets[@]}"
+check_exact_owner_count "Track G single InventoryDirectoryService owner" "InventoryDirectoryService" 1 "${track_g_main_targets[@]}"
+check_exact_owner_count "Track G single ProtocolCapabilitySeedClient owner" "ProtocolCapabilitySeedClient" 1 "${track_g_main_targets[@]}"
+check_exact_owner_count "Track G single ProtocolCapabilityCacheProvider owner" "ProtocolCapabilityCacheProvider" 1 "${track_g_main_targets[@]}"
 
 check_no_hits \
     "Track D viewer identity provider outside protocol module" \
@@ -1012,6 +1065,26 @@ check_pattern_matches \
     "self-test Track E Android probe hook pattern" \
     "$TRACK_E_ANDROID_PROBE_PATTERN" \
     'class AndroidCompatibilityProbe internal constructor(private val protocolLoadProbe: () -> State)'
+
+check_pattern_matches \
+    "self-test Track G forbidden owner pattern" \
+    "$TRACK_G_FORBIDDEN_OWNER_PATTERN" \
+    'class InventoryBrowserService'
+
+check_pattern_matches \
+    "self-test Track G old EventQueue seed pattern" \
+    "$TRACK_G_EVENT_QUEUE_SEED_PATTERN" \
+    'private fun seedBody(requested: Set<String>) = requested.joinToString()'
+
+check_pattern_matches \
+    "self-test Track G CLI direct protocol pattern" \
+    "$TRACK_G_CLI_DIRECT_PROTOCOL_PATTERN" \
+    'ProtocolInventoryRuntime().listItems(session)'
+
+check_pattern_matches \
+    "self-test Track G CLI raw capability label pattern" \
+    "$TRACK_G_CLI_RAW_CAPABILITY_PATTERN" \
+    '"FetchInventoryDescendents2" to capabilityUrl'
 
 if [[ "$failures" -ne 0 ]]; then
     exit 1
