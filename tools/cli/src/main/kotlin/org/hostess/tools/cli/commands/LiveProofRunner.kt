@@ -7,6 +7,9 @@ import org.hostess.core.domain.GroupSendState
 import org.hostess.core.domain.GroupTargetSet
 import org.hostess.core.domain.HostessDelay
 import org.hostess.core.domain.HostessSession
+import org.hostess.core.domain.InventoryItemDescriptor
+import org.hostess.core.domain.InventoryItemKind
+import org.hostess.core.domain.InventoryItemQuery
 import org.hostess.core.domain.NoticeDispatchResult
 import org.hostess.core.domain.NoticeDraft
 import org.hostess.core.domain.PacingPolicy
@@ -14,6 +17,7 @@ import org.hostess.core.domain.TargetSelectionResult
 import org.hostess.core.ports.AttachmentResolutionResult
 import org.hostess.core.ports.CredentialHandle
 import org.hostess.core.ports.GroupListResult
+import org.hostess.core.ports.InventoryItemListResult
 import org.hostess.core.ports.LoginRequest
 import org.hostess.core.ports.SessionLoginResult
 import org.hostess.core.ports.SessionLogoutResult
@@ -40,6 +44,7 @@ internal class LiveProofRunner(
     fun run(): CommandResult = when (inputs.proofScope) {
         LiveProofScope.READ_GROUPS -> runReadGroupsProof()
         LiveProofScope.LOGIN_ONLY -> runLoginOnlyProof()
+        LiveProofScope.INVENTORY_CATALOGUE -> runInventoryCatalogueProof()
         LiveProofScope.FULL -> runFullProof()
         LiveProofScope.UNSUPPORTED -> finish(ProofReportStatus.BLOCKED, "proof scope unsupported")
     }
@@ -90,6 +95,22 @@ internal class LiveProofRunner(
         runLogout(session)
         markLoginOnlyProofStepsNotRun("login-only scope", includeLogout = false)
         return finish(terminalStatus(), "live proof ${terminalStatus().wireValue}")
+    }
+
+    private fun runInventoryCatalogueProof(): CommandResult {
+        val session = login(planCurrentGroupsOnFailure = false)
+            ?: run {
+                markInventoryCatalogueProofStepsNotRun("login blocked", includeLogout = true)
+                return finish(ProofReportStatus.BLOCKED, "login blocked")
+            }
+        val items = inventoryCatalogue(session)
+        markSendProofStepsNotRun("inventory-catalogue scope", includeCleanup = true)
+        runLogout(session)
+        return if (items == null) {
+            finish(terminalStatus(), "inventory catalogue unavailable")
+        } else {
+            finish(terminalStatus(), "live proof ${terminalStatus().wireValue}")
+        }
     }
 
     private fun login(planCurrentGroupsOnFailure: Boolean = true): HostessSession? {
@@ -149,14 +170,44 @@ internal class LiveProofRunner(
         return "groups=${groups.size}; displayNames=$displayNames"
     }
 
-    private fun markSendProofStepsNotRun(detail: String) {
+    private fun inventoryCatalogue(session: HostessSession): List<InventoryItemDescriptor>? =
+        when (
+            val result = runtime.inventoryDirectoryService.listItems(
+                session,
+                InventoryItemQuery(kinds = setOf(InventoryItemKind.LANDMARK)),
+            )
+        ) {
+            is InventoryItemListResult.Success -> {
+                statusFields["inventoryCatalogueStatus"] = "passed"
+                statusFields["inventoryItemCount"] = result.items.size.toString()
+                steps += LiveProofStep.passed("inventory-catalogue", inventoryCatalogueDetail(result.items))
+                result.items
+            }
+            is InventoryItemListResult.Failure -> {
+                val detail = result.failure.redactedMessage ?: result.failure.reason.name.lowercase()
+                statusFields["inventoryCatalogueStatus"] = classifyStatus(detail)
+                steps += LiveProofStep("inventory-catalogue", statusFields.getValue("inventoryCatalogueStatus"), detail)
+                null
+            }
+        }
+
+    private fun inventoryCatalogueDetail(items: List<InventoryItemDescriptor>): String {
+        val displayNames = items
+            .map { it.displayName.value }
+            .sortedWith(compareBy<String> { it.lowercase() }.thenBy { it })
+            .joinToString("|")
+        return "items=${items.size}; displayNames=$displayNames"
+    }
+
+    private fun markSendProofStepsNotRun(detail: String, includeCleanup: Boolean = false) {
         listOf(
             "select-targets",
             "plain-notice",
             "existing-attachment",
             "existing-attachment-notice",
             "bulk-notice",
-        ).forEach { step -> steps += LiveProofStep(step, "not_run", detail) }
+            "cleanup".takeIf { includeCleanup },
+        ).filterNotNull().forEach { step -> steps += LiveProofStep(step, "not_run", detail) }
     }
 
     private fun markLoginOnlyProofStepsNotRun(
@@ -166,6 +217,22 @@ internal class LiveProofRunner(
         listOf(
             "logout".takeIf { includeLogout },
             "current-groups",
+            "select-targets",
+            "plain-notice",
+            "existing-attachment",
+            "existing-attachment-notice",
+            "bulk-notice",
+            "cleanup",
+        ).filterNotNull().forEach { step -> steps += LiveProofStep(step, "not_run", detail) }
+    }
+
+    private fun markInventoryCatalogueProofStepsNotRun(
+        detail: String,
+        includeLogout: Boolean,
+    ) {
+        listOf(
+            "logout".takeIf { includeLogout },
+            "inventory-catalogue",
             "select-targets",
             "plain-notice",
             "existing-attachment",

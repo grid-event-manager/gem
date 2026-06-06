@@ -81,11 +81,12 @@ class LiveProofCommand(
 
     private fun bootstrapBlockedStatusFields(inputs: LiveProofInputs): Map<String, String> =
         when (inputs.proofScope) {
-            LiveProofScope.READ_GROUPS, LiveProofScope.LOGIN_ONLY -> LiveProofStep.statusFields().toMutableMap().also {
-                it["credentialStatus"] = "blocked"
-                it["loginStatus"] = "runtime_gap"
-                it += inputs.loginComplianceStatusFields()
-            }
+            LiveProofScope.READ_GROUPS, LiveProofScope.LOGIN_ONLY, LiveProofScope.INVENTORY_CATALOGUE ->
+                LiveProofStep.statusFields().toMutableMap().also {
+                    it["credentialStatus"] = "blocked"
+                    it["loginStatus"] = "runtime_gap"
+                    it += inputs.loginComplianceStatusFields()
+                }
             LiveProofScope.FULL, LiveProofScope.UNSUPPORTED -> LiveProofStep.statusFields("blocked").toMutableMap().also {
                 it += inputs.loginComplianceStatusFields()
                 it += inputs.noticeComplianceArguments().reportStatusFields(null)
@@ -103,6 +104,11 @@ class LiveProofCommand(
                 "usage: live-proof --mode live --proof-scope login-only --report <path> --grid <name> " +
                     "--account <label> --credential-env <name> --proof-account-attested --scripted-agent-attested " +
                     "--operator <label> --proof-account-label <label> [--automated-use true]",
+            )
+            LiveProofScope.INVENTORY_CATALOGUE -> output.line(
+                "usage: live-proof --mode live --proof-scope inventory-catalogue --report <path> " +
+                    "--grid <name> --account <label> --credential-env <name> --proof-account-attested " +
+                    "--scripted-agent-attested --operator <label> --proof-account-label <label>",
             )
             LiveProofScope.FULL, LiveProofScope.UNSUPPORTED -> output.line(
                 "usage: live-proof --report <path> --authorised-live-send --grid <name> --account <label> " +

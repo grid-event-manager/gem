@@ -327,6 +327,102 @@ class LiveProofCommandTest {
     }
 
     @Test
+    fun `inventory catalogue scope does not require send notice inputs`() {
+        val directory = Files.createTempDirectory("hostess-live-proof-inventory-catalogue")
+        try {
+            val reportPath = directory.resolve("live-proof.json")
+            val output = RecordingCliOutput()
+
+            val exitCode = CommandRegistry.default(CliCompositionRoot()).execute(
+                listOf(
+                    "live-proof",
+                    "--mode",
+                    "live",
+                    "--proof-scope",
+                    "inventory-catalogue",
+                    "--report",
+                    reportPath.toString(),
+                    "--grid",
+                    "second-life",
+                    "--account",
+                    "venue-proof",
+                    "--credential-env",
+                    "HOSTESS_PROOF_CREDENTIAL",
+                    "--proof-account-attested",
+                    "--scripted-agent-attested",
+                    "--operator",
+                    "test-operator",
+                    "--proof-account-label",
+                    "test-proof-account",
+                ),
+                output,
+            )
+
+            val report = reportPath.readText()
+            assertEquals(3, exitCode)
+            assertFalse(output.lines.any { it.contains("missing required live proof input") })
+            assertContains(report, "\"proofScope\": \"inventory-catalogue\"")
+            assertContains(report, "\"loginComplianceStatus\": \"passed\"")
+            assertContains(report, "\"loginStatus\": \"blocked\"")
+            assertContains(report, "\"currentGroupsStatus\": \"not_run\"")
+            assertContains(report, "\"inventoryCatalogueStatus\": \"not_run\"")
+            assertContains(report, "\"inventoryItemCount\": \"0\"")
+            assertContains(report, "\"plainNoticeStatus\": \"not_run\"")
+            assertContains(report, "\"bulkNoticeStatus\": \"not_run\"")
+            assertFalse(report.contains("Venue Hosts"))
+            assertFalse(report.contains("Tonight"))
+            assertFalse(report.contains("notice-ledger"))
+            assertFalse(report.contains("HOSTESS_PROOF_CREDENTIAL"))
+        } finally {
+            directory.toFile().deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `inventory catalogue missing inputs do not mention send or notice compliance fields`() {
+        val directory = Files.createTempDirectory("hostess-live-proof-inventory-catalogue-missing")
+        try {
+            val reportPath = directory.resolve("live-proof.json")
+            val output = RecordingCliOutput()
+
+            val exitCode = CommandRegistry.default(CliCompositionRoot()).execute(
+                listOf(
+                    "live-proof",
+                    "--mode",
+                    "live",
+                    "--proof-scope",
+                    "inventory-catalogue",
+                    "--report",
+                    reportPath.toString(),
+                    "--grid",
+                    "second-life",
+                    "--account",
+                    "venue-proof",
+                ),
+                output,
+            )
+
+            val report = reportPath.readText()
+            assertEquals(2, exitCode)
+            assertTrue(output.lines.any { it.contains("credential-env") })
+            assertTrue(output.lines.any { it.contains("inventory-catalogue") })
+            assertFalse(output.lines.any { it.contains("authorised-live-send") })
+            assertFalse(output.lines.any { it.contains("recipient-count") })
+            assertFalse(output.lines.any { it.contains("ledger") })
+            assertFalse(output.lines.any { it.contains("target display name") })
+            assertFalse(output.lines.any { it.contains("subject") })
+            assertFalse(output.lines.any { it.contains("body") })
+            assertContains(report, "\"proofScope\": \"inventory-catalogue\"")
+            assertContains(report, "\"cr\\u0065dentialStatus\": \"blocked\"")
+            assertContains(report, "\"inventoryCatalogueStatus\": \"not_run\"")
+            assertContains(report, "\"inventoryItemCount\": \"0\"")
+            assertContains(report, "\"plainNoticeStatus\": \"not_run\"")
+        } finally {
+            directory.toFile().deleteRecursively()
+        }
+    }
+
+    @Test
     fun `credential file route blocks without reading or reporting path`() {
         val directory = Files.createTempDirectory("hostess-live-proof-credential-file")
         try {

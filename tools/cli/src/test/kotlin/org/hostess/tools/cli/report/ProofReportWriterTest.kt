@@ -23,6 +23,8 @@ class ProofReportWriterTest {
                     "credentialStatus" to "passed",
                     "loginStatus" to "passed",
                     "currentGroupsStatus" to "passed",
+                    "inventoryCatalogueStatus" to "passed",
+                    "inventoryItemCount" to "2",
                     "logoutStatus" to "passed",
                     "plainNoticeStatus" to "not_run",
                     "existingAttachmentStatus" to "not_run",
@@ -61,6 +63,8 @@ class ProofReportWriterTest {
             assertContains(json, "\"cr\\u0065dentialStatus\": \"passed\"")
             assertContains(json, "\"loginStatus\": \"passed\"")
             assertContains(json, "\"currentGroupsStatus\": \"passed\"")
+            assertContains(json, "\"inventoryCatalogueStatus\": \"passed\"")
+            assertContains(json, "\"inventoryItemCount\": \"2\"")
             assertContains(json, "\"logoutStatus\": \"passed\"")
             assertContains(json, "\"plainNoticeStatus\": \"not_run\"")
             assertContains(json, "\"existingAttachmentStatus\": \"not_run\"")

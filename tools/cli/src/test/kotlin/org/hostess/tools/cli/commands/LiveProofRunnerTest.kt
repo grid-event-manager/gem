@@ -19,7 +19,12 @@ import org.hostess.core.domain.GroupSendStatus
 import org.hostess.core.domain.HostessDelay
 import org.hostess.core.domain.HostessInstant
 import org.hostess.core.domain.HostessSession
+import org.hostess.core.domain.InventoryAssetId
+import org.hostess.core.domain.InventoryFolderId
+import org.hostess.core.domain.InventoryItemDescriptor
+import org.hostess.core.domain.InventoryItemDisplayName
 import org.hostess.core.domain.InventoryItemId
+import org.hostess.core.domain.InventoryItemKind
 import org.hostess.core.domain.InventoryItemQuery
 import org.hostess.core.domain.NoticeDraft
 import org.hostess.core.domain.NoticeCompliancePolicy
@@ -39,6 +44,7 @@ import org.hostess.core.ports.SessionLogoutResult
 import org.hostess.core.ports.SessionPort
 import org.hostess.core.services.AttachmentService
 import org.hostess.core.services.GroupDirectoryService
+import org.hostess.core.services.InventoryDirectoryService
 import org.hostess.core.services.LoginComplianceService
 import org.hostess.core.services.NoticeComplianceClock
 import org.hostess.core.services.NoticeComplianceService
@@ -208,6 +214,98 @@ class LiveProofRunnerTest {
     }
 
     @Test
+    fun `inventory catalogue scope logs in lists landmarks and logs out without send services`() {
+        withReport { reportPath ->
+            val ports = Ports()
+            ports.inventoryPort.listResult = InventoryItemListResult.Success(
+                listOf(
+                    inventoryItem("Venue Landmark", "landmark-b"),
+                    inventoryItem("Alpha Landmark", "landmark-a"),
+                ),
+            )
+
+            val exit = runner(
+                ports.runtime(),
+                reportPath,
+                inputs(
+                    proofScope = LiveProofScope.INVENTORY_CATALOGUE,
+                    targets = emptyList(),
+                    subject = null,
+                    body = null,
+                    authorisedLiveSend = false,
+                ),
+            ).run()
+
+            val report = reportPath.readText()
+            assertEquals(CommandResult.SUCCESS, exit)
+            assertContains(report, "\"status\": \"passed\"")
+            assertContains(report, "\"proofScope\": \"inventory-catalogue\"")
+            assertContains(report, "\"loginComplianceStatus\": \"passed\"")
+            assertContains(report, "\"loginStatus\": \"passed\"")
+            assertContains(report, "\"currentGroupsStatus\": \"not_run\"")
+            assertContains(report, "\"inventoryCatalogueStatus\": \"passed\"")
+            assertContains(report, "\"inventoryItemCount\": \"2\"")
+            assertContains(report, "\"detail\": \"items=2; displayNames=Alpha Landmark|Venue Landmark\"")
+            assertContains(report, "\"logoutStatus\": \"passed\"")
+            assertContains(report, "\"plainNoticeStatus\": \"not_run\"")
+            assertContains(report, "\"existingAttachmentStatus\": \"not_run\"")
+            assertContains(report, "\"bulkNoticeStatus\": \"not_run\"")
+            assertContains(report, "\"step\": \"cleanup\"")
+            assertContains(report, "\"detail\": \"inventory-catalogue scope\"")
+            assertEquals(1, ports.sessionPort.loginCalls)
+            assertEquals(1, ports.sessionPort.logoutCalls)
+            assertEquals(0, ports.groupPort.currentGroupsCalls)
+            assertEquals(0, ports.inventoryPort.calls)
+            assertEquals(1, ports.inventoryPort.listQueries.size)
+            assertEquals(setOf(InventoryItemKind.LANDMARK), ports.inventoryPort.listQueries.single().kinds)
+            assertEquals(0, ports.noticePort.groups.size)
+            assertFalse(RAW_UUID.containsMatchIn(report))
+        }
+    }
+
+    @Test
+    fun `inventory catalogue scope logs out and stays read only after inventory failure`() {
+        withReport { reportPath ->
+            val ports = Ports()
+            ports.inventoryPort.listResult = InventoryItemListResult.Failure(
+                CoreFailure(
+                    CoreFailureReason.INVENTORY_LIST_FAILED,
+                    "inventory runtime unavailable: fetch failed",
+                ),
+            )
+
+            val exit = runner(
+                ports.runtime(),
+                reportPath,
+                inputs(
+                    proofScope = LiveProofScope.INVENTORY_CATALOGUE,
+                    targets = emptyList(),
+                    subject = null,
+                    body = null,
+                    authorisedLiveSend = false,
+                ),
+            ).run()
+
+            val report = reportPath.readText()
+            assertEquals(CommandResult.UNAVAILABLE, exit)
+            assertContains(report, "\"status\": \"runtime_gap\"")
+            assertContains(report, "\"inventoryCatalogueStatus\": \"runtime_gap\"")
+            assertContains(report, "inventory runtime unavailable")
+            assertContains(report, "\"inventoryItemCount\": \"0\"")
+            assertContains(report, "\"logoutStatus\": \"passed\"")
+            assertContains(report, "\"plainNoticeStatus\": \"not_run\"")
+            assertContains(report, "\"existingAttachmentStatus\": \"not_run\"")
+            assertContains(report, "\"bulkNoticeStatus\": \"not_run\"")
+            assertEquals(1, ports.sessionPort.loginCalls)
+            assertEquals(1, ports.sessionPort.logoutCalls)
+            assertEquals(0, ports.groupPort.currentGroupsCalls)
+            assertEquals(0, ports.inventoryPort.calls)
+            assertEquals(1, ports.inventoryPort.listQueries.size)
+            assertEquals(0, ports.noticePort.groups.size)
+        }
+    }
+
+    @Test
     fun `plain notice uses core dispatch and missing existing attachment stays blocked`() {
         withReport { reportPath ->
             val ports = Ports()
@@ -323,6 +421,14 @@ class LiveProofRunnerTest {
         }
     }
 
+    private fun inventoryItem(displayName: String, itemId: String): InventoryItemDescriptor = InventoryItemDescriptor(
+        itemId = InventoryItemId(itemId),
+        parentFolderId = InventoryFolderId("folder-$itemId"),
+        assetId = InventoryAssetId("asset-$itemId"),
+        displayName = InventoryItemDisplayName(displayName),
+        kind = InventoryItemKind.LANDMARK,
+    )
+
     private class Ports(
         val sessionPort: RecordingSessionPort = RecordingSessionPort(),
         val groupPort: RecordingGroupPort = RecordingGroupPort(),
@@ -333,6 +439,7 @@ class LiveProofRunnerTest {
         fun runtime(): CliRuntime = CliRuntime(
             sessionService = SessionService(sessionPort, LoginComplianceService(), Redactor),
             groupDirectoryService = GroupDirectoryService(groupPort),
+            inventoryDirectoryService = InventoryDirectoryService(inventoryPort),
             targetSelectionService = TargetSelectionService(),
             noticeDraftService = NoticeDraftService(),
             attachmentService = AttachmentService(inventoryPort),
@@ -413,6 +520,8 @@ class LiveProofRunnerTest {
 
     private class RecordingInventoryPort : InventoryPort {
         var calls = 0
+        var listResult: InventoryItemListResult = InventoryItemListResult.Success(emptyList())
+        val listQueries = mutableListOf<InventoryItemQuery>()
 
         override fun resolveExistingAttachment(
             session: HostessSession,
@@ -425,7 +534,10 @@ class LiveProofRunnerTest {
         override fun listItems(
             session: HostessSession,
             query: InventoryItemQuery,
-        ): InventoryItemListResult = InventoryItemListResult.Success(emptyList())
+        ): InventoryItemListResult {
+            listQueries += query
+            return listResult
+        }
 
         private fun fakeAttachment(kind: AttachmentKind): AttachmentRef = AttachmentRef(
             attachmentId = InventoryItemId("attachment-${kind.name.lowercase()}"),

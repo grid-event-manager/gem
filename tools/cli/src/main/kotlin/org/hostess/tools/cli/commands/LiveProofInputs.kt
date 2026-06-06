@@ -203,6 +203,7 @@ internal enum class LiveProofScope(val wireValue: String) {
     FULL("full"),
     READ_GROUPS("read-groups"),
     LOGIN_ONLY("login-only"),
+    INVENTORY_CATALOGUE("inventory-catalogue"),
     UNSUPPORTED("unsupported"),
     ;
 
@@ -211,6 +212,7 @@ internal enum class LiveProofScope(val wireValue: String) {
             null, "", "full" -> FULL
             "read-groups" -> READ_GROUPS
             "login-only" -> LOGIN_ONLY
+            "inventory-catalogue" -> INVENTORY_CATALOGUE
             else -> UNSUPPORTED
         }
     }

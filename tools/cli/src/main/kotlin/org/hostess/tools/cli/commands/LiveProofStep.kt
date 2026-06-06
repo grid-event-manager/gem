@@ -28,6 +28,8 @@ internal data class LiveProofStep(
             "credentialStatus",
             "loginStatus",
             "currentGroupsStatus",
+            "inventoryCatalogueStatus",
+            "inventoryItemCount",
             "logoutStatus",
             "plainNoticeStatus",
             "existingAttachmentStatus",
@@ -54,7 +56,9 @@ internal data class LiveProofStep(
             orderedSteps.dropWhile { it != startAt }.map { LiveProofStep(it, "not_run", detail) }
 
         fun statusFields(default: String = "not_run"): Map<String, String> =
-            statusFieldNames.associateWith { default } + noticeComplianceDefaultFields.copyWithStatus(default)
+            statusFieldNames.associateWith { default }
+                .plus("inventoryItemCount" to "0")
+                .plus(noticeComplianceDefaultFields.copyWithStatus(default))
 
         fun after(step: String): String {
             val index = orderedSteps.indexOf(step)
