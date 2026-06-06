@@ -32,8 +32,13 @@ class EventQueueGetClientTest {
     }
 
     @Test
-    fun `poll maps unsigned group powers bits`() {
-        val httpClient = RecordingHttpClient(groupEventResponse(groupPowers = "18446744073709551615"))
+    fun `poll maps decimal string group powers with floor semantics`() {
+        val httpClient = RecordingHttpClient(
+            groupEventResponse(
+                groupPowers = "${LibomvMapping.SEND_NOTICES_POWER}.9",
+                groupPowersType = "string",
+            ),
+        )
         val client = EventQueueGetClient(httpClient)
 
         val result = assertIs<EventQueueGetResult.AgentGroupDataUpdate>(
@@ -44,15 +49,32 @@ class EventQueueGetClientTest {
     }
 
     @Test
-    fun `poll rejects unsigned group powers overflow`() {
-        val httpClient = RecordingHttpClient(groupEventResponse(groupPowers = "18446744073709551616"))
+    fun `poll maps invalid group powers to zero instead of proof gap`() {
+        val httpClient = RecordingHttpClient(
+            groupEventResponse(
+                groupPowers = "not-a-number",
+                groupPowersType = "string",
+            ),
+        )
         val client = EventQueueGetClient(httpClient)
 
-        val result = assertIs<EventQueueGetResult.MappingGap>(
+        val result = assertIs<EventQueueGetResult.AgentGroupDataUpdate>(
             client.pollAgentGroupDataUpdate(eventUrl()),
         )
 
-        assertContains(result.redactedMessage, "agent group powers invalid")
+        assertEquals(0L, result.groups.single().powers)
+    }
+
+    @Test
+    fun `poll maps missing group powers to zero instead of proof gap`() {
+        val httpClient = RecordingHttpClient(groupEventResponse(includeGroupPowers = false))
+        val client = EventQueueGetClient(httpClient)
+
+        val result = assertIs<EventQueueGetResult.AgentGroupDataUpdate>(
+            client.pollAgentGroupDataUpdate(eventUrl()),
+        )
+
+        assertEquals(0L, result.groups.single().powers)
     }
 
     @Test
@@ -174,8 +196,12 @@ class EventQueueGetClientTest {
 
     private fun groupEventResponse(
         groupPowers: String = LibomvMapping.SEND_NOTICES_POWER.toString(),
+        groupPowersType: String = "integer",
+        includeGroupPowers: Boolean = true,
     ): ProtocolHttpResponse = response(
-        """
+        buildString {
+            append(
+                """
         <llsd>
           <map>
             <key>events</key>
@@ -199,7 +225,19 @@ class EventQueueGetClientTest {
                       <key>GroupInsigniaID</key><uuid>00000000-0000-0000-0000-000000000000</uuid>
                       <key>GroupName</key><string>Music Room</string>
                       <key>GroupTitle</key><string>Host</string>
-                      <key>GroupPowers</key><integer>$groupPowers</integer>
+                """.trimIndent(),
+            )
+            if (includeGroupPowers) {
+                append("<key>GroupPowers</key><")
+                append(groupPowersType)
+                append(">")
+                append(groupPowers)
+                append("</")
+                append(groupPowersType)
+                append(">")
+            }
+            append(
+                """
                     </map>
                   </array>
                   <key>NewGroupData</key>
@@ -214,7 +252,9 @@ class EventQueueGetClientTest {
             <key>id</key><integer>7</integer>
           </map>
         </llsd>
-        """.trimIndent().encodeToByteArray(),
+                """.trimIndent(),
+            )
+        }.encodeToByteArray(),
     )
 
     private fun unrelatedThenGroupEventResponse(): ProtocolHttpResponse = response(

@@ -84,8 +84,7 @@ internal class EventQueueGetClient(
                 LibomvGroupSnapshot(
                     groupId = fields["GroupID"]?.asString() ?: return mappingGap("agent group id invalid"),
                     displayName = fields["GroupName"]?.asString() ?: return mappingGap("agent group name invalid"),
-                    powers = fields["GroupPowers"]?.asUnsignedLongBits()
-                        ?: return mappingGap("agent group powers invalid"),
+                    powers = LibomvOsdLongParser.parse(fields["GroupPowers"]),
                     acceptsNotices = fields["AcceptNotices"]?.asBoolean()
                         ?: return mappingGap("agent group notice preference invalid"),
                 ).also {
@@ -104,11 +103,6 @@ internal class EventQueueGetClient(
         val agents = (value as? LlsdValue.ArrayValue)?.values ?: return false
         val fields = (agents.firstOrNull() as? LlsdValue.MapValue)?.values ?: return false
         return !fields["AgentID"]?.asString().isNullOrBlank()
-    }
-
-    private fun LlsdValue.asUnsignedLongBits(): Long? {
-        val text = asString()?.takeIf(String::isNotBlank) ?: return null
-        return UnsignedLongBitsParser.parse(text)
     }
 
     private fun execute(request: ProtocolHttpRequest): EventQueueHttpResult = try {
