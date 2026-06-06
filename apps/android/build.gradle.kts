@@ -12,6 +12,7 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "0.1.0"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     compileOptions {
@@ -23,5 +24,7 @@ android {
 dependencies {
     implementation(project(":hostess-core"))
     implementation(project(":hostess-protocol-libomv"))
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.androidx.test.runner)
     testImplementation(kotlin("test-junit"))
 }
