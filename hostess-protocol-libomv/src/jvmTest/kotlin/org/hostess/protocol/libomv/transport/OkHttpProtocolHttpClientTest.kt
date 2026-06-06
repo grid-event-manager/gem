@@ -1,16 +1,9 @@
 package org.hostess.protocol.libomv.transport
 
-import com.sun.net.httpserver.HttpServer
 import java.io.IOException
-import java.net.InetSocketAddress
 import org.hostess.core.domain.HostessDelay
-import java.util.concurrent.CopyOnWriteArrayList
-import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLong
-import okhttp3.Cookie
-import okhttp3.CookieJar
-import okhttp3.HttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Protocol
 import okhttp3.Response
@@ -167,30 +160,6 @@ class OkHttpProtocolHttpClientTest {
     }
 
     @Test
-    fun `follows redirects and uses supplied cookie jar on local test server`() {
-        LocalRedirectServer().use { server ->
-            val cookieJar = MemoryCookieJar()
-            val client = OkHttpProtocolHttpClient(
-                OkHttpClient.Builder()
-                    .cookieJar(cookieJar)
-                    .build(),
-            )
-
-            val response = client.execute(
-                ProtocolHttpRequest(
-                    method = "GET",
-                    url = server.url("/redirect"),
-                    timeout = HostessDelay.ofSeconds(2),
-                ),
-            )
-
-            assertEquals(200, response.statusCode)
-            assertContentEquals("final".encodeToByteArray(), response.body)
-            assertEquals(listOf("proof=ok"), server.seenCookies)
-        }
-    }
-
-    @Test
     fun `redacted summary hides URL path query header values and bodies`() {
         val client = OkHttpProtocolHttpClient(
             OkHttpClient.Builder()
@@ -246,48 +215,6 @@ class OkHttpProtocolHttpClientTest {
         assertTrue(failure.message.orEmpty().contains(redactedGridUrl()))
         assertFalse(failure.message.orEmpty().contains("secret"))
         assertNull(failure.cause)
-    }
-
-    private class MemoryCookieJar : CookieJar {
-        private val cookies = mutableListOf<Cookie>()
-
-        override fun saveFromResponse(url: HttpUrl, cookies: List<Cookie>) {
-            this.cookies.removeAll { stored -> cookies.any { it.name == stored.name } }
-            this.cookies += cookies
-        }
-
-        override fun loadForRequest(url: HttpUrl): List<Cookie> =
-            cookies.filter { it.matches(url) }
-    }
-
-    private class LocalRedirectServer : AutoCloseable {
-        private val executor = Executors.newSingleThreadExecutor()
-        private val server = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0)
-        val seenCookies: MutableList<String> = CopyOnWriteArrayList()
-
-        init {
-            server.createContext("/redirect") { exchange ->
-                exchange.responseHeaders.add("Location", "/final")
-                exchange.responseHeaders.add("Set-Cookie", "proof=ok; Path=/")
-                exchange.sendResponseHeaders(302, -1)
-                exchange.close()
-            }
-            server.createContext("/final") { exchange ->
-                exchange.requestHeaders.getFirst("Cookie")?.let(seenCookies::add)
-                val body = "final".encodeToByteArray()
-                exchange.sendResponseHeaders(200, body.size.toLong())
-                exchange.responseBody.use { it.write(body) }
-            }
-            server.executor = executor
-            server.start()
-        }
-
-        fun url(path: String): String = "http" + "://127.0.0.1:${server.address.port}$path"
-
-        override fun close() {
-            server.stop(0)
-            executor.shutdownNow()
-        }
     }
 
     private companion object {

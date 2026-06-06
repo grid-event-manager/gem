@@ -33,31 +33,24 @@ class ProtocolHttpRequestPolicyTest {
     }
 
     @Test
-    fun `allows plain HTTP only for local test servers`() {
-        val result = ProtocolHttpRequestPolicy.normalize(
-            ProtocolHttpRequest(
-                method = "GET",
-                url = "http://127.0.0.1:8123/redirect",
-            ),
-        )
+    fun `rejects all plain HTTP including local endpoints`() {
+        listOf(
+            "http://127.0.0.1:8123/redirect",
+            "http://localhost:8123/redirect",
+            "http://[::1]:8123/redirect",
+            "http://grid.example/login",
+        ).forEach { url ->
+            val failure = assertFailsWith<ProtocolHttpException> {
+                ProtocolHttpRequestPolicy.normalize(
+                    ProtocolHttpRequest(
+                        method = "GET",
+                        url = url,
+                    ),
+                )
+            }
 
-        assertEquals("http://127.0.0.1:8123/<redacted>", result.redactedTarget)
-        assertFailsWith<ProtocolHttpException> {
-            ProtocolHttpRequestPolicy.normalize(
-                ProtocolHttpRequest(
-                    method = "GET",
-                    url = "http://grid.example/login",
-                ),
-            )
+            assertEquals("Invalid protocol HTTP request: HTTP is not supported", failure.message)
         }
-
-        val ipv6LocalResult = ProtocolHttpRequestPolicy.normalize(
-            ProtocolHttpRequest(
-                method = "GET",
-                url = "http://[::1]:8123/redirect",
-            ),
-        )
-        assertEquals("http://[::1]:8123/<redacted>", ipv6LocalResult.redactedTarget)
     }
 
     @Test

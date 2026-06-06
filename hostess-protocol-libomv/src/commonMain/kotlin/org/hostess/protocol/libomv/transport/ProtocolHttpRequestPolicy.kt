@@ -29,9 +29,7 @@ internal object ProtocolHttpRequestPolicy {
             ?: throw ProtocolHttpException("Invalid protocol HTTP request: URL is malformed")
         when (endpoint.scheme) {
             "https" -> Unit
-            "http" -> if (!endpoint.isLocalTestServer()) {
-                throw ProtocolHttpException("Invalid protocol HTTP request: HTTP is allowed only for local test servers")
-            }
+            "http" -> throw ProtocolHttpException("Invalid protocol HTTP request: HTTP is not supported")
             else -> throw ProtocolHttpException("Invalid protocol HTTP request: unsupported URL scheme")
         }
         if (request.body !is ProtocolHttpBody.NoBody && method in METHODS_WITHOUT_BODY) {
@@ -64,11 +62,6 @@ private data class ProtocolHttpEndpoint(
     fun redactedTarget(): String {
         val portText = port?.let { ":$it" }.orEmpty()
         return "$scheme://$host$portText/<redacted>"
-    }
-
-    fun isLocalTestServer(): Boolean {
-        val normalizedHost = host.lowercase().removePrefix("[").removeSuffix("]")
-        return normalizedHost == "localhost" || normalizedHost == "127.0.0.1" || normalizedHost == "::1"
     }
 
     companion object {
