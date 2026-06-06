@@ -13,6 +13,24 @@ import org.hostess.tools.cli.composition.CliCompositionRoot
 
 class LoginCommandTest {
     @Test
+    fun `missing mode is usage error and does not run fake login`() {
+        val output = RecordingCliOutput()
+
+        val exitCode = CommandRegistry.default(CliCompositionRoot()).execute(
+            listOf(
+                "login",
+                "--report",
+                "login.json",
+            ),
+            output,
+        )
+
+        assertEquals(2, exitCode)
+        assertTrue(output.lines.any { it.contains("mode is required") })
+        assertFalse(output.lines.any { it.contains("login fake ready") })
+    }
+
+    @Test
     fun `fake login passes through compliance and writes redacted status fields`() {
         val directory = Files.createTempDirectory("hostess-login-fake")
         try {

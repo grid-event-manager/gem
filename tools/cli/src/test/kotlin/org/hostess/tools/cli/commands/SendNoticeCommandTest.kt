@@ -13,6 +13,26 @@ import org.hostess.tools.cli.composition.CliCompositionRoot
 
 class SendNoticeCommandTest {
     @Test
+    fun `missing mode is usage error and does not run fake send`() {
+        val output = RecordingCliOutput()
+
+        val exitCode = CommandRegistry.default(CliCompositionRoot()).execute(
+            listOf(
+                "send-notice",
+                "--target",
+                "Venue Hosts",
+                "--subject",
+                "Tonight",
+            ),
+            output,
+        )
+
+        assertEquals(2, exitCode)
+        assertTrue(output.lines.any { it.contains("mode is required") })
+        assertFalse(output.lines.any { it.contains("send-notice fake") })
+    }
+
+    @Test
     fun `fake send notice defaults compliance projection and writes status fields`() {
         withReport { reportPath ->
             val output = RecordingCliOutput()

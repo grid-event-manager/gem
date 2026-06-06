@@ -48,7 +48,8 @@ enum class CommandMode {
 
     companion object {
         fun parse(value: String?): CommandMode = when (value?.lowercase()) {
-            null, "fake" -> FAKE
+            null -> throw IllegalArgumentException("mode is required")
+            "fake" -> FAKE
             "live" -> LIVE
             else -> throw IllegalArgumentException("Unknown mode: $value")
         }
