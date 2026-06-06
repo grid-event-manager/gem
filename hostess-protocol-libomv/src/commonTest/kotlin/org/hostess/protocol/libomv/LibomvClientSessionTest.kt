@@ -8,6 +8,9 @@ import org.hostess.core.domain.SessionId
 import org.hostess.protocol.libomv.mapping.LoginInventoryFolder
 import org.hostess.protocol.libomv.mapping.LoginInventoryRoots
 import org.hostess.protocol.libomv.mapping.LoginInventoryRootsResult
+import org.hostess.protocol.libomv.transport.CapabilityCache
+import org.hostess.protocol.libomv.transport.CapabilityName
+import org.hostess.protocol.libomv.transport.CapabilityUrl
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -29,6 +32,10 @@ class LibomvClientSessionTest {
         assertEquals(13000, identity.simulatorPort)
         assertEquals(123456789L, identity.regionHandle)
         assertEquals(987654321L, identity.circuitCode)
+        assertEquals(
+            CapabilityUrl("https://caps.example/event"),
+            clientSession.capabilityCache(identity)?.urlFor(CapabilityName.EVENT_QUEUE_GET),
+        )
         val roots = assertIs<LoginInventoryRootsResult.Success>(clientSession.inventoryRoots(session)).roots
         assertEquals("inventory-root-id", roots.inventoryRootId)
         assertEquals(
@@ -92,6 +99,16 @@ class LibomvClientSessionTest {
             LoginInventoryRoots.empty(),
             assertIs<LoginInventoryRootsResult.Success>(clientSession.inventoryRoots(newSession)).roots,
         )
+        val newIdentity = LibomvSessionIdentity(
+            agentId = "agent-id",
+            sessionId = "new-session",
+            seedCapability = "seed-capability",
+            simulatorIp = "203.0.113.8",
+            simulatorPort = 13000,
+            regionHandle = 123456789L,
+            circuitCode = 987654321L,
+        )
+        assertNull(clientSession.capabilityCache(newIdentity)?.urlFor(CapabilityName.EVENT_QUEUE_GET))
     }
 
     @Test
@@ -128,6 +145,14 @@ class LibomvClientSessionTest {
         assertEquals("hostess session inactive", failure?.redactedMessage)
     }
 
+    @Test
+    fun `inactive protocol session does not expose capability cache`() {
+        val session = hostessSession("live-session").copy(isActive = false)
+        val clientSession = LibomvClientSession.active(session)
+
+        assertNull(clientSession.capabilityCache(identityFor(session)))
+    }
+
     private fun hostessSession(id: String): HostessSession = HostessSession(
         sessionId = SessionId(id),
         accountLabel = AccountLabel("venue-proof"),
@@ -159,5 +184,18 @@ class LibomvClientSessionTest {
             libraryOwnerId = null,
             librarySkeleton = emptyList(),
         ),
+        capabilityCache = CapabilityCache(
+            mapOf(CapabilityName.EVENT_QUEUE_GET to CapabilityUrl("https://caps.example/event")),
+        ),
+    )
+
+    private fun identityFor(session: HostessSession): LibomvSessionIdentity = LibomvSessionIdentity(
+        agentId = "agent-id",
+        sessionId = session.sessionId.value,
+        seedCapability = "seed-capability",
+        simulatorIp = "203.0.113.8",
+        simulatorPort = 13000,
+        regionHandle = 123456789L,
+        circuitCode = 987654321L,
     )
 }

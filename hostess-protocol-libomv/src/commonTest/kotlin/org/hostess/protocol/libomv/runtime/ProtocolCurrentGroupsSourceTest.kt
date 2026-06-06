@@ -5,6 +5,10 @@ import org.hostess.protocol.libomv.LibomvMapping
 import org.hostess.protocol.libomv.LibomvSessionIdentity
 import org.hostess.protocol.libomv.transport.AgentDataUpdateRequester
 import org.hostess.protocol.libomv.transport.AgentDataUpdateRequestResult
+import org.hostess.protocol.libomv.transport.CapabilityName
+import org.hostess.protocol.libomv.transport.CapabilityUrl
+import org.hostess.protocol.libomv.transport.CapabilityUrlProvider
+import org.hostess.protocol.libomv.transport.CapabilityUrlResult
 import org.hostess.protocol.libomv.transport.EventQueueGetResult
 import org.hostess.protocol.libomv.transport.EventQueueGetSource
 import kotlin.test.Test
@@ -14,46 +18,49 @@ import kotlin.test.assertNull
 
 class ProtocolCurrentGroupsSourceTest {
     @Test
-    fun `current groups seeds sends request then polls group event`() {
+    fun `current groups resolves event queue url sends request then polls group event`() {
         val groups = listOf(group())
+        val capabilityProvider = RecordingCapabilityProvider(CapabilityUrlResult.Ready(EVENT_URL))
         val eventSource = RecordingEventQueueSource(
-            seedResult = EventQueueGetResult.Ready(EVENT_URL),
             pollResult = EventQueueGetResult.AgentGroupDataUpdate(groups),
         )
         val requester = RecordingRequester(AgentDataUpdateRequestResult.Sent)
-        val source = ProtocolCurrentGroupsSource(eventSource, requester)
+        val source = ProtocolCurrentGroupsSource(capabilityProvider, eventSource, requester)
 
         val result = assertIs<CurrentGroupsFetchResult.Success>(source.currentGroups(identity()))
 
         assertEquals(groups, result.groups)
-        assertEquals(SEED_URL, eventSource.seededCapability)
+        assertEquals(CapabilityName.EVENT_QUEUE_GET, capabilityProvider.requestedName)
+        assertEquals(identity(), capabilityProvider.capturedIdentity)
         assertEquals(EVENT_URL, eventSource.polledUrl)
         assertEquals(identity(), requester.capturedIdentity)
     }
 
     @Test
-    fun `seed transport gap stops before packet request`() {
-        val eventSource = RecordingEventQueueSource(
-            seedResult = EventQueueGetResult.TransportGap("current groups transport unavailable: http_status=503"),
+    fun `capability transport gap stops before packet request`() {
+        val capabilityProvider = RecordingCapabilityProvider(
+            CapabilityUrlResult.TransportGap("capability seed unavailable: http_status=503"),
         )
+        val eventSource = RecordingEventQueueSource()
         val requester = RecordingRequester(AgentDataUpdateRequestResult.Sent)
-        val source = ProtocolCurrentGroupsSource(eventSource, requester)
+        val source = ProtocolCurrentGroupsSource(capabilityProvider, eventSource, requester)
 
         val failure = assertIs<CurrentGroupsFetchResult.Failure>(source.currentGroups(identity()))
 
         assertEquals(CurrentGroupsFailureStatus.TRANSPORT_GAP, failure.status)
-        assertEquals("current groups transport unavailable: http_status=503", failure.redactedMessage)
+        assertEquals("capability seed unavailable: http_status=503", failure.redactedMessage)
         assertNull(requester.capturedIdentity)
         assertNull(eventSource.polledUrl)
     }
 
     @Test
     fun `packet request failure is a packet gap`() {
-        val eventSource = RecordingEventQueueSource(seedResult = EventQueueGetResult.Ready(EVENT_URL))
+        val capabilityProvider = RecordingCapabilityProvider(CapabilityUrlResult.Ready(EVENT_URL))
+        val eventSource = RecordingEventQueueSource()
         val requester = RecordingRequester(
             AgentDataUpdateRequestResult.Failed("bounded simulator send failed"),
         )
-        val source = ProtocolCurrentGroupsSource(eventSource, requester)
+        val source = ProtocolCurrentGroupsSource(capabilityProvider, eventSource, requester)
 
         val failure = assertIs<CurrentGroupsFetchResult.Failure>(source.currentGroups(identity()))
 
@@ -64,12 +71,12 @@ class ProtocolCurrentGroupsSourceTest {
 
     @Test
     fun `poll timeout is a proof gap`() {
+        val capabilityProvider = RecordingCapabilityProvider(CapabilityUrlResult.Ready(EVENT_URL))
         val eventSource = RecordingEventQueueSource(
-            seedResult = EventQueueGetResult.Ready(EVENT_URL),
             pollResult = EventQueueGetResult.TimedOut,
         )
         val requester = RecordingRequester(AgentDataUpdateRequestResult.Sent)
-        val source = ProtocolCurrentGroupsSource(eventSource, requester)
+        val source = ProtocolCurrentGroupsSource(capabilityProvider, eventSource, requester)
 
         val failure = assertIs<CurrentGroupsFetchResult.Failure>(source.currentGroups(identity()))
 
@@ -79,12 +86,12 @@ class ProtocolCurrentGroupsSourceTest {
 
     @Test
     fun `poll mapping gap is a proof gap with invalid event message`() {
+        val capabilityProvider = RecordingCapabilityProvider(CapabilityUrlResult.Ready(EVENT_URL))
         val eventSource = RecordingEventQueueSource(
-            seedResult = EventQueueGetResult.Ready(EVENT_URL),
             pollResult = EventQueueGetResult.MappingGap("current groups event invalid: malformed group data"),
         )
         val requester = RecordingRequester(AgentDataUpdateRequestResult.Sent)
-        val source = ProtocolCurrentGroupsSource(eventSource, requester)
+        val source = ProtocolCurrentGroupsSource(capabilityProvider, eventSource, requester)
 
         val failure = assertIs<CurrentGroupsFetchResult.Failure>(source.currentGroups(identity()))
 
@@ -93,20 +100,29 @@ class ProtocolCurrentGroupsSourceTest {
     }
 
     private class RecordingEventQueueSource(
-        private val seedResult: EventQueueGetResult,
         private val pollResult: EventQueueGetResult = EventQueueGetResult.TimedOut,
     ) : EventQueueGetSource {
-        var seededCapability: String? = null
-        var polledUrl: String? = null
+        var polledUrl: CapabilityUrl? = null
 
-        override fun seed(seedCapability: String): EventQueueGetResult {
-            seededCapability = seedCapability
-            return seedResult
-        }
-
-        override fun pollAgentGroupDataUpdate(eventQueueUrl: String): EventQueueGetResult {
+        override fun pollAgentGroupDataUpdate(eventQueueUrl: CapabilityUrl): EventQueueGetResult {
             polledUrl = eventQueueUrl
             return pollResult
+        }
+    }
+
+    private class RecordingCapabilityProvider(
+        private val result: CapabilityUrlResult,
+    ) : CapabilityUrlProvider {
+        var capturedIdentity: LibomvSessionIdentity? = null
+        var requestedName: CapabilityName? = null
+
+        override fun requireUrl(
+            identity: LibomvSessionIdentity,
+            name: CapabilityName,
+        ): CapabilityUrlResult {
+            capturedIdentity = identity
+            requestedName = name
+            return result
         }
     }
 
@@ -142,6 +158,6 @@ class ProtocolCurrentGroupsSourceTest {
         fun secureUrl(host: String, path: String): String = "https" + "://$host$path"
 
         val SEED_URL = secureUrl("caps.example", "/seed")
-        val EVENT_URL = secureUrl("caps.example", "/event")
+        val EVENT_URL = CapabilityUrl(secureUrl("caps.example", "/event"))
     }
 }

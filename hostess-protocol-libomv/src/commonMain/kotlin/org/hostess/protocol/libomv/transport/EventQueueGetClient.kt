@@ -10,38 +10,17 @@ import org.hostess.protocol.libomv.llsd.asLong
 import org.hostess.protocol.libomv.llsd.asString
 
 internal interface EventQueueGetSource {
-    fun seed(seedCapability: String): EventQueueGetResult
-    fun pollAgentGroupDataUpdate(eventQueueUrl: String): EventQueueGetResult
+    fun pollAgentGroupDataUpdate(eventQueueUrl: CapabilityUrl): EventQueueGetResult
 }
 
 internal class EventQueueGetClient(
     private val httpClient: ProtocolHttpClient,
     private val maxPolls: Int = DEFAULT_MAX_POLLS,
 ) : EventQueueGetSource {
-    override fun seed(seedCapability: String): EventQueueGetResult {
-        if (seedCapability.isBlank()) {
-            return transportGap("blank seed capability")
-        }
-        val response = when (val executed = execute(request(seedCapability, seedBody(), HostessDelay.ofSeconds(30)))) {
-            is EventQueueHttpResult.Failed -> return EventQueueGetResult.TransportGap(executed.redactedMessage)
-            is EventQueueHttpResult.Success -> executed.response
-        }
-        if (response.statusCode !in 200..299) {
-            return transportGap("http_status=${response.statusCode}; ${responseDiagnostic(response)}")
-        }
-        val fields = LlsdXml.parseMap(response.body) ?: return mappingGap("seed response invalid; ${bodyDiagnostic(response.body)}")
-        val eventQueueUrl = fields[EVENT_QUEUE_GET]?.asString()?.takeIf(String::isNotBlank)
-            ?: return transportGap("event queue url absent")
-        return EventQueueGetResult.Ready(eventQueueUrl)
-    }
-
-    override fun pollAgentGroupDataUpdate(eventQueueUrl: String): EventQueueGetResult {
-        if (eventQueueUrl.isBlank()) {
-            return transportGap("blank event queue url")
-        }
+    override fun pollAgentGroupDataUpdate(eventQueueUrl: CapabilityUrl): EventQueueGetResult {
         var ack: Long? = null
         repeat(maxPolls) {
-            val response = when (val executed = execute(request(eventQueueUrl, pollBody(ack), HostessDelay.ofSeconds(60)))) {
+            val response = when (val executed = execute(request(eventQueueUrl.value, pollBody(ack), HostessDelay.ofSeconds(60)))) {
                 is EventQueueHttpResult.Failed -> return EventQueueGetResult.TransportGap(executed.redactedMessage)
                 is EventQueueHttpResult.Success -> executed.response
             }
@@ -169,9 +148,6 @@ internal class EventQueueGetClient(
         timeout = timeout,
     )
 
-    private fun seedBody(): String =
-        "<llsd><array><string>$EVENT_QUEUE_GET</string></array></llsd>"
-
     private fun pollBody(ack: Long?): String = buildString {
         append("<llsd><map><key>ack</key>")
         if (ack == null) {
@@ -185,13 +161,11 @@ internal class EventQueueGetClient(
     private companion object {
         const val DEFAULT_MAX_POLLS = 3
         const val LLSD_XML = "application/llsd+xml"
-        const val EVENT_QUEUE_GET = "EventQueueGet"
         const val AGENT_GROUP_DATA_UPDATE = "AgentGroupDataUpdate"
     }
 }
 
 internal sealed interface EventQueueGetResult {
-    data class Ready(val eventQueueUrl: String) : EventQueueGetResult
     data object TimedOut : EventQueueGetResult
     data class TransportGap(
         val redactedMessage: String = "current groups transport unavailable",

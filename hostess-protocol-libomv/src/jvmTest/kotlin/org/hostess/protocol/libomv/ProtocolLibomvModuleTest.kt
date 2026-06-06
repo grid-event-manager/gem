@@ -168,7 +168,7 @@ class ProtocolLibomvModuleTest {
         val groups = assertIs<GroupListResult.Failure>(runtime.groupPort.currentGroups(session))
 
         assertEquals(CoreFailureReason.GROUP_LIST_FAILED, groups.failure.reason)
-        assertContains(groups.failure.redactedMessage.orEmpty(), "current groups transport unavailable")
+        assertContains(groups.failure.redactedMessage.orEmpty(), "capability seed unavailable")
         assertContains(groups.failure.redactedMessage.orEmpty(), "http_status=503")
         assertEquals(secureUrl("caps.example", "/seed"), httpClient.capturedRequest?.url)
     }

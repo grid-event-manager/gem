@@ -14,6 +14,8 @@ import org.hostess.protocol.libomv.runtime.ProtocolLoginRuntime
 import org.hostess.protocol.libomv.runtime.ProtocolNoticeRuntime
 import org.hostess.protocol.libomv.transport.AgentDataUpdateRequestTransport
 import org.hostess.protocol.libomv.transport.EventQueueGetClient
+import org.hostess.protocol.libomv.transport.ProtocolCapabilityCacheProvider
+import org.hostess.protocol.libomv.transport.ProtocolCapabilitySeedClient
 
 data class LibomvProtocolRuntime(
     val sessionPort: SessionPort,
@@ -39,7 +41,12 @@ object ProtocolLibomvModule {
         val clientSession = if (bundle.adapterLoad) LibomvClientSession.inactive() else LibomvClientSession.unavailable()
         val runtimeReady = bundle.adapterLoad && bundle.runtimeLoad
         val currentGroupsSource = if (bundle.transportLoad) {
+            val capabilitySeedClient = ProtocolCapabilitySeedClient(bundle.httpClient)
             ProtocolCurrentGroupsSource(
+                capabilityUrlProvider = ProtocolCapabilityCacheProvider(
+                    clientSession = clientSession,
+                    seedClient = capabilitySeedClient,
+                ),
                 eventQueueGetClient = EventQueueGetClient(bundle.httpClient),
                 requestTransport = AgentDataUpdateRequestTransport(bundle.circuitSender),
             )

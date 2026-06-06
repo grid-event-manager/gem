@@ -10,23 +10,6 @@ import kotlin.test.assertTrue
 
 class EventQueueGetClientTest {
     @Test
-    fun `seed asks only for EventQueueGet`() {
-        val httpClient = RecordingHttpClient(seedResponse())
-        val client = EventQueueGetClient(httpClient)
-
-        val result = assertIs<EventQueueGetResult.Ready>(client.seed(seedUrl()))
-
-        assertEquals(eventUrl(), result.eventQueueUrl)
-        val request = httpClient.requests.single()
-        assertEquals("POST", request.method)
-        assertEquals(seedUrl(), request.url)
-        val body = assertIs<ProtocolHttpBody.TextBody>(request.body).content
-        assertEquals("<llsd><array><string>EventQueueGet</string></array></llsd>", body)
-        assertFalse(body.contains("FetchInventoryDescendents"))
-        assertFalse(body.contains("GroupProposalBallot"))
-    }
-
-    @Test
     fun `poll maps AgentGroupDataUpdate groups`() {
         val httpClient = RecordingHttpClient(groupEventResponse())
         val client = EventQueueGetClient(httpClient)
@@ -41,6 +24,8 @@ class EventQueueGetClientTest {
         assertEquals(LibomvMapping.SEND_NOTICES_POWER, group.powers)
         assertEquals(true, group.acceptsNotices)
         val request = httpClient.requests.single()
+        assertEquals("POST", request.method)
+        assertEquals(eventUrl().value, request.url)
         val body = assertIs<ProtocolHttpBody.TextBody>(request.body).content
         assertTrue(body.contains("<key>ack</key><undef/>"))
         assertTrue(body.contains("<key>done</key><boolean>false</boolean>"))
@@ -106,7 +91,7 @@ class EventQueueGetClientTest {
     fun `transport failure returns transport gap`() {
         val client = EventQueueGetClient(ThrowingHttpClient())
 
-        val result = assertIs<EventQueueGetResult.TransportGap>(client.seed(seedUrl()))
+        val result = assertIs<EventQueueGetResult.TransportGap>(client.pollAgentGroupDataUpdate(eventUrl()))
 
         assertContains(result.redactedMessage, "current groups transport unavailable")
         assertContains(result.redactedMessage, "redacted transport failure")
@@ -161,7 +146,7 @@ class EventQueueGetClientTest {
             ),
         )
 
-        val result = assertIs<EventQueueGetResult.TransportGap>(client.seed(seedUrl()))
+        val result = assertIs<EventQueueGetResult.TransportGap>(client.pollAgentGroupDataUpdate(eventUrl()))
 
         assertContains(result.redactedMessage, "http_status=503")
         assertContains(result.redactedMessage, "[redacted-url]")
@@ -186,16 +171,6 @@ class EventQueueGetClientTest {
             throw ProtocolHttpException("redacted transport failure")
         }
     }
-
-    private fun seedResponse(): ProtocolHttpResponse = response(
-        """
-        <llsd>
-          <map>
-            <key>EventQueueGet</key><uri>${eventUrl()}</uri>
-          </map>
-        </llsd>
-        """.trimIndent().encodeToByteArray(),
-    )
 
     private fun groupEventResponse(
         groupPowers: String = LibomvMapping.SEND_NOTICES_POWER.toString(),
@@ -358,9 +333,7 @@ class EventQueueGetClientTest {
         const val AGENT_ID = "11111111-1111-1111-1111-111111111111"
         const val GROUP_ID = "33333333-3333-3333-3333-333333333333"
 
-        fun seedUrl(): String = secureUrl("caps.example", "/seed")
-
-        fun eventUrl(): String = secureUrl("caps.example", "/event")
+        fun eventUrl(): CapabilityUrl = CapabilityUrl(secureUrl("caps.example", "/event"))
 
         fun secureUrl(host: String, path: String): String = "https" + "://$host$path"
     }

@@ -3,20 +3,25 @@ package org.hostess.protocol.libomv.runtime
 import org.hostess.protocol.libomv.LibomvSessionIdentity
 import org.hostess.protocol.libomv.transport.AgentDataUpdateRequester
 import org.hostess.protocol.libomv.transport.AgentDataUpdateRequestResult
+import org.hostess.protocol.libomv.transport.CapabilityName
+import org.hostess.protocol.libomv.transport.CapabilityUrlProvider
+import org.hostess.protocol.libomv.transport.CapabilityUrlResult
 import org.hostess.protocol.libomv.transport.EventQueueGetResult
 import org.hostess.protocol.libomv.transport.EventQueueGetSource
 
 internal class ProtocolCurrentGroupsSource(
+    private val capabilityUrlProvider: CapabilityUrlProvider,
     private val eventQueueGetClient: EventQueueGetSource,
     private val requestTransport: AgentDataUpdateRequester,
 ) : CurrentGroupsSource {
     override fun currentGroups(identity: LibomvSessionIdentity): CurrentGroupsFetchResult {
-        val eventQueueUrl = when (val seed = eventQueueGetClient.seed(identity.seedCapability)) {
-            is EventQueueGetResult.Ready -> seed.eventQueueUrl
-            is EventQueueGetResult.TransportGap -> return transportGap(seed.redactedMessage)
-            is EventQueueGetResult.MappingGap -> return mappingGap(seed.redactedMessage)
-            EventQueueGetResult.TimedOut -> return proofGap()
-            is EventQueueGetResult.AgentGroupDataUpdate -> return CurrentGroupsFetchResult.Success(seed.groups)
+        val eventQueueUrl = when (val capability = capabilityUrlProvider.requireUrl(
+            identity,
+            CapabilityName.EVENT_QUEUE_GET,
+        )) {
+            is CapabilityUrlResult.Ready -> capability.url
+            is CapabilityUrlResult.TransportGap -> return transportGap(capability.redactedMessage)
+            is CapabilityUrlResult.MappingGap -> return mappingGap(capability.redactedMessage)
         }
 
         when (val sent = requestTransport.send(identity)) {
@@ -32,21 +37,20 @@ internal class ProtocolCurrentGroupsSource(
             EventQueueGetResult.TimedOut -> proofGap()
             is EventQueueGetResult.TransportGap -> transportGap(polled.redactedMessage)
             is EventQueueGetResult.MappingGap -> mappingGap(polled.redactedMessage)
-            is EventQueueGetResult.Ready -> mappingGap("current groups event invalid: unexpected ready response")
         }
     }
 
     private fun transportGap(message: String = "current groups transport unavailable"): CurrentGroupsFetchResult.Failure =
         CurrentGroupsFetchResult.Failure(
-        status = CurrentGroupsFailureStatus.TRANSPORT_GAP,
-        redactedMessage = message,
-    )
+            status = CurrentGroupsFailureStatus.TRANSPORT_GAP,
+            redactedMessage = message,
+        )
 
     private fun mappingGap(message: String = "current groups event invalid"): CurrentGroupsFetchResult.Failure =
         CurrentGroupsFetchResult.Failure(
-        status = CurrentGroupsFailureStatus.PROOF_GAP,
-        redactedMessage = message,
-    )
+            status = CurrentGroupsFailureStatus.PROOF_GAP,
+            redactedMessage = message,
+        )
 
     private fun proofGap(): CurrentGroupsFetchResult.Failure = CurrentGroupsFetchResult.Failure(
         status = CurrentGroupsFailureStatus.PROOF_GAP,

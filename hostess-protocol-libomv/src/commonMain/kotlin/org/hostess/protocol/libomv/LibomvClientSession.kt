@@ -5,6 +5,7 @@ import org.hostess.core.domain.CoreFailureReason
 import org.hostess.core.domain.HostessSession
 import org.hostess.protocol.libomv.mapping.LoginInventoryRoots
 import org.hostess.protocol.libomv.mapping.LoginInventoryRootsResult
+import org.hostess.protocol.libomv.transport.CapabilityCache
 
 class LibomvClientSession private constructor(
     private val protocolAvailable: Boolean,
@@ -16,6 +17,7 @@ class LibomvClientSession private constructor(
     private var regionHandle: Long?,
     private var circuitCode: Long?,
     private var inventoryRoots: LoginInventoryRoots,
+    private var capabilityCache: CapabilityCache,
 ) {
     fun unavailable(reason: CoreFailureReason): CoreFailure =
         CoreFailure(reason, redactedMessage = if (protocolAvailable) {
@@ -35,6 +37,7 @@ class LibomvClientSession private constructor(
         regionHandle: Long? = null,
         circuitCode: Long? = null,
         inventoryRoots: LoginInventoryRoots = LoginInventoryRoots.empty(),
+        capabilityCache: CapabilityCache = CapabilityCache.empty(),
     ) {
         activeSession = session
         this.agentId = agentId
@@ -44,6 +47,7 @@ class LibomvClientSession private constructor(
         this.regionHandle = regionHandle
         this.circuitCode = circuitCode
         this.inventoryRoots = inventoryRoots
+        this.capabilityCache = capabilityCache
     }
 
     internal fun clear() {
@@ -55,6 +59,7 @@ class LibomvClientSession private constructor(
         regionHandle = null
         circuitCode = null
         inventoryRoots = LoginInventoryRoots.empty()
+        capabilityCache = CapabilityCache.empty()
     }
 
     internal fun requireSession(session: HostessSession): CoreFailure? {
@@ -122,6 +127,25 @@ class LibomvClientSession private constructor(
         return LoginInventoryRootsResult.Success(inventoryRoots)
     }
 
+    internal fun capabilityCache(identity: LibomvSessionIdentity): CapabilityCache? =
+        capabilityCache.takeIf { activeSessionMatches(identity) }
+
+    internal fun replaceCapabilityCache(
+        identity: LibomvSessionIdentity,
+        cache: CapabilityCache,
+    ): Boolean {
+        if (!activeSessionMatches(identity)) {
+            return false
+        }
+        capabilityCache = cache
+        return true
+    }
+
+    private fun activeSessionMatches(identity: LibomvSessionIdentity): Boolean {
+        val active = activeSession ?: return false
+        return active.isActive && active.sessionId.value == identity.sessionId
+    }
+
     companion object {
         fun unavailable(): LibomvClientSession = LibomvClientSession(
             protocolAvailable = false,
@@ -133,6 +157,7 @@ class LibomvClientSession private constructor(
             regionHandle = null,
             circuitCode = null,
             inventoryRoots = LoginInventoryRoots.empty(),
+            capabilityCache = CapabilityCache.empty(),
         )
 
         fun inactive(): LibomvClientSession = LibomvClientSession(
@@ -145,6 +170,7 @@ class LibomvClientSession private constructor(
             regionHandle = null,
             circuitCode = null,
             inventoryRoots = LoginInventoryRoots.empty(),
+            capabilityCache = CapabilityCache.empty(),
         )
 
         internal fun active(
@@ -156,6 +182,7 @@ class LibomvClientSession private constructor(
             regionHandle: Long? = null,
             circuitCode: Long? = null,
             inventoryRoots: LoginInventoryRoots = LoginInventoryRoots.empty(),
+            capabilityCache: CapabilityCache = CapabilityCache.empty(),
         ): LibomvClientSession = LibomvClientSession(
             protocolAvailable = true,
             activeSession = session,
@@ -166,6 +193,7 @@ class LibomvClientSession private constructor(
             regionHandle = regionHandle,
             circuitCode = circuitCode,
             inventoryRoots = inventoryRoots,
+            capabilityCache = capabilityCache,
         )
     }
 }
