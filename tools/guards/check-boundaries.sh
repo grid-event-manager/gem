@@ -34,6 +34,10 @@ TRACK_D_CLI_CAP_LITERAL_PATTERN='(^|[^[:alnum:]_])(4500|4_500|5000|5_000)([^[:al
 TRACK_DS_OLD_LOGIN_LLSD_PATTERN='application/llsd\+xml|fun[[:space:]]+loginBody\('
 TRACK_DS_DIRECT_OWNER_PATTERN='LoginPackage|SecondLifePasswordHash|HostessMachineIdentity|LoginPackageSerializer'
 TRACK_DS_STALE_LOGIN_FIELD_PATTERN='platform_version|platform_string|host_id|token|extended_errors|max-agent-groups|viewer_digest|user_agent'
+TRACK_F_COMMON_FORBIDDEN_PATTERN='java\.|javax\.|okhttp|android\.|System\.|MessageDigest|NetworkInterface|Datagram|ByteBuffer|UUID|Class\.forName|::class\.java'
+TRACK_F_PARALLEL_PATH_PATTERN='hostess-core-kmp|hostess-protocol-android|AndroidProtocolLibomvModule|JvmProtocolLibomvModule|GroupReader|CurrentGroupsClient|LoginRuntimeAndroid|Manager|Utils|Helpers|Common'
+TRACK_F_PLATFORM_API_PATTERN='okhttp3\.|OkHttpClient|System(::|\.)getenv|NetworkInterface|java\.net\.Datagram|Datagram(Packet|Socket)|javax\.xml|org\.xml\.sax|DocumentBuilderFactory|java\.util\.UUID|MessageDigest|java\.nio\.ByteBuffer'
+TRACK_F_OWNER_DECLARATION_PREFIX='^[[:space:]]*(internal[[:space:]]+|private[[:space:]]+)?(data[[:space:]]+class|class|object|interface|fun[[:space:]]+interface|value[[:space:]]+class)[[:space:]]+'
 
 add_existing() {
     local -n target="$1"
@@ -139,6 +143,64 @@ check_no_forbidden_files() {
     fi
 }
 
+check_no_old_shared_roots() {
+    local matches=()
+    while IFS= read -r path; do
+        matches+=("$path")
+    done < <(find \
+        "hostess-core/src/main/kotlin" \
+        "hostess-protocol-libomv/src/main/kotlin" \
+        -type f 2>/dev/null || true)
+
+    if [[ "${#matches[@]}" -eq 0 ]]; then
+        echo "PASS: Track F old shared production roots absent"
+    else
+        echo "FAIL: Track F old shared production roots absent"
+        printf '%s\n' "${matches[@]}"
+        failures=1
+    fi
+}
+
+check_exact_owner_count() {
+    local label="$1"
+    local owner="$2"
+    local expected="$3"
+    shift 3
+
+    if [[ "$#" -eq 0 ]]; then
+        echo "ERROR: $label has no scan targets"
+        failures=1
+        return
+    fi
+
+    local output
+    local status
+    set +e
+    output="$(rg -n -- "${TRACK_F_OWNER_DECLARATION_PREFIX}${owner}([^[:alnum:]_]|$)" "$@" 2>&1)"
+    status="$?"
+    set -e
+
+    if [[ "$status" -gt 1 ]]; then
+        echo "ERROR: $label scan failed"
+        echo "$output"
+        failures=1
+        return
+    fi
+
+    local count=0
+    if [[ -n "$output" ]]; then
+        count="$(printf '%s\n' "$output" | wc -l | tr -d ' ')"
+    fi
+
+    if [[ "$count" -eq "$expected" ]]; then
+        echo "PASS: $label"
+    else
+        echo "FAIL: $label expected $expected declaration(s), found $count"
+        [[ -n "$output" ]] && echo "$output"
+        failures=1
+    fi
+}
+
 check_notice_dispatch_overloads() {
     local files=()
     add_existing files \
@@ -235,6 +297,81 @@ add_existing production_targets \
     "apps/desktop/src/main" \
     "apps/android/build.gradle.kts" \
     "apps/android/src/main"
+
+track_f_all_source_targets=()
+add_existing track_f_all_source_targets \
+    "hostess-core/src/commonMain" \
+    "hostess-core/src/commonTest" \
+    "hostess-core/src/jvmMain" \
+    "hostess-core/src/jvmTest" \
+    "hostess-core/src/androidMain" \
+    "hostess-core/src/androidTest" \
+    "hostess-core/src/androidUnitTest" \
+    "hostess-core/src/androidHostTest" \
+    "hostess-core/src/jvmAndroidMain" \
+    "hostess-core/src/main" \
+    "hostess-protocol-libomv/src/commonMain" \
+    "hostess-protocol-libomv/src/commonTest" \
+    "hostess-protocol-libomv/src/jvmMain" \
+    "hostess-protocol-libomv/src/jvmTest" \
+    "hostess-protocol-libomv/src/androidMain" \
+    "hostess-protocol-libomv/src/androidTest" \
+    "hostess-protocol-libomv/src/androidUnitTest" \
+    "hostess-protocol-libomv/src/androidHostTest" \
+    "hostess-protocol-libomv/src/jvmAndroidMain" \
+    "hostess-protocol-libomv/src/main" \
+    "hostess-protocol-libomv/build/generated/sources/libomvPackets/kotlin/commonMain" \
+    "tools/cli/src/main" \
+    "tools/cli/src/test" \
+    "apps/desktop/src/main" \
+    "apps/desktop/src/test" \
+    "apps/android/src/main" \
+    "apps/android/src/test"
+
+track_f_common_targets=()
+add_existing track_f_common_targets \
+    "hostess-core/src/commonMain" \
+    "hostess-protocol-libomv/src/commonMain"
+
+track_f_owner_targets=()
+add_existing track_f_owner_targets \
+    "hostess-core/src/commonMain" \
+    "hostess-core/src/jvmMain" \
+    "hostess-core/src/androidMain" \
+    "hostess-core/src/jvmAndroidMain" \
+    "hostess-protocol-libomv/src/commonMain" \
+    "hostess-protocol-libomv/src/jvmMain" \
+    "hostess-protocol-libomv/src/androidMain" \
+    "hostess-protocol-libomv/src/jvmAndroidMain" \
+    "tools/cli/src/main" \
+    "apps/desktop/src/main" \
+    "apps/android/src/main"
+
+track_f_platform_api_forbidden_targets=()
+while IFS= read -r path; do
+    case "$path" in
+        hostess-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/transport/OkHttpProtocolHttpClient.kt) ;;
+        hostess-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/transport/UdpSimulatorDatagramSender.kt) ;;
+        hostess-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/runtime/JvmMd5DigestPort.kt) ;;
+        hostess-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/runtime/EnvironmentLoginSecretResolver.kt) ;;
+        hostess-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/runtime/DefaultHostessHardwareAddressSource.kt) ;;
+        *) track_f_platform_api_forbidden_targets+=("$path") ;;
+    esac
+done < <(find \
+    "hostess-core/src/commonMain" \
+    "hostess-core/src/jvmMain" \
+    "hostess-core/src/androidMain" \
+    "hostess-core/src/jvmAndroidMain" \
+    "hostess-core/src/main" \
+    "hostess-protocol-libomv/src/commonMain" \
+    "hostess-protocol-libomv/src/jvmMain" \
+    "hostess-protocol-libomv/src/androidMain" \
+    "hostess-protocol-libomv/src/jvmAndroidMain" \
+    "hostess-protocol-libomv/src/main" \
+    "tools/cli/src/main" \
+    "apps/desktop/src/main" \
+    "apps/android/src/main" \
+    -type f -name '*.kt' 2>/dev/null || true)
 
 okhttp_forbidden_targets=()
 add_existing okhttp_forbidden_targets \
@@ -495,6 +632,44 @@ check_no_hits \
     "$TRACK_C_UNSUPPORTED_SECRET_PATTERN" \
     "${production_targets[@]}"
 
+check_no_old_shared_roots
+
+check_no_hits \
+    "Track F commonMain forbidden platform APIs" \
+    "$TRACK_F_COMMON_FORBIDDEN_PATTERN" \
+    "${track_f_common_targets[@]}"
+
+check_no_hits \
+    "Track F no parallel KMP or generic owner paths" \
+    "$TRACK_F_PARALLEL_PATH_PATTERN" \
+    "${track_f_all_source_targets[@]}"
+
+check_no_hits \
+    "Track F platform APIs confined to platform adapters" \
+    "$TRACK_F_PLATFORM_API_PATTERN" \
+    "${track_f_platform_api_forbidden_targets[@]}"
+
+check_exact_owner_count "Track F single HostessInstant owner" "HostessInstant" 1 "${track_f_owner_targets[@]}"
+check_exact_owner_count "Track F single HostessDelay owner" "HostessDelay" 1 "${track_f_owner_targets[@]}"
+check_exact_owner_count "Track F single ClockPort owner" "ClockPort" 1 "${track_f_owner_targets[@]}"
+check_exact_owner_count "Track F single ProtocolLibomvModule owner" "ProtocolLibomvModule" 1 "${track_f_owner_targets[@]}"
+check_exact_owner_count "Track F single LibomvPlatformAdapterBundle owner" "LibomvPlatformAdapterBundle" 1 "${track_f_owner_targets[@]}"
+check_exact_owner_count "Track F single ProtocolXmlTreeParser owner" "ProtocolXmlTreeParser" 1 "${track_f_owner_targets[@]}"
+check_exact_owner_count "Track F single ProtocolXmlElement owner" "ProtocolXmlElement" 1 "${track_f_owner_targets[@]}"
+check_exact_owner_count "Track F single LibomvUuidCodec owner" "LibomvUuidCodec" 1 "${track_f_owner_targets[@]}"
+check_exact_owner_count "Track F single UnsignedLongBitsParser owner" "UnsignedLongBitsParser" 1 "${track_f_owner_targets[@]}"
+check_exact_owner_count "Track F single LibomvPacketCodec owner" "LibomvPacketCodec" 1 "${track_f_owner_targets[@]}"
+check_exact_owner_count "Track F single LibomvBytePacketWriter owner" "LibomvBytePacketWriter" 1 "${track_f_owner_targets[@]}"
+check_exact_owner_count "Track F single ProtocolHttpRequestPolicy owner" "ProtocolHttpRequestPolicy" 1 "${track_f_owner_targets[@]}"
+check_exact_owner_count "Track F single Md5DigestPort owner" "Md5DigestPort" 1 "${track_f_owner_targets[@]}"
+check_exact_owner_count "Track F single LoginSecretJsonDecoder owner" "LoginSecretJsonDecoder" 1 "${track_f_owner_targets[@]}"
+check_exact_owner_count "Track F single HostessViewerIdentityBuilder owner" "HostessViewerIdentityBuilder" 1 "${track_f_owner_targets[@]}"
+check_exact_owner_count "Track F single ProtocolLoginRuntime owner" "ProtocolLoginRuntime" 1 "${track_f_owner_targets[@]}"
+check_exact_owner_count "Track F single ProtocolGroupRuntime owner" "ProtocolGroupRuntime" 1 "${track_f_owner_targets[@]}"
+check_exact_owner_count "Track F single ProtocolInventoryRuntime owner" "ProtocolInventoryRuntime" 1 "${track_f_owner_targets[@]}"
+check_exact_owner_count "Track F single ProtocolNoticeRuntime owner" "ProtocolNoticeRuntime" 1 "${track_f_owner_targets[@]}"
+check_exact_owner_count "Track F single NoticeDispatchService owner" "NoticeDispatchService" 1 "${track_f_owner_targets[@]}"
+
 check_no_forbidden_files \
     "Track D generic owner file names" \
     "${track_d_main_roots[@]}"
@@ -629,6 +804,21 @@ check_pattern_matches \
     "self-test Track C unsupported secret store pattern" \
     "$TRACK_C_UNSUPPORTED_SECRET_PATTERN" \
     'keychain lookup'
+
+check_pattern_matches \
+    "self-test Track F common forbidden platform API pattern" \
+    "$TRACK_F_COMMON_FORBIDDEN_PATTERN" \
+    'java.util.UUID.randomUUID()'
+
+check_pattern_matches \
+    "self-test Track F parallel path pattern" \
+    "$TRACK_F_PARALLEL_PATH_PATTERN" \
+    'class AndroidProtocolLibomvModule'
+
+check_pattern_matches \
+    "self-test Track F platform API confinement pattern" \
+    "$TRACK_F_PLATFORM_API_PATTERN" \
+    'import java.security.MessageDigest'
 
 check_pattern_matches \
     "self-test Track D generic owner pattern" \
