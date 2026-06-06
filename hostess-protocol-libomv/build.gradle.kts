@@ -6,7 +6,7 @@ plugins {
 }
 
 val libomvPacketTemplate = layout.projectDirectory.file("src/protocol-bootstrap/message_template.msg")
-val generatedLibomvPackets = layout.buildDirectory.dir("generated/sources/libomvPackets/java/jvmMain")
+val generatedLibomvPackets = layout.buildDirectory.dir("generated/sources/libomvPackets/kotlin/commonMain")
 
 val generateLibomvPacketCatalog by tasks.registering {
     group = "build"
@@ -44,58 +44,53 @@ val generateLibomvPacketCatalog by tasks.registering {
             .digest(templateFile.readBytes())
             .joinToString(separator = "") { "%02x".format(it) }
 
-        packetDir.resolve("Packet.java").writeText(
+        packetDir.resolve("Packet.kt").writeText(
             """
-            package libomv.packets;
+            package libomv.packets
 
-            public abstract class Packet {
-                public abstract PacketType getType();
+            abstract class Packet {
+                abstract val type: PacketType
             }
             """.trimIndent(),
         )
 
-        packetDir.resolve("PacketType.java").writeText(
+        packetDir.resolve("PacketType.kt").writeText(
             buildString {
-                appendLine("package libomv.packets;")
+                appendLine("package libomv.packets")
                 appendLine()
-                appendLine("public enum PacketType {")
+                appendLine("enum class PacketType {")
                 appendLine("    Default,")
                 packetNames.forEach { appendLine("    $it,") }
                 appendLine("}")
             },
         )
 
-        packetDir.resolve("PacketCatalog.java").writeText(
+        packetDir.resolve("PacketCatalog.kt").writeText(
             buildString {
-                appendLine("package libomv.packets;")
+                appendLine("package libomv.packets")
                 appendLine()
-                appendLine("public final class PacketCatalog {")
-                appendLine("    public static final int PACKET_DEFINITION_COUNT = ${packetNames.size};")
-                appendLine("    public static final int GENERATED_JAVA_FILE_COUNT = ${packetNames.size + 3};")
-                appendLine("    public static final String MESSAGE_TEMPLATE_SHA256 = \"$templateHash\";")
-                appendLine("    private static final String[] PACKET_NAMES = new String[] {")
+                appendLine("object PacketCatalog {")
+                appendLine("    const val PACKET_DEFINITION_COUNT: Int = ${packetNames.size}")
+                appendLine("    const val GENERATED_KOTLIN_FILE_COUNT: Int = ${packetNames.size + 3}")
+                appendLine("    const val MESSAGE_TEMPLATE_SHA256: String = \"$templateHash\"")
+                appendLine("    private val PACKET_NAMES: List<String> = listOf(")
                 packetNames.forEach { appendLine("        \"$it\",") }
-                appendLine("    };")
+                appendLine("    )")
                 appendLine()
-                appendLine("    private PacketCatalog() { }")
-                appendLine()
-                appendLine("    public static String[] packetNames() {")
-                appendLine("        return PACKET_NAMES.clone();")
+                appendLine("    fun packetNames(): List<String> {")
+                appendLine("        return PACKET_NAMES.toList()")
                 appendLine("    }")
                 appendLine("}")
             },
         )
 
         packetNames.forEach { packetName ->
-            packetDir.resolve("${packetName}Packet.java").writeText(
+            packetDir.resolve("${packetName}Packet.kt").writeText(
                 """
-                package libomv.packets;
+                package libomv.packets
 
-                public final class ${packetName}Packet extends Packet {
-                    @Override
-                    public PacketType getType() {
-                        return PacketType.$packetName;
-                    }
+                class ${packetName}Packet : Packet() {
+                    override val type: PacketType = PacketType.$packetName
                 }
                 """.trimIndent(),
             )
@@ -122,46 +117,41 @@ kotlin {
     }
 
     sourceSets {
+        val commonMain by getting {
+            kotlin.srcDir(generatedLibomvPackets)
+            dependencies {
+                implementation(project(":hostess-core"))
+            }
+        }
+        val jvmAndroidMain by creating {
+            dependsOn(commonMain)
+            dependencies {
+                implementation(libs.okhttp)
+            }
+        }
         commonTest {
             dependencies {
                 implementation(kotlin("test"))
             }
         }
         jvmMain {
-            // HS001-F-09 deletion gate: temporary old source root until protocol files move to common/platform source sets.
-            kotlin.srcDir("src/main/kotlin")
-            dependencies {
-                implementation(project(":hostess-core"))
-                implementation(libs.okhttp)
-            }
+            dependsOn(jvmAndroidMain)
         }
         androidMain {
-            // HS001-F-09 deletion gate: temporary old source root until protocol files move to common/platform source sets.
-            kotlin.srcDir("src/main/kotlin")
-            dependencies {
-                implementation(project(":hostess-core"))
-                implementation(libs.okhttp)
-            }
+            dependsOn(jvmAndroidMain)
         }
-        jvmTest {
-            // HS001-F-09 deletion gate: temporary old test root until protocol tests move to common/platform test source sets.
-            kotlin.srcDir("src/test/kotlin")
-            dependencies {
-                implementation(kotlin("test"))
-            }
-        }
-    }
-}
-
-extensions.configure<SourceSetContainer> {
-    named("jvmMain") {
-        // HS001-F-09 deletion gate: generated Java packet catalog is temporary until Kotlin common output lands.
-        java.srcDir(generatedLibomvPackets)
     }
 }
 
 tasks.matching {
-    it.name == "compileJvmMainJava" || it.name == "compileKotlinJvm" || it.name == "compileTestKotlinJvm"
+    it.name in setOf(
+        "compileCommonMainKotlinMetadata",
+        "compileKotlinJvm",
+        "compileAndroidMain",
+        "compileTestKotlinJvm",
+        "compileCommonTestKotlinMetadata",
+        "compileAndroidHostTest",
+    )
 }.configureEach {
     dependsOn(generateLibomvPacketCatalog)
 }
