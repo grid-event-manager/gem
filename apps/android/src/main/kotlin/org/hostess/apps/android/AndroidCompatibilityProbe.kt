@@ -12,11 +12,13 @@ import org.hostess.core.services.TargetSelectionService
 import org.hostess.protocol.libomv.ProtocolLibomvModule
 import org.hostess.protocol.libomv.runtime.HostessViewerIdentityProvider
 
-class AndroidCompatibilityProbe {
+class AndroidCompatibilityProbe internal constructor(
+    private val protocolLoadProbe: () -> AndroidProtocolLoadState = { defaultProtocolLoad() },
+) {
     fun run(): AndroidCompatibilityResult {
         val coreCompile = probeCoreCompile()
-        val runtimeResult = runCatching { ProtocolLibomvModule.liveRuntime() }
-        val loadState = runtimeResult.getOrNull()?.loadState
+        val runtimeResult = runCatching { protocolLoadProbe() }
+        val loadState = runtimeResult.getOrNull()
         val adapterLoad = loadState?.adapterLoad ?: false
         val runtimeLoad = loadState?.runtimeLoad ?: false
         val transportLoad = loadState?.transportLoad ?: false
@@ -117,6 +119,15 @@ class AndroidCompatibilityProbe {
     )
 
     private companion object {
+        fun defaultProtocolLoad(): AndroidProtocolLoadState {
+            val loadState = ProtocolLibomvModule.liveRuntime().loadState
+            return AndroidProtocolLoadState(
+                adapterLoad = loadState.adapterLoad,
+                runtimeLoad = loadState.runtimeLoad,
+                transportLoad = loadState.transportLoad,
+            )
+        }
+
         val TRACK_DS_LOGIN_PACKAGE_CLASSES = listOf(
             "org.hostess.protocol.libomv.runtime.LoginPackageBuilder",
             "org.hostess.protocol.libomv.runtime.LoginPackageSerializer",
@@ -127,6 +138,12 @@ class AndroidCompatibilityProbe {
     }
 }
 
+internal data class AndroidProtocolLoadState(
+    val adapterLoad: Boolean,
+    val runtimeLoad: Boolean,
+    val transportLoad: Boolean,
+)
+
 data class AndroidCompatibilityResult(
     val status: String,
     val coreCompile: Boolean,
@@ -136,6 +153,8 @@ data class AndroidCompatibilityResult(
     val trackCClassLoad: Boolean,
     val trackDComplianceLoad: Boolean,
     val trackDsLoginPackageLoad: Boolean,
+    val noLiveGridContact: Boolean,
+    val noUiSurface: Boolean,
     val forbiddenApiScan: String,
     val blockedReason: String?,
 ) {
@@ -149,6 +168,8 @@ data class AndroidCompatibilityResult(
             trackCClassLoad = true,
             trackDComplianceLoad = true,
             trackDsLoginPackageLoad = true,
+            noLiveGridContact = true,
+            noUiSurface = true,
             forbiddenApiScan = "external_guard_required",
             blockedReason = null,
         )
@@ -171,6 +192,8 @@ data class AndroidCompatibilityResult(
             trackCClassLoad = trackCClassLoad,
             trackDComplianceLoad = trackDComplianceLoad,
             trackDsLoginPackageLoad = trackDsLoginPackageLoad,
+            noLiveGridContact = true,
+            noUiSurface = true,
             forbiddenApiScan = "external_guard_required",
             blockedReason = reason,
         )
