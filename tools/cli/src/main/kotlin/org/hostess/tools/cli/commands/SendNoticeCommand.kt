@@ -26,8 +26,8 @@ class SendNoticeCommand(
     override val name: String = "send-notice"
 
     override fun execute(arguments: CommandArguments, output: CliOutput): CommandResult {
-        val mode = arguments.mode()
         staleNoticeTotalsOption(arguments)?.let { return usage(output, it) }
+        val mode = arguments.mode()
         if (mode == CommandMode.LIVE) {
             return blockLiveSend(arguments, output)
         }

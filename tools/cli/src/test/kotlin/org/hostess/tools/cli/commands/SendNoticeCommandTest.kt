@@ -158,6 +158,24 @@ class SendNoticeCommandTest {
     }
 
     @Test
+    fun `stale ledger option is rejected before mode parsing`() {
+        val output = RecordingCliOutput()
+
+        val exitCode = CommandRegistry.default(CliCompositionRoot()).execute(
+            listOf(
+                "send-notice",
+                "--ledger",
+                "notice-ledger.tsv",
+            ),
+            output,
+        )
+
+        assertEquals(2, exitCode)
+        assertTrue(output.lines.any { it.contains("ledger is no longer supported; local notice totals were removed") })
+        assertFalse(output.lines.any { it.contains("mode is required") })
+    }
+
+    @Test
     fun `stale recipient count option is rejected before attachment resolution`() {
         val output = RecordingCliOutput()
 
