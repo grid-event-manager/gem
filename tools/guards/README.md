@@ -36,6 +36,12 @@ Track H owner rules:
 - CLI and app shells must not call notice protocol/runtime owners directly. Android may mention Track H protocol owner class names only in `AndroidCompatibilityProbe.kt` for no-UI class-load proof.
 - `GroupNoticeAdd`, `NoticeSender`, and `BulkSender` remain forbidden production notice-send routes.
 
+Track I owner rules:
+
+- Notice compliance is submission-based. Recipient-count compliance terms, old recipient-estimate/delivery types, old recipient-delivery report fields, and Track H count environment variables remain forbidden in production source.
+- The Track I guard scans `hostess-core` common/JVM production source, CLI production source, and public readmes for stale command/report surface language.
+- Historical mentions are allowed only outside public production source and public readmes, such as private RFC/brief/archive/reference/evidence material, or inside this guard owner script and README.
+
 Non-production proof allowlist for broad source scans:
 
 - `README.md`: public repo-split documentation may mention `../private` to explain where private Hostess workbench material lives.

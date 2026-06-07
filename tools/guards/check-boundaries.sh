@@ -23,6 +23,7 @@ TRACK_H_STALE_FULL_PROOF_PATTERN='sendPlainNotice|runAttachmentProof|runBulkProo
 TRACK_H_STALE_NOTICE_PATTERN='(^|[^[:alnum:]_])(GroupNoticeAdd|NoticeSender|BulkSender)([^[:alnum:]_]|$)'
 TRACK_H_DIRECT_APP_NOTICE_PATTERN='(^|[^[:alnum:]_])(ProtocolNoticeRuntime|ProtocolNoticeCircuitSource|LibomvNoticePacketCodec|SimulatorPacketSender)([^[:alnum:]_]|$)'
 TRACK_ANDROID_PROBE_FORBIDDEN_RUNTIME_PATTERN='EnvironmentLoginSecretResolver|AgentDataUpdateRequestTransport|EventQueueGetClient|ProtocolLoginRuntime|ProtocolGroupRuntime|ProtocolInventoryRuntime|ProtocolNoticeRuntime|SimulatorPacketSender'
+TRACK_I_STALE_NOTICE_COMPLIANCE_PATTERN='recipient-count|recipient-count-source|NoticeRecipientEstimate|NoticeRecipientCount|NoticeRecipientEstimateSource|recipientDeliveryProjected|recipientDeliveryLedgerTotal|recipientDeliveryHardCap|recipientProjectionStatus|recipient_count_|recipient_delivery_|NoticeDeliveryCount|NoticeDeliveryDay|NoticeDeliveryProjection|NoticeDeliveryLedgerSnapshot|NoticeComplianceLedgerPort|HOSTESS_OWKS_COUNT|HOSTESS_MINX_COUNT'
 TRACK_C_ENV_PATTERN='System(::|\.)getenv'
 TRACK_C_FILE_ROUTE_PATTERN='credential-file'
 TRACK_C_UNSUPPORTED_SECRET_PATTERN='keychain|Keychain|KeyStore|plaintext|plain-text|plain text'
@@ -762,6 +763,20 @@ track_android_probe_targets=()
 add_existing track_android_probe_targets \
     "apps/android/src/main/kotlin/org/hostess/apps/android/AndroidCompatibilityProbe.kt"
 
+track_i_stale_notice_compliance_targets=()
+add_existing track_i_stale_notice_compliance_targets \
+    "hostess-core/src/commonMain" \
+    "hostess-core/src/jvmMain" \
+    "tools/cli/src/main"
+
+track_i_public_doc_targets=()
+add_existing track_i_public_doc_targets \
+    "README.md" \
+    "hostess-core/README.md" \
+    "tools/cli/README.md" \
+    "apps/desktop/README.md" \
+    "apps/android/README.md"
+
 check_no_hits \
     "hostess-core forbidden dependencies" \
     "$CORE_FORBIDDEN_PATTERN" \
@@ -994,6 +1009,16 @@ check_no_hits \
     "Android compatibility probe forbidden runtime routes" \
     "$TRACK_ANDROID_PROBE_FORBIDDEN_RUNTIME_PATTERN" \
     "${track_android_probe_targets[@]}"
+
+check_no_hits \
+    "Track I stale recipient-count compliance production paths" \
+    "$TRACK_I_STALE_NOTICE_COMPLIANCE_PATTERN" \
+    "${track_i_stale_notice_compliance_targets[@]}"
+
+check_no_hits \
+    "Track I stale recipient-count public docs" \
+    "$TRACK_I_STALE_NOTICE_COMPLIANCE_PATTERN" \
+    "${track_i_public_doc_targets[@]}"
 
 check_exact_owner_count "Track G single InventoryPort owner" "InventoryPort" 1 "${track_g_main_targets[@]}"
 check_exact_owner_count "Track G single InventoryDirectoryService owner" "InventoryDirectoryService" 1 "${track_g_main_targets[@]}"
@@ -1264,6 +1289,11 @@ check_pattern_matches \
     "self-test Android probe forbidden runtime route pattern" \
     "$TRACK_ANDROID_PROBE_FORBIDDEN_RUNTIME_PATTERN" \
     'val resolver = EnvironmentLoginSecretResolver()'
+
+check_pattern_matches \
+    "self-test Track I stale notice compliance pattern" \
+    "$TRACK_I_STALE_NOTICE_COMPLIANCE_PATTERN" \
+    '--recipient-count Venue Hosts=1; NoticeRecipientEstimate; recipientDeliveryProjected'
 
 if [[ "$failures" -ne 0 ]]; then
     exit 1
