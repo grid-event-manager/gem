@@ -24,6 +24,7 @@ class AndroidCompatibilityProbe {
         val trackDComplianceLoad = probeTrackDComplianceLoad()
         val trackDsLoginPackageLoad = probeTrackDsLoginPackageLoad()
         val trackGGridLoad = probeTrackGGridLoad()
+        val trackHNoticeLoad = probeTrackHNoticeLoad()
 
         return if (
             coreCompile &&
@@ -33,7 +34,8 @@ class AndroidCompatibilityProbe {
             trackCClassLoad &&
             trackDComplianceLoad &&
             trackDsLoginPackageLoad &&
-            trackGGridLoad
+            trackGGridLoad &&
+            trackHNoticeLoad
         ) {
             AndroidCompatibilityResult.passed()
         } else {
@@ -46,6 +48,7 @@ class AndroidCompatibilityProbe {
                 trackDComplianceLoad = trackDComplianceLoad,
                 trackDsLoginPackageLoad = trackDsLoginPackageLoad,
                 trackGGridLoad = trackGGridLoad,
+                trackHNoticeLoad = trackHNoticeLoad,
                 reason = blockedReason(
                     coreCompile,
                     adapterLoad,
@@ -55,6 +58,7 @@ class AndroidCompatibilityProbe {
                     trackDComplianceLoad,
                     trackDsLoginPackageLoad,
                     trackGGridLoad,
+                    trackHNoticeLoad,
                     runtimeResult.exceptionOrNull(),
                 ),
             )
@@ -99,6 +103,12 @@ class AndroidCompatibilityProbe {
                 .getOrDefault(false)
         }
 
+    private fun probeTrackHNoticeLoad(): Boolean =
+        TRACK_H_NOTICE_CLASSES.all { className ->
+            runCatching { Class.forName(className, false, javaClass.classLoader).name.isNotBlank() }
+                .getOrDefault(false)
+        }
+
     private fun blockedReason(
         coreCompile: Boolean,
         adapterLoad: Boolean,
@@ -108,6 +118,7 @@ class AndroidCompatibilityProbe {
         trackDComplianceLoad: Boolean,
         trackDsLoginPackageLoad: Boolean,
         trackGGridLoad: Boolean,
+        trackHNoticeLoad: Boolean,
         failure: Throwable?,
     ): String {
         val failedLanes = listOfNotNull(
@@ -119,6 +130,7 @@ class AndroidCompatibilityProbe {
             "trackDComplianceLoad".takeUnless { trackDComplianceLoad },
             "trackDsLoginPackageLoad".takeUnless { trackDsLoginPackageLoad },
             "trackGGridLoad".takeUnless { trackGGridLoad },
+            "trackHNoticeLoad".takeUnless { trackHNoticeLoad },
         )
         val cause = failure?.let { " cause=${it::class.java.simpleName}" }.orEmpty()
         return "Android compatibility probe failed lanes=${failedLanes.joinToString(",")}$cause"
@@ -155,6 +167,12 @@ class AndroidCompatibilityProbe {
             "org.hostess.protocol.libomv.runtime.ProtocolInventoryHttpSource",
             "org.hostess.protocol.libomv.mapping.LibomvInventoryItemMapping",
         )
+        val TRACK_H_NOTICE_CLASSES = listOf(
+            "org.hostess.core.services.InventorySelectionService",
+            "org.hostess.protocol.libomv.transport.ProtocolSimulatorCircuitClient",
+            "org.hostess.protocol.libomv.transport.LibomvNoticePacketCodec",
+            "org.hostess.protocol.libomv.runtime.ProtocolNoticeCircuitSource",
+        )
     }
 }
 
@@ -174,6 +192,7 @@ data class AndroidCompatibilityResult(
     val trackDComplianceLoad: Boolean,
     val trackDsLoginPackageLoad: Boolean,
     val trackGGridLoad: Boolean,
+    val trackHNoticeLoad: Boolean,
     val noLiveGridContact: Boolean,
     val noUiSurface: Boolean,
     val blockedReason: String?,
@@ -189,6 +208,7 @@ data class AndroidCompatibilityResult(
             trackDComplianceLoad = true,
             trackDsLoginPackageLoad = true,
             trackGGridLoad = true,
+            trackHNoticeLoad = true,
             noLiveGridContact = true,
             noUiSurface = true,
             blockedReason = null,
@@ -203,6 +223,7 @@ data class AndroidCompatibilityResult(
             trackDComplianceLoad: Boolean,
             trackDsLoginPackageLoad: Boolean,
             trackGGridLoad: Boolean,
+            trackHNoticeLoad: Boolean,
             reason: String,
         ): AndroidCompatibilityResult = AndroidCompatibilityResult(
             status = "android_gap",
@@ -214,6 +235,7 @@ data class AndroidCompatibilityResult(
             trackDComplianceLoad = trackDComplianceLoad,
             trackDsLoginPackageLoad = trackDsLoginPackageLoad,
             trackGGridLoad = trackGGridLoad,
+            trackHNoticeLoad = trackHNoticeLoad,
             noLiveGridContact = true,
             noUiSurface = true,
             blockedReason = reason,

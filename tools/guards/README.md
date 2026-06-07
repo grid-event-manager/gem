@@ -28,6 +28,14 @@ Track DS owner rules:
 - Android may mention Track DS owner class names only in `AndroidCompatibilityProbe.kt` for no-UI class-load proof.
 - The old inline LLSD login body, stale Track DS login fields, and spoofed viewer names remain forbidden in production source.
 
+Track H owner rules:
+
+- `ProtocolSimulatorCircuitClient` is the single simulator circuit owner; bounded circuit owner names remain forbidden.
+- Full live proof uses one `group-notice` workflow. Old plain, existing-attachment-notice, and bulk proof routes and inputs remain forbidden.
+- `InventorySelectionService`, `LibomvInventoryPermissionMapping`, `LibomvNoticePacketCodec`, and `ProtocolNoticeCircuitSource` each have one production owner.
+- CLI and app shells must not call notice protocol/runtime owners directly. Android may mention Track H protocol owner class names only in `AndroidCompatibilityProbe.kt` for no-UI class-load proof.
+- `GroupNoticeAdd`, `NoticeSender`, and `BulkSender` remain forbidden production notice-send routes.
+
 Non-production proof allowlist for broad source scans:
 
 - `README.md`: public repo-split documentation may mention `../private` to explain where private Hostess workbench material lives.

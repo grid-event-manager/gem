@@ -1,6 +1,6 @@
 # Hostess CLI Tools
 
-Local proof and operator helpers.
+Local proof and operator helpers for the current Hostess implementation path.
 
 Available proof commands:
 
@@ -18,4 +18,4 @@ Examples:
 ```
 
 Live mode uses credential handles that name environment variables. Do not place raw credentials in command arguments.
-Live notice send is available only through `live-proof --proof-scope full`; `send-notice` is fake-mode only.
+Live notice mutation is gated to `live-proof --proof-scope full` with explicit authorisation; `send-notice` is fake-mode only.

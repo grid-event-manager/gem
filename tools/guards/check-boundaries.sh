@@ -20,6 +20,9 @@ TRACK_C_RUNTIME_PATTERN='EnvironmentLoginSecretResolver|ProtocolSimulatorCircuit
 TRACK_H_STALE_CIRCUIT_OWNER_PATTERN='BoundedSimulatorCircuit(Client|Sender)'
 TRACK_H_STALE_CLI_LIVE_SEND_PATTERN='sessionProvider|fakeSession\(active = false\)|send-notice --mode live'
 TRACK_H_STALE_FULL_PROOF_PATTERN='sendPlainNotice|runAttachmentProof|runBulkProof|boundedBulkTargetSet|plain-notice|existing-attachment-notice|bulk-notice|existingAttachmentId|--existing-attachment-id|bulkLimit|bulkDelayMs'
+TRACK_H_STALE_NOTICE_PATTERN='(^|[^[:alnum:]_])(GroupNoticeAdd|NoticeSender|BulkSender)([^[:alnum:]_]|$)'
+TRACK_H_DIRECT_APP_NOTICE_PATTERN='(^|[^[:alnum:]_])(ProtocolNoticeRuntime|ProtocolNoticeCircuitSource|LibomvNoticePacketCodec|SimulatorPacketSender)([^[:alnum:]_]|$)'
+TRACK_ANDROID_PROBE_FORBIDDEN_RUNTIME_PATTERN='EnvironmentLoginSecretResolver|AgentDataUpdateRequestTransport|EventQueueGetClient|ProtocolLoginRuntime|ProtocolGroupRuntime|ProtocolInventoryRuntime|ProtocolNoticeRuntime|SimulatorPacketSender'
 TRACK_C_ENV_PATTERN='System(::|\.)getenv'
 TRACK_C_FILE_ROUTE_PATTERN='credential-file'
 TRACK_C_UNSUPPORTED_SECRET_PATTERN='keychain|Keychain|KeyStore|plaintext|plain-text|plain text'
@@ -464,7 +467,13 @@ add_existing track_b_runtime_forbidden_targets \
     "apps/android/src/main"
 
 track_c_runtime_forbidden_targets=()
-add_existing track_c_runtime_forbidden_targets \
+while IFS= read -r path; do
+    case "$path" in
+        # Android no-UI load probe may mention protocol owner class names only.
+        "apps/android/src/main/kotlin/org/hostess/apps/android/AndroidCompatibilityProbe.kt") ;;
+        *) track_c_runtime_forbidden_targets+=("$path") ;;
+    esac
+done < <(find \
     "hostess-core/src/commonMain" \
     "hostess-core/src/jvmMain" \
     "hostess-core/src/androidMain" \
@@ -472,7 +481,8 @@ add_existing track_c_runtime_forbidden_targets \
     "hostess-core/src/main" \
     "tools/cli/src/main" \
     "apps/desktop/src/main" \
-    "apps/android/src/main"
+    "apps/android/src/main" \
+    -type f -name '*.kt' 2>/dev/null || true)
 
 track_c_env_forbidden_targets=()
 while IFS= read -r path; do
@@ -719,6 +729,39 @@ add_existing track_h_full_proof_targets \
     "tools/cli/src/main" \
     "tools/cli/src/test"
 
+track_h_notice_stale_targets=()
+add_existing track_h_notice_stale_targets \
+    "hostess-core/src/commonMain" \
+    "hostess-core/src/jvmMain" \
+    "hostess-core/src/androidMain" \
+    "hostess-core/src/jvmAndroidMain" \
+    "hostess-core/src/main" \
+    "hostess-protocol-libomv/src/commonMain" \
+    "hostess-protocol-libomv/src/jvmMain" \
+    "hostess-protocol-libomv/src/androidMain" \
+    "hostess-protocol-libomv/src/jvmAndroidMain" \
+    "hostess-protocol-libomv/src/main" \
+    "tools/cli/src/main" \
+    "apps/desktop/src/main" \
+    "apps/android/src/main"
+
+track_h_direct_app_notice_targets=()
+while IFS= read -r path; do
+    case "$path" in
+        # H-08 Android no-UI load probe may mention Track H protocol owner class names only.
+        "apps/android/src/main/kotlin/org/hostess/apps/android/AndroidCompatibilityProbe.kt") ;;
+        *) track_h_direct_app_notice_targets+=("$path") ;;
+    esac
+done < <(find \
+    "tools/cli/src/main" \
+    "apps/desktop/src/main" \
+    "apps/android/src/main" \
+    -type f -name '*.kt' 2>/dev/null || true)
+
+track_android_probe_targets=()
+add_existing track_android_probe_targets \
+    "apps/android/src/main/kotlin/org/hostess/apps/android/AndroidCompatibilityProbe.kt"
+
 check_no_hits \
     "hostess-core forbidden dependencies" \
     "$CORE_FORBIDDEN_PATTERN" \
@@ -937,10 +980,30 @@ check_no_hits \
     "$TRACK_H_STALE_FULL_PROOF_PATTERN" \
     "${track_h_full_proof_targets[@]}"
 
+check_no_hits \
+    "Track H stale notice owner routes" \
+    "$TRACK_H_STALE_NOTICE_PATTERN" \
+    "${track_h_notice_stale_targets[@]}"
+
+check_no_hits \
+    "Track H direct CLI/app notice protocol routes" \
+    "$TRACK_H_DIRECT_APP_NOTICE_PATTERN" \
+    "${track_h_direct_app_notice_targets[@]}"
+
+check_no_hits \
+    "Android compatibility probe forbidden runtime routes" \
+    "$TRACK_ANDROID_PROBE_FORBIDDEN_RUNTIME_PATTERN" \
+    "${track_android_probe_targets[@]}"
+
 check_exact_owner_count "Track G single InventoryPort owner" "InventoryPort" 1 "${track_g_main_targets[@]}"
 check_exact_owner_count "Track G single InventoryDirectoryService owner" "InventoryDirectoryService" 1 "${track_g_main_targets[@]}"
 check_exact_owner_count "Track G single ProtocolCapabilitySeedClient owner" "ProtocolCapabilitySeedClient" 1 "${track_g_main_targets[@]}"
 check_exact_owner_count "Track G single ProtocolCapabilityCacheProvider owner" "ProtocolCapabilityCacheProvider" 1 "${track_g_main_targets[@]}"
+check_exact_owner_count "Track H single InventorySelectionService owner" "InventorySelectionService" 1 "${track_f_owner_targets[@]}"
+check_exact_owner_count "Track H single LibomvInventoryPermissionMapping owner" "LibomvInventoryPermissionMapping" 1 "${track_f_owner_targets[@]}"
+check_exact_owner_count "Track H single ProtocolSimulatorCircuitClient owner" "ProtocolSimulatorCircuitClient" 1 "${track_f_owner_targets[@]}"
+check_exact_owner_count "Track H single LibomvNoticePacketCodec owner" "LibomvNoticePacketCodec" 1 "${track_f_owner_targets[@]}"
+check_exact_owner_count "Track H single ProtocolNoticeCircuitSource owner" "ProtocolNoticeCircuitSource" 1 "${track_f_owner_targets[@]}"
 
 check_no_hits \
     "Track D viewer identity provider outside protocol module" \
@@ -1186,6 +1249,21 @@ check_pattern_matches \
     "self-test Track H stale full proof pattern" \
     "$TRACK_H_STALE_FULL_PROOF_PATTERN" \
     'private fun runBulkProof() = "bulk-notice"'
+
+check_pattern_matches \
+    "self-test Track H stale notice owner pattern" \
+    "$TRACK_H_STALE_NOTICE_PATTERN" \
+    'class NoticeSender { fun send() = GroupNoticeAdd }'
+
+check_pattern_matches \
+    "self-test Track H direct CLI app notice pattern" \
+    "$TRACK_H_DIRECT_APP_NOTICE_PATTERN" \
+    'ProtocolNoticeCircuitSource(transport).send(packet)'
+
+check_pattern_matches \
+    "self-test Android probe forbidden runtime route pattern" \
+    "$TRACK_ANDROID_PROBE_FORBIDDEN_RUNTIME_PATTERN" \
+    'val resolver = EnvironmentLoginSecretResolver()'
 
 if [[ "$failures" -ne 0 ]]; then
     exit 1
