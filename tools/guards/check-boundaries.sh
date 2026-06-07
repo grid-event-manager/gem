@@ -767,7 +767,9 @@ track_i_stale_notice_compliance_targets=()
 add_existing track_i_stale_notice_compliance_targets \
     "hostess-core/src/commonMain" \
     "hostess-core/src/jvmMain" \
-    "tools/cli/src/main"
+    "tools/cli/src/main" \
+    "apps/desktop/src/main" \
+    "apps/android/src/main"
 
 track_i_public_doc_targets=()
 add_existing track_i_public_doc_targets \

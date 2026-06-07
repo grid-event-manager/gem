@@ -39,7 +39,7 @@ Track H owner rules:
 Track I owner rules:
 
 - Notice compliance is submission-based. Recipient-count compliance terms, old recipient-estimate/delivery types, old recipient-delivery report fields, and Track H count environment variables remain forbidden in production source.
-- The Track I guard scans `hostess-core` common/JVM production source, CLI production source, and public readmes for stale command/report surface language.
+- The Track I guard scans `hostess-core` common/JVM production source, CLI/app production shells, and public readmes for stale command/report surface language.
 - Historical mentions are allowed only outside public production source and public readmes, such as private RFC/brief/archive/reference/evidence material, or inside this guard owner script and README.
 
 Non-production proof allowlist for broad source scans:

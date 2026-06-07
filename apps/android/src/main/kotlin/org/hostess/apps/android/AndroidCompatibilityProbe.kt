@@ -4,7 +4,7 @@ import org.hostess.core.domain.GroupMembership
 import org.hostess.core.domain.NoticeDraft
 import org.hostess.core.domain.NoticeDraftValidation
 import org.hostess.core.domain.TargetSelectionResult
-import org.hostess.core.ports.NoticeComplianceLedgerPort
+import org.hostess.core.ports.NoticeSubmissionLedgerPort
 import org.hostess.core.services.LoginComplianceService
 import org.hostess.core.services.NoticeComplianceClock
 import org.hostess.core.services.NoticeComplianceService
@@ -88,7 +88,7 @@ class AndroidCompatibilityProbe {
             LoginComplianceService::class.java,
             NoticeComplianceService::class.java,
             NoticeComplianceClock::class.java,
-            NoticeComplianceLedgerPort::class.java,
+            NoticeSubmissionLedgerPort::class.java,
         ).all { it.name.isNotBlank() }
 
     private fun probeTrackDsLoginPackageLoad(): Boolean =
