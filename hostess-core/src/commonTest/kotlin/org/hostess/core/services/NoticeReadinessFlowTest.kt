@@ -13,21 +13,12 @@ import org.hostess.core.domain.GroupMembership
 import org.hostess.core.domain.GroupSendState
 import org.hostess.core.domain.HostessDelay
 import org.hostess.core.domain.InventoryItemId
-import org.hostess.core.domain.NoticeComplianceLedgerResult
-import org.hostess.core.domain.NoticeCompliancePolicy
-import org.hostess.core.domain.NoticeComplianceRequest
 import org.hostess.core.domain.NoticeDispatchResult
 import org.hostess.core.domain.NoticeDraftValidation
-import org.hostess.core.domain.NoticeLedgerDay
-import org.hostess.core.domain.NoticeSubmissionCount
-import org.hostess.core.domain.NoticeSubmissionLedgerSnapshot
-import org.hostess.core.domain.NoticeSubmissionProjection
-import org.hostess.core.domain.OperatorLabel
 import org.hostess.core.domain.PacingPolicy
 import org.hostess.core.domain.TargetSelectionResult
 import org.hostess.core.ports.AttachmentResolutionResult
 import org.hostess.core.ports.GroupListResult
-import org.hostess.core.ports.NoticeSubmissionLedgerPort
 import org.hostess.core.testing.FakeClockPort
 import org.hostess.core.testing.FakeGroupPort
 import org.hostess.core.testing.FakeInventoryPort
@@ -126,14 +117,12 @@ class NoticeReadinessFlowTest {
             noticeDispatchService(noticePort, clockPort).dispatch(
                 session = defaultSession(),
                 draft = draft,
-                compliance = complianceRequest(),
                 pacingPolicy = PacingPolicy(HostessDelay.ofMilliseconds(25)),
                 attachment = attachment,
             ),
         )
 
         assertEquals(listOf(GroupSendState.SENT, GroupSendState.SENT), result.result.statuses.map { it.state })
-        assertEquals("allowed", result.complianceReceipt.reasonCode)
         assertEquals(listOf(HostessDelay.ofMilliseconds(25)), clockPort.pauses)
         assertEquals(targetSet.selectedGroups, noticePort.calls.map { it.group })
         assertEquals(listOf(attachment, attachment), noticePort.calls.map { it.attachment })
@@ -152,14 +141,7 @@ class NoticeReadinessFlowTest {
         NoticeDispatchService(
             noticePort = noticePort,
             clockPort = clockPort,
-            noticeComplianceService = NoticeComplianceService(
-                policy = NoticeCompliancePolicy(),
-                ledger = PassingNoticeComplianceLedger,
-                clock = NoticeComplianceClock { NoticeLedgerDay("2026-06-06") },
-            ),
         )
-
-    private fun complianceRequest(): NoticeComplianceRequest = NoticeComplianceRequest(OperatorLabel("operator"))
 
     private fun venueGroups(): List<GroupMembership> = listOf(
         group("venue-hosts", "Venue Hosts", canSendNotices = true),
@@ -178,61 +160,4 @@ class NoticeReadinessFlowTest {
         acceptsNotices = null,
     )
 
-    private object PassingNoticeComplianceLedger : NoticeSubmissionLedgerPort {
-        override fun snapshot(
-            proofAccountLabel: org.hostess.core.domain.AccountLabel,
-            operatorLabel: OperatorLabel,
-            groups: List<GroupMembership>,
-            noticeLedgerDay: NoticeLedgerDay,
-        ): NoticeComplianceLedgerResult<List<NoticeSubmissionLedgerSnapshot>> =
-            NoticeComplianceLedgerResult.Success(
-                groups.map { group -> ledgerSnapshot(proofAccountLabel, operatorLabel, group, noticeLedgerDay) },
-            )
-
-        override fun reserve(
-            proofAccountLabel: org.hostess.core.domain.AccountLabel,
-            operatorLabel: OperatorLabel,
-            projection: NoticeSubmissionProjection,
-            noticeLedgerDay: NoticeLedgerDay,
-        ): NoticeComplianceLedgerResult<List<NoticeSubmissionLedgerSnapshot>> =
-            NoticeComplianceLedgerResult.Success(
-                projection.selectedGroups.map { group -> ledgerSnapshot(proofAccountLabel, operatorLabel, group, noticeLedgerDay, reserved = 1) },
-            )
-
-        override fun recordSendResult(
-            proofAccountLabel: org.hostess.core.domain.AccountLabel,
-            operatorLabel: OperatorLabel,
-            projection: NoticeSubmissionProjection,
-            sentGroups: List<GroupMembership>,
-            noticeLedgerDay: NoticeLedgerDay,
-        ): NoticeComplianceLedgerResult<List<NoticeSubmissionLedgerSnapshot>> =
-            NoticeComplianceLedgerResult.Success(
-                projection.selectedGroups.map { group ->
-                    ledgerSnapshot(
-                        proofAccountLabel = proofAccountLabel,
-                        operatorLabel = operatorLabel,
-                        group = group,
-                        noticeLedgerDay = noticeLedgerDay,
-                        sent = if (sentGroups.any { it.groupId == group.groupId }) 1 else 0,
-                    )
-                },
-            )
-
-        private fun ledgerSnapshot(
-            proofAccountLabel: org.hostess.core.domain.AccountLabel,
-            operatorLabel: OperatorLabel,
-            group: GroupMembership,
-            noticeLedgerDay: NoticeLedgerDay,
-            reserved: Long = 0,
-            sent: Long = 0,
-        ): NoticeSubmissionLedgerSnapshot = NoticeSubmissionLedgerSnapshot(
-            proofAccountLabel = proofAccountLabel,
-            groupId = group.groupId,
-            groupDisplayName = group.displayName,
-            noticeLedgerDay = noticeLedgerDay,
-            reservedSubmissionCount = NoticeSubmissionCount(reserved),
-            recordedSentSubmissionCount = NoticeSubmissionCount(sent),
-            lastOperatorLabel = operatorLabel,
-        )
-    }
 }

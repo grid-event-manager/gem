@@ -493,8 +493,6 @@ class LiveProofCommandTest {
                     "Doors at eight",
                     "--existing-attachment-name",
                     "Venue Landmark",
-                    "--ledger",
-                    directory.resolve("notice-ledger.tsv").toString(),
                 ),
                 output,
             )
@@ -516,7 +514,6 @@ class LiveProofCommandTest {
             assertContains(report, "\"state\": \"not_run\"")
             assertFalse(report.contains("venue-proof"))
             assertFalse(report.contains("HOSTESS_PROOF_CREDENTIAL"))
-            assertFalse(report.contains("notice-ledger.tsv"))
             assertFalse(RAW_UUID.containsMatchIn(report))
         } finally {
             directory.toFile().deleteRecursively()
@@ -568,11 +565,17 @@ class LiveProofCommandTest {
             assertEquals(2, exitCode)
             assertTrue(
                 output.lines.any {
-                    it.contains("recipient-count is no longer supported; notice submissions are derived from selected target groups")
+                    it.contains("unsupported stale option: ledger")
+                },
+            )
+            assertTrue(
+                output.lines.any {
+                    it.contains("unsupported stale option: recipient-count")
                 },
             )
             assertContains(report, "\"status\": \"blocked\"")
             assertContains(report, "\"noticeSendStatus\": \"not_run\"")
+            assertFalse(report.contains("notice-ledger.tsv"))
         } finally {
             directory.toFile().deleteRecursively()
         }

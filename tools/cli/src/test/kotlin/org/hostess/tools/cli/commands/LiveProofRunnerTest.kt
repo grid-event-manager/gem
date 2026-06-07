@@ -26,9 +26,7 @@ import org.hostess.core.domain.InventoryItemDisplayName
 import org.hostess.core.domain.InventoryItemId
 import org.hostess.core.domain.InventoryItemKind
 import org.hostess.core.domain.InventoryItemQuery
-import org.hostess.core.domain.NoticeCompliancePolicy
 import org.hostess.core.domain.NoticeDraft
-import org.hostess.core.domain.NoticeLedgerDay
 import org.hostess.core.domain.SessionId
 import org.hostess.core.ports.AttachmentResolutionResult
 import org.hostess.core.ports.ClockPort
@@ -47,8 +45,6 @@ import org.hostess.core.services.GroupDirectoryService
 import org.hostess.core.services.InventoryDirectoryService
 import org.hostess.core.services.InventorySelectionService
 import org.hostess.core.services.LoginComplianceService
-import org.hostess.core.services.NoticeComplianceClock
-import org.hostess.core.services.NoticeComplianceService
 import org.hostess.core.services.NoticeDispatchService
 import org.hostess.core.services.NoticeDraftService
 import org.hostess.core.services.SessionService
@@ -56,7 +52,6 @@ import org.hostess.core.services.TargetSelectionService
 import org.hostess.tools.cli.CommandResult
 import org.hostess.tools.cli.RecordingCliOutput
 import org.hostess.tools.cli.composition.CliRuntime
-import org.hostess.tools.cli.composition.InMemoryNoticeSubmissionLedgerPort
 import org.hostess.tools.cli.report.ProofReportWriter
 
 class LiveProofRunnerTest {
@@ -341,7 +336,6 @@ class LiveProofRunnerTest {
         body = body,
         authorisedLiveSend = authorisedLiveSend,
         existingAttachmentName = existingAttachmentName,
-        noticeLedgerPath = "configured-test-ledger",
     )
 
     private fun withReport(assertion: (java.nio.file.Path) -> Unit) {
@@ -384,11 +378,6 @@ class LiveProofRunnerTest {
             noticeDispatchService = NoticeDispatchService(
                 noticePort = noticePort,
                 clockPort = clock,
-                noticeComplianceService = NoticeComplianceService(
-                    policy = NoticeCompliancePolicy(),
-                    ledger = InMemoryNoticeSubmissionLedgerPort(),
-                    clock = NoticeComplianceClock { NoticeLedgerDay("2026-06-05") },
-                ),
             ),
             proofReportWriter = ProofReportWriter(),
             protocolAvailable = true,

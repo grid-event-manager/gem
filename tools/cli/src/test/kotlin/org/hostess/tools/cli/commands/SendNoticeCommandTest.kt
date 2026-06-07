@@ -98,7 +98,7 @@ class SendNoticeCommandTest {
     }
 
     @Test
-    fun `fake send notice defaults compliance projection and writes status fields`() {
+    fun `fake send notice writes direct send status fields without notice totals`() {
         withReport { reportPath ->
             val output = RecordingCliOutput()
 
@@ -123,14 +123,38 @@ class SendNoticeCommandTest {
             assertEquals(0, exitCode)
             assertTrue(output.lines.any { it == "send-notice fake attempted=1" })
             assertContains(report, "\"status\": \"passed\"")
-            assertContains(report, "\"noticeComplianceStatus\": \"passed\"")
-            assertContains(report, "\"noticeSubmissionProjectionStatus\": \"passed\"")
-            assertContains(report, "\"noticeSubmissionsProjected\": \"1\"")
-            assertContains(report, "\"noticeSubmissionLedgerGroupCount\": \"1\"")
-            assertContains(report, "\"noticeSubmissionLedgerMaxGroupTotal\": \"1\"")
-            assertContains(report, "\"noticeSubmissionPerGroupHardCap\": \"180\"")
-            assertContains(report, "\"noticeLedgerConfigured\": \"true\"")
+            assertContains(report, "\"sendNoticeStatus\": \"passed\"")
+            assertContains(report, "\"targetDisplayNames\": \"Venue Hosts\"")
+            assertFalse(report.contains("noticeCompliance"))
+            assertFalse(report.contains("noticeSubmission"))
+            assertFalse(report.contains("noticeLedger"))
         }
+    }
+
+    @Test
+    fun `stale ledger option is rejected before fake send`() {
+        val output = RecordingCliOutput()
+
+        val exitCode = CommandRegistry.default(CliCompositionRoot()).execute(
+            listOf(
+                "send-notice",
+                "--mode",
+                "fake",
+                "--target",
+                "Venue Hosts",
+                "--subject",
+                "Tonight",
+                "--body",
+                "Doors at eight",
+                "--ledger",
+                "notice-ledger.tsv",
+            ),
+            output,
+        )
+
+        assertEquals(2, exitCode)
+        assertTrue(output.lines.any { it.contains("ledger is no longer supported; local notice totals were removed") })
+        assertFalse(output.lines.any { it.contains("send-notice fake attempted") })
     }
 
     @Test
@@ -148,8 +172,6 @@ class SendNoticeCommandTest {
                 "Tonight",
                 "--body",
                 "Doors at eight",
-                "--operator",
-                "test-operator",
                 "--recipient-count",
                 "Event Notices=10",
                 "--attachment-kind",
@@ -159,7 +181,7 @@ class SendNoticeCommandTest {
         )
 
         assertEquals(2, exitCode)
-        assertTrue(output.lines.any { it.contains("recipient-count is no longer supported; notice submissions are derived from selected target groups") })
+        assertTrue(output.lines.any { it.contains("recipient-count is no longer supported; local notice totals were removed") })
         assertFalse(output.lines.any { it.contains("missing attachment-id") })
     }
 
@@ -178,8 +200,6 @@ class SendNoticeCommandTest {
                 "Tonight",
                 "--body",
                 "Doors at eight",
-                "--operator",
-                "test-operator",
                 "--recipient-count-source",
                 "operator-acknowledged",
             ),
@@ -187,47 +207,7 @@ class SendNoticeCommandTest {
         )
 
         assertEquals(2, exitCode)
-        assertTrue(output.lines.any { it.contains("recipient-count-source is no longer supported; notice submissions are derived from selected target groups") })
-    }
-
-    @Test
-    fun `explicit notice submission report omits ledger path`() {
-        val directory = Files.createTempDirectory("hostess-send-notice")
-        try {
-            val reportPath = directory.resolve("send-notice.json")
-            val ledgerPath = directory.resolve("notice-ledger.tsv")
-            val output = RecordingCliOutput()
-
-            val exitCode = CommandRegistry.default(CliCompositionRoot()).execute(
-                listOf(
-                    "send-notice",
-                    "--mode",
-                    "fake",
-                    "--target",
-                    "Venue Hosts",
-                    "--subject",
-                    "Tonight",
-                    "--body",
-                    "Doors at eight",
-                    "--operator",
-                    "test-operator",
-                    "--ledger",
-                    ledgerPath.toString(),
-                    "--report",
-                    reportPath.toString(),
-                ),
-                output,
-            )
-
-            val report = reportPath.readText()
-            assertEquals(0, exitCode)
-            assertContains(report, "\"noticeSubmissionsProjected\": \"1\"")
-            assertContains(report, "\"noticeOperator\": \"test-operator\"")
-            assertFalse(report.contains("notice-ledger.tsv"))
-            assertFalse(report.contains(ledgerPath.toString()))
-        } finally {
-            directory.toFile().deleteRecursively()
-        }
+        assertTrue(output.lines.any { it.contains("recipient-count-source is no longer supported; local notice totals were removed") })
     }
 
     private fun withReport(assertion: (java.nio.file.Path) -> Unit) {

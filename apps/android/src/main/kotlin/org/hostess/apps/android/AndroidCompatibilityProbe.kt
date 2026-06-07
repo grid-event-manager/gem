@@ -4,10 +4,8 @@ import org.hostess.core.domain.GroupMembership
 import org.hostess.core.domain.NoticeDraft
 import org.hostess.core.domain.NoticeDraftValidation
 import org.hostess.core.domain.TargetSelectionResult
-import org.hostess.core.ports.NoticeSubmissionLedgerPort
 import org.hostess.core.services.LoginComplianceService
-import org.hostess.core.services.NoticeComplianceClock
-import org.hostess.core.services.NoticeComplianceService
+import org.hostess.core.services.NoticeDispatchService
 import org.hostess.core.services.TargetSelectionService
 import org.hostess.protocol.libomv.ProtocolLibomvModule
 import org.hostess.protocol.libomv.runtime.HostessViewerIdentityProvider
@@ -86,9 +84,7 @@ class AndroidCompatibilityProbe {
         listOf(
             HostessViewerIdentityProvider::class.java,
             LoginComplianceService::class.java,
-            NoticeComplianceService::class.java,
-            NoticeComplianceClock::class.java,
-            NoticeSubmissionLedgerPort::class.java,
+            NoticeDispatchService::class.java,
         ).all { it.name.isNotBlank() }
 
     private fun probeTrackDsLoginPackageLoad(): Boolean =

@@ -1,6 +1,5 @@
 package org.hostess.tools.cli.composition
 
-import java.nio.file.Path
 import org.hostess.core.domain.AccountLabel
 import org.hostess.core.domain.AttachmentOwnerId
 import org.hostess.core.domain.AttachmentRef
@@ -25,14 +24,11 @@ import org.hostess.core.ports.SessionLoginResult
 import org.hostess.core.ports.SessionLogoutResult
 import org.hostess.core.ports.SessionPort
 import org.hostess.core.services.AttachmentService
-import org.hostess.core.services.DefaultNoticeComplianceClock
 import org.hostess.core.services.DefaultRedactionPort
 import org.hostess.core.services.GroupDirectoryService
 import org.hostess.core.services.InventoryDirectoryService
 import org.hostess.core.services.InventorySelectionService
 import org.hostess.core.services.LoginComplianceService
-import org.hostess.core.domain.NoticeCompliancePolicy
-import org.hostess.core.services.NoticeComplianceService
 import org.hostess.core.services.NoticeDispatchService
 import org.hostess.core.services.NoticeDraftService
 import org.hostess.core.services.SessionService
@@ -44,9 +40,9 @@ import org.hostess.tools.cli.report.ProofReportWriter
 class CliCompositionRoot(
     private val fakeGroups: List<GroupMembership> = defaultFakeGroups(),
 ) {
-    fun runtime(mode: CommandMode, noticeLedgerPath: String? = null): CliRuntime = when (mode) {
+    fun runtime(mode: CommandMode): CliRuntime = when (mode) {
         CommandMode.FAKE -> fakeRuntime()
-        CommandMode.LIVE -> liveRuntime(noticeLedgerPath)
+        CommandMode.LIVE -> liveRuntime()
     }
 
     private fun fakeRuntime(): CliRuntime {
@@ -67,24 +63,14 @@ class CliCompositionRoot(
             noticeDispatchService = NoticeDispatchService(
                 noticePort = noticePort,
                 clockPort = NoopClockPort,
-                noticeComplianceService = NoticeComplianceService(
-                    policy = NoticeCompliancePolicy(),
-                    ledger = InMemoryNoticeSubmissionLedgerPort(),
-                    clock = DefaultNoticeComplianceClock(),
-                ),
             ),
             proofReportWriter = ProofReportWriter(),
             protocolAvailable = true,
         )
     }
 
-    private fun liveRuntime(noticeLedgerPath: String?): CliRuntime {
+    private fun liveRuntime(): CliRuntime {
         val protocolRuntime = ProtocolLibomvModule.liveRuntime()
-        val noticeLedger = noticeLedgerPath
-            ?.trim()
-            ?.takeIf(String::isNotBlank)
-            ?.let { FileNoticeSubmissionLedgerPort(Path.of(it)) }
-            ?: UnavailableNoticeSubmissionLedgerPort()
         return CliRuntime(
             sessionService = SessionService(protocolRuntime.sessionPort, LoginComplianceService(), DefaultRedactionPort),
             groupDirectoryService = GroupDirectoryService(protocolRuntime.groupPort),
@@ -96,11 +82,6 @@ class CliCompositionRoot(
             noticeDispatchService = NoticeDispatchService(
                 noticePort = protocolRuntime.noticePort,
                 clockPort = NoopClockPort,
-                noticeComplianceService = NoticeComplianceService(
-                    policy = NoticeCompliancePolicy(),
-                    ledger = noticeLedger,
-                    clock = DefaultNoticeComplianceClock(),
-                ),
             ),
             proofReportWriter = ProofReportWriter(),
             protocolAvailable = protocolRuntime.protocolAvailable,

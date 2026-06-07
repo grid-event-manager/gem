@@ -35,12 +35,10 @@ internal class LiveNoticeSendProofRunner(
 ) {
     private val steps = mutableListOf<LiveProofStep>()
     private val statusFields = LiveProofStep.statusFields().toMutableMap()
-    private val noticeCompliance = LiveProofNoticeCompliance(inputs)
     private var cleanupStatus = "not_applicable"
     private var terminalFailure = false
 
     fun run(): CommandResult {
-        statusFields += noticeCompliance.reportStatusFields(null)
         if (hasForbiddenTarget()) {
             val detail = "forbidden target display name"
             statusFields["noticeSendStatus"] = "blocked"
@@ -205,35 +203,16 @@ internal class LiveNoticeSendProofRunner(
         targetSet: GroupTargetSet,
         attachment: AttachmentRef,
     ): Boolean {
-        val complianceRequest = try {
-            noticeCompliance.request(targetSet)
-        } catch (exception: IllegalArgumentException) {
-            val detail = "blocked: ${exception.message ?: "notice compliance invalid"}"
-            statusFields["noticeSendStatus"] = "blocked"
-            steps += LiveProofStep("group-notice", "blocked", detail)
-            markNotRunUntilLogout(detail, "cleanup")
-            return false
-        }
         val draft = NoticeDraft(inputs.subject.orEmpty(), inputs.body.orEmpty(), targetSet)
         return when (
             val dispatch = runtime.noticeDispatchService.dispatch(
                 session = session,
                 draft = draft,
-                compliance = complianceRequest,
                 attachment = attachment,
             )
         ) {
             is NoticeDispatchResult.Rejected -> noticeFailed("notice draft rejected")
-            is NoticeDispatchResult.ComplianceRejected -> {
-                statusFields += noticeCompliance.reportStatusFields(dispatch.decision.receipt)
-                noticeBlocked("blocked: ${dispatch.decision.receipt.reasonCode}")
-            }
-            is NoticeDispatchResult.ComplianceRecordFailed -> {
-                statusFields += noticeCompliance.reportStatusFields(dispatch.complianceReceipt)
-                noticeFailed(dispatch.complianceReceipt.reasonCode)
-            }
             is NoticeDispatchResult.Sent -> {
-                statusFields += noticeCompliance.reportStatusFields(dispatch.complianceReceipt)
                 val failed = dispatch.result.statuses.firstOrNull { it.state != GroupSendState.SENT }
                 if (failed == null) {
                     statusFields["noticeSendStatus"] = "passed"
@@ -248,13 +227,6 @@ internal class LiveNoticeSendProofRunner(
                 }
             }
         }
-    }
-
-    private fun noticeBlocked(detail: String): Boolean {
-        statusFields["noticeSendStatus"] = "blocked"
-        steps += LiveProofStep("group-notice", "blocked", detail)
-        markNotRunUntilLogout(detail, "cleanup")
-        return false
     }
 
     private fun noticeFailed(detail: String): Boolean {

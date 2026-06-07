@@ -22,8 +22,7 @@ internal data class LiveProofInputs(
     val body: String?,
     val authorisedLiveSend: Boolean,
     val existingAttachmentName: String?,
-    val noticeLedgerPath: String? = null,
-    private val noticeComplianceArguments: NoticeComplianceArguments? = null,
+    private val staleNoticeTotalsOptions: List<String> = emptyList(),
 ) {
     fun missingRequiredFields(): List<String> = buildList {
         if (proofScope == LiveProofScope.UNSUPPORTED) {
@@ -42,12 +41,12 @@ internal data class LiveProofInputs(
         if (operator.isNullOrBlank()) add("operator")
         if (proofAccountLabel.isNullOrBlank()) add("proof-account-label")
         if (proofScope == LiveProofScope.FULL) {
+            staleNoticeTotalsOptions.forEach { add("unsupported stale option: $it") }
             if (!authorisedLiveSend) add("authorised-live-send")
             if (targetDisplayNames.isEmpty()) add("target display name")
             if (subject.isNullOrBlank()) add("subject")
             if (body.isNullOrBlank()) add("body")
             if (existingAttachmentName.isNullOrBlank()) add("existing-attachment-name")
-            addAll(noticeComplianceArguments().validationErrors(sendMayOccur = true))
         }
     }
 
@@ -67,7 +66,6 @@ internal data class LiveProofInputs(
         put("bodyLength", body.orEmpty().length.toString())
         put("authorisedLiveSend", authorisedLiveSend.toString())
         if (proofScope == LiveProofScope.FULL) {
-            putAll(noticeComplianceArguments().reportInputs())
             put("existingAttachmentDisplayName", existingAttachmentName.orEmpty())
         }
     }
@@ -78,9 +76,6 @@ internal data class LiveProofInputs(
                 fields["credentialStatus"] = "blocked"
             }
             fields += loginComplianceStatusFields()
-            if (proofScope == LiveProofScope.FULL) {
-                fields += noticeComplianceArguments().reportStatusFields(null)
-            }
         }
 
     fun loginComplianceRequest(): LoginComplianceRequest = LoginComplianceRequest(
@@ -107,13 +102,6 @@ internal data class LiveProofInputs(
         )
     }
 
-    fun noticeComplianceArguments(): NoticeComplianceArguments =
-        noticeComplianceArguments ?: NoticeComplianceArguments.fromValues(
-            mode = CommandMode.LIVE,
-            operator = operator,
-            ledgerPath = noticeLedgerPath,
-        )
-
     companion object {
         fun from(arguments: CommandArguments): LiveProofInputs {
             val compliance = LoginComplianceArguments(arguments, CommandMode.LIVE)
@@ -133,8 +121,7 @@ internal data class LiveProofInputs(
                 body = arguments.option("body"),
                 authorisedLiveSend = arguments.has("authorised-live-send"),
                 existingAttachmentName = arguments.option("existing-attachment-name"),
-                noticeLedgerPath = arguments.option("ledger"),
-                noticeComplianceArguments = NoticeComplianceArguments(arguments, CommandMode.LIVE),
+                staleNoticeTotalsOptions = staleNoticeTotalsOptions(arguments),
             )
         }
 
@@ -149,6 +136,10 @@ internal data class LiveProofInputs(
                         ?.let(::listOf)
                         .orEmpty()
                 }
+
+        private fun staleNoticeTotalsOptions(arguments: CommandArguments): List<String> =
+            listOf("ledger", "recipient-count", "recipient-count-source")
+                .filter(arguments::has)
     }
 
     private fun loginComplianceReportInputs(): Map<String, String> =

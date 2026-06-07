@@ -39,7 +39,7 @@ class LiveProofCommand(
         }
 
         val inputs = LiveProofInputs.from(arguments)
-        val runtime = compositionRoot.runtime(mode, inputs.noticeLedgerPath)
+        val runtime = compositionRoot.runtime(mode)
         val missingInputs = inputs.missingRequiredFields()
         if (missingInputs.isNotEmpty()) {
             val reason = "missing required live proof input: ${missingInputs.joinToString(", ")}"
@@ -89,7 +89,6 @@ class LiveProofCommand(
                 }
             LiveProofScope.FULL, LiveProofScope.UNSUPPORTED -> LiveProofStep.statusFields("blocked").toMutableMap().also {
                 it += inputs.loginComplianceStatusFields()
-                it += inputs.noticeComplianceArguments().reportStatusFields(null)
             }
         }
 
@@ -114,7 +113,7 @@ class LiveProofCommand(
                 "usage: live-proof --report <path> --authorised-live-send --grid <name> --account <label> " +
                     "--credential-env <name> --proof-account-attested --scripted-agent-attested " +
                     "--operator <label> --proof-account-label <label> --target <display-name> " +
-                    "--subject <subject> --body <body> --existing-attachment-name <display-name> --ledger <path>",
+                    "--subject <subject> --body <body> --existing-attachment-name <display-name>",
             )
         }
     }
