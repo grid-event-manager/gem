@@ -29,6 +29,7 @@ import org.hostess.core.services.DefaultNoticeComplianceClock
 import org.hostess.core.services.DefaultRedactionPort
 import org.hostess.core.services.GroupDirectoryService
 import org.hostess.core.services.InventoryDirectoryService
+import org.hostess.core.services.InventorySelectionService
 import org.hostess.core.services.LoginComplianceService
 import org.hostess.core.domain.NoticeCompliancePolicy
 import org.hostess.core.services.NoticeComplianceService
@@ -59,6 +60,7 @@ class CliCompositionRoot(
             sessionService = SessionService(sessionPort, LoginComplianceService(), DefaultRedactionPort),
             groupDirectoryService = GroupDirectoryService(groupPort),
             inventoryDirectoryService = InventoryDirectoryService(inventoryPort),
+            inventorySelectionService = InventorySelectionService(),
             targetSelectionService = TargetSelectionService(),
             noticeDraftService = NoticeDraftService(),
             attachmentService = AttachmentService(inventoryPort),
@@ -87,6 +89,7 @@ class CliCompositionRoot(
             sessionService = SessionService(protocolRuntime.sessionPort, LoginComplianceService(), DefaultRedactionPort),
             groupDirectoryService = GroupDirectoryService(protocolRuntime.groupPort),
             inventoryDirectoryService = InventoryDirectoryService(protocolRuntime.inventoryPort),
+            inventorySelectionService = InventorySelectionService(),
             targetSelectionService = TargetSelectionService(),
             noticeDraftService = NoticeDraftService(),
             attachmentService = AttachmentService(protocolRuntime.inventoryPort),
@@ -117,6 +120,7 @@ data class CliRuntime(
     val sessionService: SessionService,
     val groupDirectoryService: GroupDirectoryService,
     val inventoryDirectoryService: InventoryDirectoryService,
+    val inventorySelectionService: InventorySelectionService,
     val targetSelectionService: TargetSelectionService,
     val noticeDraftService: NoticeDraftService,
     val attachmentService: AttachmentService,

@@ -1,8 +1,5 @@
 package org.hostess.tools.cli.commands
 
-import org.hostess.core.domain.AttachmentKind
-import org.hostess.core.domain.ExistingInventoryAttachment
-import org.hostess.core.domain.InventoryItemId
 import org.hostess.core.domain.LoginComplianceRequest
 import org.hostess.core.domain.OperatorLabel
 import org.hostess.core.domain.ScriptedAgentEvidenceSource
@@ -24,12 +21,7 @@ internal data class LiveProofInputs(
     val subject: String?,
     val body: String?,
     val authorisedLiveSend: Boolean,
-    val existingAttachmentKind: String?,
-    val existingAttachmentId: String?,
-    val bulkLimit: Int?,
-    val bulkDelayMs: Long?,
-    val cleanupMode: String?,
-    val retentionNote: String?,
+    val existingAttachmentName: String?,
     val recipientCountValues: List<String> = emptyList(),
     val recipientCountSource: String? = null,
     val noticeLedgerPath: String? = null,
@@ -55,6 +47,7 @@ internal data class LiveProofInputs(
             if (targetDisplayNames.isEmpty()) add("target display name")
             if (subject.isNullOrBlank()) add("subject")
             if (body.isNullOrBlank()) add("body")
+            if (existingAttachmentName.isNullOrBlank()) add("existing-attachment-name")
             addAll(noticeComplianceArguments().missingRequiredFields(sendMayOccur = true))
         }
     }
@@ -76,26 +69,9 @@ internal data class LiveProofInputs(
         put("authorisedLiveSend", authorisedLiveSend.toString())
         if (proofScope == LiveProofScope.FULL) {
             putAll(noticeComplianceArguments().reportInputs())
+            put("existingAttachmentDisplayName", existingAttachmentName.orEmpty())
         }
-        existingAttachmentKind?.let { put("existingAttachmentKind", it) }
-        existingAttachmentId?.let { put("existingAttachmentId", it) }
-        bulkLimit?.let { put("bulkLimit", it.toString()) }
-        bulkDelayMs?.let { put("bulkDelayMs", it.toString()) }
-        cleanupMode?.let { put("cleanupMode", it) }
-        retentionNote?.let { put("retentionNote", it) }
     }
-
-    fun existingAttachmentRequest(): ExistingInventoryAttachment? {
-        val kind = when (existingAttachmentKind?.lowercase()) {
-            "landmark" -> AttachmentKind.LANDMARK
-            "texture" -> AttachmentKind.TEXTURE
-            else -> return null
-        }
-        val itemId = existingAttachmentId?.takeIf(String::isNotBlank) ?: return null
-        return ExistingInventoryAttachment(kind, InventoryItemId(itemId))
-    }
-
-    fun cleanupModeValue(): String = cleanupMode?.lowercase() ?: "delete-created"
 
     fun validationStatusFields(): Map<String, String> =
         LiveProofStep.statusFields().toMutableMap().also { fields ->
@@ -159,12 +135,7 @@ internal data class LiveProofInputs(
                 subject = arguments.option("subject"),
                 body = arguments.option("body"),
                 authorisedLiveSend = arguments.has("authorised-live-send"),
-                existingAttachmentKind = arguments.option("existing-attachment-kind"),
-                existingAttachmentId = arguments.option("existing-attachment-id"),
-                bulkLimit = arguments.option("bulk-limit")?.toIntOrNull(),
-                bulkDelayMs = arguments.option("bulk-delay-ms")?.toLongOrNull(),
-                cleanupMode = arguments.option("cleanup-mode"),
-                retentionNote = arguments.option("retention-note"),
+                existingAttachmentName = arguments.option("existing-attachment-name"),
                 recipientCountValues = arguments.optionValues("recipient-count"),
                 recipientCountSource = arguments.option("recipient-count-source"),
                 noticeLedgerPath = arguments.option("ledger"),

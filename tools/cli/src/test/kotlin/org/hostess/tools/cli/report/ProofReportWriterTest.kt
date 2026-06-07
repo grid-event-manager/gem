@@ -26,9 +26,9 @@ class ProofReportWriterTest {
                     "inventoryCatalogueStatus" to "passed",
                     "inventoryItemCount" to "2",
                     "logoutStatus" to "passed",
-                    "plainNoticeStatus" to "not_run",
-                    "existingAttachmentStatus" to "not_run",
-                    "bulkNoticeStatus" to "not_run",
+                    "attachmentSelectionStatus" to "not_run",
+                    "attachmentResolutionStatus" to "not_run",
+                    "noticeSendStatus" to "not_run",
                     "androidProbeStatus" to "not_run",
                 ),
                 inputs = mapOf(
@@ -66,9 +66,9 @@ class ProofReportWriterTest {
             assertContains(json, "\"inventoryCatalogueStatus\": \"passed\"")
             assertContains(json, "\"inventoryItemCount\": \"2\"")
             assertContains(json, "\"logoutStatus\": \"passed\"")
-            assertContains(json, "\"plainNoticeStatus\": \"not_run\"")
-            assertContains(json, "\"existingAttachmentStatus\": \"not_run\"")
-            assertContains(json, "\"bulkNoticeStatus\": \"not_run\"")
+            assertContains(json, "\"attachmentSelectionStatus\": \"not_run\"")
+            assertContains(json, "\"attachmentResolutionStatus\": \"not_run\"")
+            assertContains(json, "\"noticeSendStatus\": \"not_run\"")
             assertContains(json, "\"androidProbeStatus\": \"not_run\"")
             assertContains(json, "\"startedAt\"")
             assertContains(json, "\"finishedAt\"")

@@ -35,7 +35,7 @@ class LiveProofCommandTest {
             assertTrue(output.lines.any { it.contains("fake not_run") })
             assertContains(report, "\"status\": \"not_run\"")
             assertContains(report, "fake mode cannot satisfy live proof")
-            assertContains(report, "\"plainNoticeStatus\": \"not_run\"")
+            assertContains(report, "\"noticeSendStatus\": \"not_run\"")
         } finally {
             directory.toFile().deleteRecursively()
         }
@@ -140,9 +140,9 @@ class LiveProofCommandTest {
             assertContains(report, "\"proofScope\": \"read-groups\"")
             assertContains(report, "\"cr\\u0065dentialStatus\": \"passed\"")
             assertContains(report, "\"loginStatus\": \"blocked\"")
-            assertContains(report, "\"plainNoticeStatus\": \"not_run\"")
-            assertContains(report, "\"existingAttachmentStatus\": \"not_run\"")
-            assertContains(report, "\"bulkNoticeStatus\": \"not_run\"")
+            assertContains(report, "\"attachmentSelectionStatus\": \"not_run\"")
+            assertContains(report, "\"attachmentResolutionStatus\": \"not_run\"")
+            assertContains(report, "\"noticeSendStatus\": \"not_run\"")
             assertFalse(report.contains("Venue Hosts"))
             assertFalse(report.contains("Tonight"))
         } finally {
@@ -181,7 +181,7 @@ class LiveProofCommandTest {
             assertFalse(output.lines.any { it.contains("target display name") })
             assertContains(report, "\"proofScope\": \"read-groups\"")
             assertContains(report, "\"cr\\u0065dentialStatus\": \"blocked\"")
-            assertContains(report, "\"plainNoticeStatus\": \"not_run\"")
+            assertContains(report, "\"noticeSendStatus\": \"not_run\"")
         } finally {
             directory.toFile().deleteRecursively()
         }
@@ -226,8 +226,8 @@ class LiveProofCommandTest {
             assertContains(report, "\"loginComplianceStatus\": \"passed\"")
             assertContains(report, "\"loginStatus\": \"blocked\"")
             assertContains(report, "\"currentGroupsStatus\": \"not_run\"")
-            assertContains(report, "\"plainNoticeStatus\": \"not_run\"")
-            assertContains(report, "\"bulkNoticeStatus\": \"not_run\"")
+            assertContains(report, "\"attachmentSelectionStatus\": \"not_run\"")
+            assertContains(report, "\"noticeSendStatus\": \"not_run\"")
             assertFalse(report.contains("Venue Hosts"))
             assertFalse(report.contains("Tonight"))
             assertFalse(report.contains("notice-ledger"))
@@ -273,7 +273,7 @@ class LiveProofCommandTest {
             assertFalse(output.lines.any { it.contains("body") })
             assertContains(report, "\"proofScope\": \"login-only\"")
             assertContains(report, "\"cr\\u0065dentialStatus\": \"blocked\"")
-            assertContains(report, "\"plainNoticeStatus\": \"not_run\"")
+            assertContains(report, "\"noticeSendStatus\": \"not_run\"")
         } finally {
             directory.toFile().deleteRecursively()
         }
@@ -319,7 +319,7 @@ class LiveProofCommandTest {
             assertFalse(output.lines.any { it.contains("recipient-count") })
             assertContains(report, "\"proofScope\": \"login-only\"")
             assertContains(report, "\"scriptedAgentStatus\": \"blocked\"")
-            assertContains(report, "\"plainNoticeStatus\": \"not_run\"")
+            assertContains(report, "\"noticeSendStatus\": \"not_run\"")
             assertFalse(report.contains("HOSTESS_PROOF_CREDENTIAL"))
         } finally {
             directory.toFile().deleteRecursively()
@@ -367,8 +367,8 @@ class LiveProofCommandTest {
             assertContains(report, "\"currentGroupsStatus\": \"not_run\"")
             assertContains(report, "\"inventoryCatalogueStatus\": \"not_run\"")
             assertContains(report, "\"inventoryItemCount\": \"0\"")
-            assertContains(report, "\"plainNoticeStatus\": \"not_run\"")
-            assertContains(report, "\"bulkNoticeStatus\": \"not_run\"")
+            assertContains(report, "\"attachmentSelectionStatus\": \"not_run\"")
+            assertContains(report, "\"noticeSendStatus\": \"not_run\"")
             assertFalse(report.contains("Venue Hosts"))
             assertFalse(report.contains("Tonight"))
             assertFalse(report.contains("notice-ledger"))
@@ -416,7 +416,7 @@ class LiveProofCommandTest {
             assertContains(report, "\"cr\\u0065dentialStatus\": \"blocked\"")
             assertContains(report, "\"inventoryCatalogueStatus\": \"not_run\"")
             assertContains(report, "\"inventoryItemCount\": \"0\"")
-            assertContains(report, "\"plainNoticeStatus\": \"not_run\"")
+            assertContains(report, "\"noticeSendStatus\": \"not_run\"")
         } finally {
             directory.toFile().deleteRecursively()
         }
@@ -491,6 +491,8 @@ class LiveProofCommandTest {
                     "Tonight",
                     "--body",
                     "Doors at eight",
+                    "--existing-attachment-name",
+                    "Venue Landmark",
                     "--recipient-count",
                     "Venue Hosts=1",
                     "--recipient-count-source",
@@ -507,7 +509,8 @@ class LiveProofCommandTest {
             assertContains(report, "\"status\": \"blocked\"")
             assertContains(report, "\"loginComplianceStatus\": \"passed\"")
             assertContains(report, "\"loginStatus\": \"blocked\"")
-            assertContains(report, "\"plainNoticeStatus\": \"not_run\"")
+            assertContains(report, "\"noticeSendStatus\": \"not_run\"")
+            assertContains(report, "\"existingAttachmentDisplayName\": \"Venue Landmark\"")
             assertContains(report, "\"account\": \"[redacted]\"")
             assertContains(report, "\"authHandlePresent\": \"true\"")
             assertFalse(report.contains("credentialHandle"))

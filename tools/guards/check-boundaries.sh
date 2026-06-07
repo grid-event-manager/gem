@@ -19,6 +19,7 @@ TRACK_B_RUNTIME_PATTERN="(^|[^[:alnum:]_.])(${PROTOCOL_PREFIX}Login${RUNTIME_SUF
 TRACK_C_RUNTIME_PATTERN='EnvironmentLoginSecretResolver|ProtocolSimulatorCircuitClient|AgentDataUpdateRequestTransport|EventQueueGetClient'
 TRACK_H_STALE_CIRCUIT_OWNER_PATTERN='BoundedSimulatorCircuit(Client|Sender)'
 TRACK_H_STALE_CLI_LIVE_SEND_PATTERN='sessionProvider|fakeSession\(active = false\)|send-notice --mode live'
+TRACK_H_STALE_FULL_PROOF_PATTERN='sendPlainNotice|runAttachmentProof|runBulkProof|boundedBulkTargetSet|plain-notice|existing-attachment-notice|bulk-notice|existingAttachmentId|--existing-attachment-id|bulkLimit|bulkDelayMs'
 TRACK_C_ENV_PATTERN='System(::|\.)getenv'
 TRACK_C_FILE_ROUTE_PATTERN='credential-file'
 TRACK_C_UNSUPPORTED_SECRET_PATTERN='keychain|Keychain|KeyStore|plaintext|plain-text|plain text'
@@ -713,6 +714,11 @@ add_existing track_h_cli_live_send_targets \
     "tools/cli/src/main" \
     "tools/cli/README.md"
 
+track_h_full_proof_targets=()
+add_existing track_h_full_proof_targets \
+    "tools/cli/src/main" \
+    "tools/cli/src/test"
+
 check_no_hits \
     "hostess-core forbidden dependencies" \
     "$CORE_FORBIDDEN_PATTERN" \
@@ -925,6 +931,11 @@ check_no_hits \
     "Track H stale CLI live send path" \
     "$TRACK_H_STALE_CLI_LIVE_SEND_PATTERN" \
     "${track_h_cli_live_send_targets[@]}"
+
+check_no_hits \
+    "Track H stale full proof routes" \
+    "$TRACK_H_STALE_FULL_PROOF_PATTERN" \
+    "${track_h_full_proof_targets[@]}"
 
 check_exact_owner_count "Track G single InventoryPort owner" "InventoryPort" 1 "${track_g_main_targets[@]}"
 check_exact_owner_count "Track G single InventoryDirectoryService owner" "InventoryDirectoryService" 1 "${track_g_main_targets[@]}"
@@ -1170,6 +1181,11 @@ check_pattern_matches \
     "self-test Track H stale CLI live send pattern" \
     "$TRACK_H_STALE_CLI_LIVE_SEND_PATTERN" \
     'sessionProvider = { fakeSession(active = false) }'
+
+check_pattern_matches \
+    "self-test Track H stale full proof pattern" \
+    "$TRACK_H_STALE_FULL_PROOF_PATTERN" \
+    'private fun runBulkProof() = "bulk-notice"'
 
 if [[ "$failures" -ne 0 ]]; then
     exit 1

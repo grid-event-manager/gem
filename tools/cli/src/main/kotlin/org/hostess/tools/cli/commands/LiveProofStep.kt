@@ -17,10 +17,10 @@ internal data class LiveProofStep(
             "login",
             "current-groups",
             "select-targets",
-            "plain-notice",
-            "existing-attachment",
-            "existing-attachment-notice",
-            "bulk-notice",
+            "inventory-catalogue",
+            "select-attachment",
+            "resolve-attachment",
+            "group-notice",
             "cleanup",
             "logout",
         )
@@ -31,9 +31,9 @@ internal data class LiveProofStep(
             "inventoryCatalogueStatus",
             "inventoryItemCount",
             "logoutStatus",
-            "plainNoticeStatus",
-            "existingAttachmentStatus",
-            "bulkNoticeStatus",
+            "attachmentSelectionStatus",
+            "attachmentResolutionStatus",
+            "noticeSendStatus",
             "androidProbeStatus",
         )
         private val noticeComplianceDefaultFields = mapOf(

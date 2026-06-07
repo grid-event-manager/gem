@@ -114,7 +114,8 @@ class LiveProofCommand(
                 "usage: live-proof --report <path> --authorised-live-send --grid <name> --account <label> " +
                     "--credential-env <name> --proof-account-attested --scripted-agent-attested " +
                     "--operator <label> --proof-account-label <label> --target <display-name> " +
-                    "--subject <subject> --body <body> --recipient-count <display-name=count> " +
+                    "--subject <subject> --body <body> --existing-attachment-name <display-name> " +
+                    "--recipient-count <display-name=count> " +
                     "--recipient-count-source operator-acknowledged|authoritative --ledger <path>",
             )
         }
