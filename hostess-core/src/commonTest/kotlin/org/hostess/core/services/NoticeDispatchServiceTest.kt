@@ -1,5 +1,9 @@
 package org.hostess.core.services
 
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertIs
+import kotlin.test.assertTrue
 import org.hostess.core.domain.AccountLabel
 import org.hostess.core.domain.AttachmentKind
 import org.hostess.core.domain.AttachmentOwnerId
@@ -7,8 +11,8 @@ import org.hostess.core.domain.AttachmentRef
 import org.hostess.core.domain.GroupDisplayName
 import org.hostess.core.domain.GroupId
 import org.hostess.core.domain.GroupMembership
-import org.hostess.core.domain.GroupTargetSet
 import org.hostess.core.domain.GroupSendState
+import org.hostess.core.domain.GroupTargetSet
 import org.hostess.core.domain.HostessDelay
 import org.hostess.core.domain.HostessInstant
 import org.hostess.core.domain.HostessSession
@@ -17,32 +21,27 @@ import org.hostess.core.domain.NoticeComplianceDecision
 import org.hostess.core.domain.NoticeComplianceLedgerResult
 import org.hostess.core.domain.NoticeCompliancePolicy
 import org.hostess.core.domain.NoticeComplianceRequest
-import org.hostess.core.domain.NoticeDeliveryCount
-import org.hostess.core.domain.NoticeDeliveryDay
-import org.hostess.core.domain.NoticeDeliveryLedgerSnapshot
 import org.hostess.core.domain.NoticeDispatchResult
 import org.hostess.core.domain.NoticeDraft
 import org.hostess.core.domain.NoticeDraftInvalidReason
 import org.hostess.core.domain.NoticeDraftValidation
-import org.hostess.core.domain.NoticeRecipientCount
-import org.hostess.core.domain.NoticeRecipientEstimate
-import org.hostess.core.domain.NoticeRecipientEstimateSource
+import org.hostess.core.domain.NoticeLedgerDay
+import org.hostess.core.domain.NoticeSubmissionCount
+import org.hostess.core.domain.NoticeSubmissionLedgerSnapshot
+import org.hostess.core.domain.NoticeSubmissionProjection
 import org.hostess.core.domain.OperatorLabel
 import org.hostess.core.domain.PacingPolicy
 import org.hostess.core.domain.SessionId
 import org.hostess.core.domain.TargetSelectionResult
-import org.hostess.core.ports.NoticeComplianceLedgerPort
+import org.hostess.core.ports.NoticeSubmissionLedgerPort
 import org.hostess.core.testing.FakeClockPort
 import org.hostess.core.testing.FakeNoticePort
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertIs
-import kotlin.test.assertTrue
 
 class NoticeDispatchServiceTest {
     @Test
-    fun `dispatch calls notice port once per selected group and applies pacing between groups`() {
+    fun `dispatch calls notice port once per selected group and records sent groups only`() {
         val events = mutableListOf<String>()
+        val ledger = RecordingNoticeSubmissionLedger()
         val noticePort = FakeNoticePort(
             events = events,
             statesByGroup = mapOf(
@@ -50,7 +49,7 @@ class NoticeDispatchServiceTest {
                 GroupId("gallery") to GroupSendState.FAILED,
             ),
         )
-        val service = service(noticePort, FakeClockPort(events))
+        val service = service(noticePort, FakeClockPort(events), ledger)
         val draft = NoticeDraft(
             subject = "Opening set",
             message = "Tonight at 8",
@@ -68,12 +67,16 @@ class NoticeDispatchServiceTest {
 
         assertEquals(listOf("send:music", "pause:5000ms", "send:gallery"), events)
         assertEquals(listOf(GroupSendState.SENT, GroupSendState.FAILED), result.statuses.map { it.state })
+        assertEquals(
+            listOf(RecordCall(projectionGroupIds = listOf("music", "gallery"), sentGroupIds = listOf("music"))),
+            ledger.recordCalls,
+        )
     }
 
     @Test
     fun `dispatch rejects invalid draft without calling notice port`() {
         val events = mutableListOf<String>()
-        val ledger = RecordingNoticeComplianceLedger()
+        val ledger = RecordingNoticeSubmissionLedger()
         val service = service(FakeNoticePort(events), FakeClockPort(events), ledger)
         val invalidDraft = NoticeDraft(
             subject = "",
@@ -98,8 +101,10 @@ class NoticeDispatchServiceTest {
         val service = service(
             noticePort = noticePort,
             clockPort = FakeClockPort(events),
-            ledger = RecordingNoticeComplianceLedger(
-                snapshotResult = NoticeComplianceLedgerResult.Success(snapshot(reserved = 4_499)),
+            ledger = RecordingNoticeSubmissionLedger(
+                snapshotResult = NoticeComplianceLedgerResult.Success(
+                    listOf(snapshot("music", "Music Room", reserved = 180), snapshot("gallery", "Gallery")),
+                ),
             ),
         )
         val draft = NoticeDraft(
@@ -109,11 +114,11 @@ class NoticeDispatchServiceTest {
         )
 
         val result = assertIs<NoticeDispatchResult.ComplianceRejected>(
-            service.dispatch(session(), draft, request(music = 2, gallery = 0)),
+            service.dispatch(session(), draft, request()),
         )
 
         assertIs<NoticeComplianceDecision.Denied>(result.decision)
-        assertEquals("recipient_delivery_cap_exceeded", result.decision.receipt.reasonCode)
+        assertEquals("notice_submission_cap_exceeded", result.decision.receipt.reasonCode)
         assertTrue(events.isEmpty())
         assertTrue(noticePort.calls.isEmpty())
     }
@@ -121,7 +126,7 @@ class NoticeDispatchServiceTest {
     @Test
     fun `dispatch surfaces ledger record failure after sent statuses`() {
         val events = mutableListOf<String>()
-        val ledger = RecordingNoticeComplianceLedger(
+        val ledger = RecordingNoticeSubmissionLedger(
             recordResult = NoticeComplianceLedgerResult.Failure("disk unavailable"),
         )
         val noticePort = FakeNoticePort(events)
@@ -133,12 +138,15 @@ class NoticeDispatchServiceTest {
         )
 
         val result = assertIs<NoticeDispatchResult.ComplianceRecordFailed>(
-            service.dispatch(session(), draft, request(music = 10, gallery = 20)),
+            service.dispatch(session(), draft, request()),
         )
 
         assertEquals("ledger_record_failed", result.complianceReceipt.reasonCode)
         assertEquals(listOf(GroupSendState.SENT, GroupSendState.SENT), result.result.statuses.map { it.state })
-        assertEquals(listOf(RecordCall(NoticeDeliveryCount(30), NoticeDeliveryCount(30))), ledger.recordCalls)
+        assertEquals(
+            listOf(RecordCall(projectionGroupIds = listOf("music", "gallery"), sentGroupIds = listOf("music", "gallery"))),
+            ledger.recordCalls,
+        )
     }
 
     @Test
@@ -194,89 +202,88 @@ class NoticeDispatchServiceTest {
     private fun service(
         noticePort: FakeNoticePort,
         clockPort: FakeClockPort,
-        ledger: NoticeComplianceLedgerPort = RecordingNoticeComplianceLedger(),
+        ledger: NoticeSubmissionLedgerPort = RecordingNoticeSubmissionLedger(),
     ): NoticeDispatchService = NoticeDispatchService(
         noticePort = noticePort,
         clockPort = clockPort,
         noticeComplianceService = NoticeComplianceService(
             policy = NoticeCompliancePolicy(),
             ledger = ledger,
-            clock = NoticeComplianceClock { NoticeDeliveryDay("2026-06-05") },
+            clock = NoticeComplianceClock { NoticeLedgerDay("2026-06-05") },
         ),
     )
 
-    private fun request(
-        music: Long = 100,
-        gallery: Long = 100,
-    ): NoticeComplianceRequest = NoticeComplianceRequest(
-        operatorLabel = OperatorLabel("operator"),
-        recipientEstimates = listOf(
-            estimate("Music Room", music),
-            estimate("Gallery", gallery),
-        ),
-    )
-
-    private fun estimate(
-        displayName: String,
-        count: Long,
-    ): NoticeRecipientEstimate = NoticeRecipientEstimate(
-        displayName = GroupDisplayName(displayName),
-        recipientCount = NoticeRecipientCount(count),
-        source = NoticeRecipientEstimateSource.OPERATOR_ACKNOWLEDGED,
-    )
+    private fun request(): NoticeComplianceRequest = NoticeComplianceRequest(OperatorLabel("operator"))
 
     private data class RecordCall(
-        val reservedProjection: NoticeDeliveryCount,
-        val delivered: NoticeDeliveryCount,
+        val projectionGroupIds: List<String>,
+        val sentGroupIds: List<String>,
     )
 
-    private class RecordingNoticeComplianceLedger(
-        private val snapshotResult: NoticeComplianceLedgerResult<NoticeDeliveryLedgerSnapshot> =
-            NoticeComplianceLedgerResult.Success(snapshot()),
-        private val reserveResult: NoticeComplianceLedgerResult<NoticeDeliveryLedgerSnapshot>? = null,
-        private val recordResult: NoticeComplianceLedgerResult<NoticeDeliveryLedgerSnapshot>? = null,
-    ) : NoticeComplianceLedgerPort {
+    private class RecordingNoticeSubmissionLedger(
+        private val snapshotResult: NoticeComplianceLedgerResult<List<NoticeSubmissionLedgerSnapshot>>? = null,
+        private val reserveResult: NoticeComplianceLedgerResult<List<NoticeSubmissionLedgerSnapshot>>? = null,
+        private val recordResult: NoticeComplianceLedgerResult<List<NoticeSubmissionLedgerSnapshot>>? = null,
+    ) : NoticeSubmissionLedgerPort {
         var snapshotCalls = 0
-        val reserveCalls = mutableListOf<NoticeDeliveryCount>()
+        val reserveCalls = mutableListOf<List<String>>()
         val recordCalls = mutableListOf<RecordCall>()
 
         override fun snapshot(
+            proofAccountLabel: AccountLabel,
             operatorLabel: OperatorLabel,
-            deliveryDay: NoticeDeliveryDay,
-        ): NoticeComplianceLedgerResult<NoticeDeliveryLedgerSnapshot> {
+            groups: List<GroupMembership>,
+            noticeLedgerDay: NoticeLedgerDay,
+        ): NoticeComplianceLedgerResult<List<NoticeSubmissionLedgerSnapshot>> {
             snapshotCalls += 1
-            return snapshotResult
+            return snapshotResult ?: NoticeComplianceLedgerResult.Success(
+                groups.map { group -> snapshot(group.groupId.value, group.displayName.value) },
+            )
         }
 
         override fun reserve(
+            proofAccountLabel: AccountLabel,
             operatorLabel: OperatorLabel,
-            deliveryDay: NoticeDeliveryDay,
-            projected: NoticeDeliveryCount,
-        ): NoticeComplianceLedgerResult<NoticeDeliveryLedgerSnapshot> {
-            reserveCalls += projected
-            return reserveResult ?: NoticeComplianceLedgerResult.Success(snapshot(reserved = projected.value))
+            projection: NoticeSubmissionProjection,
+            noticeLedgerDay: NoticeLedgerDay,
+        ): NoticeComplianceLedgerResult<List<NoticeSubmissionLedgerSnapshot>> {
+            reserveCalls += projection.selectedGroups.map { it.groupId.value }
+            return reserveResult ?: NoticeComplianceLedgerResult.Success(
+                projection.selectedGroups.map { group -> snapshot(group.groupId.value, group.displayName.value, reserved = 1) },
+            )
         }
 
         override fun recordSendResult(
+            proofAccountLabel: AccountLabel,
             operatorLabel: OperatorLabel,
-            deliveryDay: NoticeDeliveryDay,
-            reservedProjection: NoticeDeliveryCount,
-            delivered: NoticeDeliveryCount,
-        ): NoticeComplianceLedgerResult<NoticeDeliveryLedgerSnapshot> {
-            recordCalls += RecordCall(reservedProjection, delivered)
-            return recordResult ?: NoticeComplianceLedgerResult.Success(snapshot(sent = delivered.value))
+            projection: NoticeSubmissionProjection,
+            sentGroups: List<GroupMembership>,
+            noticeLedgerDay: NoticeLedgerDay,
+        ): NoticeComplianceLedgerResult<List<NoticeSubmissionLedgerSnapshot>> {
+            recordCalls += RecordCall(
+                projectionGroupIds = projection.selectedGroups.map { it.groupId.value },
+                sentGroupIds = sentGroups.map { it.groupId.value },
+            )
+            return recordResult ?: NoticeComplianceLedgerResult.Success(
+                projection.selectedGroups.map { group -> snapshot(group.groupId.value, group.displayName.value) },
+            )
         }
     }
 
     private companion object {
         fun snapshot(
+            groupId: String,
+            groupName: String,
             reserved: Long = 0,
             sent: Long = 0,
-        ): NoticeDeliveryLedgerSnapshot = NoticeDeliveryLedgerSnapshot(
-            operatorLabel = OperatorLabel("operator"),
-            deliveryDay = NoticeDeliveryDay("2026-06-05"),
-            reservedDeliveryCount = NoticeDeliveryCount(reserved),
-            recordedSentDeliveryCount = NoticeDeliveryCount(sent),
+        ): NoticeSubmissionLedgerSnapshot = NoticeSubmissionLedgerSnapshot(
+            proofAccountLabel = AccountLabel("proof-account"),
+            groupId = GroupId(groupId),
+            groupDisplayName = GroupDisplayName(groupName),
+            noticeLedgerDay = NoticeLedgerDay("2026-06-05"),
+            reservedSubmissionCount = NoticeSubmissionCount(reserved),
+            recordedSentSubmissionCount = NoticeSubmissionCount(sent),
+            lastOperatorLabel = OperatorLabel("operator"),
         )
     }
 }

@@ -1,12 +1,12 @@
 package org.hostess.core.domain
 
 data class NoticeCompliancePolicy(
-    val policyMaximum: NoticeDeliveryCount = NoticeDeliveryCount(5_000),
-    val hostessHardCap: NoticeDeliveryCount = NoticeDeliveryCount(4_500),
+    val platformPerGroupDailyLimit: NoticeSubmissionCount = NoticeSubmissionCount(200),
+    val hostessPerGroupDailyHardCap: NoticeSubmissionCount = NoticeSubmissionCount(180),
 ) {
     init {
-        require(hostessHardCap.value <= policyMaximum.value) {
-            "Hostess hard cap cannot exceed policy maximum."
+        require(hostessPerGroupDailyHardCap.value <= platformPerGroupDailyLimit.value) {
+            "Hostess per-group hard cap cannot exceed platform per-group limit."
         }
     }
 }

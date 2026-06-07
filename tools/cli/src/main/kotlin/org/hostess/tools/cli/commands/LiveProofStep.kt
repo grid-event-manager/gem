@@ -38,10 +38,11 @@ internal data class LiveProofStep(
         )
         private val noticeComplianceDefaultFields = mapOf(
             "noticeComplianceStatus" to "not_run",
-            "recipientProjectionStatus" to "not_run",
-            "recipientDeliveryProjected" to "0",
-            "recipientDeliveryLedgerTotal" to "0",
-            "recipientDeliveryHardCap" to "4500",
+            "noticeSubmissionProjectionStatus" to "not_run",
+            "noticeSubmissionsProjected" to "0",
+            "noticeSubmissionLedgerGroupCount" to "0",
+            "noticeSubmissionLedgerMaxGroupTotal" to "0",
+            "noticeSubmissionPerGroupHardCap" to "180",
             "noticeLedgerConfigured" to "false",
         )
 
@@ -70,5 +71,5 @@ internal data class LiveProofStep(
 private fun Map<String, String>.copyWithStatus(default: String): Map<String, String> =
     this + mapOf(
         "noticeComplianceStatus" to default,
-        "recipientProjectionStatus" to default,
+        "noticeSubmissionProjectionStatus" to default,
     )

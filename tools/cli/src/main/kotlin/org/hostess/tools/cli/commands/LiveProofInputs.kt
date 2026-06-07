@@ -22,9 +22,8 @@ internal data class LiveProofInputs(
     val body: String?,
     val authorisedLiveSend: Boolean,
     val existingAttachmentName: String?,
-    val recipientCountValues: List<String> = emptyList(),
-    val recipientCountSource: String? = null,
     val noticeLedgerPath: String? = null,
+    private val noticeComplianceArguments: NoticeComplianceArguments? = null,
 ) {
     fun missingRequiredFields(): List<String> = buildList {
         if (proofScope == LiveProofScope.UNSUPPORTED) {
@@ -48,7 +47,7 @@ internal data class LiveProofInputs(
             if (subject.isNullOrBlank()) add("subject")
             if (body.isNullOrBlank()) add("body")
             if (existingAttachmentName.isNullOrBlank()) add("existing-attachment-name")
-            addAll(noticeComplianceArguments().missingRequiredFields(sendMayOccur = true))
+            addAll(noticeComplianceArguments().validationErrors(sendMayOccur = true))
         }
     }
 
@@ -109,11 +108,9 @@ internal data class LiveProofInputs(
     }
 
     fun noticeComplianceArguments(): NoticeComplianceArguments =
-        NoticeComplianceArguments.fromValues(
+        noticeComplianceArguments ?: NoticeComplianceArguments.fromValues(
             mode = CommandMode.LIVE,
             operator = operator,
-            recipientCountValues = recipientCountValues,
-            recipientCountSource = recipientCountSource,
             ledgerPath = noticeLedgerPath,
         )
 
@@ -136,9 +133,8 @@ internal data class LiveProofInputs(
                 body = arguments.option("body"),
                 authorisedLiveSend = arguments.has("authorised-live-send"),
                 existingAttachmentName = arguments.option("existing-attachment-name"),
-                recipientCountValues = arguments.optionValues("recipient-count"),
-                recipientCountSource = arguments.option("recipient-count-source"),
                 noticeLedgerPath = arguments.option("ledger"),
+                noticeComplianceArguments = NoticeComplianceArguments(arguments, CommandMode.LIVE),
             )
         }
 

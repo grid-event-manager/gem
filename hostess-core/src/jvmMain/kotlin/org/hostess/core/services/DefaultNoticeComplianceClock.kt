@@ -3,7 +3,7 @@ package org.hostess.core.services
 import java.time.Clock
 import java.time.LocalDate
 import java.time.ZoneId
-import org.hostess.core.domain.NoticeDeliveryDay
+import org.hostess.core.domain.NoticeLedgerDay
 
 class DefaultNoticeComplianceClock private constructor(
     private val clock: Clock,
@@ -13,8 +13,8 @@ class DefaultNoticeComplianceClock private constructor(
 
     internal constructor(currentDate: () -> String) : this(Clock.systemUTC(), currentDate)
 
-    override fun currentSecondLifeDay(): NoticeDeliveryDay =
-        NoticeDeliveryDay(currentDate?.invoke() ?: LocalDate.now(clock.withZone(SECOND_LIFE_ZONE)).toString())
+    override fun currentSecondLifeDay(): NoticeLedgerDay =
+        NoticeLedgerDay(currentDate?.invoke() ?: LocalDate.now(clock.withZone(SECOND_LIFE_ZONE)).toString())
 
     private companion object {
         val SECOND_LIFE_ZONE: ZoneId = ZoneId.of("America/Los_Angeles")

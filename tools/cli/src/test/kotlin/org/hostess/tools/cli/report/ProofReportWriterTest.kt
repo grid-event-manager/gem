@@ -35,7 +35,6 @@ class ProofReportWriterTest {
                     "account" to "venue-proof",
                     "credentialHandle" to "HOSTESS_PROOF_CREDENTIAL",
                     "ledgerPath" to "/home/user/private/notice-ledger.tsv",
-                    "recipientCountPath" to "/home/user/private/recipient-counts.csv",
                     "mac" to "0123456789abcdef0123456789abcdef",
                     "id0" to "abcdef0123456789abcdef0123456789",
                     "host_id" to "fedcba9876543210fedcba9876543210",

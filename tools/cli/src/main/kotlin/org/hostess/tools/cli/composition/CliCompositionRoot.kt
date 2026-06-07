@@ -69,7 +69,7 @@ class CliCompositionRoot(
                 clockPort = NoopClockPort,
                 noticeComplianceService = NoticeComplianceService(
                     policy = NoticeCompliancePolicy(),
-                    ledger = InMemoryNoticeComplianceLedgerPort(),
+                    ledger = InMemoryNoticeSubmissionLedgerPort(),
                     clock = DefaultNoticeComplianceClock(),
                 ),
             ),
@@ -83,8 +83,8 @@ class CliCompositionRoot(
         val noticeLedger = noticeLedgerPath
             ?.trim()
             ?.takeIf(String::isNotBlank)
-            ?.let { FileNoticeComplianceLedgerPort(Path.of(it)) }
-            ?: UnavailableNoticeComplianceLedgerPort()
+            ?.let { FileNoticeSubmissionLedgerPort(Path.of(it)) }
+            ?: UnavailableNoticeSubmissionLedgerPort()
         return CliRuntime(
             sessionService = SessionService(protocolRuntime.sessionPort, LoginComplianceService(), DefaultRedactionPort),
             groupDirectoryService = GroupDirectoryService(protocolRuntime.groupPort),

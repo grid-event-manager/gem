@@ -5,7 +5,6 @@ import org.hostess.core.domain.GroupSendState
 import org.hostess.core.domain.HostessSession
 import org.hostess.core.domain.NoticeComplianceDecision
 import org.hostess.core.domain.NoticeComplianceRequest
-import org.hostess.core.domain.NoticeDeliveryCount
 import org.hostess.core.domain.NoticeDispatchResult
 import org.hostess.core.domain.NoticeDraft
 import org.hostess.core.domain.NoticeDraftValidation
@@ -48,7 +47,9 @@ class NoticeDispatchService(
         val sendResult = NoticeSendResult(plan, statuses)
         val receipt = noticeComplianceService.recordSendResult(
             allowed = complianceDecision,
-            delivered = deliveredCount(complianceDecision, sendResult),
+            sentGroups = sendResult.statuses
+                .filter { it.state == GroupSendState.SENT }
+                .map { it.group },
         )
 
         return if (receipt.reasonCode == "ledger_record_failed") {
@@ -61,25 +62,6 @@ class NoticeDispatchService(
     private fun applyPacing(pacingPolicy: PacingPolicy) {
         if (pacingPolicy.delayBetweenGroups.isPositive) {
             clockPort.pause(pacingPolicy.delayBetweenGroups)
-        }
-    }
-
-    private fun deliveredCount(
-        allowed: NoticeComplianceDecision.Allowed,
-        sendResult: NoticeSendResult,
-    ): NoticeDeliveryCount {
-        val estimatesByGroupId = allowed.projection.selectedGroups
-            .zip(allowed.projection.estimates)
-            .associate { (group, estimate) ->
-                group.groupId to estimate.recipientCount.value
-            }
-
-        return sendResult.statuses.fold(NoticeDeliveryCount.ZERO) { total, status ->
-            if (status.state != GroupSendState.SENT) {
-                total
-            } else {
-                total.plus(NoticeDeliveryCount(estimatesByGroupId.getValue(status.group.groupId)))
-            }
         }
     }
 }

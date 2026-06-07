@@ -27,8 +27,8 @@ import org.hostess.core.domain.InventoryItemId
 import org.hostess.core.domain.InventoryItemKind
 import org.hostess.core.domain.InventoryItemQuery
 import org.hostess.core.domain.NoticeCompliancePolicy
-import org.hostess.core.domain.NoticeDeliveryDay
 import org.hostess.core.domain.NoticeDraft
+import org.hostess.core.domain.NoticeLedgerDay
 import org.hostess.core.domain.SessionId
 import org.hostess.core.ports.AttachmentResolutionResult
 import org.hostess.core.ports.ClockPort
@@ -56,7 +56,7 @@ import org.hostess.core.services.TargetSelectionService
 import org.hostess.tools.cli.CommandResult
 import org.hostess.tools.cli.RecordingCliOutput
 import org.hostess.tools.cli.composition.CliRuntime
-import org.hostess.tools.cli.composition.InMemoryNoticeComplianceLedgerPort
+import org.hostess.tools.cli.composition.InMemoryNoticeSubmissionLedgerPort
 import org.hostess.tools.cli.report.ProofReportWriter
 
 class LiveNoticeSendProofRunnerTest {
@@ -318,8 +318,6 @@ class LiveNoticeSendProofRunnerTest {
         body = "Doors at eight",
         authorisedLiveSend = true,
         existingAttachmentName = existingAttachmentName,
-        recipientCountValues = targets.map { "$it=1" },
-        recipientCountSource = "operator-acknowledged",
         noticeLedgerPath = "configured-test-ledger",
     )
 
@@ -366,8 +364,8 @@ class LiveNoticeSendProofRunnerTest {
                 clockPort = clock,
                 noticeComplianceService = NoticeComplianceService(
                     policy = NoticeCompliancePolicy(),
-                    ledger = InMemoryNoticeComplianceLedgerPort(),
-                    clock = NoticeComplianceClock { NoticeDeliveryDay("2026-06-07") },
+                    ledger = InMemoryNoticeSubmissionLedgerPort(),
+                    clock = NoticeComplianceClock { NoticeLedgerDay("2026-06-07") },
                 ),
             ),
             proofReportWriter = ProofReportWriter(),

@@ -37,7 +37,6 @@ object SafeDiagnosticRedaction {
         "password",
         "passwd",
         "rawLoginUri",
-        "recipientCountPath",
         "seed_cap",
         "seedCapability",
         "seedcap",

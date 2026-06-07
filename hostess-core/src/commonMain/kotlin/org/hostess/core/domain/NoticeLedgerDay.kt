@@ -1,9 +1,9 @@
 package org.hostess.core.domain
 
 @JvmInline
-value class NoticeDeliveryDay(val value: String) {
+value class NoticeLedgerDay(val value: String) {
     init {
-        require(DAY_PATTERN.matches(value)) { "NoticeDeliveryDay must be YYYY-MM-DD." }
+        require(DAY_PATTERN.matches(value)) { "NoticeLedgerDay must be YYYY-MM-DD." }
     }
 
     companion object {

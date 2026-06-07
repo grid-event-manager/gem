@@ -4,7 +4,7 @@ sealed interface NoticeComplianceDecision {
     val receipt: NoticeComplianceReceipt
 
     data class Allowed(
-        val projection: NoticeDeliveryProjection,
+        val projection: NoticeSubmissionProjection,
         override val receipt: NoticeComplianceReceipt,
     ) : NoticeComplianceDecision
 

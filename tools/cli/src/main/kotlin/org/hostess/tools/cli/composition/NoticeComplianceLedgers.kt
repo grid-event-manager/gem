@@ -4,141 +4,198 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.exists
+import org.hostess.core.domain.AccountLabel
+import org.hostess.core.domain.GroupDisplayName
+import org.hostess.core.domain.GroupId
+import org.hostess.core.domain.GroupMembership
 import org.hostess.core.domain.NoticeComplianceLedgerResult
-import org.hostess.core.domain.NoticeDeliveryCount
-import org.hostess.core.domain.NoticeDeliveryDay
-import org.hostess.core.domain.NoticeDeliveryLedgerSnapshot
+import org.hostess.core.domain.NoticeLedgerDay
+import org.hostess.core.domain.NoticeSubmissionCount
+import org.hostess.core.domain.NoticeSubmissionLedgerSnapshot
+import org.hostess.core.domain.NoticeSubmissionProjection
 import org.hostess.core.domain.OperatorLabel
-import org.hostess.core.ports.NoticeComplianceLedgerPort
+import org.hostess.core.ports.NoticeSubmissionLedgerPort
 
-internal class InMemoryNoticeComplianceLedgerPort : NoticeComplianceLedgerPort {
-    private val snapshots = linkedMapOf<LedgerKey, NoticeDeliveryLedgerSnapshot>()
+internal class InMemoryNoticeSubmissionLedgerPort : NoticeSubmissionLedgerPort {
+    private val snapshots = linkedMapOf<LedgerKey, NoticeSubmissionLedgerSnapshot>()
 
     override fun snapshot(
+        proofAccountLabel: AccountLabel,
         operatorLabel: OperatorLabel,
-        deliveryDay: NoticeDeliveryDay,
-    ): NoticeComplianceLedgerResult<NoticeDeliveryLedgerSnapshot> =
-        NoticeComplianceLedgerResult.Success(currentSnapshot(operatorLabel, deliveryDay))
+        groups: List<GroupMembership>,
+        noticeLedgerDay: NoticeLedgerDay,
+    ): NoticeComplianceLedgerResult<List<NoticeSubmissionLedgerSnapshot>> =
+        NoticeComplianceLedgerResult.Success(
+            groups.map { group -> currentSnapshot(proofAccountLabel, operatorLabel, group, noticeLedgerDay) },
+        )
 
     override fun reserve(
+        proofAccountLabel: AccountLabel,
         operatorLabel: OperatorLabel,
-        deliveryDay: NoticeDeliveryDay,
-        projected: NoticeDeliveryCount,
-    ): NoticeComplianceLedgerResult<NoticeDeliveryLedgerSnapshot> {
-        val current = currentSnapshot(operatorLabel, deliveryDay)
-        val updated = current.copy(
-            reservedDeliveryCount = current.reservedDeliveryCount.plus(projected),
+        projection: NoticeSubmissionProjection,
+        noticeLedgerDay: NoticeLedgerDay,
+    ): NoticeComplianceLedgerResult<List<NoticeSubmissionLedgerSnapshot>> =
+        NoticeComplianceLedgerResult.Success(
+            projection.selectedGroups.map { group ->
+                val current = currentSnapshot(proofAccountLabel, operatorLabel, group, noticeLedgerDay)
+                val updated = current.copy(
+                    groupDisplayName = group.displayName,
+                    reservedSubmissionCount = current.reservedSubmissionCount.plus(NoticeSubmissionCount.ONE),
+                    lastOperatorLabel = operatorLabel,
+                )
+                snapshots[key(proofAccountLabel, group, noticeLedgerDay)] = updated
+                updated
+            },
         )
-        snapshots[LedgerKey(operatorLabel.value, deliveryDay.value)] = updated
-        return NoticeComplianceLedgerResult.Success(updated)
-    }
 
     override fun recordSendResult(
+        proofAccountLabel: AccountLabel,
         operatorLabel: OperatorLabel,
-        deliveryDay: NoticeDeliveryDay,
-        reservedProjection: NoticeDeliveryCount,
-        delivered: NoticeDeliveryCount,
-    ): NoticeComplianceLedgerResult<NoticeDeliveryLedgerSnapshot> {
-        val current = currentSnapshot(operatorLabel, deliveryDay)
-        val updated = current.copy(
-            reservedDeliveryCount = current.reservedDeliveryCount.minusFloorZero(reservedProjection),
-            recordedSentDeliveryCount = current.recordedSentDeliveryCount.plus(delivered),
+        projection: NoticeSubmissionProjection,
+        sentGroups: List<GroupMembership>,
+        noticeLedgerDay: NoticeLedgerDay,
+    ): NoticeComplianceLedgerResult<List<NoticeSubmissionLedgerSnapshot>> {
+        if (!projection.containsAll(sentGroups)) {
+            return NoticeComplianceLedgerResult.Failure("notice_ledger_unavailable")
+        }
+        val sentIds = sentGroups.mapTo(hashSetOf()) { it.groupId }
+        return NoticeComplianceLedgerResult.Success(
+            projection.selectedGroups.map { group ->
+                val current = currentSnapshot(proofAccountLabel, operatorLabel, group, noticeLedgerDay)
+                val updated = current.copy(
+                    groupDisplayName = group.displayName,
+                    reservedSubmissionCount = current.reservedSubmissionCount.minusFloorZero(NoticeSubmissionCount.ONE),
+                    recordedSentSubmissionCount = if (group.groupId in sentIds) {
+                        current.recordedSentSubmissionCount.plus(NoticeSubmissionCount.ONE)
+                    } else {
+                        current.recordedSentSubmissionCount
+                    },
+                    lastOperatorLabel = operatorLabel,
+                )
+                snapshots[key(proofAccountLabel, group, noticeLedgerDay)] = updated
+                updated
+            },
         )
-        snapshots[LedgerKey(operatorLabel.value, deliveryDay.value)] = updated
-        return NoticeComplianceLedgerResult.Success(updated)
     }
 
     private fun currentSnapshot(
+        proofAccountLabel: AccountLabel,
         operatorLabel: OperatorLabel,
-        deliveryDay: NoticeDeliveryDay,
-    ): NoticeDeliveryLedgerSnapshot =
-        snapshots[LedgerKey(operatorLabel.value, deliveryDay.value)] ?: emptySnapshot(operatorLabel, deliveryDay)
+        group: GroupMembership,
+        noticeLedgerDay: NoticeLedgerDay,
+    ): NoticeSubmissionLedgerSnapshot =
+        snapshots[key(proofAccountLabel, group, noticeLedgerDay)]
+            ?: emptySnapshot(proofAccountLabel, operatorLabel, group, noticeLedgerDay)
 }
 
-internal class UnavailableNoticeComplianceLedgerPort : NoticeComplianceLedgerPort {
+internal class UnavailableNoticeSubmissionLedgerPort : NoticeSubmissionLedgerPort {
     override fun snapshot(
+        proofAccountLabel: AccountLabel,
         operatorLabel: OperatorLabel,
-        deliveryDay: NoticeDeliveryDay,
-    ): NoticeComplianceLedgerResult<NoticeDeliveryLedgerSnapshot> =
+        groups: List<GroupMembership>,
+        noticeLedgerDay: NoticeLedgerDay,
+    ): NoticeComplianceLedgerResult<List<NoticeSubmissionLedgerSnapshot>> =
         NoticeComplianceLedgerResult.Failure("notice_ledger_unavailable")
 
     override fun reserve(
+        proofAccountLabel: AccountLabel,
         operatorLabel: OperatorLabel,
-        deliveryDay: NoticeDeliveryDay,
-        projected: NoticeDeliveryCount,
-    ): NoticeComplianceLedgerResult<NoticeDeliveryLedgerSnapshot> =
+        projection: NoticeSubmissionProjection,
+        noticeLedgerDay: NoticeLedgerDay,
+    ): NoticeComplianceLedgerResult<List<NoticeSubmissionLedgerSnapshot>> =
         NoticeComplianceLedgerResult.Failure("notice_ledger_unavailable")
 
     override fun recordSendResult(
+        proofAccountLabel: AccountLabel,
         operatorLabel: OperatorLabel,
-        deliveryDay: NoticeDeliveryDay,
-        reservedProjection: NoticeDeliveryCount,
-        delivered: NoticeDeliveryCount,
-    ): NoticeComplianceLedgerResult<NoticeDeliveryLedgerSnapshot> =
+        projection: NoticeSubmissionProjection,
+        sentGroups: List<GroupMembership>,
+        noticeLedgerDay: NoticeLedgerDay,
+    ): NoticeComplianceLedgerResult<List<NoticeSubmissionLedgerSnapshot>> =
         NoticeComplianceLedgerResult.Failure("notice_ledger_unavailable")
 }
 
-internal class FileNoticeComplianceLedgerPort(
+internal class FileNoticeSubmissionLedgerPort(
     private val path: Path,
-) : NoticeComplianceLedgerPort {
+) : NoticeSubmissionLedgerPort {
     override fun snapshot(
+        proofAccountLabel: AccountLabel,
         operatorLabel: OperatorLabel,
-        deliveryDay: NoticeDeliveryDay,
-    ): NoticeComplianceLedgerResult<NoticeDeliveryLedgerSnapshot> =
+        groups: List<GroupMembership>,
+        noticeLedgerDay: NoticeLedgerDay,
+    ): NoticeComplianceLedgerResult<List<NoticeSubmissionLedgerSnapshot>> =
         try {
-            val snapshot = readSnapshots()[LedgerKey(operatorLabel.value, deliveryDay.value)]
-                ?: emptySnapshot(operatorLabel, deliveryDay)
-            NoticeComplianceLedgerResult.Success(snapshot)
+            val snapshots = readSnapshots()
+            NoticeComplianceLedgerResult.Success(
+                groups.map { group ->
+                    snapshots[key(proofAccountLabel, group, noticeLedgerDay)]
+                        ?: emptySnapshot(proofAccountLabel, operatorLabel, group, noticeLedgerDay)
+                },
+            )
         } catch (_: Exception) {
             NoticeComplianceLedgerResult.Failure("notice_ledger_unavailable")
         }
 
     override fun reserve(
+        proofAccountLabel: AccountLabel,
         operatorLabel: OperatorLabel,
-        deliveryDay: NoticeDeliveryDay,
-        projected: NoticeDeliveryCount,
-    ): NoticeComplianceLedgerResult<NoticeDeliveryLedgerSnapshot> =
-        mutate(operatorLabel, deliveryDay) { snapshots, key ->
-            val current = snapshots.getOrPut(key) { emptySnapshot(operatorLabel, deliveryDay) }
-            val updated = current.copy(
-                reservedDeliveryCount = current.reservedDeliveryCount.plus(projected),
+        projection: NoticeSubmissionProjection,
+        noticeLedgerDay: NoticeLedgerDay,
+    ): NoticeComplianceLedgerResult<List<NoticeSubmissionLedgerSnapshot>> =
+        mutate(proofAccountLabel, operatorLabel, projection, noticeLedgerDay) { current, group, _ ->
+            current.copy(
+                groupDisplayName = group.displayName,
+                reservedSubmissionCount = current.reservedSubmissionCount.plus(NoticeSubmissionCount.ONE),
+                lastOperatorLabel = operatorLabel,
             )
-            snapshots[key] = updated
-            updated
         }
 
     override fun recordSendResult(
+        proofAccountLabel: AccountLabel,
         operatorLabel: OperatorLabel,
-        deliveryDay: NoticeDeliveryDay,
-        reservedProjection: NoticeDeliveryCount,
-        delivered: NoticeDeliveryCount,
-    ): NoticeComplianceLedgerResult<NoticeDeliveryLedgerSnapshot> =
-        mutate(operatorLabel, deliveryDay) { snapshots, key ->
-            val current = snapshots.getOrPut(key) { emptySnapshot(operatorLabel, deliveryDay) }
-            val updated = current.copy(
-                reservedDeliveryCount = current.reservedDeliveryCount.minusFloorZero(reservedProjection),
-                recordedSentDeliveryCount = current.recordedSentDeliveryCount.plus(delivered),
-            )
-            snapshots[key] = updated
-            updated
+        projection: NoticeSubmissionProjection,
+        sentGroups: List<GroupMembership>,
+        noticeLedgerDay: NoticeLedgerDay,
+    ): NoticeComplianceLedgerResult<List<NoticeSubmissionLedgerSnapshot>> {
+        if (!projection.containsAll(sentGroups)) {
+            return NoticeComplianceLedgerResult.Failure("notice_ledger_unavailable")
         }
+        val sentIds = sentGroups.mapTo(hashSetOf()) { it.groupId }
+        return mutate(proofAccountLabel, operatorLabel, projection, noticeLedgerDay) { current, group, _ ->
+            current.copy(
+                groupDisplayName = group.displayName,
+                reservedSubmissionCount = current.reservedSubmissionCount.minusFloorZero(NoticeSubmissionCount.ONE),
+                recordedSentSubmissionCount = if (group.groupId in sentIds) {
+                    current.recordedSentSubmissionCount.plus(NoticeSubmissionCount.ONE)
+                } else {
+                    current.recordedSentSubmissionCount
+                },
+                lastOperatorLabel = operatorLabel,
+            )
+        }
+    }
 
     private fun mutate(
+        proofAccountLabel: AccountLabel,
         operatorLabel: OperatorLabel,
-        deliveryDay: NoticeDeliveryDay,
-        action: (MutableMap<LedgerKey, NoticeDeliveryLedgerSnapshot>, LedgerKey) -> NoticeDeliveryLedgerSnapshot,
-    ): NoticeComplianceLedgerResult<NoticeDeliveryLedgerSnapshot> =
+        projection: NoticeSubmissionProjection,
+        noticeLedgerDay: NoticeLedgerDay,
+        action: (NoticeSubmissionLedgerSnapshot, GroupMembership, LedgerKey) -> NoticeSubmissionLedgerSnapshot,
+    ): NoticeComplianceLedgerResult<List<NoticeSubmissionLedgerSnapshot>> =
         try {
             val snapshots = readSnapshots().toMutableMap()
-            val key = LedgerKey(operatorLabel.value, deliveryDay.value)
-            val result = action(snapshots, key)
+            val updated = projection.selectedGroups.map { group ->
+                val key = key(proofAccountLabel, group, noticeLedgerDay)
+                val current = snapshots[key] ?: emptySnapshot(proofAccountLabel, operatorLabel, group, noticeLedgerDay)
+                action(current, group, key).also { snapshots[key] = it }
+            }
             writeSnapshots(snapshots)
-            NoticeComplianceLedgerResult.Success(result)
+            NoticeComplianceLedgerResult.Success(updated)
         } catch (_: Exception) {
             NoticeComplianceLedgerResult.Failure("notice_ledger_unavailable")
         }
 
-    private fun readSnapshots(): Map<LedgerKey, NoticeDeliveryLedgerSnapshot> {
+    private fun readSnapshots(): Map<LedgerKey, NoticeSubmissionLedgerSnapshot> {
         if (!path.exists()) {
             return emptyMap()
         }
@@ -147,29 +204,33 @@ internal class FileNoticeComplianceLedgerPort(
             .filter(String::isNotBlank)
             .associate { row ->
                 val parts = row.split('\t')
-                require(parts.size == 4) { "malformed notice ledger row" }
-                val operatorLabel = OperatorLabel(parts[0])
-                val deliveryDay = NoticeDeliveryDay(parts[1])
-                val snapshot = NoticeDeliveryLedgerSnapshot(
-                    operatorLabel = operatorLabel,
-                    deliveryDay = deliveryDay,
-                    reservedDeliveryCount = NoticeDeliveryCount(parts[2].toLong()),
-                    recordedSentDeliveryCount = NoticeDeliveryCount(parts[3].toLong()),
+                require(parts.size == 7) { "malformed notice ledger row" }
+                val snapshot = NoticeSubmissionLedgerSnapshot(
+                    proofAccountLabel = AccountLabel(parts[0]),
+                    groupId = GroupId(parts[1]),
+                    groupDisplayName = GroupDisplayName(parts[2]),
+                    noticeLedgerDay = NoticeLedgerDay(parts[3]),
+                    reservedSubmissionCount = NoticeSubmissionCount(parts[4].toLong()),
+                    recordedSentSubmissionCount = NoticeSubmissionCount(parts[5].toLong()),
+                    lastOperatorLabel = OperatorLabel(parts[6]),
                 )
-                LedgerKey(operatorLabel.value, deliveryDay.value) to snapshot
+                key(snapshot.proofAccountLabel, snapshot.groupId, snapshot.noticeLedgerDay) to snapshot
             }
     }
 
-    private fun writeSnapshots(snapshots: Map<LedgerKey, NoticeDeliveryLedgerSnapshot>) {
+    private fun writeSnapshots(snapshots: Map<LedgerKey, NoticeSubmissionLedgerSnapshot>) {
         path.parent?.let(Files::createDirectories)
         val body = snapshots.entries
-            .sortedWith(compareBy({ it.key.operator }, { it.key.day }))
+            .sortedWith(compareBy({ it.key.proofAccount }, { it.key.groupId }, { it.key.day }))
             .joinToString(separator = "\n", postfix = "\n") { (_, snapshot) ->
                 listOf(
-                    snapshot.operatorLabel.value,
-                    snapshot.deliveryDay.value,
-                    snapshot.reservedDeliveryCount.value.toString(),
-                    snapshot.recordedSentDeliveryCount.value.toString(),
+                    snapshot.proofAccountLabel.value,
+                    snapshot.groupId.value,
+                    snapshot.groupDisplayName.value,
+                    snapshot.noticeLedgerDay.value,
+                    snapshot.reservedSubmissionCount.value.toString(),
+                    snapshot.recordedSentSubmissionCount.value.toString(),
+                    snapshot.lastOperatorLabel.value,
                 ).joinToString("\t")
             }
         Files.writeString(path, body, StandardCharsets.UTF_8)
@@ -177,19 +238,42 @@ internal class FileNoticeComplianceLedgerPort(
 }
 
 private data class LedgerKey(
-    val operator: String,
+    val proofAccount: String,
+    val groupId: String,
     val day: String,
 )
 
+private fun key(
+    proofAccountLabel: AccountLabel,
+    group: GroupMembership,
+    noticeLedgerDay: NoticeLedgerDay,
+): LedgerKey = key(proofAccountLabel, group.groupId, noticeLedgerDay)
+
+private fun key(
+    proofAccountLabel: AccountLabel,
+    groupId: GroupId,
+    noticeLedgerDay: NoticeLedgerDay,
+): LedgerKey = LedgerKey(proofAccountLabel.value, groupId.value, noticeLedgerDay.value)
+
 private fun emptySnapshot(
+    proofAccountLabel: AccountLabel,
     operatorLabel: OperatorLabel,
-    deliveryDay: NoticeDeliveryDay,
-): NoticeDeliveryLedgerSnapshot = NoticeDeliveryLedgerSnapshot(
-    operatorLabel = operatorLabel,
-    deliveryDay = deliveryDay,
-    reservedDeliveryCount = NoticeDeliveryCount.ZERO,
-    recordedSentDeliveryCount = NoticeDeliveryCount.ZERO,
+    group: GroupMembership,
+    noticeLedgerDay: NoticeLedgerDay,
+): NoticeSubmissionLedgerSnapshot = NoticeSubmissionLedgerSnapshot(
+    proofAccountLabel = proofAccountLabel,
+    groupId = group.groupId,
+    groupDisplayName = group.displayName,
+    noticeLedgerDay = noticeLedgerDay,
+    reservedSubmissionCount = NoticeSubmissionCount.ZERO,
+    recordedSentSubmissionCount = NoticeSubmissionCount.ZERO,
+    lastOperatorLabel = operatorLabel,
 )
 
-private fun NoticeDeliveryCount.minusFloorZero(other: NoticeDeliveryCount): NoticeDeliveryCount =
-    NoticeDeliveryCount((value - other.value).coerceAtLeast(0L))
+private fun NoticeSubmissionCount.minusFloorZero(other: NoticeSubmissionCount): NoticeSubmissionCount =
+    NoticeSubmissionCount((value - other.value).coerceAtLeast(0L))
+
+private fun NoticeSubmissionProjection.containsAll(groups: List<GroupMembership>): Boolean {
+    val projectionIds = selectedGroups.mapTo(hashSetOf()) { it.groupId }
+    return groups.all { it.groupId in projectionIds }
+}

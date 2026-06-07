@@ -9,8 +9,8 @@ internal class LiveProofNoticeCompliance(
 ) {
     constructor(inputs: LiveProofInputs) : this(inputs.noticeComplianceArguments())
 
-    fun missingRequiredFields(sendMayOccur: Boolean): List<String> =
-        arguments.missingRequiredFields(sendMayOccur)
+    fun validationErrors(sendMayOccur: Boolean): List<String> =
+        arguments.validationErrors(sendMayOccur)
 
     fun request(targetSet: GroupTargetSet): NoticeComplianceRequest =
         arguments.request(targetSet)

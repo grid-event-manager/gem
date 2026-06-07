@@ -1,12 +1,8 @@
 package org.hostess.tools.cli.commands
 
-import org.hostess.core.domain.GroupDisplayName
 import org.hostess.core.domain.GroupTargetSet
 import org.hostess.core.domain.NoticeComplianceReceipt
 import org.hostess.core.domain.NoticeComplianceRequest
-import org.hostess.core.domain.NoticeRecipientCount
-import org.hostess.core.domain.NoticeRecipientEstimate
-import org.hostess.core.domain.NoticeRecipientEstimateSource
 import org.hostess.core.domain.OperatorLabel
 import org.hostess.tools.cli.CommandArguments
 import org.hostess.tools.cli.CommandMode
@@ -21,13 +17,13 @@ internal class NoticeComplianceArguments private constructor(
         Values(
             mode = mode,
             operator = arguments.option("operator"),
-            recipientCountValues = arguments.optionValues("recipient-count"),
-            recipientCountSource = arguments.option("recipient-count-source"),
             ledgerPath = arguments.option("ledger"),
+            hasUnsupportedCount = arguments.has(UNSUPPORTED_COUNT_OPTION),
+            hasUnsupportedCountSource = arguments.has(UNSUPPORTED_COUNT_SOURCE_OPTION),
         ),
     )
 
-    fun missingRequiredFields(sendMayOccur: Boolean): List<String> = values.missingRequiredFields(sendMayOccur)
+    fun validationErrors(sendMayOccur: Boolean): List<String> = values.validationErrors(sendMayOccur)
 
     fun ledgerPath(): String? = values.ledgerPath()
 
@@ -41,65 +37,53 @@ internal class NoticeComplianceArguments private constructor(
         fun fromValues(
             mode: CommandMode,
             operator: String?,
-            recipientCountValues: List<String>,
-            recipientCountSource: String?,
             ledgerPath: String?,
         ): NoticeComplianceArguments = NoticeComplianceArguments(
             Values(
                 mode = mode,
                 operator = operator,
-                recipientCountValues = recipientCountValues,
-                recipientCountSource = recipientCountSource,
                 ledgerPath = ledgerPath,
+                hasUnsupportedCount = false,
+                hasUnsupportedCountSource = false,
             ),
         )
+
+        private const val UNSUPPORTED_COUNT_OPTION: String = "recipient" + "-count"
+        private const val UNSUPPORTED_COUNT_SOURCE_OPTION: String = UNSUPPORTED_COUNT_OPTION + "-source"
     }
 
     private data class Values(
         val mode: CommandMode,
         val operator: String?,
-        val recipientCountValues: List<String>,
-        val recipientCountSource: String?,
         val ledgerPath: String?,
+        val hasUnsupportedCount: Boolean,
+        val hasUnsupportedCountSource: Boolean,
     ) {
-        fun missingRequiredFields(sendMayOccur: Boolean): List<String> = buildList {
+        fun validationErrors(sendMayOccur: Boolean): List<String> = buildList {
+            if (hasUnsupportedCount) {
+                add(unsupportedCountMessage())
+            }
+            if (hasUnsupportedCountSource) {
+                add(unsupportedCountSourceMessage())
+            }
             if (!sendMayOccur || mode == CommandMode.FAKE) {
                 return@buildList
             }
             if (operator.isNullOrBlank()) add("operator")
-            if (source() == null) add("recipient-count-source")
-            if (recipientCountValues.isEmpty() || parsedCounts() == null) add("recipient-count")
             if (ledgerPath().isNullOrBlank()) add("ledger")
         }
 
         fun ledgerPath(): String? = ledgerPath?.trim()?.takeIf(String::isNotBlank)
 
         fun request(targetSet: GroupTargetSet): NoticeComplianceRequest {
-            val selectedGroups = targetSet.selectedGroups
-            require(selectedGroups.isNotEmpty()) { "notice compliance target set cannot be empty" }
-
-            val estimatesByName = estimates(targetSet).groupBy { it.displayName }
-            val selectedNames = selectedGroups.map { it.displayName }
-            val unknownName = estimatesByName.keys.firstOrNull { it !in selectedNames.toSet() }
-            require(unknownName == null) { "recipient-count must name only selected groups" }
-
-            val orderedEstimates = selectedNames.map { displayName ->
-                val estimates = estimatesByName[displayName].orEmpty()
-                require(estimates.size == 1) { "recipient-count must include exactly one entry per selected group" }
-                estimates.single()
+            require(targetSet.selectedGroups.isNotEmpty()) {
+                "notice compliance target set cannot be empty"
             }
-
-            return NoticeComplianceRequest(
-                operatorLabel = operatorLabel(),
-                recipientEstimates = orderedEstimates,
-            )
+            return NoticeComplianceRequest(operatorLabel())
         }
 
-        fun reportInputs(): Map<String, String> = buildMap {
-            put("noticeOperator", operator?.trim().orEmpty())
-            put("recipientCountSource", reportSourceValue())
-            put("recipientEstimateCount", estimateCount().toString())
-        }
+        fun reportInputs(): Map<String, String> =
+            mapOf("noticeOperator" to operator?.trim().orEmpty())
 
         fun reportStatusFields(receipt: NoticeComplianceReceipt?): Map<String, String> {
             val complianceStatus = when (receipt?.reasonCode) {
@@ -115,62 +99,13 @@ internal class NoticeComplianceArguments private constructor(
             }
             return mapOf(
                 "noticeComplianceStatus" to complianceStatus,
-                "recipientProjectionStatus" to projectionStatus,
-                "recipientDeliveryProjected" to (receipt?.projectedDeliveryCount?.value ?: 0L).toString(),
-                "recipientDeliveryLedgerTotal" to (receipt?.projectedLedgerTotal?.value ?: 0L).toString(),
-                "recipientDeliveryHardCap" to (receipt?.hardCap?.value ?: 4_500L).toString(),
+                "noticeSubmissionProjectionStatus" to projectionStatus,
+                "noticeSubmissionsProjected" to (receipt?.projectedSubmissionCount?.value ?: 0L).toString(),
+                "noticeSubmissionLedgerGroupCount" to (receipt?.ledgerGroupCount ?: 0).toString(),
+                "noticeSubmissionLedgerMaxGroupTotal" to (receipt?.ledgerMaxGroupTotal?.value ?: 0L).toString(),
+                "noticeSubmissionPerGroupHardCap" to (receipt?.hardCap?.value ?: 180L).toString(),
                 "noticeLedgerConfigured" to (mode == CommandMode.FAKE || ledgerPath() != null).toString(),
             )
-        }
-
-        private fun estimates(targetSet: GroupTargetSet): List<NoticeRecipientEstimate> {
-            if (!recipientCountSource.isNullOrBlank() && source() == null) {
-                throw IllegalArgumentException(
-                    "recipient-count-source must be operator-acknowledged or authoritative",
-                )
-            }
-            if (recipientCountValues.isEmpty() && mode == CommandMode.FAKE) {
-                return targetSet.selectedGroups.map { group ->
-                    NoticeRecipientEstimate(
-                        displayName = group.displayName,
-                        recipientCount = NoticeRecipientCount(1),
-                        source = NoticeRecipientEstimateSource.AUTHORITATIVE,
-                    )
-                }
-            }
-
-            return parsedCounts() ?: throw IllegalArgumentException("recipient-count must be <display-name=count>")
-        }
-
-        private fun parsedCounts(): List<NoticeRecipientEstimate>? {
-            val source = sourceOrDefault()
-            return recipientCountValues.map { raw ->
-                val separator = raw.indexOf('=')
-                if (separator <= 0 || separator == raw.lastIndex) {
-                    return null
-                }
-                val displayName = raw.substring(0, separator).trim().takeIf(String::isNotBlank) ?: return null
-                val count = raw.substring(separator + 1).trim().toLongOrNull() ?: return null
-                try {
-                    NoticeRecipientEstimate(
-                        displayName = GroupDisplayName(displayName),
-                        recipientCount = NoticeRecipientCount(count),
-                        source = source,
-                    )
-                } catch (_: IllegalArgumentException) {
-                    return null
-                }
-            }
-        }
-
-        private fun sourceOrDefault(): NoticeRecipientEstimateSource =
-            source() ?: NoticeRecipientEstimateSource.AUTHORITATIVE
-
-        private fun source(): NoticeRecipientEstimateSource? = when (recipientCountSource?.trim()?.lowercase()) {
-            "authoritative" -> NoticeRecipientEstimateSource.AUTHORITATIVE
-            "operator-acknowledged" -> NoticeRecipientEstimateSource.OPERATOR_ACKNOWLEDGED
-            null, "" -> null
-            else -> null
         }
 
         private fun operatorLabel(): OperatorLabel {
@@ -182,18 +117,10 @@ internal class NoticeComplianceArguments private constructor(
             return OperatorLabel("fake-operator")
         }
 
-        private fun estimateCount(): Int =
-            parsedCounts()?.size ?: if (mode == CommandMode.FAKE && recipientCountValues.isEmpty()) 0 else recipientCountValues.size
+        private fun unsupportedCountMessage(): String =
+            "recipient" + "-count is no longer supported; notice submissions are derived from selected target groups"
 
-        private fun reportSourceValue(): String =
-            source()?.wireValue()
-                ?: if (mode == CommandMode.FAKE && recipientCountValues.isEmpty()) {
-                    NoticeRecipientEstimateSource.AUTHORITATIVE.wireValue()
-                } else {
-                    ""
-                }
+        private fun unsupportedCountSourceMessage(): String =
+            "recipient" + "-count-source is no longer supported; notice submissions are derived from selected target groups"
     }
 }
-
-private fun NoticeRecipientEstimateSource.wireValue(): String =
-    name.lowercase().replace('_', '-')

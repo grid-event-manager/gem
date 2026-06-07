@@ -73,9 +73,9 @@ class SendNoticeCommand(
             }
         }
 
-        val missingCompliance = complianceArguments.missingRequiredFields(sendMayOccur = true)
-        if (missingCompliance.isNotEmpty()) {
-            return usage(output, "missing notice compliance input: ${missingCompliance.joinToString(", ")}")
+        val complianceValidationErrors = complianceArguments.validationErrors(sendMayOccur = true)
+        if (complianceValidationErrors.isNotEmpty()) {
+            return usage(output, complianceValidationErrors.first())
         }
         val complianceRequest = try {
             complianceArguments.request(targetSet)
@@ -265,8 +265,7 @@ class SendNoticeCommand(
         output.line("send-notice usage error: $reason")
         output.line(
             "usage: send-notice --mode fake --target <display-name> --subject <subject> --body <body> " +
-                "--operator <label> --recipient-count <display-name=count> " +
-                "--recipient-count-source operator-acknowledged|authoritative --ledger <path> --report <path>",
+                "--operator <label> --ledger <path> --report <path>",
         )
         return CommandResult.USAGE_ERROR
     }

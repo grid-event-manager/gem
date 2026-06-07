@@ -124,16 +124,17 @@ class SendNoticeCommandTest {
             assertTrue(output.lines.any { it == "send-notice fake attempted=1" })
             assertContains(report, "\"status\": \"passed\"")
             assertContains(report, "\"noticeComplianceStatus\": \"passed\"")
-            assertContains(report, "\"recipientProjectionStatus\": \"passed\"")
-            assertContains(report, "\"recipientDeliveryProjected\": \"1\"")
-            assertContains(report, "\"recipientDeliveryLedgerTotal\": \"1\"")
-            assertContains(report, "\"recipientDeliveryHardCap\": \"4500\"")
+            assertContains(report, "\"noticeSubmissionProjectionStatus\": \"passed\"")
+            assertContains(report, "\"noticeSubmissionsProjected\": \"1\"")
+            assertContains(report, "\"noticeSubmissionLedgerGroupCount\": \"1\"")
+            assertContains(report, "\"noticeSubmissionLedgerMaxGroupTotal\": \"1\"")
+            assertContains(report, "\"noticeSubmissionPerGroupHardCap\": \"180\"")
             assertContains(report, "\"noticeLedgerConfigured\": \"true\"")
         }
     }
 
     @Test
-    fun `recipient counts are matched by selected display name before attachment resolution`() {
+    fun `stale recipient count option is rejected before attachment resolution`() {
         val output = RecordingCliOutput()
 
         val exitCode = CommandRegistry.default(CliCompositionRoot()).execute(
@@ -151,8 +152,6 @@ class SendNoticeCommandTest {
                 "test-operator",
                 "--recipient-count",
                 "Event Notices=10",
-                "--recipient-count-source",
-                "operator-acknowledged",
                 "--attachment-kind",
                 "texture",
             ),
@@ -160,12 +159,12 @@ class SendNoticeCommandTest {
         )
 
         assertEquals(2, exitCode)
-        assertTrue(output.lines.any { it.contains("recipient-count must name only selected groups") })
+        assertTrue(output.lines.any { it.contains("recipient-count is no longer supported; notice submissions are derived from selected target groups") })
         assertFalse(output.lines.any { it.contains("missing attachment-id") })
     }
 
     @Test
-    fun `duplicate recipient count for selected display name is a usage error`() {
+    fun `stale recipient count source option is rejected in fake mode too`() {
         val output = RecordingCliOutput()
 
         val exitCode = CommandRegistry.default(CliCompositionRoot()).execute(
@@ -181,51 +180,18 @@ class SendNoticeCommandTest {
                 "Doors at eight",
                 "--operator",
                 "test-operator",
-                "--recipient-count",
-                "Venue Hosts=10",
-                "--recipient-count",
-                "Venue Hosts=11",
                 "--recipient-count-source",
-                "authoritative",
+                "operator-acknowledged",
             ),
             output,
         )
 
         assertEquals(2, exitCode)
-        assertTrue(output.lines.any { it.contains("recipient-count must include exactly one entry per selected group") })
+        assertTrue(output.lines.any { it.contains("recipient-count-source is no longer supported; notice submissions are derived from selected target groups") })
     }
 
     @Test
-    fun `unsupported recipient count source is a usage error in fake mode too`() {
-        val output = RecordingCliOutput()
-
-        val exitCode = CommandRegistry.default(CliCompositionRoot()).execute(
-            listOf(
-                "send-notice",
-                "--mode",
-                "fake",
-                "--target",
-                "Venue Hosts",
-                "--subject",
-                "Tonight",
-                "--body",
-                "Doors at eight",
-                "--operator",
-                "test-operator",
-                "--recipient-count",
-                "Venue Hosts=10",
-                "--recipient-count-source",
-                "spreadsheet-ish",
-            ),
-            output,
-        )
-
-        assertEquals(2, exitCode)
-        assertTrue(output.lines.any { it.contains("recipient-count-source must be operator-acknowledged or authoritative") })
-    }
-
-    @Test
-    fun `explicit recipient count report omits ledger path`() {
+    fun `explicit notice submission report omits ledger path`() {
         val directory = Files.createTempDirectory("hostess-send-notice")
         try {
             val reportPath = directory.resolve("send-notice.json")
@@ -245,10 +211,6 @@ class SendNoticeCommandTest {
                     "Doors at eight",
                     "--operator",
                     "test-operator",
-                    "--recipient-count",
-                    "Venue Hosts=12",
-                    "--recipient-count-source",
-                    "operator-acknowledged",
                     "--ledger",
                     ledgerPath.toString(),
                     "--report",
@@ -259,9 +221,8 @@ class SendNoticeCommandTest {
 
             val report = reportPath.readText()
             assertEquals(0, exitCode)
-            assertContains(report, "\"recipientDeliveryProjected\": \"12\"")
+            assertContains(report, "\"noticeSubmissionsProjected\": \"1\"")
             assertContains(report, "\"noticeOperator\": \"test-operator\"")
-            assertContains(report, "\"recipientCountSource\": \"operator-acknowledged\"")
             assertFalse(report.contains("notice-ledger.tsv"))
             assertFalse(report.contains(ledgerPath.toString()))
         } finally {

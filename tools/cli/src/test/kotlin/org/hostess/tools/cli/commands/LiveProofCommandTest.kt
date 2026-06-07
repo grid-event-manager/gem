@@ -493,10 +493,6 @@ class LiveProofCommandTest {
                     "Doors at eight",
                     "--existing-attachment-name",
                     "Venue Landmark",
-                    "--recipient-count",
-                    "Venue Hosts=1",
-                    "--recipient-count-source",
-                    "operator-acknowledged",
                     "--ledger",
                     directory.resolve("notice-ledger.tsv").toString(),
                 ),
@@ -522,6 +518,61 @@ class LiveProofCommandTest {
             assertFalse(report.contains("HOSTESS_PROOF_CREDENTIAL"))
             assertFalse(report.contains("notice-ledger.tsv"))
             assertFalse(RAW_UUID.containsMatchIn(report))
+        } finally {
+            directory.toFile().deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `stale full proof recipient count options are rejected before live runtime`() {
+        val directory = Files.createTempDirectory("hostess-live-proof-stale-count")
+        try {
+            val reportPath = directory.resolve("live-proof.json")
+            val output = RecordingCliOutput()
+
+            val exitCode = CommandRegistry.default(CliCompositionRoot()).execute(
+                listOf(
+                    "live-proof",
+                    "--report",
+                    reportPath.toString(),
+                    "--authorised-live-send",
+                    "--grid",
+                    "second-life",
+                    "--account",
+                    "venue-proof",
+                    "--credential-env",
+                    "HOSTESS_PROOF_CREDENTIAL",
+                    "--proof-account-attested",
+                    "--scripted-agent-attested",
+                    "--operator",
+                    "test-operator",
+                    "--proof-account-label",
+                    "test-proof-account",
+                    "--target",
+                    "Venue Hosts",
+                    "--subject",
+                    "Tonight",
+                    "--body",
+                    "Doors at eight",
+                    "--existing-attachment-name",
+                    "Venue Landmark",
+                    "--recipient-count",
+                    "Venue Hosts=1",
+                    "--ledger",
+                    directory.resolve("notice-ledger.tsv").toString(),
+                ),
+                output,
+            )
+
+            val report = reportPath.readText()
+            assertEquals(2, exitCode)
+            assertTrue(
+                output.lines.any {
+                    it.contains("recipient-count is no longer supported; notice submissions are derived from selected target groups")
+                },
+            )
+            assertContains(report, "\"status\": \"blocked\"")
+            assertContains(report, "\"noticeSendStatus\": \"not_run\"")
         } finally {
             directory.toFile().deleteRecursively()
         }

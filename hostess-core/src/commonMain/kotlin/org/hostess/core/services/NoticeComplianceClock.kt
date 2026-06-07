@@ -1,7 +1,7 @@
 package org.hostess.core.services
 
-import org.hostess.core.domain.NoticeDeliveryDay
+import org.hostess.core.domain.NoticeLedgerDay
 
 fun interface NoticeComplianceClock {
-    fun currentSecondLifeDay(): NoticeDeliveryDay
+    fun currentSecondLifeDay(): NoticeLedgerDay
 }
