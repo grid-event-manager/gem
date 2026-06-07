@@ -14,6 +14,10 @@ object SafeDiagnosticRedaction {
             "\\s*[:=]\\s*[^,;\\s]+",
         RegexOption.IGNORE_CASE,
     )
+    private val sensitiveKeyPatterns = listOf(
+        Regex(".*attachmentId$", RegexOption.IGNORE_CASE),
+        Regex(".*attachment[-_]?id$", RegexOption.IGNORE_CASE),
+    )
     private val sensitiveKeys = setOf(
         "account",
         "accountLabel",
@@ -23,7 +27,6 @@ object SafeDiagnosticRedaction {
         "credentialEnv",
         "credentialFile",
         "eventQueueUrl",
-        "existingAttachmentId",
         "groupId",
         "host_id",
         "hostId",
@@ -50,7 +53,10 @@ object SafeDiagnosticRedaction {
     fun redact(rawValue: String): String = redact("detail", rawValue)
 
     fun redact(key: String, rawValue: String): String {
-        if (sensitiveKeys.any { it.equals(key, ignoreCase = true) }) {
+        if (
+            sensitiveKeys.any { it.equals(key, ignoreCase = true) } ||
+            sensitiveKeyPatterns.any { it.matches(key) }
+        ) {
             return REDACTED
         }
 
