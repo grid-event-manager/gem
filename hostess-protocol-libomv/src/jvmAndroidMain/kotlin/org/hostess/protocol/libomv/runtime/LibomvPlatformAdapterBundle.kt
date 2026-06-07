@@ -3,9 +3,8 @@ package org.hostess.protocol.libomv.runtime
 import org.hostess.core.domain.HostessDelay
 import org.hostess.core.domain.HostessInstant
 import org.hostess.core.ports.ClockPort
-import org.hostess.protocol.libomv.transport.BoundedSimulatorCircuitClient
-import org.hostess.protocol.libomv.transport.BoundedSimulatorCircuitSender
 import org.hostess.protocol.libomv.transport.OkHttpProtocolHttpClient
+import org.hostess.protocol.libomv.transport.ProtocolSimulatorCircuitClient
 import org.hostess.protocol.libomv.transport.ProtocolHttpClient
 import org.hostess.protocol.libomv.transport.UdpSimulatorDatagramSender
 
@@ -16,7 +15,7 @@ internal data class LibomvPlatformAdapterBundle(
     val machineIdentityProvider: HostessMachineIdentityProvider,
     val clockPort: ClockPort,
     val md5DigestPort: Md5DigestPort,
-    val circuitSender: BoundedSimulatorCircuitSender,
+    val circuitSender: ProtocolSimulatorCircuitClient,
     val adapterLoad: Boolean,
     val runtimeLoad: Boolean,
     val transportLoad: Boolean,
@@ -31,7 +30,7 @@ internal object DefaultLibomvPlatformAdapterBundle {
             machineIdentityProvider = DefaultHostessMachineIdentityProvider,
             clockPort = JvmProtocolClockPort,
             md5DigestPort = JvmMd5DigestPort,
-            circuitSender = BoundedSimulatorCircuitClient(UdpSimulatorDatagramSender()),
+            circuitSender = ProtocolSimulatorCircuitClient(UdpSimulatorDatagramSender()),
             adapterLoad = true,
             runtimeLoad = true,
             transportLoad = true,

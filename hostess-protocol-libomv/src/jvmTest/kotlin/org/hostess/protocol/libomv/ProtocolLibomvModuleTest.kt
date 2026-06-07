@@ -33,12 +33,13 @@ import org.hostess.protocol.libomv.runtime.Md5DigestPort
 import org.hostess.protocol.libomv.runtime.HostessPlatformIdentity
 import org.hostess.protocol.libomv.runtime.HostessViewerIdentity
 import org.hostess.protocol.libomv.runtime.HostessViewerIdentityProvider
-import org.hostess.protocol.libomv.transport.BoundedSimulatorCircuitSender
 import org.hostess.protocol.libomv.transport.ProtocolHttpBody
 import org.hostess.protocol.libomv.transport.ProtocolHttpClient
 import org.hostess.protocol.libomv.transport.ProtocolHttpRequest
 import org.hostess.protocol.libomv.transport.ProtocolHttpResponse
-import org.hostess.protocol.libomv.transport.SimulatorCircuitSendResult
+import org.hostess.protocol.libomv.transport.ProtocolSimulatorCircuitClient
+import org.hostess.protocol.libomv.transport.SimulatorEndpoint
+import org.hostess.protocol.libomv.transport.SimulatorPacketSender
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
@@ -401,9 +402,7 @@ class ProtocolLibomvModuleTest {
         machineIdentityProvider: HostessMachineIdentityProvider = machineIdentityProvider(),
         clockPort: ClockPort = FixedClockPort,
         md5DigestPort: Md5DigestPort = JvmMd5DigestPort,
-        circuitSender: BoundedSimulatorCircuitSender = BoundedSimulatorCircuitSender {
-            SimulatorCircuitSendResult.Sent
-        },
+        circuitSender: ProtocolSimulatorCircuitClient = ProtocolSimulatorCircuitClient(NoopSimulatorPacketSender),
         adapterLoad: Boolean = true,
         runtimeLoad: Boolean = true,
         transportLoad: Boolean = true,
@@ -425,6 +424,10 @@ class ProtocolLibomvModuleTest {
         override fun now(): HostessInstant = HostessInstant.EPOCH
 
         override fun pause(duration: HostessDelay) = Unit
+    }
+
+    private object NoopSimulatorPacketSender : SimulatorPacketSender {
+        override fun send(endpoint: SimulatorEndpoint, payloads: List<ByteArray>) = Unit
     }
 
     private companion object {

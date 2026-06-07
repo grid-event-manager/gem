@@ -16,7 +16,8 @@ PROTOCOL_PREFIX='Protocol'
 RUNTIME_SUFFIX='Runtime'
 TRACK_B_OKHTTP_PATTERN="(^|[^[:alnum:]_.])okhttp3\.|(^|[^[:alnum:]_.])${OK_HTTP_CLIENT_SYMBOL}([^[:alnum:]_]|$)"
 TRACK_B_RUNTIME_PATTERN="(^|[^[:alnum:]_.])(${PROTOCOL_PREFIX}Login${RUNTIME_SUFFIX}|${PROTOCOL_PREFIX}Group${RUNTIME_SUFFIX}|${PROTOCOL_PREFIX}Inventory${RUNTIME_SUFFIX}|${PROTOCOL_PREFIX}Notice${RUNTIME_SUFFIX}|${PROTOCOL_PREFIX}HttpClient)([^[:alnum:]_]|$)"
-TRACK_C_RUNTIME_PATTERN='EnvironmentLoginSecretResolver|BoundedSimulatorCircuitClient|AgentDataUpdateRequestTransport|EventQueueGetClient'
+TRACK_C_RUNTIME_PATTERN='EnvironmentLoginSecretResolver|ProtocolSimulatorCircuitClient|AgentDataUpdateRequestTransport|EventQueueGetClient'
+TRACK_H_STALE_CIRCUIT_OWNER_PATTERN='BoundedSimulatorCircuit(Client|Sender)'
 TRACK_C_ENV_PATTERN='System(::|\.)getenv'
 TRACK_C_FILE_ROUTE_PATTERN='credential-file'
 TRACK_C_UNSUPPORTED_SECRET_PATTERN='keychain|Keychain|KeyStore|plaintext|plain-text|plain text'
@@ -909,6 +910,11 @@ check_no_hits \
     "$TRACK_G_CLI_RAW_CAPABILITY_PATTERN" \
     "${track_g_cli_targets[@]}"
 
+check_no_hits \
+    "Track H stale bounded circuit owner" \
+    "$TRACK_H_STALE_CIRCUIT_OWNER_PATTERN" \
+    "${track_f_all_source_targets[@]}"
+
 check_exact_owner_count "Track G single InventoryPort owner" "InventoryPort" 1 "${track_g_main_targets[@]}"
 check_exact_owner_count "Track G single InventoryDirectoryService owner" "InventoryDirectoryService" 1 "${track_g_main_targets[@]}"
 check_exact_owner_count "Track G single ProtocolCapabilitySeedClient owner" "ProtocolCapabilitySeedClient" 1 "${track_g_main_targets[@]}"
@@ -1143,6 +1149,11 @@ check_pattern_matches \
     "self-test Track G CLI raw capability label pattern" \
     "$TRACK_G_CLI_RAW_CAPABILITY_PATTERN" \
     '"FetchInventoryDescendents2" to capabilityUrl'
+
+check_pattern_matches \
+    "self-test Track H stale bounded circuit owner pattern" \
+    "$TRACK_H_STALE_CIRCUIT_OWNER_PATTERN" \
+    'class BoundedSimulatorCircuitClient'
 
 if [[ "$failures" -ne 0 ]]; then
     exit 1

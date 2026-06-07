@@ -6,11 +6,11 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
 
-class BoundedSimulatorCircuitClientTest {
+class ProtocolSimulatorCircuitClientTest {
     @Test
-    fun `sends only bounded current-groups packet sequence`() {
+    fun `sends current-groups packet sequence through canonical circuit client`() {
         val sender = RecordingPacketSender()
-        val client = BoundedSimulatorCircuitClient(
+        val client = ProtocolSimulatorCircuitClient(
             packetSender = sender,
             sequence = SimulatorPacketSequence(0),
         )
@@ -48,29 +48,44 @@ class BoundedSimulatorCircuitClientTest {
         val sender = RecordingPacketSender(
             failure = Exception("cannot reach $SIM_HOST:$SIM_PORT for $AGENT_ID"),
         )
-        val client = BoundedSimulatorCircuitClient(packetSender = sender)
+        val client = ProtocolSimulatorCircuitClient(packetSender = sender)
 
         val result = assertIs<SimulatorCircuitSendResult.Failed>(
             client.sendCurrentGroupsRequest(circuit()),
         )
 
-        assertEquals("bounded simulator send failed", result.redactedMessage)
+        assertEquals("protocol simulator send failed", result.redactedMessage)
         assertFalse(result.redactedMessage.contains(SIM_HOST))
         assertFalse(result.redactedMessage.contains(AGENT_ID))
         assertFalse(result.redactedMessage.contains(CIRCUIT_CODE.toString()))
     }
 
     @Test
-    fun `invalid identity fails before datagram send`() {
-        val sender = RecordingPacketSender()
-        val client = BoundedSimulatorCircuitClient(packetSender = sender)
-
-        val result = assertIs<SimulatorCircuitSendResult.Failed>(
-            client.sendCurrentGroupsRequest(circuit(agentId = "not-a-uuid")),
+    fun `invalid circuit fields fail before datagram send`() {
+        val cases = listOf(
+            circuit(agentId = "not-a-uuid"),
+            circuit(sessionId = "not-a-uuid"),
+            circuit(seedCapability = ""),
+            circuit(simulatorIp = ""),
+            circuit(simulatorIp = "not-a-host"),
+            circuit(simulatorIp = "999.0.113.8"),
+            circuit(simulatorPort = 0),
+            circuit(simulatorPort = 65536),
+            circuit(circuitCode = 0),
+            circuit(circuitCode = 0x1_0000_0000L),
         )
 
-        assertEquals("bounded simulator send failed", result.redactedMessage)
-        assertEquals(0, sender.sent.size)
+        for (case in cases) {
+            val sender = RecordingPacketSender()
+            val client = ProtocolSimulatorCircuitClient(packetSender = sender)
+
+            val result = assertIs<SimulatorCircuitSendResult.Failed>(
+                client.sendCurrentGroupsRequest(case),
+            )
+
+            assertEquals("protocol simulator send failed", result.redactedMessage)
+            assertEquals(0, sender.sent.size)
+        }
     }
 
     private fun assertLowPacket(
@@ -110,14 +125,18 @@ class BoundedSimulatorCircuitClientTest {
     private fun circuit(
         agentId: String = AGENT_ID,
         sessionId: String = SESSION_ID,
+        seedCapability: String = "seed-capability",
+        simulatorIp: String = SIM_HOST,
+        simulatorPort: Int = SIM_PORT,
+        circuitCode: Long = CIRCUIT_CODE,
     ): SimulatorCircuit = SimulatorCircuit(
         agentId = agentId,
         sessionId = sessionId,
-        seedCapability = "seed-capability",
-        simulatorIp = SIM_HOST,
-        simulatorPort = SIM_PORT,
+        seedCapability = seedCapability,
+        simulatorIp = simulatorIp,
+        simulatorPort = simulatorPort,
         regionHandle = 123456789L,
-        circuitCode = CIRCUIT_CODE,
+        circuitCode = circuitCode,
     )
 
     private class RecordingPacketSender(

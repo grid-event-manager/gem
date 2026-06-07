@@ -7,36 +7,31 @@ import kotlin.test.assertIs
 
 class AgentDataUpdateRequestTransportTest {
     @Test
-    fun `passes internal identity to bounded circuit sender`() {
-        val sender = RecordingCircuitSender(SimulatorCircuitSendResult.Sent)
-        val transport = AgentDataUpdateRequestTransport(sender)
+    fun `passes internal identity to protocol circuit client`() {
+        val sender = RecordingPacketSender()
+        val transport = AgentDataUpdateRequestTransport(
+            ProtocolSimulatorCircuitClient(sender, SimulatorPacketSequence(0)),
+        )
 
         val result = transport.send(identity())
 
         assertEquals(AgentDataUpdateRequestResult.Sent, result)
-        assertEquals(
-            SimulatorCircuit(
-                agentId = AGENT_ID,
-                sessionId = SESSION_ID,
-                seedCapability = "seed-capability",
-                simulatorIp = SIM_HOST,
-                simulatorPort = SIM_PORT,
-                regionHandle = REGION_HANDLE,
-                circuitCode = CIRCUIT_CODE,
-            ),
-            sender.capturedCircuit,
-        )
+        assertEquals(SIM_HOST, sender.endpoint?.host)
+        assertEquals(SIM_PORT, sender.endpoint?.port)
+        assertEquals(3, sender.payloads.size)
     }
 
     @Test
-    fun `maps bounded circuit failure to redacted request failure`() {
+    fun `maps protocol circuit failure to redacted request failure`() {
         val transport = AgentDataUpdateRequestTransport(
-            RecordingCircuitSender(SimulatorCircuitSendResult.Failed("bounded simulator send failed")),
+            ProtocolSimulatorCircuitClient(
+                RecordingPacketSender(failure = Exception("cannot reach $SIM_HOST with $AGENT_ID")),
+            ),
         )
 
         val result = assertIs<AgentDataUpdateRequestResult.Failed>(transport.send(identity()))
 
-        assertEquals("bounded simulator send failed", result.redactedMessage)
+        assertEquals("protocol simulator send failed", result.redactedMessage)
     }
 
     private fun identity(): LibomvSessionIdentity = LibomvSessionIdentity(
@@ -49,14 +44,16 @@ class AgentDataUpdateRequestTransportTest {
         circuitCode = CIRCUIT_CODE,
     )
 
-    private class RecordingCircuitSender(
-        private val result: SimulatorCircuitSendResult,
-    ) : BoundedSimulatorCircuitSender {
-        var capturedCircuit: SimulatorCircuit? = null
+    private class RecordingPacketSender(
+        private val failure: Exception? = null,
+    ) : SimulatorPacketSender {
+        var endpoint: SimulatorEndpoint? = null
+        var payloads: List<ByteArray> = emptyList()
 
-        override fun sendCurrentGroupsRequest(circuit: SimulatorCircuit): SimulatorCircuitSendResult {
-            capturedCircuit = circuit
-            return result
+        override fun send(endpoint: SimulatorEndpoint, payloads: List<ByteArray>) {
+            failure?.let { throw it }
+            this.endpoint = endpoint
+            this.payloads = payloads
         }
     }
 
