@@ -18,6 +18,7 @@ TRACK_B_OKHTTP_PATTERN="(^|[^[:alnum:]_.])okhttp3\.|(^|[^[:alnum:]_.])${OK_HTTP_
 TRACK_B_RUNTIME_PATTERN="(^|[^[:alnum:]_.])(${PROTOCOL_PREFIX}Login${RUNTIME_SUFFIX}|${PROTOCOL_PREFIX}Group${RUNTIME_SUFFIX}|${PROTOCOL_PREFIX}Inventory${RUNTIME_SUFFIX}|${PROTOCOL_PREFIX}Notice${RUNTIME_SUFFIX}|${PROTOCOL_PREFIX}HttpClient)([^[:alnum:]_]|$)"
 TRACK_C_RUNTIME_PATTERN='EnvironmentLoginSecretResolver|ProtocolSimulatorCircuitClient|AgentDataUpdateRequestTransport|EventQueueGetClient'
 TRACK_H_STALE_CIRCUIT_OWNER_PATTERN='BoundedSimulatorCircuit(Client|Sender)'
+TRACK_H_STALE_CLI_LIVE_SEND_PATTERN='sessionProvider|fakeSession\(active = false\)|send-notice --mode live'
 TRACK_C_ENV_PATTERN='System(::|\.)getenv'
 TRACK_C_FILE_ROUTE_PATTERN='credential-file'
 TRACK_C_UNSUPPORTED_SECRET_PATTERN='keychain|Keychain|KeyStore|plaintext|plain-text|plain text'
@@ -707,6 +708,11 @@ track_g_cli_targets=()
 add_existing track_g_cli_targets \
     "tools/cli/src/main"
 
+track_h_cli_live_send_targets=()
+add_existing track_h_cli_live_send_targets \
+    "tools/cli/src/main" \
+    "tools/cli/README.md"
+
 check_no_hits \
     "hostess-core forbidden dependencies" \
     "$CORE_FORBIDDEN_PATTERN" \
@@ -914,6 +920,11 @@ check_no_hits \
     "Track H stale bounded circuit owner" \
     "$TRACK_H_STALE_CIRCUIT_OWNER_PATTERN" \
     "${track_f_all_source_targets[@]}"
+
+check_no_hits \
+    "Track H stale CLI live send path" \
+    "$TRACK_H_STALE_CLI_LIVE_SEND_PATTERN" \
+    "${track_h_cli_live_send_targets[@]}"
 
 check_exact_owner_count "Track G single InventoryPort owner" "InventoryPort" 1 "${track_g_main_targets[@]}"
 check_exact_owner_count "Track G single InventoryDirectoryService owner" "InventoryDirectoryService" 1 "${track_g_main_targets[@]}"
@@ -1154,6 +1165,11 @@ check_pattern_matches \
     "self-test Track H stale bounded circuit owner pattern" \
     "$TRACK_H_STALE_CIRCUIT_OWNER_PATTERN" \
     'class BoundedSimulatorCircuitClient'
+
+check_pattern_matches \
+    "self-test Track H stale CLI live send pattern" \
+    "$TRACK_H_STALE_CLI_LIVE_SEND_PATTERN" \
+    'sessionProvider = { fakeSession(active = false) }'
 
 if [[ "$failures" -ne 0 ]]; then
     exit 1

@@ -1,8 +1,5 @@
 package org.hostess.tools.cli.commands
 
-import org.hostess.core.domain.AccountLabel
-import org.hostess.core.ports.CredentialHandle
-import org.hostess.core.ports.LoginRequest
 import org.hostess.core.ports.SessionLoginResult
 import org.hostess.tools.cli.CliCommand
 import org.hostess.tools.cli.CliOutput
@@ -19,7 +16,7 @@ class LoginCommand(
 
     override fun execute(arguments: CommandArguments, output: CliOutput): CommandResult {
         val mode = arguments.mode()
-        val request = loginRequest(arguments, mode)
+        val request = CommandLoginRequest.from(arguments, mode)
             ?: return usage(output, "missing account or credential handle")
         val complianceArguments = LoginComplianceArguments(arguments, mode)
         val missingCompliance = complianceArguments.missingRequiredFields(forLiveProof = false)
@@ -70,13 +67,6 @@ class LoginCommand(
                 CommandResult.UNAVAILABLE
             }
         }
-    }
-
-    private fun loginRequest(arguments: CommandArguments, mode: CommandMode): LoginRequest? {
-        val account = arguments.option("account") ?: if (mode == CommandMode.FAKE) "fake-account" else return null
-        val credentialHandle = arguments.option("credential-env")
-            ?: if (mode == CommandMode.FAKE) "fake-credential" else return null
-        return LoginRequest(AccountLabel(account), CredentialHandle(credentialHandle))
     }
 
     private fun usage(output: CliOutput, reason: String): CommandResult {

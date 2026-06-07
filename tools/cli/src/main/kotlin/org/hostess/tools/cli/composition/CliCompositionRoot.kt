@@ -73,7 +73,6 @@ class CliCompositionRoot(
             ),
             proofReportWriter = ProofReportWriter(),
             protocolAvailable = true,
-            sessionProvider = { session },
         )
     }
 
@@ -102,7 +101,6 @@ class CliCompositionRoot(
             ),
             proofReportWriter = ProofReportWriter(),
             protocolAvailable = protocolRuntime.protocolAvailable,
-            sessionProvider = { fakeSession(active = false) },
         )
     }
 
@@ -125,7 +123,6 @@ data class CliRuntime(
     val noticeDispatchService: NoticeDispatchService,
     val proofReportWriter: ProofReportWriter,
     val protocolAvailable: Boolean,
-    val sessionProvider: () -> HostessSession,
 )
 
 private class FakeProofSessionPort(
@@ -171,9 +168,9 @@ private object NoopClockPort : ClockPort {
     override fun pause(duration: HostessDelay) = Unit
 }
 
-private fun fakeSession(active: Boolean = true): HostessSession = HostessSession(
+private fun fakeSession(): HostessSession = HostessSession(
     sessionId = SessionId("fake-session"),
     accountLabel = AccountLabel("fake-account"),
     startedAt = HostessInstant.EPOCH,
-    isActive = active,
+    isActive = true,
 )

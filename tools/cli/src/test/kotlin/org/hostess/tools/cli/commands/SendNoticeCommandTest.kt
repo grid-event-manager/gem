@@ -33,6 +33,71 @@ class SendNoticeCommandTest {
     }
 
     @Test
+    fun `live send notice is blocked before usage validation or runtime work`() {
+        withReport { reportPath ->
+            val output = RecordingCliOutput()
+
+            val exitCode = CommandRegistry.default(CliCompositionRoot()).execute(
+                listOf(
+                    "send-notice",
+                    "--mode",
+                    "live",
+                    "--attachment-kind",
+                    "texture",
+                    "--report",
+                    reportPath.toString(),
+                ),
+                output,
+            )
+
+            val report = reportPath.readText()
+            assertEquals(3, exitCode)
+            assertEquals(
+                listOf("send-notice live blocked: live send is only available through live-proof --proof-scope full"),
+                output.lines,
+            )
+            assertContains(report, "\"command\": \"send-notice\"")
+            assertContains(report, "\"mode\": \"live\"")
+            assertContains(report, "\"status\": \"blocked\"")
+            assertContains(report, "\"sendNoticeStatus\": \"blocked\"")
+            assertContains(report, "\"targetCount\": \"0\"")
+            assertContains(report, "\"subjectLength\": \"0\"")
+            assertContains(report, "\"bodyLength\": \"0\"")
+            assertContains(report, "\"blockedReason\": \"live send is only available through live-proof --proof-scope full\"")
+            assertFalse(report.contains("targetDisplayNames"))
+            assertFalse(report.contains("attachment-id"))
+        }
+    }
+
+    @Test
+    fun `live send notice blocks valid looking mutation before attachment resolution`() {
+        val output = RecordingCliOutput()
+
+        val exitCode = CommandRegistry.default(CliCompositionRoot()).execute(
+            listOf(
+                "send-notice",
+                "--mode",
+                "live",
+                "--target",
+                "Venue Hosts",
+                "--subject",
+                "Tonight",
+                "--body",
+                "Doors at eight",
+                "--attachment-kind",
+                "landmark",
+            ),
+            output,
+        )
+
+        assertEquals(3, exitCode)
+        assertEquals(
+            listOf("send-notice live blocked: live send is only available through live-proof --proof-scope full"),
+            output.lines,
+        )
+    }
+
+    @Test
     fun `fake send notice defaults compliance projection and writes status fields`() {
         withReport { reportPath ->
             val output = RecordingCliOutput()

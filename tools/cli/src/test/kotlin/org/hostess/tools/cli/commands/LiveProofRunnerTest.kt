@@ -454,7 +454,6 @@ class LiveProofRunnerTest {
             ),
             proofReportWriter = ProofReportWriter(),
             protocolAvailable = true,
-            sessionProvider = { SESSION },
         )
     }
 
