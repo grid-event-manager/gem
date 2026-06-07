@@ -38,8 +38,9 @@ Track H owner rules:
 
 Track I owner rules:
 
-- Notice compliance is submission-based. Recipient-count compliance terms, old recipient-estimate/delivery types, old recipient-delivery report fields, and Track H count environment variables remain forbidden in production source.
-- The Track I guard scans `hostess-core` common/JVM production source, CLI/app production shells, and public readmes for stale command/report surface language.
+- Local notice totals are non-authoritative and must not exist in production source. `NoticeComplianceService`, `NoticeSubmissionLedgerPort`, local notice ledger/cap types, notice-compliance report fields such as `noticeSubmissionProjectionStatus` and `noticeLedgerConfigured`, old recipient-estimate/delivery types, old recipient-delivery report fields, and Track H count environment variables remain forbidden in production source.
+- Stale `--ledger`, `--recipient-count`, and `--recipient-count-source` strings are allowed only at command boundaries that reject those options before send; they must not feed a retained notice totals model.
+- The Track I guard scans `hostess-core` common/JVM production source, CLI/app production shells, and public readmes for local notice totals classes, report fields, and stale owner language.
 - Historical mentions are allowed only outside public production source and public readmes, such as private RFC/brief/archive/reference/evidence material, or inside this guard owner script and README.
 
 Non-production proof allowlist for broad source scans:

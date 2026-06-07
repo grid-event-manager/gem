@@ -23,7 +23,7 @@ TRACK_H_STALE_FULL_PROOF_PATTERN='sendPlainNotice|runAttachmentProof|runBulkProo
 TRACK_H_STALE_NOTICE_PATTERN='(^|[^[:alnum:]_])(GroupNoticeAdd|NoticeSender|BulkSender)([^[:alnum:]_]|$)'
 TRACK_H_DIRECT_APP_NOTICE_PATTERN='(^|[^[:alnum:]_])(ProtocolNoticeRuntime|ProtocolNoticeCircuitSource|LibomvNoticePacketCodec|SimulatorPacketSender)([^[:alnum:]_]|$)'
 TRACK_ANDROID_PROBE_FORBIDDEN_RUNTIME_PATTERN='EnvironmentLoginSecretResolver|AgentDataUpdateRequestTransport|EventQueueGetClient|ProtocolLoginRuntime|ProtocolGroupRuntime|ProtocolInventoryRuntime|ProtocolNoticeRuntime|SimulatorPacketSender'
-TRACK_I_STALE_NOTICE_COMPLIANCE_PATTERN='recipient-count|recipient-count-source|NoticeRecipientEstimate|NoticeRecipientCount|NoticeRecipientEstimateSource|recipientDeliveryProjected|recipientDeliveryLedgerTotal|recipientDeliveryHardCap|recipientProjectionStatus|recipient_count_|recipient_delivery_|NoticeDeliveryCount|NoticeDeliveryDay|NoticeDeliveryProjection|NoticeDeliveryLedgerSnapshot|NoticeComplianceLedgerPort|HOSTESS_OWKS_COUNT|HOSTESS_MINX_COUNT'
+TRACK_I_STALE_NOTICE_COMPLIANCE_PATTERN='NoticeCompliance(Service|Request|Decision|Receipt|Policy|Clock|LedgerResult|Ledgers?)|DefaultNoticeComplianceClock|NoticeSubmission(Count|Projection|LedgerSnapshot|LedgerPort)|NoticeLedgerDay|noticeSubmissionProjectionStatus|noticeSubmissionsProjected|noticeSubmissionLedgerGroupCount|noticeSubmissionLedgerMaxGroupTotal|noticeSubmissionPerGroupHardCap|noticeLedgerConfigured|notice_submission_cap_exceeded|ledger_snapshot_unavailable|ledger_reserve_failed|ledger_record_failed|notice_ledger_unavailable|NoticeRecipientEstimate|NoticeRecipientCount|NoticeRecipientEstimateSource|recipientDeliveryProjected|recipientDeliveryLedgerTotal|recipientDeliveryHardCap|recipientProjectionStatus|recipient_count_|recipient_delivery_|NoticeDeliveryCount|NoticeDeliveryDay|NoticeDeliveryProjection|NoticeDeliveryLedgerSnapshot|NoticeComplianceLedgerPort|HOSTESS_OWKS_COUNT|HOSTESS_MINX_COUNT'
 TRACK_C_ENV_PATTERN='System(::|\.)getenv'
 TRACK_C_FILE_ROUTE_PATTERN='credential-file'
 TRACK_C_UNSUPPORTED_SECRET_PATTERN='keychain|Keychain|KeyStore|plaintext|plain-text|plain text'
@@ -262,14 +262,14 @@ check_notice_dispatch_overloads() {
         "hostess-core/src/main/kotlin/org/hostess/core/services/NoticeDispatchService.kt"
 
     if [[ "${#files[@]}" -eq 0 ]]; then
-        echo "ERROR: Track D notice dispatch overload scan has no scan targets"
+        echo "ERROR: Track I notice dispatch overload scan has no scan targets"
         failures=1
         return
     fi
 
     set +e
     local output
-    output="$(perl -0ne 'while (/fun\s+dispatch\s*\((.*?)\)\s*:/sg) { print "$ARGV: dispatch overload omits NoticeComplianceRequest\n" if $1 !~ /NoticeComplianceRequest/ }' "${files[@]}" 2>&1)"
+    output="$(perl -0ne 'while (/fun\s+dispatch\s*\((.*?)\)\s*:/sg) { print "$ARGV: dispatch overload keeps notice compliance argument\n" if $1 =~ /NoticeComplianceRequest|compliance\s*:/ }' "${files[@]}" 2>&1)"
     local status="$?"
     set -e
 
@@ -278,11 +278,11 @@ check_notice_dispatch_overloads() {
         echo "$output"
         failures=1
     elif [[ -n "$output" ]]; then
-        echo "FAIL: Track D notice dispatch overload requires NoticeComplianceRequest"
+        echo "FAIL: Track I notice dispatch overload forbids local notice compliance"
         echo "$output"
         failures=1
     else
-        echo "PASS: Track D notice dispatch overload requires NoticeComplianceRequest"
+        echo "PASS: Track I notice dispatch overload forbids local notice compliance"
     fi
 }
 
@@ -295,8 +295,8 @@ check_notice_dispatch_call_blocks() {
     while IFS=: read -r path line _; do
         [[ -n "$path" && -n "$line" ]] || continue
         block="$(sed -n "${line},$((line + 12))p" "$path")"
-        if ! printf '%s\n' "$block" | rg -q 'compliance[[:space:]]*='; then
-            output+="${path}:${line}: noticeDispatchService.dispatch call omits named compliance argument"$'\n'
+        if printf '%s\n' "$block" | rg -q 'compliance[[:space:]]*='; then
+            output+="${path}:${line}: noticeDispatchService.dispatch call keeps deleted compliance argument"$'\n'
         fi
     done < <(rg -n 'noticeDispatchService\.dispatch\(' "$@" 2>/dev/null || true)
 
@@ -894,7 +894,7 @@ check_no_hits \
     "${track_d_notice_dispatch_targets[@]}"
 
 check_notice_dispatch_call_blocks \
-    "Track D notice dispatch calls require named compliance" \
+    "Track I notice dispatch calls forbid named compliance" \
     "${track_d_notice_dispatch_targets[@]}"
 
 check_no_hits \
@@ -1013,12 +1013,12 @@ check_no_hits \
     "${track_android_probe_targets[@]}"
 
 check_no_hits \
-    "Track I stale recipient-count compliance production paths" \
+    "Track I stale local notice totals production paths" \
     "$TRACK_I_STALE_NOTICE_COMPLIANCE_PATTERN" \
     "${track_i_stale_notice_compliance_targets[@]}"
 
 check_no_hits \
-    "Track I stale recipient-count public docs" \
+    "Track I stale local notice totals public docs" \
     "$TRACK_I_STALE_NOTICE_COMPLIANCE_PATTERN" \
     "${track_i_public_doc_targets[@]}"
 
@@ -1037,10 +1037,14 @@ check_no_hits \
     "$TRACK_D_VIEWER_PROVIDER_PATTERN" \
     "${track_d_viewer_provider_forbidden_targets[@]}"
 
-check_no_hits \
-    "Track D NoticeComplianceService direct system time" \
-    "$TRACK_D_NOTICE_TIME_PATTERN" \
-    "${track_d_notice_time_targets[@]}"
+if [[ "${#track_d_notice_time_targets[@]}" -gt 0 ]]; then
+    check_no_hits \
+        "Track D NoticeComplianceService direct system time" \
+        "$TRACK_D_NOTICE_TIME_PATTERN" \
+        "${track_d_notice_time_targets[@]}"
+else
+    echo "PASS: Track D NoticeComplianceService direct system time owner deleted"
+fi
 
 check_no_hits \
     "Track D raw report key leakage" \
@@ -1295,7 +1299,7 @@ check_pattern_matches \
 check_pattern_matches \
     "self-test Track I stale notice compliance pattern" \
     "$TRACK_I_STALE_NOTICE_COMPLIANCE_PATTERN" \
-    '--recipient-count Venue Hosts=1; NoticeRecipientEstimate; recipientDeliveryProjected'
+    'NoticeComplianceService; NoticeSubmissionLedgerPort; noticeSubmissionProjectionStatus; noticeLedgerConfigured'
 
 if [[ "$failures" -ne 0 ]]; then
     exit 1
