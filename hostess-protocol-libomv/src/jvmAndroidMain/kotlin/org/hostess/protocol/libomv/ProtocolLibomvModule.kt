@@ -13,7 +13,9 @@ import org.hostess.protocol.libomv.runtime.ProtocolGroupRuntime
 import org.hostess.protocol.libomv.runtime.ProtocolInventoryHttpSource
 import org.hostess.protocol.libomv.runtime.ProtocolInventoryRuntime
 import org.hostess.protocol.libomv.runtime.ProtocolLoginRuntime
+import org.hostess.protocol.libomv.runtime.ProtocolNoticeCircuitSource
 import org.hostess.protocol.libomv.runtime.ProtocolNoticeRuntime
+import org.hostess.protocol.libomv.runtime.NoticeRuntimeSource
 import org.hostess.protocol.libomv.transport.AgentDataUpdateRequestTransport
 import org.hostess.protocol.libomv.transport.EventQueueGetClient
 import org.hostess.protocol.libomv.transport.ProtocolCapabilityCacheProvider
@@ -86,7 +88,18 @@ object ProtocolLibomvModule {
         } else {
             null
         }
-        val noticeRuntime = if (runtimeReady) ProtocolNoticeRuntime(clientSession) else null
+        val noticeRuntime = if (runtimeReady) {
+            ProtocolNoticeRuntime(
+                clientSession = clientSession,
+                noticeSource = if (bundle.transportLoad) {
+                    ProtocolNoticeCircuitSource(bundle.circuitSender)
+                } else {
+                    NoticeRuntimeSource.unavailable()
+                },
+            )
+        } else {
+            null
+        }
         return runtimeFor(
             clientSession = clientSession,
             groupRuntime = groupRuntime,

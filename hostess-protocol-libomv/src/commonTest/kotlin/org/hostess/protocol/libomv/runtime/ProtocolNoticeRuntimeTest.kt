@@ -17,6 +17,7 @@ import org.hostess.core.domain.NoticeDraft
 import org.hostess.core.domain.SessionId
 import org.hostess.core.domain.TargetSelectionResult
 import org.hostess.protocol.libomv.LibomvClientSession
+import org.hostess.protocol.libomv.LibomvSessionIdentity
 import org.hostess.protocol.libomv.mapping.LibomvNoticeMapping
 import org.hostess.protocol.libomv.mapping.LibomvNoticePacket
 import kotlin.test.Test
@@ -40,6 +41,9 @@ class ProtocolNoticeRuntimeTest {
         )
 
         assertEquals(GroupSendState.SENT, status.state)
+        val identity = source.identities.single()
+        assertEquals(AGENT_ID, identity.agentId)
+        assertEquals(SESSION_ID, identity.sessionId)
         val packet = source.packets.single()
         assertEquals(AGENT_ID, packet.agentId)
         assertEquals(SESSION_ID, packet.sessionId)
@@ -258,9 +262,11 @@ class ProtocolNoticeRuntimeTest {
     private class RecordingNoticeRuntimeSource(
         private val result: NoticeRuntimeResult = NoticeRuntimeResult.Sent,
     ) : NoticeRuntimeSource {
+        val identities = mutableListOf<LibomvSessionIdentity>()
         val packets = mutableListOf<LibomvNoticePacket>()
 
-        override fun send(packet: LibomvNoticePacket): NoticeRuntimeResult {
+        override fun send(identity: LibomvSessionIdentity, packet: LibomvNoticePacket): NoticeRuntimeResult {
+            identities += identity
             packets += packet
             return result
         }

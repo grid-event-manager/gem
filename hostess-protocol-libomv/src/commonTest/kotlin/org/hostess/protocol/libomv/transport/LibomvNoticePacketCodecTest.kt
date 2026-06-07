@@ -16,24 +16,24 @@ class LibomvNoticePacketCodecTest {
         )
 
         val encoded = LibomvNoticePacketCodec.improvedInstantMessage(packet, SEQUENCE)
-        val decoded = zeroDecode(encoded)
+        val decoded = LibomvPacketTestBytes.zeroDecode(encoded)
 
         assertEquals(0xC0.toByte(), encoded[0])
         assertTrue(encoded.containsZeroRun())
         assertContentEquals(
-            lowHeader(SEQUENCE) +
-                uuid(AGENT_ID) +
-                uuid(SESSION_ID) +
+            LibomvPacketTestBytes.lowHeader(SEQUENCE) +
+                LibomvPacketTestBytes.uuid(AGENT_ID) +
+                LibomvPacketTestBytes.uuid(SESSION_ID) +
                 byteArrayOf(0) +
-                uuid(TARGET_GROUP_ID) +
+                LibomvPacketTestBytes.uuid(TARGET_GROUP_ID) +
                 u32(PARENT_ESTATE_ID) +
-                uuid(REGION_ID) +
+                LibomvPacketTestBytes.uuid(REGION_ID) +
                 f32(1.0f) +
                 f32(-2.5f) +
                 f32(3.25f) +
                 byteArrayOf(OFFLINE.toByte()) +
                 byteArrayOf(DIALOG.toByte()) +
-                uuid(INSTANT_MESSAGE_ID) +
+                LibomvPacketTestBytes.uuid(INSTANT_MESSAGE_ID) +
                 u32(TIMESTAMP) +
                 variable1("Hostess Viewer") +
                 variable2("Set|Doors open") +
@@ -46,22 +46,24 @@ class LibomvNoticePacketCodecTest {
     fun `encodes empty binary bucket as zero variable length`() {
         val packet = noticePacket(binaryBucket = ByteArray(0))
 
-        val decoded = zeroDecode(LibomvNoticePacketCodec.improvedInstantMessage(packet, SEQUENCE))
+        val decoded = LibomvPacketTestBytes.zeroDecode(
+            LibomvNoticePacketCodec.improvedInstantMessage(packet, SEQUENCE),
+        )
 
         assertContentEquals(
-            lowHeader(SEQUENCE) +
-                uuid(AGENT_ID) +
-                uuid(SESSION_ID) +
+            LibomvPacketTestBytes.lowHeader(SEQUENCE) +
+                LibomvPacketTestBytes.uuid(AGENT_ID) +
+                LibomvPacketTestBytes.uuid(SESSION_ID) +
                 byteArrayOf(0) +
-                uuid(TARGET_GROUP_ID) +
+                LibomvPacketTestBytes.uuid(TARGET_GROUP_ID) +
                 u32(PARENT_ESTATE_ID) +
-                uuid(REGION_ID) +
+                LibomvPacketTestBytes.uuid(REGION_ID) +
                 f32(1.0f) +
                 f32(-2.5f) +
                 f32(3.25f) +
                 byteArrayOf(OFFLINE.toByte()) +
                 byteArrayOf(DIALOG.toByte()) +
-                uuid(INSTANT_MESSAGE_ID) +
+                LibomvPacketTestBytes.uuid(INSTANT_MESSAGE_ID) +
                 u32(TIMESTAMP) +
                 variable1("Hostess Viewer") +
                 variable2("Set|Doors open") +
@@ -125,19 +127,6 @@ class LibomvNoticePacketCodecTest {
         binaryBucket = binaryBucket,
     )
 
-    private fun lowHeader(sequence: Int): ByteArray = byteArrayOf(
-        0xC0.toByte(),
-        ((sequence ushr 24) and 0xFF).toByte(),
-        ((sequence ushr 16) and 0xFF).toByte(),
-        ((sequence ushr 8) and 0xFF).toByte(),
-        (sequence and 0xFF).toByte(),
-        0,
-        0xFF.toByte(),
-        0xFF.toByte(),
-        0,
-        254.toByte(),
-    )
-
     private fun variable1(value: String): ByteArray {
         val bytes = value.encodeToByteArray() + 0.toByte()
         return byteArrayOf(bytes.size.toByte()) + bytes
@@ -151,12 +140,6 @@ class LibomvNoticePacketCodecTest {
             (value.size and 0xFF).toByte(),
             ((value.size ushr 8) and 0xFF).toByte(),
         ) + value
-
-    private fun uuid(value: String): ByteArray =
-        value.replace("-", "")
-            .chunked(2)
-            .map { it.toInt(16).toByte() }
-            .toByteArray()
 
     private fun u32(value: Int): ByteArray = byteArrayOf(
         (value and 0xFF).toByte(),
@@ -173,27 +156,6 @@ class LibomvNoticePacketCodecTest {
             ((bits ushr 16) and 0xFF).toByte(),
             ((bits ushr 24) and 0xFF).toByte(),
         )
-    }
-
-    private fun zeroDecode(encoded: ByteArray): ByteArray {
-        val headerLength = 6 + (encoded[5].toInt() and 0xFF)
-        val decoded = mutableListOf<Byte>()
-        for (index in 0 until headerLength) {
-            decoded += encoded[index]
-        }
-        var index = headerLength
-        while (index < encoded.size) {
-            val value = encoded[index]
-            if (value == 0.toByte()) {
-                val count = encoded[index + 1].toInt() and 0xFF
-                repeat(count) { decoded += 0 }
-                index += 2
-            } else {
-                decoded += value
-                index += 1
-            }
-        }
-        return decoded.toByteArray()
     }
 
     private fun ByteArray.containsZeroRun(): Boolean {

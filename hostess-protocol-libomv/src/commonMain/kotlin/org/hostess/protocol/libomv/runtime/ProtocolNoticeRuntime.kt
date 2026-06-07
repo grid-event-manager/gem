@@ -9,6 +9,7 @@ import org.hostess.core.domain.GroupSendStatus
 import org.hostess.core.domain.HostessSession
 import org.hostess.core.domain.NoticeDraft
 import org.hostess.protocol.libomv.LibomvClientSession
+import org.hostess.protocol.libomv.LibomvSessionIdentity
 import org.hostess.protocol.libomv.LibomvSessionIdentityResult
 import org.hostess.protocol.libomv.mapping.LibomvNoticeMapping
 import org.hostess.protocol.libomv.mapping.LibomvNoticeMappingResult
@@ -39,7 +40,7 @@ class ProtocolNoticeRuntime internal constructor(
             is LibomvNoticeMappingResult.Success -> mapped.packet
         }
 
-        return when (val result = noticeSource.send(packet)) {
+        return when (val result = noticeSource.send(identity, packet)) {
             NoticeRuntimeResult.Sent -> GroupSendStatus(group, GroupSendState.SENT)
             is NoticeRuntimeResult.Failed -> failed(group, redactedProtocolFailure(result.message))
         }
@@ -61,11 +62,11 @@ class ProtocolNoticeRuntime internal constructor(
 }
 
 internal fun interface NoticeRuntimeSource {
-    fun send(packet: LibomvNoticePacket): NoticeRuntimeResult
+    fun send(identity: LibomvSessionIdentity, packet: LibomvNoticePacket): NoticeRuntimeResult
 
     companion object {
         fun unavailable(): NoticeRuntimeSource =
-            NoticeRuntimeSource { NoticeRuntimeResult.Failed("notice runtime unavailable") }
+            NoticeRuntimeSource { _, _ -> NoticeRuntimeResult.Failed("notice runtime unavailable") }
     }
 }
 

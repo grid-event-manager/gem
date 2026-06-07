@@ -1,5 +1,7 @@
 package org.hostess.protocol.libomv.transport
 
+import org.hostess.protocol.libomv.mapping.LibomvNoticePacket
+
 internal data class SimulatorCircuit(
     val agentId: String,
     val sessionId: String,
@@ -26,6 +28,11 @@ internal class ProtocolSimulatorCircuitClient(
                 LibomvPacketCodec.completeAgentMovement(circuit, sequence.next()),
                 LibomvPacketCodec.agentDataUpdateRequest(circuit, sequence.next()),
             )
+        }
+
+    fun sendNotice(circuit: SimulatorCircuit, packet: LibomvNoticePacket): SimulatorCircuitSendResult =
+        send(circuit) {
+            listOf(LibomvNoticePacketCodec.improvedInstantMessage(packet, sequence.next()))
         }
 
     private fun send(

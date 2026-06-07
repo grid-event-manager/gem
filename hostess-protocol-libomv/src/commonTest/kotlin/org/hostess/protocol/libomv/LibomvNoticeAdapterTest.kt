@@ -33,6 +33,7 @@ class LibomvNoticeAdapterTest {
         val status = adapter.sendGroupNotice(session, group(), draft(), null)
 
         assertEquals(GroupSendState.SENT, status.state)
+        assertEquals(AGENT_ID, source.identities.single().agentId)
         assertEquals("Gig tonight|Doors at 8", source.packets.single().message)
     }
 
@@ -83,9 +84,11 @@ class LibomvNoticeAdapterTest {
     )
 
     private class RecordingNoticeRuntimeSource : NoticeRuntimeSource {
+        val identities = mutableListOf<LibomvSessionIdentity>()
         val packets = mutableListOf<LibomvNoticePacket>()
 
-        override fun send(packet: LibomvNoticePacket): NoticeRuntimeResult {
+        override fun send(identity: LibomvSessionIdentity, packet: LibomvNoticePacket): NoticeRuntimeResult {
+            identities += identity
             packets += packet
             return NoticeRuntimeResult.Sent
         }

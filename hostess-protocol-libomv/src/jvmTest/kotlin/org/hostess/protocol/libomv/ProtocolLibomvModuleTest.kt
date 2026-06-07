@@ -136,7 +136,12 @@ class ProtocolLibomvModuleTest {
 
     @Test
     fun `live runtime notice adapter reaches protocol runtime source`() {
-        val runtime = ProtocolLibomvModule.liveRuntime()
+        val packetSender = RecordingSimulatorPacketSender()
+        val runtime = ProtocolLibomvModule.liveRuntime(
+            platformBundle(
+                circuitSender = ProtocolSimulatorCircuitClient(packetSender),
+            ),
+        )
         val session = fakeActiveUuidSession()
         runtime.clientSession.activate(
             session = session,
@@ -150,8 +155,8 @@ class ProtocolLibomvModuleTest {
 
         val status = runtime.noticePort.sendGroupNotice(session, group(), draft(), null)
 
-        assertEquals(GroupSendState.FAILED, status.state)
-        assertEquals("notice runtime unavailable", status.detail)
+        assertEquals(GroupSendState.SENT, status.state)
+        assertEquals(1, packetSender.payloads.size)
     }
 
     @Test
@@ -428,6 +433,14 @@ class ProtocolLibomvModuleTest {
 
     private object NoopSimulatorPacketSender : SimulatorPacketSender {
         override fun send(endpoint: SimulatorEndpoint, payloads: List<ByteArray>) = Unit
+    }
+
+    private class RecordingSimulatorPacketSender : SimulatorPacketSender {
+        var payloads: List<ByteArray> = emptyList()
+
+        override fun send(endpoint: SimulatorEndpoint, payloads: List<ByteArray>) {
+            this.payloads = payloads
+        }
     }
 
     private companion object {

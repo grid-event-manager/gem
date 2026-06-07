@@ -27,19 +27,23 @@ class ProtocolSimulatorCircuitClientTest {
             payload = payloads[0],
             sequence = 1,
             packetId = 3,
-            body = u32(CIRCUIT_CODE) + uuid(SESSION_ID) + uuid(AGENT_ID),
+            body = u32(CIRCUIT_CODE) +
+                LibomvPacketTestBytes.uuid(SESSION_ID) +
+                LibomvPacketTestBytes.uuid(AGENT_ID),
         )
         assertLowPacket(
             payload = payloads[1],
             sequence = 2,
             packetId = 249,
-            body = uuid(AGENT_ID) + uuid(SESSION_ID) + u32(CIRCUIT_CODE),
+            body = LibomvPacketTestBytes.uuid(AGENT_ID) +
+                LibomvPacketTestBytes.uuid(SESSION_ID) +
+                u32(CIRCUIT_CODE),
         )
         assertLowPacket(
             payload = payloads[2],
             sequence = 3,
             packetId = 386,
-            body = uuid(AGENT_ID) + uuid(SESSION_ID),
+            body = LibomvPacketTestBytes.uuid(AGENT_ID) + LibomvPacketTestBytes.uuid(SESSION_ID),
         )
     }
 
@@ -94,17 +98,10 @@ class ProtocolSimulatorCircuitClientTest {
         packetId: Int,
         body: ByteArray,
     ) {
-        val header = byteArrayOf(
-            0x00,
-            ((sequence ushr 24) and 0xFF).toByte(),
-            ((sequence ushr 16) and 0xFF).toByte(),
-            ((sequence ushr 8) and 0xFF).toByte(),
-            (sequence and 0xFF).toByte(),
-            0x00,
-            0xFF.toByte(),
-            0xFF.toByte(),
-            ((packetId ushr 8) and 0xFF).toByte(),
-            (packetId and 0xFF).toByte(),
+        val header = LibomvPacketTestBytes.lowHeader(
+            sequence = sequence,
+            packetId = packetId,
+            flags = 0,
         )
         assertContentEquals(header + body, payload)
     }
@@ -115,12 +112,6 @@ class ProtocolSimulatorCircuitClientTest {
         ((value ushr 16) and 0xFF).toByte(),
         ((value ushr 24) and 0xFF).toByte(),
     )
-
-    private fun uuid(value: String): ByteArray =
-        value.replace("-", "")
-            .chunked(2)
-            .map { it.toInt(16).toByte() }
-            .toByteArray()
 
     private fun circuit(
         agentId: String = AGENT_ID,
