@@ -40,7 +40,7 @@ internal object LibomvInventoryItemMapping {
             assetId = InventoryAssetId(snapshot.assetId),
             displayName = InventoryItemDisplayName(snapshot.name),
             kind = kind,
-            copyable = null,
+            copyable = LibomvInventoryPermissionMapping.copyable(snapshot.permissions),
         )
     }
 
