@@ -40,6 +40,9 @@ import org.hostess.core.ports.RedactionPort
 import org.hostess.core.ports.SessionLoginResult
 import org.hostess.core.ports.SessionLogoutResult
 import org.hostess.core.ports.SessionPort
+import org.hostess.core.ports.SimulatorPresenceProof
+import org.hostess.core.ports.SimulatorPresenceProofResult
+import org.hostess.core.ports.SimulatorPresenceProofStatus
 import org.hostess.core.services.AttachmentService
 import org.hostess.core.services.GroupDirectoryService
 import org.hostess.core.services.InventoryDirectoryService
@@ -391,6 +394,17 @@ class LiveNoticeSendProofRunnerTest {
             currentGroupsCalls += 1
             return result
         }
+
+        override fun simulatorPresence(session: HostessSession): SimulatorPresenceProofResult =
+            SimulatorPresenceProofResult.Success(
+                SimulatorPresenceProof(
+                    simulatorPresenceStatus = SimulatorPresenceProofStatus.PASSED,
+                    regionHandshakeStatus = SimulatorPresenceProofStatus.PASSED,
+                    regionHandshakeReplyStatus = SimulatorPresenceProofStatus.PASSED,
+                    agentMovementStatus = SimulatorPresenceProofStatus.PASSED,
+                    agentUpdateStatus = SimulatorPresenceProofStatus.PASSED,
+                ),
+            )
     }
 
     private class RecordingNoticePort(

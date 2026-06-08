@@ -48,29 +48,43 @@ internal class ProtocolSimulatorCircuitClient(
         val endpoint = SimulatorEndpoint(circuit.simulatorIp, circuit.simulatorPort)
 
         return try {
-            packetExchange.send(endpoint, listOf(LibomvPacketCodec.useCircuitCode(circuit, sequence.next())))
-            val handshake = waitForPacket(
-                endpoint = endpoint,
-                receiveTimeoutMillis = HANDSHAKE_RECEIVE_TIMEOUT_MILLIS,
-                maxAttempts = HANDSHAKE_RECEIVE_ATTEMPTS,
-                wantedType = SimulatorPacketType.REGION_HANDSHAKE,
-            ) ?: return SimulatorPresenceResult.Failed(
-                status = SimulatorPresenceStatus.HANDSHAKE_TIMEOUT,
-                redactedMessage = REDACTED_SEND_FAILURE,
-            )
-            packetExchange.send(endpoint, listOf(LibomvPacketCodec.regionHandshakeReply(circuit, sequence.next())))
-            packetExchange.send(endpoint, listOf(LibomvPacketCodec.completeAgentMovement(circuit, sequence.next())))
-            val movement = waitForPacket(
-                endpoint = endpoint,
-                receiveTimeoutMillis = MOVEMENT_RECEIVE_TIMEOUT_MILLIS,
-                maxAttempts = MOVEMENT_RECEIVE_ATTEMPTS,
-                wantedType = SimulatorPacketType.AGENT_MOVEMENT_COMPLETE,
-                pingReplies = handshake.pingReplies,
-            ) ?: return SimulatorPresenceResult.Failed(
-                status = SimulatorPresenceStatus.MOVEMENT_TIMEOUT,
-                redactedMessage = REDACTED_SEND_FAILURE,
-            )
-            packetExchange.send(endpoint, listOf(LibomvPacketCodec.agentUpdate(circuit, sequence.next())))
+            sendPresencePacket(endpoint, SimulatorPresenceStatus.USE_CIRCUIT_CODE_FAILED) {
+                LibomvPacketCodec.useCircuitCode(circuit, sequence.next())
+            }?.let { return it }
+            val handshake = when (
+                val result = waitForPacket(
+                    endpoint = endpoint,
+                    receiveTimeoutMillis = HANDSHAKE_RECEIVE_TIMEOUT_MILLIS,
+                    maxAttempts = HANDSHAKE_RECEIVE_ATTEMPTS,
+                    wantedType = SimulatorPacketType.REGION_HANDSHAKE,
+                    timeoutStatus = SimulatorPresenceStatus.HANDSHAKE_TIMEOUT,
+                )
+            ) {
+                is WaitForPacketResult.Failed -> return result.toPresenceFailure()
+                is WaitForPacketResult.Found -> result
+            }
+            sendPresencePacket(endpoint, SimulatorPresenceStatus.HANDSHAKE_REPLY_FAILED) {
+                LibomvPacketCodec.regionHandshakeReply(circuit, sequence.next())
+            }?.let { return it }
+            sendPresencePacket(endpoint, SimulatorPresenceStatus.COMPLETE_AGENT_MOVEMENT_FAILED) {
+                LibomvPacketCodec.completeAgentMovement(circuit, sequence.next())
+            }?.let { return it }
+            val movement = when (
+                val result = waitForPacket(
+                    endpoint = endpoint,
+                    receiveTimeoutMillis = MOVEMENT_RECEIVE_TIMEOUT_MILLIS,
+                    maxAttempts = MOVEMENT_RECEIVE_ATTEMPTS,
+                    wantedType = SimulatorPacketType.AGENT_MOVEMENT_COMPLETE,
+                    timeoutStatus = SimulatorPresenceStatus.MOVEMENT_TIMEOUT,
+                    pingReplies = handshake.pingReplies,
+                )
+            ) {
+                is WaitForPacketResult.Failed -> return result.toPresenceFailure()
+                is WaitForPacketResult.Found -> result
+            }
+            sendPresencePacket(endpoint, SimulatorPresenceStatus.AGENT_UPDATE_FAILED) {
+                LibomvPacketCodec.agentUpdate(circuit, sequence.next())
+            }?.let { return it }
             presentCircuit = circuitKey
             SimulatorPresenceResult.Present(pingReplies = movement.pingReplies, cached = false)
         } catch (ex: IllegalArgumentException) {
@@ -85,6 +99,21 @@ internal class ProtocolSimulatorCircuitClient(
             )
         }
     }
+
+    private fun sendPresencePacket(
+        endpoint: SimulatorEndpoint,
+        failureStatus: SimulatorPresenceStatus,
+        payload: () -> ByteArray,
+    ): SimulatorPresenceResult.Failed? =
+        try {
+            packetExchange.send(endpoint, listOf(payload()))
+            null
+        } catch (ex: Exception) {
+            SimulatorPresenceResult.Failed(failureStatus, REDACTED_SEND_FAILURE)
+        }
+
+    private fun WaitForPacketResult.Failed.toPresenceFailure(): SimulatorPresenceResult.Failed =
+        SimulatorPresenceResult.Failed(status, REDACTED_SEND_FAILURE)
 
     private fun sendAfterPresence(
         circuit: SimulatorCircuit,
@@ -109,21 +138,27 @@ internal class ProtocolSimulatorCircuitClient(
         receiveTimeoutMillis: Int,
         maxAttempts: Int,
         wantedType: SimulatorPacketType,
+        timeoutStatus: SimulatorPresenceStatus,
         pingReplies: Int = 0,
-    ): WaitForPacketResult? {
+    ): WaitForPacketResult {
         var replies = pingReplies
         repeat(maxAttempts) {
             val inbound = packetExchange.receive(endpoint, receiveTimeoutMillis) ?: return@repeat
             when (LibomvPacketCodec.packetType(inbound.payload)) {
                 SimulatorPacketType.START_PING_CHECK -> {
-                    val pingId = LibomvPacketCodec.startPingId(inbound.payload) ?: return null
-                    packetExchange.send(
-                        endpoint,
-                        listOf(LibomvPacketCodec.completePingCheck(pingId, sequence.next())),
-                    )
+                    val pingId = LibomvPacketCodec.startPingId(inbound.payload)
+                        ?: return WaitForPacketResult.Failed(SimulatorPresenceStatus.PING_REPLY_FAILED)
+                    try {
+                        packetExchange.send(
+                            endpoint,
+                            listOf(LibomvPacketCodec.completePingCheck(pingId, sequence.next())),
+                        )
+                    } catch (ex: Exception) {
+                        return WaitForPacketResult.Failed(SimulatorPresenceStatus.PING_REPLY_FAILED)
+                    }
                     replies += 1
                 }
-                wantedType -> return WaitForPacketResult(replies)
+                wantedType -> return WaitForPacketResult.Found(replies)
                 SimulatorPacketType.UNKNOWN,
                 SimulatorPacketType.GROUP_NOTICES_LIST_REPLY,
                 SimulatorPacketType.GROUP_NOTICE_REQUESTED,
@@ -132,12 +167,13 @@ internal class ProtocolSimulatorCircuitClient(
                 else -> Unit
             }
         }
-        return null
+        return WaitForPacketResult.Failed(timeoutStatus)
     }
 
-    private data class WaitForPacketResult(
-        val pingReplies: Int,
-    )
+    private sealed interface WaitForPacketResult {
+        data class Found(val pingReplies: Int) : WaitForPacketResult
+        data class Failed(val status: SimulatorPresenceStatus) : WaitForPacketResult
+    }
 
     private data class SimulatorCircuitKey(
         val agentId: String,

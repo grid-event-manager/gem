@@ -4,6 +4,9 @@ import org.hostess.core.domain.CoreFailure
 import org.hostess.core.domain.CoreFailureReason
 import org.hostess.core.domain.HostessSession
 import org.hostess.core.ports.GroupListResult
+import org.hostess.core.ports.SimulatorPresenceProof
+import org.hostess.core.ports.SimulatorPresenceProofResult
+import org.hostess.core.ports.SimulatorPresenceProofStatus
 import org.hostess.protocol.libomv.LibomvClientSession
 import org.hostess.protocol.libomv.LibomvGroupSnapshot
 import org.hostess.protocol.libomv.LibomvSessionIdentity
@@ -14,6 +17,7 @@ import org.hostess.protocol.libomv.mapping.LibomvGroupMappingResult
 class ProtocolGroupRuntime internal constructor(
     private val clientSession: LibomvClientSession,
     private val currentGroupsSource: CurrentGroupsSource = CurrentGroupsSource.unavailable(),
+    private val simulatorPresenceSource: SimulatorPresenceSource = SimulatorPresenceSource.unavailable(),
 ) {
     fun currentGroups(session: HostessSession): GroupListResult {
         val identity = when (val result = clientSession.requireIdentity(session)) {
@@ -29,6 +33,20 @@ class ProtocolGroupRuntime internal constructor(
         }
     }
 
+    fun simulatorPresence(session: HostessSession): SimulatorPresenceProofResult {
+        val identity = when (val result = clientSession.requireIdentity(session)) {
+            is LibomvSessionIdentityResult.Failure -> {
+                val message = result.failure.redactedMessage ?: "simulator presence blocked"
+                return SimulatorPresenceProofResult.Failure(
+                    proof = blockedPresenceProof(message),
+                    failure = result.failure.copy(reason = CoreFailureReason.GROUP_LIST_FAILED),
+                )
+            }
+            is LibomvSessionIdentityResult.Success -> result.identity
+        }
+        return simulatorPresenceSource.simulatorPresence(identity)
+    }
+
     private fun mapCurrentGroups(result: CurrentGroupsFetchResult.Success): GroupListResult =
         when (val mapped = LibomvGroupMapping.currentGroups(result.groups)) {
             LibomvGroupMappingResult.Failure -> groupFailure("current groups invalid")
@@ -37,6 +55,36 @@ class ProtocolGroupRuntime internal constructor(
 
     private fun groupFailure(message: String): GroupListResult.Failure =
         GroupListResult.Failure(CoreFailure(CoreFailureReason.GROUP_LIST_FAILED, redactedMessage = message))
+
+    private fun blockedPresenceProof(message: String): SimulatorPresenceProof = SimulatorPresenceProof(
+        simulatorPresenceStatus = SimulatorPresenceProofStatus.BLOCKED,
+        regionHandshakeStatus = SimulatorPresenceProofStatus.NOT_RUN,
+        regionHandshakeReplyStatus = SimulatorPresenceProofStatus.NOT_RUN,
+        agentMovementStatus = SimulatorPresenceProofStatus.NOT_RUN,
+        agentUpdateStatus = SimulatorPresenceProofStatus.NOT_RUN,
+        redactedMessage = message,
+    )
+}
+
+internal fun interface SimulatorPresenceSource {
+    fun simulatorPresence(identity: LibomvSessionIdentity): SimulatorPresenceProofResult
+
+    companion object {
+        fun unavailable(): SimulatorPresenceSource = SimulatorPresenceSource {
+            val message = "simulator presence runtime unavailable"
+            SimulatorPresenceProofResult.Failure(
+                proof = SimulatorPresenceProof(
+                    simulatorPresenceStatus = SimulatorPresenceProofStatus.RUNTIME_GAP,
+                    regionHandshakeStatus = SimulatorPresenceProofStatus.NOT_RUN,
+                    regionHandshakeReplyStatus = SimulatorPresenceProofStatus.NOT_RUN,
+                    agentMovementStatus = SimulatorPresenceProofStatus.NOT_RUN,
+                    agentUpdateStatus = SimulatorPresenceProofStatus.NOT_RUN,
+                    redactedMessage = message,
+                ),
+                failure = CoreFailure(CoreFailureReason.GROUP_LIST_FAILED, redactedMessage = message),
+            )
+        }
+    }
 }
 
 internal fun interface CurrentGroupsSource {

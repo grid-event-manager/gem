@@ -35,6 +35,9 @@ import org.hostess.core.ports.RedactionPort
 import org.hostess.core.ports.SessionLoginResult
 import org.hostess.core.ports.SessionLogoutResult
 import org.hostess.core.ports.SessionPort
+import org.hostess.core.ports.SimulatorPresenceProof
+import org.hostess.core.ports.SimulatorPresenceProofResult
+import org.hostess.core.ports.SimulatorPresenceProofStatus
 
 class FakeSessionPort(
     var loginResult: SessionLoginResult = SessionLoginResult.Success(defaultSession()),
@@ -56,12 +59,19 @@ class FakeSessionPort(
 
 class FakeGroupPort(
     var result: GroupListResult = GroupListResult.Success(emptyList()),
+    var presenceResult: SimulatorPresenceProofResult = SimulatorPresenceProofResult.Success(defaultPresenceProof()),
 ) : GroupPort {
     val sessions = mutableListOf<HostessSession>()
+    val presenceSessions = mutableListOf<HostessSession>()
 
     override fun currentGroups(session: HostessSession): GroupListResult {
         sessions += session
         return result
+    }
+
+    override fun simulatorPresence(session: HostessSession): SimulatorPresenceProofResult {
+        presenceSessions += session
+        return presenceResult
     }
 }
 
@@ -144,6 +154,14 @@ fun defaultSession(): HostessSession = HostessSession(
     accountLabel = AccountLabel("proof-account"),
     startedAt = HostessInstant.EPOCH,
     isActive = true,
+)
+
+fun defaultPresenceProof(): SimulatorPresenceProof = SimulatorPresenceProof(
+    simulatorPresenceStatus = SimulatorPresenceProofStatus.PASSED,
+    regionHandshakeStatus = SimulatorPresenceProofStatus.PASSED,
+    regionHandshakeReplyStatus = SimulatorPresenceProofStatus.PASSED,
+    agentMovementStatus = SimulatorPresenceProofStatus.PASSED,
+    agentUpdateStatus = SimulatorPresenceProofStatus.PASSED,
 )
 
 fun defaultAttachment(): AttachmentRef = AttachmentRef(

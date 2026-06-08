@@ -12,6 +12,8 @@ import org.hostess.core.ports.InventoryItemListResult
 import org.hostess.core.ports.LoginRequest
 import org.hostess.core.ports.SessionLoginResult
 import org.hostess.core.ports.SessionLogoutResult
+import org.hostess.core.ports.SimulatorPresenceProof
+import org.hostess.core.ports.SimulatorPresenceProofResult
 import org.hostess.tools.cli.CliOutput
 import org.hostess.tools.cli.CommandMode
 import org.hostess.tools.cli.CommandResult
@@ -31,11 +33,28 @@ internal class LiveProofRunner(
     private var terminalFailure = false
 
     fun run(): CommandResult = when (inputs.proofScope) {
+        LiveProofScope.SIMULATOR_PRESENCE -> runSimulatorPresenceProof()
         LiveProofScope.READ_GROUPS -> runReadGroupsProof()
         LiveProofScope.LOGIN_ONLY -> runLoginOnlyProof()
         LiveProofScope.INVENTORY_CATALOGUE -> runInventoryCatalogueProof()
         LiveProofScope.FULL -> LiveNoticeSendProofRunner(runtime, inputs, reportPath, output, commandName).run()
         LiveProofScope.UNSUPPORTED -> finish(ProofReportStatus.BLOCKED, "proof scope unsupported")
+    }
+
+    private fun runSimulatorPresenceProof(): CommandResult {
+        val session = login(planCurrentGroupsOnFailure = false)
+            ?: run {
+                markSimulatorPresenceProofStepsNotRun("login blocked", includeLogout = true)
+                return finish(ProofReportStatus.BLOCKED, "login blocked")
+            }
+        val presence = simulatorPresence(session)
+        markReadOnlyPresenceProofStepsNotRun("simulator-presence scope")
+        runLogout(session)
+        return if (presence == null) {
+            finish(terminalStatus(), "simulator presence unavailable")
+        } else {
+            finish(terminalStatus(), "live proof ${terminalStatus().wireValue}")
+        }
     }
 
     private fun runReadGroupsProof(): CommandResult {
@@ -49,6 +68,23 @@ internal class LiveProofRunner(
             finish(terminalStatus(), "live proof ${terminalStatus().wireValue}")
         }
     }
+
+    private fun simulatorPresence(session: HostessSession): SimulatorPresenceProof? =
+        when (val result = runtime.groupDirectoryService.simulatorPresence(session)) {
+            is SimulatorPresenceProofResult.Success -> {
+                applySimulatorPresenceFields(result.proof)
+                steps += LiveProofStep.passed("simulator-presence", simulatorPresenceDetail(result.proof))
+                result.proof
+            }
+            is SimulatorPresenceProofResult.Failure -> {
+                applySimulatorPresenceFields(result.proof)
+                val detail = result.proof.redactedMessage
+                    ?: result.failure.redactedMessage
+                    ?: result.failure.reason.name.lowercase()
+                steps += LiveProofStep("simulator-presence", result.proof.simulatorPresenceStatus.reportValue, detail)
+                null
+            }
+        }
 
     private fun runLoginOnlyProof(): CommandResult {
         val session = login(planCurrentGroupsOnFailure = false)
@@ -174,12 +210,42 @@ internal class LiveProofRunner(
         ).filterNotNull().forEach { step -> steps += LiveProofStep(step, "not_run", detail) }
     }
 
+    private fun markReadOnlyPresenceProofStepsNotRun(detail: String) {
+        listOf(
+            "current-groups",
+            "select-targets",
+            "inventory-catalogue",
+            "select-attachment",
+            "resolve-attachment",
+            "group-notice",
+            "cleanup",
+        ).forEach { step -> steps += LiveProofStep(step, "not_run", detail) }
+    }
+
     private fun markLoginOnlyProofStepsNotRun(
         detail: String,
         includeLogout: Boolean,
     ) {
         listOf(
             "logout".takeIf { includeLogout },
+            "simulator-presence",
+            "current-groups",
+            "select-targets",
+            "inventory-catalogue",
+            "select-attachment",
+            "resolve-attachment",
+            "group-notice",
+            "cleanup",
+        ).filterNotNull().forEach { step -> steps += LiveProofStep(step, "not_run", detail) }
+    }
+
+    private fun markSimulatorPresenceProofStepsNotRun(
+        detail: String,
+        includeLogout: Boolean,
+    ) {
+        listOf(
+            "logout".takeIf { includeLogout },
+            "simulator-presence",
             "current-groups",
             "select-targets",
             "inventory-catalogue",
@@ -196,6 +262,7 @@ internal class LiveProofRunner(
     ) {
         listOf(
             "logout".takeIf { includeLogout },
+            "simulator-presence",
             "inventory-catalogue",
             "select-targets",
             "select-attachment",
@@ -204,6 +271,17 @@ internal class LiveProofRunner(
             "cleanup",
         ).filterNotNull().forEach { step -> steps += LiveProofStep(step, "not_run", detail) }
     }
+
+    private fun applySimulatorPresenceFields(proof: SimulatorPresenceProof) {
+        statusFields["simulatorPresenceStatus"] = proof.simulatorPresenceStatus.reportValue
+        statusFields["regionHandshakeStatus"] = proof.regionHandshakeStatus.reportValue
+        statusFields["regionHandshakeReplyStatus"] = proof.regionHandshakeReplyStatus.reportValue
+        statusFields["agentMovementStatus"] = proof.agentMovementStatus.reportValue
+        statusFields["agentUpdateStatus"] = proof.agentUpdateStatus.reportValue
+    }
+
+    private fun simulatorPresenceDetail(proof: SimulatorPresenceProof): String =
+        "pingReplies=${proof.pingReplies}"
 
     private fun runLogout(session: HostessSession) {
         when (val result = runtime.sessionService.logout(session)) {

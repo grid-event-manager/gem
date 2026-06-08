@@ -15,7 +15,9 @@ import org.hostess.protocol.libomv.runtime.ProtocolInventoryRuntime
 import org.hostess.protocol.libomv.runtime.ProtocolLoginRuntime
 import org.hostess.protocol.libomv.runtime.ProtocolNoticeCircuitSource
 import org.hostess.protocol.libomv.runtime.ProtocolNoticeRuntime
+import org.hostess.protocol.libomv.runtime.ProtocolSimulatorPresenceSource
 import org.hostess.protocol.libomv.runtime.NoticeRuntimeSource
+import org.hostess.protocol.libomv.runtime.SimulatorPresenceSource
 import org.hostess.protocol.libomv.transport.AgentDataUpdateRequestTransport
 import org.hostess.protocol.libomv.transport.EventQueueGetClient
 import org.hostess.protocol.libomv.transport.ProtocolCapabilityCacheProvider
@@ -61,7 +63,20 @@ object ProtocolLibomvModule {
         } else {
             CurrentGroupsSource.unavailable()
         }
-        val groupRuntime = if (runtimeReady) ProtocolGroupRuntime(clientSession, currentGroupsSource) else null
+        val simulatorPresenceSource = if (bundle.transportLoad) {
+            ProtocolSimulatorPresenceSource(bundle.circuitSender)
+        } else {
+            SimulatorPresenceSource.unavailable()
+        }
+        val groupRuntime = if (runtimeReady) {
+            ProtocolGroupRuntime(
+                clientSession = clientSession,
+                currentGroupsSource = currentGroupsSource,
+                simulatorPresenceSource = simulatorPresenceSource,
+            )
+        } else {
+            null
+        }
         val inventoryRuntime = if (runtimeReady) {
             ProtocolInventoryRuntime(
                 clientSession = clientSession,

@@ -42,9 +42,12 @@ internal sealed interface SimulatorPresenceResult {
 internal enum class SimulatorPresenceStatus {
     CIRCUIT_INVALID,
     SEND_FAILED,
+    USE_CIRCUIT_CODE_FAILED,
     HANDSHAKE_TIMEOUT,
     HANDSHAKE_MALFORMED,
     PING_REPLY_FAILED,
+    HANDSHAKE_REPLY_FAILED,
+    COMPLETE_AGENT_MOVEMENT_FAILED,
     MOVEMENT_TIMEOUT,
     AGENT_UPDATE_FAILED,
 }

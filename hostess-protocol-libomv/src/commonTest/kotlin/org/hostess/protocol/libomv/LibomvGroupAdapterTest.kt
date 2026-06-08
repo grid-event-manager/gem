@@ -6,6 +6,9 @@ import org.hostess.core.domain.CoreFailureReason
 import org.hostess.core.domain.HostessSession
 import org.hostess.core.domain.SessionId
 import org.hostess.core.ports.GroupListResult
+import org.hostess.core.ports.SimulatorPresenceProof
+import org.hostess.core.ports.SimulatorPresenceProofResult
+import org.hostess.core.ports.SimulatorPresenceProofStatus
 import org.hostess.protocol.libomv.runtime.CurrentGroupsFetchResult
 import org.hostess.protocol.libomv.runtime.CurrentGroupsSource
 import org.hostess.protocol.libomv.runtime.ProtocolGroupRuntime
@@ -53,6 +56,35 @@ class LibomvGroupAdapterTest {
         assertEquals("protocol runtime unavailable", failure.redactedMessage)
     }
 
+    @Test
+    fun `simulator presence routes through protocol runtime`() {
+        val session = hostessSession()
+        val clientSession = activeClientSession(session)
+        val adapter = LibomvGroupAdapter(
+            clientSession = clientSession,
+            groupRuntime = ProtocolGroupRuntime(
+                clientSession = clientSession,
+                simulatorPresenceSource = { SimulatorPresenceProofResult.Success(presenceProof()) },
+            ),
+        )
+
+        val proof = assertIs<SimulatorPresenceProofResult.Success>(adapter.simulatorPresence(session)).proof
+
+        assertEquals(SimulatorPresenceProofStatus.PASSED, proof.simulatorPresenceStatus)
+        assertEquals(SimulatorPresenceProofStatus.PASSED, proof.regionHandshakeStatus)
+    }
+
+    @Test
+    fun `simulator presence fallback still fails closed without runtime`() {
+        val session = hostessSession()
+        val adapter = LibomvGroupAdapter(clientSession = LibomvClientSession.active(session))
+
+        val failure = assertIs<SimulatorPresenceProofResult.Failure>(adapter.simulatorPresence(session))
+
+        assertEquals(SimulatorPresenceProofStatus.RUNTIME_GAP, failure.proof.simulatorPresenceStatus)
+        assertEquals(CoreFailureReason.GROUP_LIST_FAILED, failure.failure.reason)
+    }
+
     private fun hostessSession(): HostessSession = HostessSession(
         sessionId = SessionId("live-session"),
         accountLabel = AccountLabel("venue-proof"),
@@ -68,5 +100,13 @@ class LibomvGroupAdapterTest {
         simulatorPort = 13000,
         regionHandle = 123456789L,
         circuitCode = 0x01020304L,
+    )
+
+    private fun presenceProof(): SimulatorPresenceProof = SimulatorPresenceProof(
+        simulatorPresenceStatus = SimulatorPresenceProofStatus.PASSED,
+        regionHandshakeStatus = SimulatorPresenceProofStatus.PASSED,
+        regionHandshakeReplyStatus = SimulatorPresenceProofStatus.PASSED,
+        agentMovementStatus = SimulatorPresenceProofStatus.PASSED,
+        agentUpdateStatus = SimulatorPresenceProofStatus.PASSED,
     )
 }

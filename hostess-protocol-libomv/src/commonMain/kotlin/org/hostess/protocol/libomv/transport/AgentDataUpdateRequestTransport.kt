@@ -10,16 +10,7 @@ internal class AgentDataUpdateRequestTransport(
     private val circuitClient: ProtocolSimulatorCircuitClient,
 ) : AgentDataUpdateRequester {
     override fun send(identity: LibomvSessionIdentity): AgentDataUpdateRequestResult {
-        val circuit = SimulatorCircuit(
-            agentId = identity.agentId,
-            sessionId = identity.sessionId,
-            seedCapability = identity.seedCapability,
-            simulatorIp = identity.simulatorIp,
-            simulatorPort = identity.simulatorPort,
-            regionHandle = identity.regionHandle,
-            circuitCode = identity.circuitCode,
-        )
-        return when (val result = circuitClient.sendCurrentGroupsRequest(circuit)) {
+        return when (val result = circuitClient.sendCurrentGroupsRequest(identity.toSimulatorCircuit())) {
             SimulatorCircuitSendResult.Sent -> AgentDataUpdateRequestResult.Sent
             is SimulatorCircuitSendResult.Failed -> AgentDataUpdateRequestResult.Failed(result.redactedMessage)
         }

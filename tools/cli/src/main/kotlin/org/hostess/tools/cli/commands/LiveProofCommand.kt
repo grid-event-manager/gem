@@ -81,7 +81,11 @@ class LiveProofCommand(
 
     private fun bootstrapBlockedStatusFields(inputs: LiveProofInputs): Map<String, String> =
         when (inputs.proofScope) {
-            LiveProofScope.READ_GROUPS, LiveProofScope.LOGIN_ONLY, LiveProofScope.INVENTORY_CATALOGUE ->
+            LiveProofScope.SIMULATOR_PRESENCE,
+            LiveProofScope.READ_GROUPS,
+            LiveProofScope.LOGIN_ONLY,
+            LiveProofScope.INVENTORY_CATALOGUE,
+            ->
                 LiveProofStep.statusFields().toMutableMap().also {
                     it["credentialStatus"] = "blocked"
                     it["loginStatus"] = "runtime_gap"
@@ -94,6 +98,11 @@ class LiveProofCommand(
 
     private fun usage(output: CliOutput, scope: LiveProofScope) {
         when (scope) {
+            LiveProofScope.SIMULATOR_PRESENCE -> output.line(
+                "usage: live-proof --mode live --proof-scope simulator-presence --report <path> " +
+                    "--grid <name> --account <label> --credential-env <name> --proof-account-attested " +
+                    "--scripted-agent-attested --operator <label> --proof-account-label <label>",
+            )
             LiveProofScope.READ_GROUPS -> output.line(
                 "usage: live-proof --mode live --proof-scope read-groups --report <path> " +
                     "--grid <name> --account <label> --credential-env <name> --proof-account-attested " +

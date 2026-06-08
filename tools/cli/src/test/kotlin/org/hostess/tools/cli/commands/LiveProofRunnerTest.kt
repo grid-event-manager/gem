@@ -40,6 +40,9 @@ import org.hostess.core.ports.RedactionPort
 import org.hostess.core.ports.SessionLoginResult
 import org.hostess.core.ports.SessionLogoutResult
 import org.hostess.core.ports.SessionPort
+import org.hostess.core.ports.SimulatorPresenceProof
+import org.hostess.core.ports.SimulatorPresenceProofResult
+import org.hostess.core.ports.SimulatorPresenceProofStatus
 import org.hostess.core.services.AttachmentService
 import org.hostess.core.services.GroupDirectoryService
 import org.hostess.core.services.InventoryDirectoryService
@@ -55,6 +58,92 @@ import org.hostess.tools.cli.composition.CliRuntime
 import org.hostess.tools.cli.report.ProofReportWriter
 
 class LiveProofRunnerTest {
+    @Test
+    fun `simulator presence scope logs in proves presence and logs out without send services`() {
+        withReport { reportPath ->
+            val ports = Ports()
+
+            val exit = runner(
+                ports.runtime(),
+                reportPath,
+                inputs(
+                    proofScope = LiveProofScope.SIMULATOR_PRESENCE,
+                    targets = emptyList(),
+                    subject = null,
+                    body = null,
+                    authorisedLiveSend = false,
+                ),
+            ).run()
+
+            val report = reportPath.readText()
+            assertEquals(CommandResult.SUCCESS, exit)
+            assertContains(report, "\"status\": \"passed\"")
+            assertContains(report, "\"proofScope\": \"simulator-presence\"")
+            assertContains(report, "\"simulatorPresenceStatus\": \"passed\"")
+            assertContains(report, "\"regionHandshakeStatus\": \"passed\"")
+            assertContains(report, "\"regionHandshakeReplyStatus\": \"passed\"")
+            assertContains(report, "\"agentMovementStatus\": \"passed\"")
+            assertContains(report, "\"agentUpdateStatus\": \"passed\"")
+            assertContains(report, "\"detail\": \"pingReplies=0\"")
+            assertContains(report, "\"currentGroupsStatus\": \"not_run\"")
+            assertContains(report, "\"noticeSendStatus\": \"not_run\"")
+            assertEquals(1, ports.sessionPort.loginCalls)
+            assertEquals(1, ports.sessionPort.logoutCalls)
+            assertEquals(1, ports.groupPort.simulatorPresenceCalls)
+            assertEquals(0, ports.groupPort.currentGroupsCalls)
+            assertEquals(0, ports.inventoryPort.calls)
+            assertEquals(0, ports.noticePort.groups.size)
+            assertFalse(RAW_UUID.containsMatchIn(report))
+        }
+    }
+
+    @Test
+    fun `simulator presence scope logs out after proof gap and stays read only`() {
+        withReport { reportPath ->
+            val ports = Ports(
+                groupPort = RecordingGroupPort(
+                    presenceResult = SimulatorPresenceProofResult.Failure(
+                        proof = presenceProof().copy(
+                            simulatorPresenceStatus = SimulatorPresenceProofStatus.PROOF_GAP,
+                            agentMovementStatus = SimulatorPresenceProofStatus.PROOF_GAP,
+                            agentUpdateStatus = SimulatorPresenceProofStatus.NOT_RUN,
+                            redactedMessage = "simulator presence proof_gap",
+                        ),
+                        failure = CoreFailure(
+                            CoreFailureReason.GROUP_LIST_FAILED,
+                            "simulator presence proof_gap",
+                        ),
+                    ),
+                ),
+            )
+
+            val exit = runner(
+                ports.runtime(),
+                reportPath,
+                inputs(
+                    proofScope = LiveProofScope.SIMULATOR_PRESENCE,
+                    targets = emptyList(),
+                    subject = null,
+                    body = null,
+                    authorisedLiveSend = false,
+                ),
+            ).run()
+
+            val report = reportPath.readText()
+            assertEquals(CommandResult.UNAVAILABLE, exit)
+            assertContains(report, "\"status\": \"proof_gap\"")
+            assertContains(report, "\"simulatorPresenceStatus\": \"proof_gap\"")
+            assertContains(report, "\"agentMovementStatus\": \"proof_gap\"")
+            assertContains(report, "\"agentUpdateStatus\": \"not_run\"")
+            assertContains(report, "simulator presence proof_gap")
+            assertContains(report, "\"logoutStatus\": \"passed\"")
+            assertEquals(1, ports.sessionPort.logoutCalls)
+            assertEquals(1, ports.groupPort.simulatorPresenceCalls)
+            assertEquals(0, ports.groupPort.currentGroupsCalls)
+            assertEquals(0, ports.noticePort.groups.size)
+        }
+    }
+
     @Test
     fun `read groups scope logs in reads groups and logs out without send services`() {
         withReport { reportPath ->
@@ -409,12 +498,21 @@ class LiveProofRunnerTest {
                 GroupMembership.fromValues("event-notices", "Event Notices", true, true),
             ),
         ),
+        private val presenceResult: SimulatorPresenceProofResult = SimulatorPresenceProofResult.Success(
+            presenceProof(),
+        ),
     ) : GroupPort {
         var currentGroupsCalls = 0
+        var simulatorPresenceCalls = 0
 
         override fun currentGroups(session: HostessSession): GroupListResult {
             currentGroupsCalls += 1
             return result
+        }
+
+        override fun simulatorPresence(session: HostessSession): SimulatorPresenceProofResult {
+            simulatorPresenceCalls += 1
+            return presenceResult
         }
     }
 
@@ -485,6 +583,14 @@ class LiveProofRunnerTest {
         )
         val RAW_UUID = Regex(
             "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}",
+        )
+
+        fun presenceProof(): SimulatorPresenceProof = SimulatorPresenceProof(
+            simulatorPresenceStatus = SimulatorPresenceProofStatus.PASSED,
+            regionHandshakeStatus = SimulatorPresenceProofStatus.PASSED,
+            regionHandshakeReplyStatus = SimulatorPresenceProofStatus.PASSED,
+            agentMovementStatus = SimulatorPresenceProofStatus.PASSED,
+            agentUpdateStatus = SimulatorPresenceProofStatus.PASSED,
         )
     }
 }

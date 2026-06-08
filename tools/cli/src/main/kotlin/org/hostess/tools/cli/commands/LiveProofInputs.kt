@@ -159,6 +159,7 @@ internal data class LiveProofInputs(
 
 internal enum class LiveProofScope(val wireValue: String) {
     FULL("full"),
+    SIMULATOR_PRESENCE("simulator-presence"),
     READ_GROUPS("read-groups"),
     LOGIN_ONLY("login-only"),
     INVENTORY_CATALOGUE("inventory-catalogue"),
@@ -168,6 +169,7 @@ internal enum class LiveProofScope(val wireValue: String) {
     companion object {
         fun parse(value: String?): LiveProofScope = when (value?.lowercase()) {
             null, "", "full" -> FULL
+            "simulator-presence" -> SIMULATOR_PRESENCE
             "read-groups" -> READ_GROUPS
             "login-only" -> LOGIN_ONLY
             "inventory-catalogue" -> INVENTORY_CATALOGUE

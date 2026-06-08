@@ -103,6 +103,54 @@ class LiveProofCommandTest {
     }
 
     @Test
+    fun `simulator presence scope does not require send notice inputs`() {
+        val directory = Files.createTempDirectory("hostess-live-proof-simulator-presence")
+        try {
+            val reportPath = directory.resolve("live-proof.json")
+            val output = RecordingCliOutput()
+
+            val exitCode = CommandRegistry.default(CliCompositionRoot()).execute(
+                listOf(
+                    "live-proof",
+                    "--mode",
+                    "live",
+                    "--proof-scope",
+                    "simulator-presence",
+                    "--report",
+                    reportPath.toString(),
+                    "--grid",
+                    "second-life",
+                    "--account",
+                    "venue-proof",
+                    "--credential-env",
+                    "HOSTESS_PROOF_CREDENTIAL",
+                    "--proof-account-attested",
+                    "--scripted-agent-attested",
+                    "--operator",
+                    "test-operator",
+                    "--proof-account-label",
+                    "test-proof-account",
+                ),
+                output,
+            )
+
+            val report = reportPath.readText()
+            assertEquals(3, exitCode)
+            assertFalse(output.lines.any { it.contains("missing required live proof input") })
+            assertContains(report, "\"proofScope\": \"simulator-presence\"")
+            assertContains(report, "\"loginComplianceStatus\": \"passed\"")
+            assertContains(report, "\"loginStatus\": \"blocked\"")
+            assertContains(report, "\"currentGroupsStatus\": \"not_run\"")
+            assertContains(report, "\"noticeSendStatus\": \"not_run\"")
+            assertFalse(report.contains("Venue Hosts"))
+            assertFalse(report.contains("Tonight"))
+            assertFalse(report.contains("HOSTESS_PROOF_CREDENTIAL"))
+        } finally {
+            directory.toFile().deleteRecursively()
+        }
+    }
+
+    @Test
     fun `read groups scope does not require send inputs`() {
         val directory = Files.createTempDirectory("hostess-live-proof-read-groups")
         try {
