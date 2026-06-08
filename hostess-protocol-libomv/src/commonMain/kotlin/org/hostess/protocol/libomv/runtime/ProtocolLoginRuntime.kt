@@ -95,6 +95,7 @@ class ProtocolLoginRuntime private constructor(
                     circuitCode = mapped.value.circuitCode,
                     agentName = loginPackage.agentName(),
                     inventoryRoots = mapped.value.inventoryRoots,
+                    appearanceState = mapped.value.appearanceState,
                 )
                 SessionLoginResult.Success(session)
             }

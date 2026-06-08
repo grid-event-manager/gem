@@ -5,6 +5,7 @@ import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
+import kotlin.test.assertNull
 
 class LibomvLoginMappingTest {
     @Test
@@ -14,6 +15,8 @@ class LibomvLoginMappingTest {
         ).value
 
         assertEquals("live-session", success.sessionId.value)
+        assertEquals(true, success.appearanceState.agentAppearanceService)
+        assertEquals(45, success.appearanceState.cofVersion)
         assertEquals("inventory-root-id", success.inventoryRoots.inventoryRootId)
         assertEquals("library-root-id", success.inventoryRoots.libraryRootId)
         assertEquals("library-owner-id", success.inventoryRoots.libraryOwnerId)
@@ -49,6 +52,8 @@ class LibomvLoginMappingTest {
 
         assertEquals("live-session", success.sessionId.value)
         assertEquals("agent-id", success.agentId)
+        assertEquals(true, success.appearanceState.agentAppearanceService)
+        assertEquals(46, success.appearanceState.cofVersion)
         assertEquals("https://caps.example/seed", success.seedCapability)
         assertEquals("203.0.113.8", success.simulatorIp)
         assertEquals(13000, success.simulatorPort)
@@ -79,6 +84,25 @@ class LibomvLoginMappingTest {
             ),
             success.inventoryRoots.librarySkeleton.single(),
         )
+    }
+
+    @Test
+    fun `successful login ignores invalid appearance state fields`() {
+        val success = assertIs<LibomvLoginMappingResult.Success>(
+            LibomvLoginMapping.parse(
+                buildString {
+                    append("<llsd><map>")
+                    field(LoginKeys.LOGIN, "true")
+                    field(LoginKeys.SESSION_ID, "live-session")
+                    field(LoginKeys.AGENT_APPEARANCE_SERVICE, "maybe")
+                    field(LoginKeys.COF_VERSION, "-1")
+                    append("</map></llsd>")
+                }.encodeToByteArray(),
+            ),
+        ).value
+
+        assertNull(success.appearanceState.agentAppearanceService)
+        assertNull(success.appearanceState.cofVersion)
     }
 
     @Test
@@ -305,6 +329,8 @@ class LibomvLoginMappingTest {
         field(LoginKeys.LOGIN, "true")
         field(LoginKeys.AGENT_ID, "agent-id")
         field(LoginKeys.SESSION_ID, "live-session")
+        field(LoginKeys.AGENT_APPEARANCE_SERVICE, "yes")
+        field(LoginKeys.COF_VERSION, "45")
         mappedUuid(LoginKeys.INVENTORY_ROOT, LoginKeys.FOLDER_ID, "inventory-root-id")
         mappedUuid(LoginKeys.INVENTORY_LIB_ROOT, LoginKeys.FOLDER_ID, "library-root-id")
         mappedUuid(LoginKeys.INVENTORY_LIB_OWNER, LoginKeys.AGENT_ID, "library-owner-id")
@@ -321,6 +347,8 @@ class LibomvLoginMappingTest {
         LoginKeys.LOGIN to xmlRpcString("true"),
         LoginKeys.SESSION_ID to xmlRpcString("live-session"),
         LoginKeys.AGENT_ID to xmlRpcString("agent-id"),
+        LoginKeys.AGENT_APPEARANCE_SERVICE to xmlRpcString("true"),
+        LoginKeys.COF_VERSION to xmlRpcInt("46"),
         LoginKeys.SEED_CAPABILITY to xmlRpcString("https://caps.example/seed"),
         LoginKeys.SIM_IP to xmlRpcString("203.0.113.8"),
         LoginKeys.SIM_PORT to xmlRpcInt("13000"),

@@ -3,6 +3,8 @@ package org.hostess.protocol.libomv
 import org.hostess.core.domain.CoreFailure
 import org.hostess.core.domain.CoreFailureReason
 import org.hostess.core.domain.HostessSession
+import org.hostess.protocol.libomv.mapping.LoginAppearanceState
+import org.hostess.protocol.libomv.mapping.LoginAppearanceStateResult
 import org.hostess.protocol.libomv.mapping.LoginInventoryRoots
 import org.hostess.protocol.libomv.mapping.LoginInventoryRootsResult
 import org.hostess.protocol.libomv.transport.CapabilityCache
@@ -18,6 +20,7 @@ class LibomvClientSession private constructor(
     private var circuitCode: Long?,
     private var agentName: String?,
     private var inventoryRoots: LoginInventoryRoots,
+    private var appearanceState: LoginAppearanceState,
     private var capabilityCache: CapabilityCache,
 ) {
     fun unavailable(reason: CoreFailureReason): CoreFailure =
@@ -39,6 +42,7 @@ class LibomvClientSession private constructor(
         circuitCode: Long? = null,
         agentName: String? = null,
         inventoryRoots: LoginInventoryRoots = LoginInventoryRoots.empty(),
+        appearanceState: LoginAppearanceState = LoginAppearanceState.empty(),
         capabilityCache: CapabilityCache = CapabilityCache.empty(),
     ) {
         activeSession = session
@@ -50,6 +54,7 @@ class LibomvClientSession private constructor(
         this.circuitCode = circuitCode
         this.agentName = agentName
         this.inventoryRoots = inventoryRoots
+        this.appearanceState = appearanceState
         this.capabilityCache = capabilityCache
     }
 
@@ -63,6 +68,7 @@ class LibomvClientSession private constructor(
         circuitCode = null
         agentName = null
         inventoryRoots = LoginInventoryRoots.empty()
+        appearanceState = LoginAppearanceState.empty()
         capabilityCache = CapabilityCache.empty()
     }
 
@@ -132,6 +138,14 @@ class LibomvClientSession private constructor(
         return LoginInventoryRootsResult.Success(inventoryRoots)
     }
 
+    internal fun appearanceState(session: HostessSession): LoginAppearanceStateResult {
+        val bindingFailure = requireSession(session)
+        if (bindingFailure != null) {
+            return LoginAppearanceStateResult.Failure(bindingFailure)
+        }
+        return LoginAppearanceStateResult.Success(appearanceState)
+    }
+
     internal fun capabilityCache(identity: LibomvSessionIdentity): CapabilityCache? =
         capabilityCache.takeIf { activeSessionMatches(identity) }
 
@@ -163,6 +177,7 @@ class LibomvClientSession private constructor(
             circuitCode = null,
             agentName = null,
             inventoryRoots = LoginInventoryRoots.empty(),
+            appearanceState = LoginAppearanceState.empty(),
             capabilityCache = CapabilityCache.empty(),
         )
 
@@ -177,6 +192,7 @@ class LibomvClientSession private constructor(
             circuitCode = null,
             agentName = null,
             inventoryRoots = LoginInventoryRoots.empty(),
+            appearanceState = LoginAppearanceState.empty(),
             capabilityCache = CapabilityCache.empty(),
         )
 
@@ -190,6 +206,7 @@ class LibomvClientSession private constructor(
             circuitCode: Long? = null,
             agentName: String? = null,
             inventoryRoots: LoginInventoryRoots = LoginInventoryRoots.empty(),
+            appearanceState: LoginAppearanceState = LoginAppearanceState.empty(),
             capabilityCache: CapabilityCache = CapabilityCache.empty(),
         ): LibomvClientSession = LibomvClientSession(
             protocolAvailable = true,
@@ -202,6 +219,7 @@ class LibomvClientSession private constructor(
             circuitCode = circuitCode,
             agentName = agentName,
             inventoryRoots = inventoryRoots,
+            appearanceState = appearanceState,
             capabilityCache = capabilityCache,
         )
     }

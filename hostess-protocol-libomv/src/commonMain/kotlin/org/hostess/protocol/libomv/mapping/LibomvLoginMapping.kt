@@ -15,6 +15,7 @@ internal data class LibomvLoginSuccess(
     val regionHandle: Long?,
     val circuitCode: Long?,
     val inventoryRoots: LoginInventoryRoots,
+    val appearanceState: LoginAppearanceState,
 )
 
 internal data class LibomvLoginFailure(
@@ -63,6 +64,7 @@ internal object LibomvLoginMapping {
                     regionHandle = regionHandle(fields),
                     circuitCode = fields[LoginKeys.CIRCUIT_CODE]?.toUnsignedPositiveLongOrNull(),
                     inventoryRoots = inventoryRoots(body, fields, llsdFields),
+                    appearanceState = appearanceState(fields),
                 ),
             )
         }
@@ -129,6 +131,12 @@ internal object LibomvLoginMapping {
             XmlRpcLoginResponseParser.parseInventoryRoots(body.decodeToString())
         }
 
+    private fun appearanceState(fields: Map<String, String>): LoginAppearanceState =
+        LoginAppearanceState(
+            agentAppearanceService = fields[LoginKeys.AGENT_APPEARANCE_SERVICE]?.asLoginBoolean(),
+            cofVersion = fields[LoginKeys.COF_VERSION]?.toNonNegativeIntOrNull(),
+        )
+
     private fun sourceDiagnostics(fields: Map<String, String>): String =
         diagnosticKeys.mapNotNull { key ->
             fields[key]
@@ -160,6 +168,15 @@ internal object LibomvLoginMapping {
 
     private fun String.toUnsigned32OrNull(): Long? =
         toLongOrNull()?.takeIf { it in 0..UNSIGNED_32_MAX }
+
+    private fun String.toNonNegativeIntOrNull(): Int? =
+        toLongOrNull()?.takeIf { it in 0..Int.MAX_VALUE }?.toInt()
+
+    private fun String.asLoginBoolean(): Boolean? = when (trim().lowercase()) {
+        "true", "1", "yes" -> true
+        "false", "0", "no" -> false
+        else -> null
+    }
 
     private const val MAX_PORT: Long = 65535L
     private const val UNSIGNED_32_MAX: Long = 0xFFFF_FFFFL
@@ -203,6 +220,8 @@ internal object LoginKeys {
     val REGION_X: String = listOf("region", "x").joinToString("_")
     val REGION_Y: String = listOf("region", "y").joinToString("_")
     val CIRCUIT_CODE: String = listOf("circuit", "code").joinToString("_")
+    val AGENT_APPEARANCE_SERVICE: String = listOf("agent", "appearance", "service").joinToString("_")
+    val COF_VERSION: String = listOf("cof", "version").joinToString("_")
     val INVENTORY_ROOT: String = "inventory-root"
     val INVENTORY_SKELETON: String = "inventory-skeleton"
     val INVENTORY_LIB_ROOT: String = "inventory-lib-root"

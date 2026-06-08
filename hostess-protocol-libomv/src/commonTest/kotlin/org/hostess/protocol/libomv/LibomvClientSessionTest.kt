@@ -5,6 +5,8 @@ import org.hostess.core.domain.AccountLabel
 import org.hostess.core.domain.CoreFailureReason
 import org.hostess.core.domain.HostessSession
 import org.hostess.core.domain.SessionId
+import org.hostess.protocol.libomv.mapping.LoginAppearanceState
+import org.hostess.protocol.libomv.mapping.LoginAppearanceStateResult
 import org.hostess.protocol.libomv.mapping.LoginInventoryFolder
 import org.hostess.protocol.libomv.mapping.LoginInventoryRoots
 import org.hostess.protocol.libomv.mapping.LoginInventoryRootsResult
@@ -38,6 +40,10 @@ class LibomvClientSessionTest {
             clientSession.capabilityCache(identity)?.urlFor(CapabilityName.EVENT_QUEUE_GET),
         )
         val roots = assertIs<LoginInventoryRootsResult.Success>(clientSession.inventoryRoots(session)).roots
+        val appearanceState = assertIs<LoginAppearanceStateResult.Success>(
+            clientSession.appearanceState(session),
+        ).appearanceState
+        assertEquals(LoginAppearanceState(agentAppearanceService = true, cofVersion = 51), appearanceState)
         assertEquals("inventory-root-id", roots.inventoryRootId)
         assertEquals(
             LoginInventoryFolder(
@@ -100,6 +106,10 @@ class LibomvClientSessionTest {
             LoginInventoryRoots.empty(),
             assertIs<LoginInventoryRootsResult.Success>(clientSession.inventoryRoots(newSession)).roots,
         )
+        assertEquals(
+            LoginAppearanceState.empty(),
+            assertIs<LoginAppearanceStateResult.Success>(clientSession.appearanceState(newSession)).appearanceState,
+        )
         val newIdentity = LibomvSessionIdentity(
             agentId = "agent-id",
             sessionId = "new-session",
@@ -125,6 +135,12 @@ class LibomvClientSessionTest {
             "hostess session mismatch",
             assertIs<LoginInventoryRootsResult.Failure>(
                 clientSession.inventoryRoots(hostessSession("other-session")),
+            ).failure.redactedMessage,
+        )
+        assertEquals(
+            "hostess session mismatch",
+            assertIs<LoginAppearanceStateResult.Failure>(
+                clientSession.appearanceState(hostessSession("other-session")),
             ).failure.redactedMessage,
         )
     }
@@ -186,6 +202,7 @@ class LibomvClientSessionTest {
             libraryOwnerId = null,
             librarySkeleton = emptyList(),
         ),
+        appearanceState = LoginAppearanceState(agentAppearanceService = true, cofVersion = 51),
         capabilityCache = CapabilityCache(
             mapOf(CapabilityName.EVENT_QUEUE_GET to CapabilityUrl("https://caps.example/event")),
         ),

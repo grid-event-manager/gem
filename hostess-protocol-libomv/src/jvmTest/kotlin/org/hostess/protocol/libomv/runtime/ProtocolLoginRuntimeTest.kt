@@ -13,6 +13,8 @@ import org.hostess.core.ports.SessionLoginResult
 import org.hostess.core.ports.SessionLogoutResult
 import org.hostess.protocol.libomv.LibomvClientSession
 import org.hostess.protocol.libomv.LibomvSessionIdentityResult
+import org.hostess.protocol.libomv.mapping.LoginAppearanceState
+import org.hostess.protocol.libomv.mapping.LoginAppearanceStateResult
 import org.hostess.protocol.libomv.mapping.LoginInventoryRootsResult
 import org.hostess.protocol.libomv.mapping.LoginKeys
 import org.hostess.protocol.libomv.transport.ProtocolHttpBody
@@ -78,6 +80,10 @@ class ProtocolLoginRuntimeTest {
         val roots = assertIs<LoginInventoryRootsResult.Success>(clientSession.inventoryRoots(session)).roots
         assertEquals("inventory-root-id", roots.inventoryRootId)
         assertEquals("landmarks-folder-id", roots.inventorySkeleton.single().folderId)
+        val appearanceState = assertIs<LoginAppearanceStateResult.Success>(
+            clientSession.appearanceState(session),
+        ).appearanceState
+        assertEquals(LoginAppearanceState(agentAppearanceService = true, cofVersion = 47), appearanceState)
 
         val request = httpClient.capturedRequest ?: error("login request was not captured")
         assertEquals("POST", request.method)
@@ -146,6 +152,10 @@ class ProtocolLoginRuntimeTest {
         val roots = assertIs<LoginInventoryRootsResult.Success>(clientSession.inventoryRoots(session)).roots
         assertEquals("xml-inventory-root-id", roots.inventoryRootId)
         assertEquals("xml-landmarks-folder-id", roots.inventorySkeleton.single().folderId)
+        assertEquals(
+            LoginAppearanceState(agentAppearanceService = false, cofVersion = 48),
+            assertIs<LoginAppearanceStateResult.Success>(clientSession.appearanceState(session)).appearanceState,
+        )
     }
 
     @Test
@@ -415,6 +425,8 @@ class ProtocolLoginRuntimeTest {
         field(LoginKeys.LOGIN, "true")
         field(LoginKeys.AGENT_ID, "agent-id")
         field(LoginKeys.SESSION_ID, sessionValue)
+        field(LoginKeys.AGENT_APPEARANCE_SERVICE, "yes")
+        field(LoginKeys.COF_VERSION, "47")
         field(LoginKeys.SEED_CAPABILITY, secureUrl("caps.example", "/private"))
         if (includeSimulatorFields) {
             field(LoginKeys.SIM_IP, "203.0.113.8")
@@ -435,6 +447,8 @@ class ProtocolLoginRuntimeTest {
         xmlRpcMember(LoginKeys.LOGIN, xmlRpcString("true"))
         xmlRpcMember(LoginKeys.AGENT_ID, xmlRpcString("agent-id"))
         xmlRpcMember(LoginKeys.SESSION_ID, xmlRpcString(sessionValue))
+        xmlRpcMember(LoginKeys.AGENT_APPEARANCE_SERVICE, xmlRpcString("no"))
+        xmlRpcMember(LoginKeys.COF_VERSION, xmlRpcInt("48"))
         xmlRpcMember(LoginKeys.SEED_CAPABILITY, xmlRpcString(secureUrl("caps.example", "/private")))
         xmlRpcMember(LoginKeys.SIM_IP, xmlRpcString("203.0.113.8"))
         xmlRpcMember(LoginKeys.SIM_PORT, xmlRpcInt("13000"))
