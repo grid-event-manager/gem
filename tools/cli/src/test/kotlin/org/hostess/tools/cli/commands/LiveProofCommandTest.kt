@@ -655,8 +655,8 @@ class LiveProofCommandTest {
     }
 
     @Test
-    fun `second life full proof is frozen during incident even with operator observation`() {
-        val directory = Files.createTempDirectory("hostess-live-proof-incident-freeze")
+    fun `second life full proof with operator observation reaches shared runtime`() {
+        val directory = Files.createTempDirectory("hostess-live-proof-operator-ready")
         try {
             val reportPath = directory.resolve("live-proof.json")
             val output = RecordingCliOutput()
@@ -694,11 +694,13 @@ class LiveProofCommandTest {
 
             val report = reportPath.readText()
             assertEquals(3, exitCode)
-            assertTrue(output.lines.any { it.contains("real Second Life mutation frozen pending incident review") })
+            assertTrue(output.lines.any { it == "live-proof live blocked: login blocked" })
             assertContains(report, "\"status\": \"blocked\"")
-            assertContains(report, "\"noticeSendStatus\": \"blocked\"")
-            assertContains(report, "\"operatorReceiptStatus\": \"blocked\"")
-            assertContains(report, "\"loginStatus\": \"not_run\"")
+            assertContains(report, "\"loginComplianceStatus\": \"passed\"")
+            assertContains(report, "\"loginStatus\": \"blocked\"")
+            assertContains(report, "\"noticeSendStatus\": \"not_run\"")
+            assertContains(report, "\"operatorReceiptStatus\": \"pending\"")
+            assertContains(report, "\"operatorObservationReady\": \"true\"")
             assertFalse(report.contains("HOSTESS_PROOF_CREDENTIAL"))
         } finally {
             directory.toFile().deleteRecursively()

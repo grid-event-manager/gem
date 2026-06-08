@@ -45,7 +45,7 @@ class ProtocolAvatarAppearanceSourceTest {
         ).updateServerAppearance(identity(), 17, capabilityUrl())
 
         assertEquals(
-            "avatar appearance transport unavailable",
+            "avatar appearance transport unavailable: http_status=503; POST <redacted> -> 503; response=<llsd><map /></llsd>",
             assertIs<AvatarAppearanceUpdateResult.TransportGap>(statusFailure).redactedMessage,
         )
         assertEquals(
@@ -55,29 +55,53 @@ class ProtocolAvatarAppearanceSourceTest {
     }
 
     @Test
-    fun `malformed missing false or error responses are proof gaps without body leakage`() {
+    fun `malformed responses are proof gaps with redacted body diagnostics`() {
         val cases = listOf(
-            "",
-            "<llsd><map>",
-            "<llsd><map><key>other</key><boolean>true</boolean></map></llsd>",
-            "<llsd><map><key>success</key><boolean>false</boolean></map></llsd>",
-            "<llsd><map><key>error</key><string>raw grid body</string></map></llsd>",
+            "" to "avatar appearance response invalid: response=<empty>",
+            "<llsd><map>" to "avatar appearance response invalid: response=<llsd><map>",
         )
 
-        cases.forEach { body ->
+        cases.forEach { (body, expectedMessage) ->
             val result = ProtocolAvatarAppearanceSource(
                 RecordingHttpClient { response(body) },
             ).updateServerAppearance(identity(), 17, capabilityUrl())
 
             val message = assertIs<AvatarAppearanceUpdateResult.ProofGap>(result).redactedMessage
-            assertEquals("avatar appearance response invalid", message)
-            if (body.isNotEmpty()) {
-                assertFalse(message.contains(body))
-            }
-            assertFalse(message.contains("raw grid body"))
+            assertEquals(expectedMessage, message)
             assertFalse(message.contains(capabilityUrl().value))
             assertFalse(message.contains("17"))
             assertFalse(message.contains(AGENT_ID))
+        }
+    }
+
+    @Test
+    fun `false missing and error responses are proof gaps with returned fields redacted`() {
+        val cases = listOf(
+            "<llsd><map><key>other</key><boolean>true</boolean></map></llsd>" to
+                "avatar appearance response invalid: success=<missing>; response={other=true}",
+            "<llsd><map><key>success</key><boolean>false</boolean></map></llsd>" to
+                "avatar appearance response invalid: success=false; response={success=false}",
+            """
+            <llsd><map>
+              <key>success</key><boolean>false</boolean>
+              <key>error</key><string>COF mismatch token=secret https://caps.example/raw $AGENT_ID</string>
+              <key>expected</key><integer>31</integer>
+            </map></llsd>
+            """.trimIndent() to
+                "avatar appearance response invalid: success=false; error=COF mismatch token=[redacted] [redacted-url] [redacted-id]; expected=31; response={success=false, error=COF mismatch token=[redacted] [redacted-url] [redacted-id], expected=31}",
+        )
+
+        cases.forEach { (body, expectedMessage) ->
+            val result = ProtocolAvatarAppearanceSource(
+                RecordingHttpClient { response(body) },
+            ).updateServerAppearance(identity(), 17, capabilityUrl())
+
+            val message = assertIs<AvatarAppearanceUpdateResult.ProofGap>(result).redactedMessage
+            assertEquals(expectedMessage, message)
+            assertFalse(message.contains(capabilityUrl().value))
+            assertFalse(message.contains("token=secret"))
+            assertFalse(message.contains(AGENT_ID))
+            assertFalse(message.contains("17"))
         }
     }
 

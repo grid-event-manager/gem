@@ -58,25 +58,6 @@ class LiveProofCommand(
             return CommandResult.USAGE_ERROR
         }
 
-        if (inputs.requiresOperatorObservation()) {
-            val reason = "real Second Life mutation frozen pending incident review"
-            runtime.proofReportWriter.writeIfRequested(
-                reportPath = reportPath,
-                command = name,
-                mode = mode.label(),
-                status = ProofReportStatus.BLOCKED,
-                statusFields = inputs.validationStatusFields().toMutableMap().also {
-                    it["noticeSendStatus"] = "blocked"
-                    it["operatorReceiptStatus"] = "blocked"
-                },
-                inputs = inputs.toReportInputs(mode),
-                results = LiveProofStep.blockedPlan("validate-inputs", reason).map(LiveProofStep::toReportMap),
-                blockedReason = reason,
-            )
-            output.line("live-proof live blocked: $reason")
-            return CommandResult.UNAVAILABLE
-        }
-
         if (!runtime.protocolAvailable) {
             val reason = "protocol bootstrap unavailable after HS001-A-07; live grid proof not attempted"
             val results = listOf(LiveProofStep.passed("validate-inputs")) +
