@@ -15,7 +15,7 @@ internal data class LiveProofStep(
         private val orderedSteps = listOf(
             "validate-inputs",
             "login",
-            "simulator-presence",
+            "avatar-readiness",
             "current-groups",
             "select-targets",
             "inventory-catalogue",
@@ -29,7 +29,12 @@ internal data class LiveProofStep(
         val statusFieldNames = listOf(
             "credentialStatus",
             "loginStatus",
+            "avatarReadinessStatus",
             "simulatorPresenceStatus",
+            "regionProtocolStatus",
+            "agentAppearanceServiceStatus",
+            "cofVersionStatus",
+            "serverAppearanceStatus",
             "regionHandshakeStatus",
             "regionHandshakeReplyStatus",
             "agentMovementStatus",

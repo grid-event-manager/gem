@@ -31,6 +31,7 @@ import org.hostess.core.domain.SessionId
 import org.hostess.core.ports.AttachmentResolutionResult
 import org.hostess.core.ports.AvatarPort
 import org.hostess.core.ports.AvatarReadinessProof
+import org.hostess.core.ports.AvatarReadinessProofStatus
 import org.hostess.core.ports.AvatarReadinessResult
 import org.hostess.core.ports.ClockPort
 import org.hostess.core.ports.GroupListResult
@@ -72,7 +73,10 @@ class LiveNoticeSendProofRunnerTest {
                 GroupMembership.fromValues("minx", "m!nx", true, true),
             )
             val ports = Ports(
-                groupPort = RecordingGroupPort(GroupListResult.Success(groups)),
+                groupPort = RecordingGroupPort(
+                    result = GroupListResult.Success(groups),
+                    presenceResult = failingPresenceResult(),
+                ),
             )
             ports.inventoryPort.listResult = InventoryItemListResult.Success(
                 listOf(inventoryItem("Venue Landmark", "landmark-item", copyable = true)),
@@ -95,12 +99,34 @@ class LiveNoticeSendProofRunnerTest {
             assertContains(report, "\"attachmentSelectionStatus\": \"passed\"")
             assertContains(report, "\"attachmentResolutionStatus\": \"passed\"")
             assertContains(report, "\"noticeSendStatus\": \"passed\"")
+            assertContains(report, "\"avatarReadinessStatus\": \"passed\"")
             assertContains(report, "\"simulatorPresenceStatus\": \"passed\"")
+            assertContains(report, "\"regionProtocolStatus\": \"passed\"")
+            assertContains(report, "\"agentAppearanceServiceStatus\": \"passed\"")
+            assertContains(report, "\"cofVersionStatus\": \"passed\"")
+            assertContains(report, "\"serverAppearanceStatus\": \"passed\"")
             assertContains(report, "\"noticeArchiveStatus\": \"passed\"")
             assertContains(report, "\"noticeArchiveTargetCount\": \"2\"")
             assertContains(report, "\"noticeArchiveMatchedTargetCount\": \"2\"")
             assertContains(report, "\"existingAttachmentDisplayName\": \"Venue Landmark\"")
-            assertContains(report, "\"step\": \"simulator-presence\"")
+            assertStepOrder(
+                report,
+                listOf(
+                    "validate-inputs",
+                    "login",
+                    "avatar-readiness",
+                    "current-groups",
+                    "select-targets",
+                    "inventory-catalogue",
+                    "select-attachment",
+                    "resolve-attachment",
+                    "group-notice",
+                    "notice-archive",
+                    "cleanup",
+                    "logout",
+                ),
+            )
+            assertFalse(report.contains("\"step\": \"simulator-presence\""))
             assertContains(report, "\"step\": \"select-attachment\"")
             assertContains(report, "\"step\": \"resolve-attachment\"")
             assertContains(report, "\"step\": \"group-notice\"")
@@ -109,7 +135,8 @@ class LiveNoticeSendProofRunnerTest {
             assertContains(report, "authorised retained external notice proof")
             assertEquals(1, ports.sessionPort.loginCalls)
             assertEquals(1, ports.sessionPort.logoutCalls)
-            assertEquals(1, ports.groupPort.simulatorPresenceCalls)
+            assertEquals(1, ports.avatarPort.calls)
+            assertEquals(0, ports.groupPort.simulatorPresenceCalls)
             assertEquals(listOf("Owks", "m!nx"), ports.groupPort.noticeArchiveGroups.map { it.displayName.value })
             assertEquals(setOf(InventoryItemKind.LANDMARK), ports.inventoryPort.listQueries.single().kinds)
             assertFalse(RAW_UUID.containsMatchIn(report))
@@ -118,19 +145,17 @@ class LiveNoticeSendProofRunnerTest {
     }
 
     @Test
-    fun `simulator presence failure blocks before groups inventory or send`() {
+    fun `avatar readiness failure logs out before groups inventory or send`() {
         withReport { reportPath ->
-            val ports = Ports(
-                groupPort = RecordingGroupPort(
-                    presenceResult = SimulatorPresenceProofResult.Failure(
-                        proof = presenceProof(
-                            simulatorPresenceStatus = SimulatorPresenceProofStatus.PROOF_GAP,
-                            agentMovementStatus = SimulatorPresenceProofStatus.PROOF_GAP,
-                            agentUpdateStatus = SimulatorPresenceProofStatus.NOT_RUN,
-                            message = "simulator presence proof_gap",
-                        ),
-                        failure = CoreFailure(CoreFailureReason.GROUP_LIST_FAILED, "simulator presence proof_gap"),
-                    ),
+            val ports = Ports()
+            ports.avatarPort.result = AvatarReadinessResult.Failure(
+                proof = avatarProof(
+                    avatarReadinessStatus = AvatarReadinessProofStatus.PROOF_GAP,
+                    serverAppearanceStatus = AvatarReadinessProofStatus.PROOF_GAP,
+                ),
+                failure = CoreFailure(
+                    CoreFailureReason.AVATAR_READINESS_FAILED,
+                    "avatar readiness proof_gap",
                 ),
             )
 
@@ -139,12 +164,21 @@ class LiveNoticeSendProofRunnerTest {
             val report = reportPath.readText()
             assertEquals(CommandResult.UNAVAILABLE, exit)
             assertContains(report, "\"status\": \"proof_gap\"")
-            assertContains(report, "\"simulatorPresenceStatus\": \"proof_gap\"")
+            assertContains(report, "\"avatarReadinessStatus\": \"proof_gap\"")
+            assertContains(report, "\"simulatorPresenceStatus\": \"passed\"")
+            assertContains(report, "\"regionProtocolStatus\": \"passed\"")
+            assertContains(report, "\"agentAppearanceServiceStatus\": \"passed\"")
+            assertContains(report, "\"cofVersionStatus\": \"passed\"")
+            assertContains(report, "\"serverAppearanceStatus\": \"proof_gap\"")
+            assertContains(report, "\"step\": \"avatar-readiness\"")
             assertContains(report, "\"currentGroupsStatus\": \"not_run\"")
             assertContains(report, "\"noticeSendStatus\": \"not_run\"")
             assertContains(report, "\"noticeArchiveStatus\": \"not_run\"")
             assertContains(report, "\"logoutStatus\": \"passed\"")
-            assertEquals(1, ports.groupPort.simulatorPresenceCalls)
+            assertFalse(report.contains("https://secret.example/cap"))
+            assertFalse(report.contains("Doors at eight"))
+            assertEquals(1, ports.avatarPort.calls)
+            assertEquals(0, ports.groupPort.simulatorPresenceCalls)
             assertEquals(0, ports.groupPort.currentGroupsCalls)
             assertEquals(0, ports.inventoryPort.listQueries.size)
             assertEquals(0, ports.inventoryPort.resolveRequests)
@@ -490,11 +524,12 @@ class LiveNoticeSendProofRunnerTest {
         val groupPort: RecordingGroupPort = RecordingGroupPort(),
         val inventoryPort: RecordingInventoryPort = RecordingInventoryPort(),
         val noticePort: RecordingNoticePort = RecordingNoticePort(),
+        val avatarPort: RecordingAvatarPort = RecordingAvatarPort(),
         private val clock: RecordingClockPort = RecordingClockPort(),
     ) {
         fun runtime(): CliRuntime = CliRuntime(
             sessionService = SessionService(sessionPort, LoginComplianceService(), Redactor),
-            avatarReadinessService = AvatarReadinessService(FakeAvatarPort),
+            avatarReadinessService = AvatarReadinessService(avatarPort),
             groupDirectoryService = GroupDirectoryService(groupPort),
             inventoryDirectoryService = InventoryDirectoryService(inventoryPort),
             inventorySelectionService = InventorySelectionService(),
@@ -510,9 +545,13 @@ class LiveNoticeSendProofRunnerTest {
         )
     }
 
-    private object FakeAvatarPort : AvatarPort {
+    private class RecordingAvatarPort(
+        var result: AvatarReadinessResult = AvatarReadinessResult.Success(AvatarReadinessProof.success()),
+    ) : AvatarPort {
+        var calls = 0
+
         override fun ensureReady(session: HostessSession): AvatarReadinessResult =
-            AvatarReadinessResult.Success(AvatarReadinessProof.success())
+            result.also { calls += 1 }
     }
 
     private class RecordingSessionPort(
@@ -655,5 +694,40 @@ class LiveNoticeSendProofRunnerTest {
             agentUpdateStatus = agentUpdateStatus,
             redactedMessage = message,
         )
+
+        fun failingPresenceResult(): SimulatorPresenceProofResult = SimulatorPresenceProofResult.Failure(
+            proof = presenceProof(
+                simulatorPresenceStatus = SimulatorPresenceProofStatus.PROOF_GAP,
+                agentMovementStatus = SimulatorPresenceProofStatus.PROOF_GAP,
+                agentUpdateStatus = SimulatorPresenceProofStatus.NOT_RUN,
+                message = "diagnostic simulator presence proof_gap",
+            ),
+            failure = CoreFailure(CoreFailureReason.GROUP_LIST_FAILED, "diagnostic simulator presence proof_gap"),
+        )
+
+        fun avatarProof(
+            avatarReadinessStatus: AvatarReadinessProofStatus = AvatarReadinessProofStatus.PASSED,
+            simulatorPresenceStatus: AvatarReadinessProofStatus = AvatarReadinessProofStatus.PASSED,
+            regionProtocolStatus: AvatarReadinessProofStatus = AvatarReadinessProofStatus.PASSED,
+            agentAppearanceServiceStatus: AvatarReadinessProofStatus = AvatarReadinessProofStatus.PASSED,
+            cofVersionStatus: AvatarReadinessProofStatus = AvatarReadinessProofStatus.PASSED,
+            serverAppearanceStatus: AvatarReadinessProofStatus = AvatarReadinessProofStatus.PASSED,
+        ): AvatarReadinessProof = AvatarReadinessProof(
+            avatarReadinessStatus = avatarReadinessStatus,
+            simulatorPresenceStatus = simulatorPresenceStatus,
+            regionProtocolStatus = regionProtocolStatus,
+            agentAppearanceServiceStatus = agentAppearanceServiceStatus,
+            cofVersionStatus = cofVersionStatus,
+            serverAppearanceStatus = serverAppearanceStatus,
+        )
+
+        fun assertStepOrder(report: String, steps: List<String>) {
+            var previous = -1
+            steps.forEach { step ->
+                val index = report.indexOf("\"step\": \"$step\"")
+                assertTrue(index > previous, "expected step $step after prior proof step")
+                previous = index
+            }
+        }
     }
 }

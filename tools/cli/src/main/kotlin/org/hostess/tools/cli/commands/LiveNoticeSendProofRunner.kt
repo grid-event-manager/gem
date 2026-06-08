@@ -13,6 +13,8 @@ import org.hostess.core.domain.NoticeDispatchResult
 import org.hostess.core.domain.NoticeDraft
 import org.hostess.core.domain.AccountLabel
 import org.hostess.core.ports.AttachmentResolutionResult
+import org.hostess.core.ports.AvatarReadinessProof
+import org.hostess.core.ports.AvatarReadinessResult
 import org.hostess.core.ports.CredentialHandle
 import org.hostess.core.ports.GroupListResult
 import org.hostess.core.ports.InventoryItemListResult
@@ -59,8 +61,8 @@ internal class LiveNoticeSendProofRunner(
         }
 
         val session = login() ?: return finish(ProofReportStatus.BLOCKED, "login blocked")
-        if (!simulatorPresence(session)) {
-            return finishAfterLogout(session, "simulator presence unavailable")
+        if (!avatarReadiness(session)) {
+            return finishAfterLogout(session, "avatar readiness unavailable")
         }
         val groups = currentGroups(session) ?: return finishAfterLogout(session, "current groups unavailable")
         val targetSet = selectTargets(groups) ?: return finishAfterLogout(session, "target selection failed")
@@ -100,23 +102,37 @@ internal class LiveNoticeSendProofRunner(
                 val detail = login.failure.redactedMessage ?: "login unavailable"
                 statusFields["loginStatus"] = "blocked"
                 steps += LiveProofStep("login", "blocked", detail)
-                markNotRunUntilLogout(detail, "simulator-presence")
+                markNotRunUntilLogout(detail, "avatar-readiness")
                 null
             }
         }
     }
 
-    private fun simulatorPresence(session: HostessSession): Boolean {
-        val outcome = LiveProofSimulatorPresenceVerifier(runtime.groupDirectoryService).verify(session)
-        statusFields += outcome.statusFields
-        steps += outcome.step
-        return if (outcome.passed) {
-            true
-        } else {
-            markNotRunUntilLogout(outcome.failureReason ?: "simulator presence unavailable", "current-groups")
-            false
+    private fun avatarReadiness(session: HostessSession): Boolean {
+        return when (val result = runtime.avatarReadinessService.ensureReady(session)) {
+            is AvatarReadinessResult.Success -> {
+                statusFields += avatarReadinessStatusFields(result.proof)
+                steps += LiveProofStep.passed("avatar-readiness")
+                true
+            }
+            is AvatarReadinessResult.Failure -> {
+                statusFields += avatarReadinessStatusFields(result.proof)
+                val detail = result.failure.redactedMessage ?: result.failure.reason.name.lowercase()
+                steps += LiveProofStep("avatar-readiness", result.proof.avatarReadinessStatus.reportValue, detail)
+                markNotRunUntilLogout(detail, "current-groups")
+                false
+            }
         }
     }
+
+    private fun avatarReadinessStatusFields(proof: AvatarReadinessProof): Map<String, String> = mapOf(
+        "avatarReadinessStatus" to proof.avatarReadinessStatus.reportValue,
+        "simulatorPresenceStatus" to proof.simulatorPresenceStatus.reportValue,
+        "regionProtocolStatus" to proof.regionProtocolStatus.reportValue,
+        "agentAppearanceServiceStatus" to proof.agentAppearanceServiceStatus.reportValue,
+        "cofVersionStatus" to proof.cofVersionStatus.reportValue,
+        "serverAppearanceStatus" to proof.serverAppearanceStatus.reportValue,
+    )
 
     private fun currentGroups(session: HostessSession): List<GroupMembership>? =
         when (val result = runtime.groupDirectoryService.currentGroups(session)) {
