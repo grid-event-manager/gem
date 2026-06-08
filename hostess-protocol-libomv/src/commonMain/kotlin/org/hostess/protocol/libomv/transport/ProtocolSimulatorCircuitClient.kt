@@ -22,7 +22,7 @@ internal class ProtocolSimulatorCircuitClient(
     private val packetExchange: SimulatorPacketExchange,
     private val sequence: SimulatorPacketSequence = SimulatorPacketSequence(),
 ) {
-    private var presentCircuit: SimulatorCircuitKey? = null
+    private var presentCircuit: SimulatorPresenceCache? = null
     private val pendingNoticeArchiveReplies = mutableMapOf<String, List<SimulatorNoticeArchiveEntry>>()
 
     fun sendCurrentGroupsRequest(circuit: SimulatorCircuit): SimulatorCircuitSendResult =
@@ -89,8 +89,13 @@ internal class ProtocolSimulatorCircuitClient(
             )
         }
         val circuitKey = circuit.toKey()
-        if (presentCircuit == circuitKey) {
-            return SimulatorPresenceResult.Present(pingReplies = 0, cached = true)
+        val cachedPresence = presentCircuit
+        if (cachedPresence?.circuitKey == circuitKey) {
+            return SimulatorPresenceResult.Present(
+                pingReplies = 0,
+                cached = true,
+                regionProtocolFlags = cachedPresence.regionProtocolFlags,
+            )
         }
         val endpoint = SimulatorEndpoint(circuit.simulatorIp, circuit.simulatorPort)
 
@@ -132,6 +137,11 @@ internal class ProtocolSimulatorCircuitClient(
                 }
                 is WaitForPacketResult.Found -> result
             }
+            val handshakeInfo = LibomvPacketCodec.regionHandshakeInfo(handshake.payload)
+                ?: return SimulatorPresenceResult.Failed(
+                    status = SimulatorPresenceStatus.HANDSHAKE_MALFORMED,
+                    redactedMessage = REDACTED_SEND_FAILURE,
+                )
             sendPresencePacket(endpoint, SimulatorPresenceStatus.HANDSHAKE_REPLY_FAILED) {
                 LibomvPacketCodec.regionHandshakeReply(circuit, sequence.next())
             }?.let { return it }
@@ -156,8 +166,15 @@ internal class ProtocolSimulatorCircuitClient(
             sendPresencePacket(endpoint, SimulatorPresenceStatus.AGENT_UPDATE_FAILED) {
                 LibomvPacketCodec.agentUpdate(circuit, sequence.next())
             }?.let { return it }
-            presentCircuit = circuitKey
-            SimulatorPresenceResult.Present(pingReplies = movement.pingReplies, cached = false)
+            presentCircuit = SimulatorPresenceCache(
+                circuitKey = circuitKey,
+                regionProtocolFlags = handshakeInfo.regionProtocolFlags,
+            )
+            SimulatorPresenceResult.Present(
+                pingReplies = movement.pingReplies,
+                cached = false,
+                regionProtocolFlags = handshakeInfo.regionProtocolFlags,
+            )
         } catch (ex: IllegalArgumentException) {
             SimulatorPresenceResult.Failed(
                 status = SimulatorPresenceStatus.HANDSHAKE_MALFORMED,
@@ -410,6 +427,11 @@ internal class ProtocolSimulatorCircuitClient(
         val simulatorIp: String,
         val simulatorPort: Int,
         val circuitCode: Long,
+    )
+
+    private data class SimulatorPresenceCache(
+        val circuitKey: SimulatorCircuitKey,
+        val regionProtocolFlags: RegionProtocolFlags,
     )
 
     private data class ReliablePayload(

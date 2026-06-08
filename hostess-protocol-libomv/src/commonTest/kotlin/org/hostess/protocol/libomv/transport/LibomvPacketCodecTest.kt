@@ -54,6 +54,41 @@ class LibomvPacketCodecTest {
         assertNull(LibomvPacketCodec.packetAckSequences(ack))
     }
 
+    @Test
+    fun `regionHandshakeInfo detects true AgentAppearanceService fixture`() {
+        val info = LibomvPacketCodec.regionHandshakeInfo(
+            LibomvPacketTestBytes.regionHandshakeWithRegionProtocols(regionProtocols = 1L),
+        )
+
+        assertEquals(true, info?.regionProtocolFlags?.agentAppearanceService)
+    }
+
+    @Test
+    fun `regionHandshakeInfo ignores RegionInfo flags for false AgentAppearanceService fixture`() {
+        val info = LibomvPacketCodec.regionHandshakeInfo(
+            LibomvPacketTestBytes.regionHandshakeWithRegionProtocols(
+                regionInfoFlags = 1L,
+                regionProtocols = 0L,
+            ),
+        )
+
+        assertEquals(false, info?.regionProtocolFlags?.agentAppearanceService)
+    }
+
+    @Test
+    fun `regionHandshakeInfo treats absent RegionInfo4 as unknown flags`() {
+        val info = LibomvPacketCodec.regionHandshakeInfo(
+            LibomvPacketTestBytes.regionHandshakeWithoutRegionInfo4(),
+        )
+
+        assertEquals(false, info?.regionProtocolFlags?.agentAppearanceService)
+    }
+
+    @Test
+    fun `regionHandshakeInfo rejects malformed required RegionInfo body`() {
+        assertNull(LibomvPacketCodec.regionHandshakeInfo(LibomvPacketTestBytes.malformedRegionHandshake()))
+    }
+
     private fun u32(value: Long): ByteArray = byteArrayOf(
         (value and 0xFF).toByte(),
         ((value ushr 8) and 0xFF).toByte(),

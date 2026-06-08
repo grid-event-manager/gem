@@ -7,6 +7,7 @@ import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
+import kotlin.test.assertTrue
 
 class ProtocolSimulatorCircuitClientTest {
     @Test
@@ -132,6 +133,62 @@ class ProtocolSimulatorCircuitClientTest {
         assertLowPacket(payloads[3], sequence = 3, packetId = 149, flags = 0xC0)
         assertHighPacketPrefix(payloads[4], sequence = 4, packetId = 4, flags = 0xC0)
         assertLowPacket(payloads[5], sequence = 5, packetId = 386)
+    }
+
+    @Test
+    fun `ensurePresence returns parsed region protocol flags from fresh handshake`() {
+        val exchange = RecordingPacketExchange(
+            inboundPayloads = mutableListOf(
+                LibomvPacketTestBytes.regionHandshakeWithRegionProtocols(regionProtocols = 1L),
+                agentMovementComplete(),
+            ),
+        )
+        val client = ProtocolSimulatorCircuitClient(
+            packetExchange = exchange,
+            sequence = SimulatorPacketSequence(0),
+        )
+
+        val result = assertIs<SimulatorPresenceResult.Present>(client.ensurePresence(circuit()))
+
+        assertFalse(result.cached)
+        assertTrue(result.regionProtocolFlags.agentAppearanceService)
+    }
+
+    @Test
+    fun `ensurePresence returns cached region protocol flags on later calls`() {
+        val exchange = RecordingPacketExchange(
+            inboundPayloads = mutableListOf(
+                LibomvPacketTestBytes.regionHandshakeWithRegionProtocols(regionProtocols = 1L),
+                agentMovementComplete(),
+            ),
+        )
+        val client = ProtocolSimulatorCircuitClient(
+            packetExchange = exchange,
+            sequence = SimulatorPacketSequence(0),
+        )
+
+        assertIs<SimulatorPresenceResult.Present>(client.ensurePresence(circuit()))
+        val cached = assertIs<SimulatorPresenceResult.Present>(client.ensurePresence(circuit()))
+
+        assertTrue(cached.cached)
+        assertTrue(cached.regionProtocolFlags.agentAppearanceService)
+    }
+
+    @Test
+    fun `malformed region handshake fails redacted as malformed`() {
+        val exchange = RecordingPacketExchange(
+            inboundPayloads = mutableListOf(LibomvPacketTestBytes.malformedRegionHandshake()),
+        )
+        val client = ProtocolSimulatorCircuitClient(
+            packetExchange = exchange,
+            sequence = SimulatorPacketSequence(0),
+        )
+
+        val result = assertIs<SimulatorPresenceResult.Failed>(client.ensurePresence(circuit()))
+
+        assertEquals(SimulatorPresenceStatus.HANDSHAKE_MALFORMED, result.status)
+        assertEquals("protocol simulator send failed", result.redactedMessage)
+        assertFalse(result.redactedMessage.contains(AGENT_ID))
     }
 
     @Test

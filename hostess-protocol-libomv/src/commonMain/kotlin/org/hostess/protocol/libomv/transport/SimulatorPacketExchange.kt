@@ -31,6 +31,7 @@ internal sealed interface SimulatorPresenceResult {
     data class Present(
         val pingReplies: Int,
         val cached: Boolean,
+        val regionProtocolFlags: RegionProtocolFlags = RegionProtocolFlags.unknown(),
     ) : SimulatorPresenceResult
 
     data class Failed(

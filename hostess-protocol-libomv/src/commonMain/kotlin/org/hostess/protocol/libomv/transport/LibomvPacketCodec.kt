@@ -120,6 +120,15 @@ internal object LibomvPacketCodec {
             else -> SimulatorPacketType.UNKNOWN
         }
 
+    fun regionHandshakeInfo(payload: ByteArray): RegionHandshakeInfo? {
+        val packet = decodedPacket(payload) ?: return null
+        if (packet.packetId != REGION_HANDSHAKE) {
+            return null
+        }
+        val reader = RegionHandshakeBodyReader(packet.decoded, packet.bodyOffset)
+        return reader.regionProtocolFlags()?.let(::RegionHandshakeInfo)
+    }
+
     fun packetAckSequences(payload: ByteArray): List<Long>? {
         appendedAckSequences(payload)?.let { return it }
         val decoded = try {
@@ -307,6 +316,80 @@ internal object LibomvPacketCodec {
         val bodyOffset: Int,
     )
 
+    private class RegionHandshakeBodyReader(
+        private val bytes: ByteArray,
+        private var offset: Int,
+    ) {
+        fun regionProtocolFlags(): RegionProtocolFlags? {
+            if (isExhausted()) {
+                return RegionProtocolFlags.unknown()
+            }
+            if (!skipRegionInfo() || !skipBytes(ID_BYTES) || !skipRegionInfo3()) {
+                return null
+            }
+            return readRegionInfo4()
+        }
+
+        private fun skipRegionInfo(): Boolean =
+            skipBytes(U32_BYTES) &&
+                skipBytes(U8_BYTES) &&
+                skipVariable1() &&
+                skipBytes(ID_BYTES) &&
+                skipBytes(U8_BYTES) &&
+                skipBytes(F32_BYTES) &&
+                skipBytes(F32_BYTES) &&
+                skipBytes(ID_BYTES) &&
+                skipBytes(ID_BYTES * TERRAIN_ID_FIELD_COUNT) &&
+                skipBytes(F32_BYTES * TERRAIN_FLOAT_FIELD_COUNT)
+
+        private fun skipRegionInfo3(): Boolean =
+            skipBytes(S32_BYTES) &&
+                skipBytes(S32_BYTES) &&
+                skipVariable1() &&
+                skipVariable1() &&
+                skipVariable1()
+
+        private fun readRegionInfo4(): RegionProtocolFlags {
+            val count = readU8() ?: return RegionProtocolFlags.unknown()
+            if (count == 0) {
+                return RegionProtocolFlags.unknown()
+            }
+            readU64() ?: return RegionProtocolFlags.unknown()
+            val regionProtocols = readU64() ?: return RegionProtocolFlags.unknown()
+            return RegionProtocolFlags(
+                agentAppearanceService = (regionProtocols and AGENT_APPEARANCE_SERVICE_FLAG) != 0L,
+            )
+        }
+
+        private fun skipVariable1(): Boolean {
+            val size = readU8() ?: return false
+            return skipBytes(size)
+        }
+
+        private fun readU8(): Int? =
+            readBytes(U8_BYTES)?.single()?.toInt()?.and(BYTE_MASK)
+
+        private fun readU64(): Long? {
+            val values = readBytes(U64_BYTES) ?: return null
+            return values.foldIndexed(0L) { index, result, byte ->
+                result or ((byte.toLong() and BYTE_MASK_LONG) shl (index * BYTE_BITS))
+            }
+        }
+
+        private fun skipBytes(size: Int): Boolean = readBytes(size) != null
+
+        private fun readBytes(size: Int): ByteArray? {
+            if (size < 0 || offset + size > bytes.size) {
+                return null
+            }
+            val value = bytes.copyOfRange(offset, offset + size)
+            offset += size
+            return value
+        }
+
+        private fun isExhausted(): Boolean = offset == bytes.size
+    }
+
     private const val USE_CIRCUIT_CODE = 3
     private const val START_PING_CHECK = 1
     private const val COMPLETE_PING_CHECK = 2
@@ -330,6 +413,8 @@ internal object LibomvPacketCodec {
     private const val HIGH_PACKET_ID_BYTES = 1
     private const val ID_BYTES = 16
     private const val U32_BYTES = 4
+    private const val S32_BYTES = 4
+    private const val U64_BYTES = 8
     private const val U8_BYTES = 1
     private const val QUATERNION_BYTES = 16
     private const val VECTOR3_BYTES = 12
@@ -343,10 +428,14 @@ internal object LibomvPacketCodec {
     private const val LOW_FREQUENCY_MARKER = 0xFF
     private const val BYTE_MASK = 0xFF
     private const val BYTE_MASK_LONG = 0xFFL
+    private const val BYTE_BITS = 8
+    private const val TERRAIN_ID_FIELD_COUNT = 8
+    private const val TERRAIN_FLOAT_FIELD_COUNT = 8
     private const val APPENDED_ACKS_FLAG = 0x10
     private const val RELIABLE_FLAGS = 0x40
     private const val RELIABLE_ZEROCODED_FLAGS = 0xC0
     private const val SELF_APPEARANCE_SUPPORT_FLAG = 4L
+    private const val AGENT_APPEARANCE_SERVICE_FLAG = 1L
     private const val AGENT_CONTROL_FLAGS_NONE = 0L
     private const val AGENT_FLAGS_NONE = 0
     private const val AGENT_STATE_WALKING = 0
