@@ -91,17 +91,61 @@ class LiveNoticeSendProofRunnerTest {
             assertContains(report, "\"attachmentSelectionStatus\": \"passed\"")
             assertContains(report, "\"attachmentResolutionStatus\": \"passed\"")
             assertContains(report, "\"noticeSendStatus\": \"passed\"")
+            assertContains(report, "\"simulatorPresenceStatus\": \"passed\"")
+            assertContains(report, "\"noticeArchiveStatus\": \"passed\"")
+            assertContains(report, "\"noticeArchiveTargetCount\": \"2\"")
+            assertContains(report, "\"noticeArchiveMatchedTargetCount\": \"2\"")
             assertContains(report, "\"existingAttachmentDisplayName\": \"Venue Landmark\"")
+            assertContains(report, "\"step\": \"simulator-presence\"")
             assertContains(report, "\"step\": \"select-attachment\"")
             assertContains(report, "\"step\": \"resolve-attachment\"")
             assertContains(report, "\"step\": \"group-notice\"")
+            assertContains(report, "\"detail\": \"targets=2; matched=2; entries=2; bodyEcho=not_run\"")
             assertContains(report, "\"cleanupStatus\": \"passed\"")
             assertContains(report, "authorised retained external notice proof")
             assertEquals(1, ports.sessionPort.loginCalls)
             assertEquals(1, ports.sessionPort.logoutCalls)
+            assertEquals(1, ports.groupPort.simulatorPresenceCalls)
+            assertEquals(listOf("Owks", "m!nx"), ports.groupPort.noticeArchiveGroups.map { it.displayName.value })
             assertEquals(setOf(InventoryItemKind.LANDMARK), ports.inventoryPort.listQueries.single().kinds)
             assertFalse(RAW_UUID.containsMatchIn(report))
             assertFalse(report.contains("landmark-item"))
+        }
+    }
+
+    @Test
+    fun `simulator presence failure blocks before groups inventory or send`() {
+        withReport { reportPath ->
+            val ports = Ports(
+                groupPort = RecordingGroupPort(
+                    presenceResult = SimulatorPresenceProofResult.Failure(
+                        proof = presenceProof(
+                            simulatorPresenceStatus = SimulatorPresenceProofStatus.PROOF_GAP,
+                            agentMovementStatus = SimulatorPresenceProofStatus.PROOF_GAP,
+                            agentUpdateStatus = SimulatorPresenceProofStatus.NOT_RUN,
+                            message = "simulator presence proof_gap",
+                        ),
+                        failure = CoreFailure(CoreFailureReason.GROUP_LIST_FAILED, "simulator presence proof_gap"),
+                    ),
+                ),
+            )
+
+            val exit = runner(ports.runtime(), reportPath, inputs()).run()
+
+            val report = reportPath.readText()
+            assertEquals(CommandResult.UNAVAILABLE, exit)
+            assertContains(report, "\"status\": \"proof_gap\"")
+            assertContains(report, "\"simulatorPresenceStatus\": \"proof_gap\"")
+            assertContains(report, "\"currentGroupsStatus\": \"not_run\"")
+            assertContains(report, "\"noticeSendStatus\": \"not_run\"")
+            assertContains(report, "\"noticeArchiveStatus\": \"not_run\"")
+            assertContains(report, "\"logoutStatus\": \"passed\"")
+            assertEquals(1, ports.groupPort.simulatorPresenceCalls)
+            assertEquals(0, ports.groupPort.currentGroupsCalls)
+            assertEquals(0, ports.inventoryPort.listQueries.size)
+            assertEquals(0, ports.inventoryPort.resolveRequests)
+            assertEquals(0, ports.noticePort.groups.size)
+            assertEquals(1, ports.sessionPort.logoutCalls)
         }
     }
 
@@ -254,11 +298,104 @@ class LiveNoticeSendProofRunnerTest {
             assertEquals(CommandResult.UNAVAILABLE, exit)
             assertContains(report, "\"noticeSendStatus\": \"transport_gap\"")
             assertContains(report, "\"step\": \"group-notice\"")
+            assertContains(report, "\"noticeArchiveStatus\": \"not_run\"")
             assertContains(report, "\"cleanupStatus\": \"not_applicable\"")
             assertContains(report, "\"logoutStatus\": \"passed\"")
             assertEquals(1, Regex("\"step\": \"group-notice\"").findAll(report).count())
             assertEquals(1, ports.sessionPort.logoutCalls)
             assertEquals(1, ports.noticePort.groups.size)
+            assertEquals(0, ports.groupPort.noticeArchiveGroups.size)
+        }
+    }
+
+    @Test
+    fun `notice archive subject miss fails after dispatch and before cleanup`() {
+        withReport { reportPath ->
+            val ports = Ports(
+                groupPort = RecordingGroupPort(
+                    archiveResult = { group ->
+                        GroupNoticeArchiveResult.Success(
+                            group = group,
+                            entries = listOf(
+                                GroupNoticeArchiveEntry(
+                                    subject = "Earlier",
+                                    fromName = "venue-proof",
+                                    timestamp = 1_717_000_000L,
+                                    hasAttachment = true,
+                                    assetType = 3,
+                                ),
+                            ),
+                        )
+                    },
+                ),
+            )
+            ports.inventoryPort.listResult = InventoryItemListResult.Success(
+                listOf(inventoryItem("Venue Landmark", "landmark-item", copyable = true)),
+            )
+
+            val exit = runner(ports.runtime(), reportPath, inputs()).run()
+
+            val report = reportPath.readText()
+            assertEquals(CommandResult.UNAVAILABLE, exit)
+            assertContains(report, "\"status\": \"proof_gap\"")
+            assertContains(report, "\"noticeSendStatus\": \"passed\"")
+            assertContains(report, "\"noticeArchiveStatus\": \"proof_gap\"")
+            assertContains(report, "\"noticeArchiveTargetCount\": \"1\"")
+            assertContains(report, "\"noticeArchiveMatchedTargetCount\": \"0\"")
+            assertContains(report, "subjectMatch=missing")
+            assertContains(report, "\"cleanupStatus\": \"not_applicable\"")
+            assertContains(report, "\"logoutStatus\": \"passed\"")
+            assertEquals(1, ports.noticePort.groups.size)
+            assertEquals(List(4) { "Venue Hosts" }, ports.groupPort.noticeArchiveGroups.map { it.displayName.value })
+        }
+    }
+
+    @Test
+    fun `notice archive retries failed post-send read before passing cleanup`() {
+        withReport { reportPath ->
+            var archiveCalls = 0
+            val ports = Ports(
+                groupPort = RecordingGroupPort(
+                    archiveResult = { group ->
+                        archiveCalls += 1
+                        if (archiveCalls == 1) {
+                            GroupNoticeArchiveResult.Failure(
+                                group = group,
+                                failure = CoreFailure(
+                                    CoreFailureReason.GROUP_LIST_FAILED,
+                                    "notice archive proof_gap reply_timeout",
+                                ),
+                            )
+                        } else {
+                            GroupNoticeArchiveResult.Success(
+                                group = group,
+                                entries = listOf(
+                                    GroupNoticeArchiveEntry(
+                                        subject = "Tonight",
+                                        fromName = "venue-proof",
+                                        timestamp = 1_717_000_000L,
+                                        hasAttachment = true,
+                                        assetType = 3,
+                                    ),
+                                ),
+                            )
+                        }
+                    },
+                ),
+            )
+            ports.inventoryPort.listResult = InventoryItemListResult.Success(
+                listOf(inventoryItem("Venue Landmark", "landmark-item", copyable = true)),
+            )
+
+            val exit = runner(ports.runtime(), reportPath, inputs()).run()
+
+            val report = reportPath.readText()
+            assertEquals(CommandResult.SUCCESS, exit)
+            assertContains(report, "\"noticeArchiveStatus\": \"passed\"")
+            assertContains(report, "\"noticeArchiveMatchedTargetCount\": \"1\"")
+            assertContains(report, "\"cleanupStatus\": \"passed\"")
+            assertEquals(2, archiveCalls)
+            assertEquals(listOf("Venue Hosts", "Venue Hosts"), ports.groupPort.noticeArchiveGroups.map { it.displayName.value })
         }
     }
 
@@ -317,6 +454,7 @@ class LiveNoticeSendProofRunnerTest {
         subject = "Tonight",
         body = "Doors at eight",
         authorisedLiveSend = true,
+        operatorObservationReady = true,
         existingAttachmentName = existingAttachmentName,
     )
 
@@ -389,26 +527,10 @@ class LiveNoticeSendProofRunnerTest {
         private val result: GroupListResult = GroupListResult.Success(
             listOf(GroupMembership.fromValues("venue-hosts", "Venue Hosts", true, true)),
         ),
-    ) : GroupPort {
-        var currentGroupsCalls = 0
-
-        override fun currentGroups(session: HostessSession): GroupListResult {
-            currentGroupsCalls += 1
-            return result
-        }
-
-        override fun simulatorPresence(session: HostessSession): SimulatorPresenceProofResult =
-            SimulatorPresenceProofResult.Success(
-                SimulatorPresenceProof(
-                    simulatorPresenceStatus = SimulatorPresenceProofStatus.PASSED,
-                    regionHandshakeStatus = SimulatorPresenceProofStatus.PASSED,
-                    regionHandshakeReplyStatus = SimulatorPresenceProofStatus.PASSED,
-                    agentMovementStatus = SimulatorPresenceProofStatus.PASSED,
-                    agentUpdateStatus = SimulatorPresenceProofStatus.PASSED,
-                ),
-            )
-
-        override fun noticeArchive(session: HostessSession, group: GroupMembership): GroupNoticeArchiveResult =
+        private val presenceResult: SimulatorPresenceProofResult = SimulatorPresenceProofResult.Success(
+            presenceProof(),
+        ),
+        private val archiveResult: (GroupMembership) -> GroupNoticeArchiveResult = { group ->
             GroupNoticeArchiveResult.Success(
                 group = group,
                 entries = listOf(
@@ -421,6 +543,26 @@ class LiveNoticeSendProofRunnerTest {
                     ),
                 ),
             )
+        },
+    ) : GroupPort {
+        var currentGroupsCalls = 0
+        var simulatorPresenceCalls = 0
+        val noticeArchiveGroups = mutableListOf<GroupMembership>()
+
+        override fun currentGroups(session: HostessSession): GroupListResult {
+            currentGroupsCalls += 1
+            return result
+        }
+
+        override fun simulatorPresence(session: HostessSession): SimulatorPresenceProofResult {
+            simulatorPresenceCalls += 1
+            return presenceResult
+        }
+
+        override fun noticeArchive(session: HostessSession, group: GroupMembership): GroupNoticeArchiveResult {
+            noticeArchiveGroups += group
+            return archiveResult(group)
+        }
     }
 
     private class RecordingNoticePort(
@@ -486,6 +628,22 @@ class LiveNoticeSendProofRunnerTest {
         )
         val RAW_UUID = Regex(
             "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}",
+        )
+
+        fun presenceProof(
+            simulatorPresenceStatus: SimulatorPresenceProofStatus = SimulatorPresenceProofStatus.PASSED,
+            regionHandshakeStatus: SimulatorPresenceProofStatus = SimulatorPresenceProofStatus.PASSED,
+            regionHandshakeReplyStatus: SimulatorPresenceProofStatus = SimulatorPresenceProofStatus.PASSED,
+            agentMovementStatus: SimulatorPresenceProofStatus = SimulatorPresenceProofStatus.PASSED,
+            agentUpdateStatus: SimulatorPresenceProofStatus = SimulatorPresenceProofStatus.PASSED,
+            message: String? = null,
+        ): SimulatorPresenceProof = SimulatorPresenceProof(
+            simulatorPresenceStatus = simulatorPresenceStatus,
+            regionHandshakeStatus = regionHandshakeStatus,
+            regionHandshakeReplyStatus = regionHandshakeReplyStatus,
+            agentMovementStatus = agentMovementStatus,
+            agentUpdateStatus = agentUpdateStatus,
+            redactedMessage = message,
         )
     }
 }

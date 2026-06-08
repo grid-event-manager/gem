@@ -46,8 +46,22 @@ internal class LiveNoticeSendProofRunner(
             return finish(ProofReportStatus.BLOCKED, detail)
         }
         steps += LiveProofStep.passed("validate-inputs")
+        if (!operatorObservationReady()) {
+            val detail = "operator observation unavailable"
+            statusFields["operatorReceiptStatus"] = "blocked"
+            markNotRunUntilLogout(detail, "login")
+            return finish(ProofReportStatus.BLOCKED, detail)
+        }
+        statusFields["operatorReceiptStatus"] = if (inputs.requiresOperatorObservation()) {
+            "pending"
+        } else {
+            "not_applicable"
+        }
 
         val session = login() ?: return finish(ProofReportStatus.BLOCKED, "login blocked")
+        if (!simulatorPresence(session)) {
+            return finishAfterLogout(session, "simulator presence unavailable")
+        }
         val groups = currentGroups(session) ?: return finishAfterLogout(session, "current groups unavailable")
         val targetSet = selectTargets(groups) ?: return finishAfterLogout(session, "target selection failed")
         val items = inventoryCatalogue(session) ?: return finishAfterLogout(session, "inventory catalogue unavailable")
@@ -56,12 +70,18 @@ internal class LiveNoticeSendProofRunner(
         if (!sendNotice(session, targetSet, attachment)) {
             return finishAfterLogout(session, "group notice failed")
         }
+        if (!noticeArchive(session, targetSet)) {
+            return finishAfterLogout(session, "notice archive proof failed")
+        }
         runCleanup()
         return finishAfterLogout(session)
     }
 
     private fun hasForbiddenTarget(): Boolean =
         inputs.targetDisplayNames.any { FORBIDDEN_TARGET.matches(it.trim()) }
+
+    private fun operatorObservationReady(): Boolean =
+        !inputs.requiresOperatorObservation() || inputs.operatorObservationReady
 
     private fun login(): HostessSession? {
         val loginRequest = LoginRequest(
@@ -80,9 +100,21 @@ internal class LiveNoticeSendProofRunner(
                 val detail = login.failure.redactedMessage ?: "login unavailable"
                 statusFields["loginStatus"] = "blocked"
                 steps += LiveProofStep("login", "blocked", detail)
-                markNotRunUntilLogout(detail, "current-groups")
+                markNotRunUntilLogout(detail, "simulator-presence")
                 null
             }
+        }
+    }
+
+    private fun simulatorPresence(session: HostessSession): Boolean {
+        val outcome = LiveProofSimulatorPresenceVerifier(runtime.groupDirectoryService).verify(session)
+        statusFields += outcome.statusFields
+        steps += outcome.step
+        return if (outcome.passed) {
+            true
+        } else {
+            markNotRunUntilLogout(outcome.failureReason ?: "simulator presence unavailable", "current-groups")
+            false
         }
     }
 
@@ -213,7 +245,7 @@ internal class LiveNoticeSendProofRunner(
                     val detail = failed.detail ?: failed.state.name.lowercase()
                     statusFields["noticeSendStatus"] = classifyStatus(detail)
                     steps += LiveProofStep("group-notice", statusFields.getValue("noticeSendStatus"), detail)
-                    markNotRunUntilLogout(detail, "cleanup")
+                    markNotRunUntilLogout(detail, "notice-archive")
                     false
                 }
             }
@@ -223,8 +255,25 @@ internal class LiveNoticeSendProofRunner(
     private fun noticeFailed(detail: String): Boolean {
         statusFields["noticeSendStatus"] = classifyStatus(detail)
         steps += LiveProofStep("group-notice", statusFields.getValue("noticeSendStatus"), detail)
-        markNotRunUntilLogout(detail, "cleanup")
+        markNotRunUntilLogout(detail, "notice-archive")
         return false
+    }
+
+    private fun noticeArchive(session: HostessSession, targetSet: GroupTargetSet): Boolean {
+        val outcome = LiveProofNoticeArchiveVerifier(runtime.groupDirectoryService).read(
+            session = session,
+            targetSet = targetSet,
+            expectedSubject = inputs.subject.orEmpty(),
+            requireAttachment = true,
+        )
+        statusFields += outcome.statusFields
+        steps += outcome.steps
+        return if (outcome.passed) {
+            true
+        } else {
+            markNotRunUntilLogout(outcome.failureReason ?: "notice archive proof failed", "cleanup")
+            false
+        }
     }
 
     private fun runCleanup() {
@@ -277,14 +326,7 @@ internal class LiveNoticeSendProofRunner(
     }
 
     private fun classifyStatus(detail: String): String {
-        val lower = detail.lowercase()
-        return when {
-            "transport" in lower -> "transport_gap"
-            "runtime" in lower || "unavailable" in lower -> "runtime_gap"
-            "proof" in lower -> "proof_gap"
-            "blocked" in lower -> "blocked"
-            else -> "failed"
-        }
+        return LiveProofStatusClassifier.classify(detail)
     }
 
     private fun finish(status: ProofReportStatus, reason: String): CommandResult {

@@ -21,6 +21,7 @@ internal data class LiveProofInputs(
     val subject: String?,
     val body: String?,
     val authorisedLiveSend: Boolean,
+    val operatorObservationReady: Boolean,
     val existingAttachmentName: String?,
     private val staleNoticeTotalsOptions: List<String> = emptyList(),
 ) {
@@ -47,6 +48,7 @@ internal data class LiveProofInputs(
             if (subject.isNullOrBlank()) add("subject")
             if (body.isNullOrBlank()) add("body")
             if (existingAttachmentName.isNullOrBlank()) add("existing-attachment-name")
+            if (requiresOperatorObservation() && !operatorObservationReady) add("operator-observation-ready")
         }
         if (proofScope == LiveProofScope.NOTICE_ARCHIVE && targetDisplayNames.isEmpty()) {
             add("target display name")
@@ -68,6 +70,7 @@ internal data class LiveProofInputs(
         put("subject", subject.orEmpty())
         put("bodyLength", body.orEmpty().length.toString())
         put("authorisedLiveSend", authorisedLiveSend.toString())
+        put("operatorObservationReady", operatorObservationReady.toString())
         if (proofScope == LiveProofScope.FULL) {
             put("existingAttachmentDisplayName", existingAttachmentName.orEmpty())
         }
@@ -78,8 +81,14 @@ internal data class LiveProofInputs(
             if (!credentialFile.isNullOrBlank() || credentialHandle.isNullOrBlank()) {
                 fields["credentialStatus"] = "blocked"
             }
+            if (requiresOperatorObservation() && !operatorObservationReady) {
+                fields["operatorReceiptStatus"] = "blocked"
+            }
             fields += loginComplianceStatusFields()
         }
+
+    fun requiresOperatorObservation(): Boolean =
+        proofScope == LiveProofScope.FULL && grid.isSecondLifeGrid()
 
     fun loginComplianceRequest(): LoginComplianceRequest = LoginComplianceRequest(
         proofAccountAttested = proofAccountAttested,
@@ -123,6 +132,7 @@ internal data class LiveProofInputs(
                 subject = arguments.option("subject"),
                 body = arguments.option("body"),
                 authorisedLiveSend = arguments.has("authorised-live-send"),
+                operatorObservationReady = arguments.has("operator-observation-ready"),
                 existingAttachmentName = arguments.option("existing-attachment-name"),
                 staleNoticeTotalsOptions = staleNoticeTotalsOptions(arguments),
             )
@@ -158,6 +168,19 @@ internal data class LiveProofInputs(
                 ScriptedAgentEvidenceSource.ABSENT.reportValue
             },
         )
+
+    private fun String?.isSecondLifeGrid(): Boolean =
+        when (this?.trim()?.lowercase()) {
+            "agni",
+            "second-life",
+            "second life",
+            "secondlife",
+            "sl",
+            "main-grid",
+            "main grid",
+            -> true
+            else -> false
+        }
 }
 
 internal enum class LiveProofScope(val wireValue: String) {

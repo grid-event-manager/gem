@@ -22,6 +22,10 @@ TRACK_H_STALE_CLI_LIVE_SEND_PATTERN='sessionProvider|fakeSession\(active = false
 TRACK_H_STALE_FULL_PROOF_PATTERN='sendPlainNotice|runAttachmentProof|runBulkProof|boundedBulkTargetSet|plain-notice|existing-attachment-notice|bulk-notice|existingAttachmentId|--existing-attachment-id|bulkLimit|bulkDelayMs'
 TRACK_H_STALE_NOTICE_PATTERN='(^|[^[:alnum:]_])(GroupNoticeAdd|NoticeSender|BulkSender)([^[:alnum:]_]|$)'
 TRACK_H_DIRECT_APP_NOTICE_PATTERN='(^|[^[:alnum:]_])(ProtocolNoticeRuntime|ProtocolNoticeCircuitSource|LibomvNoticePacketCodec|SimulatorPacketExchange)([^[:alnum:]_]|$)'
+TRACK_HS_DUPLICATE_SIMULATOR_EXCHANGE_PATTERN='SimulatorPacketReceiver|UdpSimulatorDatagramReceiver|class[[:space:]]+.*Presence.*Socket|class[[:space:]]+.*Simulator.*Socket|DatagramSocket\('
+TRACK_HS_DIRECT_ARCHIVE_PATTERN='(^|[^[:alnum:]_])(ProtocolGroupNoticeArchiveSource|requestGroupNoticeArchive|GroupNoticesListRequest|GroupNoticesListReply)([^[:alnum:]_]|$)'
+TRACK_HS_FAKE_LIVE_PASS_PATTERN='fake mode.*passed|CommandMode\.FAKE[^;]*ProofReportStatus\.PASSED|ProofReportStatus\.PASSED[^;]*CommandMode\.FAKE'
+TRACK_HS_FULL_PROOF_ARCHIVE_REQUIRED_PATTERN='if[[:space:]]*\(!noticeArchive\(session,[[:space:]]*targetSet\)\)'
 TRACK_ANDROID_PROBE_FORBIDDEN_RUNTIME_PATTERN='EnvironmentLoginSecretResolver|AgentDataUpdateRequestTransport|EventQueueGetClient|ProtocolLoginRuntime|ProtocolGroupRuntime|ProtocolInventoryRuntime|ProtocolNoticeRuntime|SimulatorPacketExchange'
 TRACK_I_STALE_NOTICE_COMPLIANCE_PATTERN='NoticeCompliance(Service|Request|Decision|Receipt|Policy|Clock|LedgerResult|Ledgers?)|DefaultNoticeComplianceClock|NoticeSubmission(Count|Projection|LedgerSnapshot|LedgerPort)|NoticeLedgerDay|noticeSubmissionProjectionStatus|noticeSubmissionsProjected|noticeSubmissionLedgerGroupCount|noticeSubmissionLedgerMaxGroupTotal|noticeSubmissionPerGroupHardCap|noticeLedgerConfigured|notice_submission_cap_exceeded|ledger_snapshot_unavailable|ledger_reserve_failed|ledger_record_failed|notice_ledger_unavailable|NoticeRecipientEstimate|NoticeRecipientCount|NoticeRecipientEstimateSource|recipientDeliveryProjected|recipientDeliveryLedgerTotal|recipientDeliveryHardCap|recipientProjectionStatus|recipient_count_|recipient_delivery_|NoticeDeliveryCount|NoticeDeliveryDay|NoticeDeliveryProjection|NoticeDeliveryLedgerSnapshot|NoticeComplianceLedgerPort|HOSTESS_OWKS_COUNT|HOSTESS_MINX_COUNT'
 TRACK_C_ENV_PATTERN='System(::|\.)getenv'
@@ -100,6 +104,41 @@ check_no_hits() {
             ;;
         1)
             echo "PASS: $label"
+            ;;
+        *)
+            echo "ERROR: $label scan failed"
+            echo "$output"
+            failures=1
+            ;;
+    esac
+}
+
+check_required_hits() {
+    local label="$1"
+    local pattern="$2"
+    shift 2
+
+    if [[ "$#" -eq 0 ]]; then
+        echo "ERROR: $label has no scan targets"
+        failures=1
+        return
+    fi
+
+    local output
+    local status
+
+    set +e
+    output="$(rg -n -- "$pattern" "$@" 2>&1)"
+    status="$?"
+    set -e
+
+    case "$status" in
+        0)
+            echo "PASS: $label"
+            ;;
+        1)
+            echo "FAIL: $label"
+            failures=1
             ;;
         *)
             echo "ERROR: $label scan failed"
@@ -759,6 +798,42 @@ done < <(find \
     "apps/android/src/main" \
     -type f -name '*.kt' 2>/dev/null || true)
 
+track_hs_duplicate_exchange_targets=()
+while IFS= read -r path; do
+    case "$path" in
+        "hostess-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/transport/UdpSimulatorDatagramSender.kt") ;;
+        *) track_hs_duplicate_exchange_targets+=("$path") ;;
+    esac
+done < <(find \
+    "hostess-core/src/commonMain" \
+    "hostess-core/src/jvmMain" \
+    "hostess-core/src/androidMain" \
+    "hostess-core/src/jvmAndroidMain" \
+    "hostess-core/src/main" \
+    "hostess-protocol-libomv/src/commonMain" \
+    "hostess-protocol-libomv/src/jvmMain" \
+    "hostess-protocol-libomv/src/androidMain" \
+    "hostess-protocol-libomv/src/jvmAndroidMain" \
+    "hostess-protocol-libomv/src/main" \
+    "tools/cli/src/main" \
+    "apps/desktop/src/main" \
+    "apps/android/src/main" \
+    -type f -name '*.kt' 2>/dev/null || true)
+
+track_hs_direct_archive_targets=()
+add_existing track_hs_direct_archive_targets \
+    "tools/cli/src/main" \
+    "apps/desktop/src/main" \
+    "apps/android/src/main"
+
+track_hs_fake_live_targets=()
+add_existing track_hs_fake_live_targets \
+    "tools/cli/src/main"
+
+track_hs_full_proof_targets=()
+add_existing track_hs_full_proof_targets \
+    "tools/cli/src/main/kotlin/org/hostess/tools/cli/commands/LiveNoticeSendProofRunner.kt"
+
 track_android_probe_targets=()
 add_existing track_android_probe_targets \
     "apps/android/src/main/kotlin/org/hostess/apps/android/AndroidCompatibilityProbe.kt"
@@ -1006,6 +1081,26 @@ check_no_hits \
     "Track H direct CLI/app notice protocol routes" \
     "$TRACK_H_DIRECT_APP_NOTICE_PATTERN" \
     "${track_h_direct_app_notice_targets[@]}"
+
+check_no_hits \
+    "Track HS duplicate simulator exchange outside UDP owner" \
+    "$TRACK_HS_DUPLICATE_SIMULATOR_EXCHANGE_PATTERN" \
+    "${track_hs_duplicate_exchange_targets[@]}"
+
+check_no_hits \
+    "Track HS direct CLI/app archive protocol routes" \
+    "$TRACK_HS_DIRECT_ARCHIVE_PATTERN" \
+    "${track_hs_direct_archive_targets[@]}"
+
+check_no_hits \
+    "Track HS fake live proof pass route" \
+    "$TRACK_HS_FAKE_LIVE_PASS_PATTERN" \
+    "${track_hs_fake_live_targets[@]}"
+
+check_required_hits \
+    "Track HS full proof requires archive read-back" \
+    "$TRACK_HS_FULL_PROOF_ARCHIVE_REQUIRED_PATTERN" \
+    "${track_hs_full_proof_targets[@]}"
 
 check_no_hits \
     "Android compatibility probe forbidden runtime routes" \
@@ -1290,6 +1385,21 @@ check_pattern_matches \
     "self-test Track H direct CLI app notice pattern" \
     "$TRACK_H_DIRECT_APP_NOTICE_PATTERN" \
     'ProtocolNoticeCircuitSource(transport).send(packet)'
+
+check_pattern_matches \
+    "self-test Track HS duplicate simulator exchange pattern" \
+    "$TRACK_HS_DUPLICATE_SIMULATOR_EXCHANGE_PATTERN" \
+    'class ExtraSimulatorSocket { val socket = DatagramSocket() }'
+
+check_pattern_matches \
+    "self-test Track HS direct archive pattern" \
+    "$TRACK_HS_DIRECT_ARCHIVE_PATTERN" \
+    'ProtocolGroupNoticeArchiveSource(client).read(group)'
+
+check_pattern_matches \
+    "self-test Track HS fake live pass pattern" \
+    "$TRACK_HS_FAKE_LIVE_PASS_PATTERN" \
+    'CommandMode.FAKE returns ProofReportStatus.PASSED'
 
 check_pattern_matches \
     "self-test Android probe forbidden runtime route pattern" \

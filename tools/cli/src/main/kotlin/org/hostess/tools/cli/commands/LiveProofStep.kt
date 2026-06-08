@@ -44,6 +44,7 @@ internal data class LiveProofStep(
             "noticeArchiveStatus",
             "noticeArchiveTargetCount",
             "noticeArchiveMatchedTargetCount",
+            "operatorReceiptStatus",
             "androidProbeStatus",
         )
         fun passed(name: String, detail: String? = null): LiveProofStep = LiveProofStep(name, "passed", detail)

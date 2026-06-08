@@ -25,7 +25,7 @@ class ProtocolSimulatorCircuitClientTest {
         assertEquals(SIM_HOST, exchange.sent.first().endpoint.host)
         assertEquals(SIM_PORT, exchange.sent.first().endpoint.port)
         val payloads = exchange.sentPayloads()
-        assertEquals(5, payloads.size)
+        assertEquals(6, payloads.size)
         assertLowPacket(
             payload = payloads[0],
             sequence = 1,
@@ -34,8 +34,9 @@ class ProtocolSimulatorCircuitClientTest {
                 LibomvPacketTestBytes.uuid(SESSION_ID) +
                 LibomvPacketTestBytes.uuid(AGENT_ID),
         )
+        assertPacketAck(payloads[1], ackedSequence = 101)
         assertLowPacket(
-            payload = payloads[1],
+            payload = payloads[2],
             sequence = 2,
             packetId = 149,
             flags = 0xC0,
@@ -44,7 +45,7 @@ class ProtocolSimulatorCircuitClientTest {
                 u32(4L),
         )
         assertLowPacket(
-            payload = payloads[2],
+            payload = payloads[3],
             sequence = 3,
             packetId = 249,
             body = LibomvPacketTestBytes.uuid(AGENT_ID) +
@@ -52,7 +53,7 @@ class ProtocolSimulatorCircuitClientTest {
                 u32(CIRCUIT_CODE),
         )
         assertHighPacketPrefix(
-            payload = payloads[3],
+            payload = payloads[4],
             sequence = 4,
             packetId = 4,
             flags = 0xC0,
@@ -60,7 +61,7 @@ class ProtocolSimulatorCircuitClientTest {
                 LibomvPacketTestBytes.uuid(SESSION_ID),
         )
         assertLowPacket(
-            payload = payloads[4],
+            payload = payloads[5],
             sequence = 5,
             packetId = 386,
             body = LibomvPacketTestBytes.uuid(AGENT_ID) + LibomvPacketTestBytes.uuid(SESSION_ID),
@@ -92,16 +93,45 @@ class ProtocolSimulatorCircuitClientTest {
             packetId = 2,
             bodyPrefix = byteArrayOf(7),
         )
+        assertPacketAck(payloads[2], ackedSequence = 101)
+        assertLowPacket(payloads[3], sequence = 3, packetId = 149, flags = 0xC0)
+        assertLowPacket(payloads[4], sequence = 4, packetId = 249)
         assertHighPacketPrefix(
-            payload = payloads[4],
+            payload = payloads[5],
             sequence = 5,
             packetId = 2,
             bodyPrefix = byteArrayOf(8),
         )
-        assertLowPacket(payloads[2], sequence = 3, packetId = 149, flags = 0xC0)
-        assertLowPacket(payloads[3], sequence = 4, packetId = 249)
-        assertHighPacketPrefix(payloads[5], sequence = 6, packetId = 4, flags = 0xC0)
-        assertLowPacket(payloads[6], sequence = 7, packetId = 386)
+        assertHighPacketPrefix(payloads[6], sequence = 6, packetId = 4, flags = 0xC0)
+        assertLowPacket(payloads[7], sequence = 7, packetId = 386)
+    }
+
+    @Test
+    fun `triggers movement before handshake when login circuit sends traffic first`() {
+        val preHandshakeTraffic = List(12) { layerData(sequence = 200 + it) }
+        val exchange = RecordingPacketExchange(
+            inboundPayloads = (
+                preHandshakeTraffic +
+                    regionHandshake() +
+                    agentMovementComplete()
+                ).toMutableList(),
+        )
+        val client = ProtocolSimulatorCircuitClient(
+            packetExchange = exchange,
+            sequence = SimulatorPacketSequence(0),
+        )
+
+        val result = client.sendCurrentGroupsRequest(circuit())
+
+        assertEquals(SimulatorCircuitSendResult.Sent, result)
+        val payloads = exchange.sentPayloads()
+        assertEquals(6, payloads.size)
+        assertLowPacket(payloads[0], sequence = 1, packetId = 3)
+        assertLowPacket(payloads[1], sequence = 2, packetId = 249)
+        assertPacketAck(payloads[2], ackedSequence = 101)
+        assertLowPacket(payloads[3], sequence = 3, packetId = 149, flags = 0xC0)
+        assertHighPacketPrefix(payloads[4], sequence = 4, packetId = 4, flags = 0xC0)
+        assertLowPacket(payloads[5], sequence = 5, packetId = 386)
     }
 
     @Test
@@ -121,7 +151,8 @@ class ProtocolSimulatorCircuitClientTest {
         assertEquals(1, payloads.count { packetId(it) == 3 })
         assertEquals(1, payloads.count { packetId(it) == 249 })
         assertLowPacket(payloads[0], sequence = 1, packetId = 3)
-        assertLowPacket(payloads[2], sequence = 3, packetId = 249)
+        assertPacketAck(payloads[1], ackedSequence = 101)
+        assertLowPacket(payloads[3], sequence = 3, packetId = 249)
         assertLowPacket(payloads.last(), sequence = 6, packetId = 254, flags = 0xC0)
     }
 
@@ -149,14 +180,43 @@ class ProtocolSimulatorCircuitClientTest {
         assertEquals(1_717_000_000L, entry.timestamp)
         assertEquals(true, entry.hasAttachment)
         assertEquals(3, entry.assetType)
+        val archiveRequest = exchange.sentPayloads().first { packetId(it) == 58 }
         assertLowPacket(
-            payload = exchange.sentPayloads().last(),
+            payload = archiveRequest,
             sequence = 5,
             packetId = 58,
+            flags = 0x40,
             body = LibomvPacketTestBytes.uuid(AGENT_ID) +
                 LibomvPacketTestBytes.uuid(SESSION_ID) +
                 LibomvPacketTestBytes.uuid(GROUP_ID),
         )
+    }
+
+    @Test
+    fun `caches out-of-order group notice archive replies for later group reads`() {
+        val exchange = RecordingPacketExchange(
+            inboundPayloads = mutableListOf(
+                regionHandshake(),
+                agentMovementComplete(),
+                groupNoticesListReply(groupId = GROUP_ID_2, noticeId = "77777777-7777-7777-7777-777777777777"),
+                groupNoticesListReply(groupId = GROUP_ID),
+            ),
+        )
+        val client = ProtocolSimulatorCircuitClient(
+            packetExchange = exchange,
+            sequence = SimulatorPacketSequence(0),
+        )
+
+        val first = assertIs<SimulatorNoticeArchiveResult.Found>(
+            client.requestGroupNoticeArchive(circuit(), GROUP_ID),
+        )
+        val second = assertIs<SimulatorNoticeArchiveResult.Found>(
+            client.requestGroupNoticeArchive(circuit(), GROUP_ID_2),
+        )
+
+        assertEquals("Tonight", first.entries.single().subject)
+        assertEquals("Tonight", second.entries.single().subject)
+        assertEquals(1, exchange.sentPayloads().count { packetId(it) == 58 })
     }
 
     @Test
@@ -271,6 +331,23 @@ class ProtocolSimulatorCircuitClientTest {
         assertContentEquals(expected, decoded.copyOfRange(0, expected.size))
     }
 
+    private fun assertPacketAck(payload: ByteArray, ackedSequence: Long) {
+        val expected = byteArrayOf(
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0xFF.toByte(),
+            0xFF.toByte(),
+            0xFF.toByte(),
+            0xFB.toByte(),
+            1,
+        ) + u32(ackedSequence)
+        assertContentEquals(expected, payload)
+    }
+
     private fun packetId(payload: ByteArray): Int {
         val decoded = LibomvPacketTestBytes.zeroDecode(payload)
         return if (decoded[6] == 0xFF.toByte()) {
@@ -317,11 +394,15 @@ class ProtocolSimulatorCircuitClientTest {
             byteArrayOf(pingId.toByte()) +
             u32(0L)
 
+    private fun layerData(sequence: Int): ByteArray =
+        LibomvPacketTestBytes.highHeader(sequence = sequence, packetId = 11, flags = 0) +
+            byteArrayOf(0)
+
     private fun groupNoticesListReply(
         groupId: String = GROUP_ID,
         noticeId: String = "99999999-9999-9999-9999-999999999999",
     ): ByteArray =
-        LibomvPacketTestBytes.lowHeader(sequence = 104, packetId = 59, flags = 0) +
+        LibomvPacketTestBytes.lowHeader(sequence = 104, packetId = 59, flags = 0x40) +
             LibomvPacketTestBytes.uuid(AGENT_ID) +
             LibomvPacketTestBytes.uuid(groupId) +
             byteArrayOf(1) +
@@ -387,6 +468,7 @@ class ProtocolSimulatorCircuitClientTest {
         const val AGENT_ID = "11111111-1111-1111-1111-111111111111"
         const val SESSION_ID = "22222222-2222-2222-2222-222222222222"
         const val GROUP_ID = "33333333-3333-3333-3333-333333333333"
+        const val GROUP_ID_2 = "55555555-5555-5555-5555-555555555555"
         const val SIM_HOST = "203.0.113.8"
         const val SIM_PORT = 13000
         const val CIRCUIT_CODE = 0x01020304L

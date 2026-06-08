@@ -159,7 +159,7 @@ class ProtocolLibomvModuleTest {
         val status = runtime.noticePort.sendGroupNotice(session, group(), draft(), null)
 
         assertEquals(GroupSendState.SENT, status.state)
-        assertEquals(5, packetExchange.payloads.size)
+        assertEquals(6, packetExchange.payloads.size)
     }
 
     @Test

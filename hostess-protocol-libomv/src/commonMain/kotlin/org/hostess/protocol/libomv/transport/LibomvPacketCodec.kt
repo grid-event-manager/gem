@@ -35,6 +35,7 @@ internal object LibomvPacketCodec {
     fun groupNoticesListRequest(circuit: SimulatorCircuit, groupId: String, sequence: Int): ByteArray = lowPacket(
         packetId = GROUP_NOTICES_LIST_REQUEST,
         sequence = sequence,
+        flags = RELIABLE_FLAGS,
         bodyLength = ID_BYTES + ID_BYTES + ID_BYTES,
     ) {
         writeUuid(circuit.agentId)
@@ -82,6 +83,30 @@ internal object LibomvPacketCodec {
         writeBodyF32(128.0f)
         writeBodyU32(AGENT_CONTROL_FLAGS_NONE)
         writeByte(AGENT_FLAGS_NONE)
+    }
+
+    fun packetAck(sequenceNumber: Long): ByteArray {
+        val writer = LibomvBytePacketWriter(FIXED_HEADER_BYTES + FIXED_PACKET_ID_BYTES + U8_BYTES + U32_BYTES)
+        writer.writeByte(0)
+        writer.writeHeaderInt(0)
+        writer.writeByte(0)
+        writer.writeByte(LOW_FREQUENCY_MARKER)
+        writer.writeByte(LOW_FREQUENCY_MARKER)
+        writer.writeByte(LOW_FREQUENCY_MARKER)
+        writer.writeByte(PACKET_ACK_FIXED_ID)
+        writer.writeByte(1)
+        writer.writeBodyU32(sequenceNumber)
+        return writer.toByteArray()
+    }
+
+    fun reliableSequenceNumber(payload: ByteArray): Long? {
+        if (payload.size < FIXED_HEADER_BYTES || (payload[0].toInt() and RELIABLE_FLAGS) == 0) {
+            return null
+        }
+        return ((payload[1].toLong() and BYTE_MASK_LONG) shl 24) +
+            ((payload[2].toLong() and BYTE_MASK_LONG) shl 16) +
+            ((payload[3].toLong() and BYTE_MASK_LONG) shl 8) +
+            (payload[4].toLong() and BYTE_MASK_LONG)
     }
 
     fun packetType(payload: ByteArray): SimulatorPacketType =
@@ -242,9 +267,11 @@ internal object LibomvPacketCodec {
     private const val GROUP_NOTICES_LIST_REQUEST = 58
     private const val GROUP_NOTICES_LIST_REPLY = 59
     private const val GROUP_NOTICE_REQUESTED = 465
+    private const val PACKET_ACK_FIXED_ID = 0xFB
     private const val LOW_HEADER_BYTES = 10
     private const val HIGH_HEADER_BYTES = 7
     private const val FIXED_HEADER_BYTES = 6
+    private const val FIXED_PACKET_ID_BYTES = 4
     private const val EXTRA_BYTES_OFFSET = 5
     private const val LOW_PACKET_ID_BYTES = 4
     private const val HIGH_PACKET_ID_BYTES = 1
@@ -262,6 +289,8 @@ internal object LibomvPacketCodec {
             F32_BYTES + U32_BYTES + U8_BYTES
     private const val LOW_FREQUENCY_MARKER = 0xFF
     private const val BYTE_MASK = 0xFF
+    private const val BYTE_MASK_LONG = 0xFFL
+    private const val RELIABLE_FLAGS = 0x40
     private const val RELIABLE_ZEROCODED_FLAGS = 0xC0
     private const val SELF_APPEARANCE_SUPPORT_FLAG = 4L
     private const val AGENT_CONTROL_FLAGS_NONE = 0L

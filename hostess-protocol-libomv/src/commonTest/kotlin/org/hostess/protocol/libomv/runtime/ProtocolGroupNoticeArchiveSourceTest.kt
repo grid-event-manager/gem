@@ -55,7 +55,7 @@ class ProtocolGroupNoticeArchiveSourceTest {
             source.noticeArchive(identity(), group()),
         )
 
-        assertEquals("notice archive proof_gap", result.failure.redactedMessage)
+        assertEquals("notice archive proof_gap reply_timeout", result.failure.redactedMessage)
     }
 
     private class RecordingPacketExchange(

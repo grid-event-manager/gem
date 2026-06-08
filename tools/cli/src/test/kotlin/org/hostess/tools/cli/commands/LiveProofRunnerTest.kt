@@ -512,6 +512,7 @@ class LiveProofRunnerTest {
         subject = subject,
         body = body,
         authorisedLiveSend = authorisedLiveSend,
+        operatorObservationReady = false,
         existingAttachmentName = existingAttachmentName,
     )
 

@@ -20,7 +20,7 @@ class AgentDataUpdateRequestTransportTest {
         assertEquals(AgentDataUpdateRequestResult.Sent, result)
         assertEquals(SIM_HOST, exchange.endpoint?.host)
         assertEquals(SIM_PORT, exchange.endpoint?.port)
-        assertEquals(5, exchange.payloads.size)
+        assertEquals(6, exchange.payloads.size)
     }
 
     @Test

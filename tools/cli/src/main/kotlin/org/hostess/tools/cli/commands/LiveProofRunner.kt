@@ -9,13 +9,10 @@ import org.hostess.core.domain.InventoryItemKind
 import org.hostess.core.domain.InventoryItemQuery
 import org.hostess.core.ports.CredentialHandle
 import org.hostess.core.ports.GroupListResult
-import org.hostess.core.ports.GroupNoticeArchiveResult
 import org.hostess.core.ports.InventoryItemListResult
 import org.hostess.core.ports.LoginRequest
 import org.hostess.core.ports.SessionLoginResult
 import org.hostess.core.ports.SessionLogoutResult
-import org.hostess.core.ports.SimulatorPresenceProof
-import org.hostess.core.ports.SimulatorPresenceProofResult
 import org.hostess.tools.cli.CliOutput
 import org.hostess.tools.cli.CommandMode
 import org.hostess.tools.cli.CommandResult
@@ -53,7 +50,7 @@ internal class LiveProofRunner(
         val presence = simulatorPresence(session)
         markReadOnlyPresenceProofStepsNotRun("simulator-presence scope")
         runLogout(session)
-        return if (presence == null) {
+        return if (!presence.passed) {
             finish(terminalStatus(), "simulator presence unavailable")
         } else {
             finish(terminalStatus(), "live proof ${terminalStatus().wireValue}")
@@ -89,31 +86,20 @@ internal class LiveProofRunner(
                 runLogout(session)
                 return finish(terminalStatus(), "target selection failed")
             }
-        val archiveAvailable = noticeArchive(session, targetSet)
+        val archive = noticeArchive(session, targetSet)
         markNoticeArchiveMutationStepsNotRun("notice-archive scope")
         runLogout(session)
-        return if (archiveAvailable) {
+        return if (archive.passed) {
             finish(terminalStatus(), "live proof ${terminalStatus().wireValue}")
         } else {
             finish(terminalStatus(), "notice archive unavailable")
         }
     }
 
-    private fun simulatorPresence(session: HostessSession): SimulatorPresenceProof? =
-        when (val result = runtime.groupDirectoryService.simulatorPresence(session)) {
-            is SimulatorPresenceProofResult.Success -> {
-                applySimulatorPresenceFields(result.proof)
-                steps += LiveProofStep.passed("simulator-presence", simulatorPresenceDetail(result.proof))
-                result.proof
-            }
-            is SimulatorPresenceProofResult.Failure -> {
-                applySimulatorPresenceFields(result.proof)
-                val detail = result.proof.redactedMessage
-                    ?: result.failure.redactedMessage
-                    ?: result.failure.reason.name.lowercase()
-                steps += LiveProofStep("simulator-presence", result.proof.simulatorPresenceStatus.reportValue, detail)
-                null
-            }
+    private fun simulatorPresence(session: HostessSession): LiveProofSimulatorPresenceOutcome =
+        LiveProofSimulatorPresenceVerifier(runtime.groupDirectoryService).verify(session).also { outcome ->
+            statusFields += outcome.statusFields
+            steps += outcome.step
         }
 
     private fun selectArchiveTargets(groups: List<GroupMembership>): GroupTargetSet? =
@@ -133,43 +119,11 @@ internal class LiveProofRunner(
             }
         }
 
-    private fun noticeArchive(session: HostessSession, targetSet: GroupTargetSet): Boolean {
-        statusFields["noticeArchiveTargetCount"] = targetSet.selectedCount.toString()
-        var totalEntries = 0
-        var firstFailureStatus: String? = null
-        for (group in targetSet.selectedGroups) {
-            when (val result = runtime.groupDirectoryService.noticeArchive(session, group)) {
-                is GroupNoticeArchiveResult.Success -> {
-                    totalEntries += result.entries.size
-                    steps += LiveProofStep.passed(
-                        "notice-archive",
-                        "target=${group.displayName.value}; entries=${result.entries.size}; bodyEcho=not_run",
-                    )
-                }
-                is GroupNoticeArchiveResult.Failure -> {
-                    val detail = result.failure.redactedMessage ?: result.failure.reason.name.lowercase()
-                    val status = classifyStatus(detail)
-                    firstFailureStatus = firstFailureStatus ?: status
-                    steps += LiveProofStep(
-                        "notice-archive",
-                        status,
-                        "target=${group.displayName.value}; $detail",
-                    )
-                }
-            }
+    private fun noticeArchive(session: HostessSession, targetSet: GroupTargetSet): LiveProofNoticeArchiveOutcome =
+        LiveProofNoticeArchiveVerifier(runtime.groupDirectoryService).read(session, targetSet).also { outcome ->
+            statusFields += outcome.statusFields
+            steps += outcome.steps
         }
-        if (firstFailureStatus != null) {
-            statusFields["noticeArchiveStatus"] = firstFailureStatus
-            return false
-        }
-        statusFields["noticeArchiveStatus"] = "passed"
-        steps += LiveProofStep.passed(
-            "notice-archive",
-            "targets=${targetSet.selectedCount}; readable=${targetSet.selectedCount}; entries=$totalEntries; " +
-                "bodyEcho=not_run",
-        )
-        return true
-    }
 
     private fun runLoginOnlyProof(): CommandResult {
         val session = login(planCurrentGroupsOnFailure = false)
@@ -235,7 +189,7 @@ internal class LiveProofRunner(
             }
             is GroupListResult.Failure -> {
                 val detail = result.failure.redactedMessage ?: result.failure.reason.name.lowercase()
-                statusFields["currentGroupsStatus"] = classifyStatus(detail)
+                statusFields["currentGroupsStatus"] = LiveProofStatusClassifier.classify(detail)
                 steps += LiveProofStep("current-groups", statusFields.getValue("currentGroupsStatus"), detail)
                 if (planMutationStepsOnFailure) {
                     steps += LiveProofStep.notRunPlan(detail, "select-targets")
@@ -270,7 +224,7 @@ internal class LiveProofRunner(
             }
             is InventoryItemListResult.Failure -> {
                 val detail = result.failure.redactedMessage ?: result.failure.reason.name.lowercase()
-                statusFields["inventoryCatalogueStatus"] = classifyStatus(detail)
+                statusFields["inventoryCatalogueStatus"] = LiveProofStatusClassifier.classify(detail)
                 steps += LiveProofStep("inventory-catalogue", statusFields.getValue("inventoryCatalogueStatus"), detail)
                 null
             }
@@ -413,17 +367,6 @@ internal class LiveProofRunner(
         ).filterNotNull().forEach { step -> steps += LiveProofStep(step, "not_run", detail) }
     }
 
-    private fun applySimulatorPresenceFields(proof: SimulatorPresenceProof) {
-        statusFields["simulatorPresenceStatus"] = proof.simulatorPresenceStatus.reportValue
-        statusFields["regionHandshakeStatus"] = proof.regionHandshakeStatus.reportValue
-        statusFields["regionHandshakeReplyStatus"] = proof.regionHandshakeReplyStatus.reportValue
-        statusFields["agentMovementStatus"] = proof.agentMovementStatus.reportValue
-        statusFields["agentUpdateStatus"] = proof.agentUpdateStatus.reportValue
-    }
-
-    private fun simulatorPresenceDetail(proof: SimulatorPresenceProof): String =
-        "pingReplies=${proof.pingReplies}"
-
     private fun runLogout(session: HostessSession) {
         when (val result = runtime.sessionService.logout(session)) {
             SessionLogoutResult.LoggedOut -> {
@@ -453,17 +396,6 @@ internal class LiveProofRunner(
             "proof_gap" in values -> ProofReportStatus.PROOF_GAP
             "blocked" in values -> ProofReportStatus.BLOCKED
             else -> ProofReportStatus.PASSED
-        }
-    }
-
-    private fun classifyStatus(detail: String): String {
-        val lower = detail.lowercase()
-        return when {
-            "transport" in lower -> "transport_gap"
-            "runtime" in lower || "unavailable" in lower -> "runtime_gap"
-            "proof" in lower -> "proof_gap"
-            "blocked" in lower -> "blocked"
-            else -> "failed"
         }
     }
 

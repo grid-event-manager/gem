@@ -605,6 +605,56 @@ class LiveProofCommandTest {
     }
 
     @Test
+    fun `second life full proof requires operator observation before live runtime`() {
+        val directory = Files.createTempDirectory("hostess-live-proof-operator-observation")
+        try {
+            val reportPath = directory.resolve("live-proof.json")
+            val output = RecordingCliOutput()
+
+            val exitCode = CommandRegistry.default(CliCompositionRoot()).execute(
+                listOf(
+                    "live-proof",
+                    "--report",
+                    reportPath.toString(),
+                    "--authorised-live-send",
+                    "--grid",
+                    "agni",
+                    "--account",
+                    "venue-proof",
+                    "--credential-env",
+                    "HOSTESS_PROOF_CREDENTIAL",
+                    "--proof-account-attested",
+                    "--scripted-agent-attested",
+                    "--operator",
+                    "test-operator",
+                    "--proof-account-label",
+                    "test-proof-account",
+                    "--target",
+                    "Venue Hosts",
+                    "--subject",
+                    "Tonight",
+                    "--body",
+                    "Doors at eight",
+                    "--existing-attachment-name",
+                    "Venue Landmark",
+                ),
+                output,
+            )
+
+            val report = reportPath.readText()
+            assertEquals(2, exitCode)
+            assertTrue(output.lines.any { it.contains("operator-observation-ready") })
+            assertContains(report, "\"status\": \"blocked\"")
+            assertContains(report, "\"operatorReceiptStatus\": \"blocked\"")
+            assertContains(report, "\"loginStatus\": \"not_run\"")
+            assertContains(report, "\"noticeSendStatus\": \"not_run\"")
+            assertFalse(report.contains("HOSTESS_PROOF_CREDENTIAL"))
+        } finally {
+            directory.toFile().deleteRecursively()
+        }
+    }
+
+    @Test
     fun `complete live proof inputs reach shared runtime and fail closed without leaking inputs`() {
         val directory = Files.createTempDirectory("hostess-live-proof-unavailable")
         try {
@@ -617,6 +667,7 @@ class LiveProofCommandTest {
                     "--report",
                     reportPath.toString(),
                     "--authorised-live-send",
+                    "--operator-observation-ready",
                     "--grid",
                     "second-life",
                     "--account",
@@ -677,6 +728,7 @@ class LiveProofCommandTest {
                     "--report",
                     reportPath.toString(),
                     "--authorised-live-send",
+                    "--operator-observation-ready",
                     "--grid",
                     "second-life",
                     "--account",

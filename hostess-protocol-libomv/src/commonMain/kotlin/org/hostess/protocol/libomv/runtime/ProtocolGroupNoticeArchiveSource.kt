@@ -47,14 +47,14 @@ internal class ProtocolGroupNoticeArchiveSource(
 
     private fun SimulatorNoticeArchiveStatus.redactedMessage(): String =
         when (this) {
-            SimulatorNoticeArchiveStatus.REQUEST_INVALID -> "notice archive blocked"
+            SimulatorNoticeArchiveStatus.REQUEST_INVALID -> "notice archive blocked request_invalid"
             SimulatorNoticeArchiveStatus.PRESENCE_TRANSPORT_GAP,
             SimulatorNoticeArchiveStatus.REQUEST_SEND_FAILED,
-            -> "notice archive transport_gap"
+            -> "notice archive transport_gap ${name.lowercase()}"
             SimulatorNoticeArchiveStatus.PRESENCE_PROOF_GAP,
             SimulatorNoticeArchiveStatus.REPLY_TIMEOUT,
             SimulatorNoticeArchiveStatus.REPLY_MALFORMED,
             SimulatorNoticeArchiveStatus.WRONG_GROUP_REPLY,
-            -> "notice archive proof_gap"
+            -> "notice archive proof_gap ${name.lowercase()}"
         }
 }
