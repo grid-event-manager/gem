@@ -32,6 +32,16 @@ internal object LibomvPacketCodec {
         writeUuid(circuit.sessionId)
     }
 
+    fun groupNoticesListRequest(circuit: SimulatorCircuit, groupId: String, sequence: Int): ByteArray = lowPacket(
+        packetId = GROUP_NOTICES_LIST_REQUEST,
+        sequence = sequence,
+        bodyLength = ID_BYTES + ID_BYTES + ID_BYTES,
+    ) {
+        writeUuid(circuit.agentId)
+        writeUuid(circuit.sessionId)
+        writeUuid(groupId)
+    }
+
     fun regionHandshakeReply(circuit: SimulatorCircuit, sequence: Int): ByteArray = lowPacket(
         packetId = REGION_HANDSHAKE_REPLY,
         sequence = sequence,
@@ -91,6 +101,38 @@ internal object LibomvPacketCodec {
             return null
         }
         return packet.decoded[packet.bodyOffset].toInt() and BYTE_MASK
+    }
+
+    fun groupNoticesListReply(payload: ByteArray): SimulatorNoticeArchiveReply? {
+        val packet = decodedPacket(payload) ?: return null
+        if (packet.packetId != GROUP_NOTICES_LIST_REPLY) {
+            return null
+        }
+        val reader = LibomvBytePacketReader(packet.decoded, packet.bodyOffset)
+        reader.readUuid() ?: return null
+        val groupId = reader.readUuid() ?: return null
+        val entryCount = reader.readU8() ?: return null
+        val entries = mutableListOf<SimulatorNoticeArchiveEntry>()
+        repeat(entryCount) {
+            val noticeId = reader.readUuid() ?: return null
+            val timestamp = reader.readU32() ?: return null
+            val fromName = reader.readVariable2String() ?: return null
+            val subject = reader.readVariable2String() ?: return null
+            val hasAttachment = reader.readBool() ?: return null
+            val assetType = reader.readU8() ?: return null
+            entries += SimulatorNoticeArchiveEntry(
+                noticeId = noticeId,
+                timestamp = timestamp,
+                fromName = fromName,
+                subject = subject,
+                hasAttachment = hasAttachment,
+                assetType = assetType,
+            )
+        }
+        if (!reader.isExhausted()) {
+            return null
+        }
+        return SimulatorNoticeArchiveReply(groupId = groupId, entries = entries)
     }
 
     private fun lowPacket(
@@ -197,7 +239,8 @@ internal object LibomvPacketCodec {
     private const val AGENT_MOVEMENT_COMPLETE = 250
     private const val IMPROVED_INSTANT_MESSAGE = 254
     private const val AGENT_DATA_UPDATE_REQUEST = 386
-    private const val GROUP_NOTICES_LIST_REPLY = 464
+    private const val GROUP_NOTICES_LIST_REQUEST = 58
+    private const val GROUP_NOTICES_LIST_REPLY = 59
     private const val GROUP_NOTICE_REQUESTED = 465
     private const val LOW_HEADER_BYTES = 10
     private const val HIGH_HEADER_BYTES = 7

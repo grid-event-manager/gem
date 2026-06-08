@@ -2,12 +2,14 @@ package org.hostess.tools.cli.commands
 
 import org.hostess.core.domain.AccountLabel
 import org.hostess.core.domain.GroupMembership
+import org.hostess.core.domain.GroupTargetSet
 import org.hostess.core.domain.HostessSession
 import org.hostess.core.domain.InventoryItemDescriptor
 import org.hostess.core.domain.InventoryItemKind
 import org.hostess.core.domain.InventoryItemQuery
 import org.hostess.core.ports.CredentialHandle
 import org.hostess.core.ports.GroupListResult
+import org.hostess.core.ports.GroupNoticeArchiveResult
 import org.hostess.core.ports.InventoryItemListResult
 import org.hostess.core.ports.LoginRequest
 import org.hostess.core.ports.SessionLoginResult
@@ -34,6 +36,7 @@ internal class LiveProofRunner(
 
     fun run(): CommandResult = when (inputs.proofScope) {
         LiveProofScope.SIMULATOR_PRESENCE -> runSimulatorPresenceProof()
+        LiveProofScope.NOTICE_ARCHIVE -> runNoticeArchiveProof()
         LiveProofScope.READ_GROUPS -> runReadGroupsProof()
         LiveProofScope.LOGIN_ONLY -> runLoginOnlyProof()
         LiveProofScope.INVENTORY_CATALOGUE -> runInventoryCatalogueProof()
@@ -69,6 +72,33 @@ internal class LiveProofRunner(
         }
     }
 
+    private fun runNoticeArchiveProof(): CommandResult {
+        val session = login(planCurrentGroupsOnFailure = false)
+            ?: run {
+                markNoticeArchiveProofStepsNotRun("login blocked", includeLogout = true)
+                return finish(ProofReportStatus.BLOCKED, "login blocked")
+            }
+        val groups = currentGroups(session, planMutationStepsOnFailure = false)
+            ?: run {
+                markNoticeArchiveAfterCurrentGroupsNotRun("current groups unavailable")
+                runLogout(session)
+                return finish(terminalStatus(), "current groups unavailable")
+            }
+        val targetSet = selectArchiveTargets(groups)
+            ?: run {
+                runLogout(session)
+                return finish(terminalStatus(), "target selection failed")
+            }
+        val archiveAvailable = noticeArchive(session, targetSet)
+        markNoticeArchiveMutationStepsNotRun("notice-archive scope")
+        runLogout(session)
+        return if (archiveAvailable) {
+            finish(terminalStatus(), "live proof ${terminalStatus().wireValue}")
+        } else {
+            finish(terminalStatus(), "notice archive unavailable")
+        }
+    }
+
     private fun simulatorPresence(session: HostessSession): SimulatorPresenceProof? =
         when (val result = runtime.groupDirectoryService.simulatorPresence(session)) {
             is SimulatorPresenceProofResult.Success -> {
@@ -85,6 +115,61 @@ internal class LiveProofRunner(
                 null
             }
         }
+
+    private fun selectArchiveTargets(groups: List<GroupMembership>): GroupTargetSet? =
+        when (
+            val selection = LiveProofTargetSelector(runtime.targetSelectionService)
+                .select(groups, inputs.targetDisplayNames)
+        ) {
+            is LiveProofTargetSelection.Selected -> {
+                steps += LiveProofStep.passed("select-targets", "targets=${selection.targetSet.selectedCount}")
+                selection.targetSet
+            }
+            is LiveProofTargetSelection.Failed -> {
+                statusFields["noticeArchiveStatus"] = "blocked"
+                steps += LiveProofStep("select-targets", "blocked", selection.detail)
+                markNoticeArchiveAfterTargetSelectionNotRun(selection.detail)
+                null
+            }
+        }
+
+    private fun noticeArchive(session: HostessSession, targetSet: GroupTargetSet): Boolean {
+        statusFields["noticeArchiveTargetCount"] = targetSet.selectedCount.toString()
+        var totalEntries = 0
+        var firstFailureStatus: String? = null
+        for (group in targetSet.selectedGroups) {
+            when (val result = runtime.groupDirectoryService.noticeArchive(session, group)) {
+                is GroupNoticeArchiveResult.Success -> {
+                    totalEntries += result.entries.size
+                    steps += LiveProofStep.passed(
+                        "notice-archive",
+                        "target=${group.displayName.value}; entries=${result.entries.size}; bodyEcho=not_run",
+                    )
+                }
+                is GroupNoticeArchiveResult.Failure -> {
+                    val detail = result.failure.redactedMessage ?: result.failure.reason.name.lowercase()
+                    val status = classifyStatus(detail)
+                    firstFailureStatus = firstFailureStatus ?: status
+                    steps += LiveProofStep(
+                        "notice-archive",
+                        status,
+                        "target=${group.displayName.value}; $detail",
+                    )
+                }
+            }
+        }
+        if (firstFailureStatus != null) {
+            statusFields["noticeArchiveStatus"] = firstFailureStatus
+            return false
+        }
+        statusFields["noticeArchiveStatus"] = "passed"
+        steps += LiveProofStep.passed(
+            "notice-archive",
+            "targets=${targetSet.selectedCount}; readable=${targetSet.selectedCount}; entries=$totalEntries; " +
+                "bodyEcho=not_run",
+        )
+        return true
+    }
 
     private fun runLoginOnlyProof(): CommandResult {
         val session = login(planCurrentGroupsOnFailure = false)
@@ -206,6 +291,7 @@ internal class LiveProofRunner(
             "select-attachment",
             "resolve-attachment",
             "group-notice",
+            "notice-archive",
             "cleanup".takeIf { includeCleanup },
         ).filterNotNull().forEach { step -> steps += LiveProofStep(step, "not_run", detail) }
     }
@@ -218,6 +304,7 @@ internal class LiveProofRunner(
             "select-attachment",
             "resolve-attachment",
             "group-notice",
+            "notice-archive",
             "cleanup",
         ).forEach { step -> steps += LiveProofStep(step, "not_run", detail) }
     }
@@ -235,6 +322,7 @@ internal class LiveProofRunner(
             "select-attachment",
             "resolve-attachment",
             "group-notice",
+            "notice-archive",
             "cleanup",
         ).filterNotNull().forEach { step -> steps += LiveProofStep(step, "not_run", detail) }
     }
@@ -252,8 +340,60 @@ internal class LiveProofRunner(
             "select-attachment",
             "resolve-attachment",
             "group-notice",
+            "notice-archive",
             "cleanup",
         ).filterNotNull().forEach { step -> steps += LiveProofStep(step, "not_run", detail) }
+    }
+
+    private fun markNoticeArchiveProofStepsNotRun(
+        detail: String,
+        includeLogout: Boolean,
+    ) {
+        listOf(
+            "logout".takeIf { includeLogout },
+            "simulator-presence",
+            "current-groups",
+            "select-targets",
+            "inventory-catalogue",
+            "select-attachment",
+            "resolve-attachment",
+            "group-notice",
+            "notice-archive",
+            "cleanup",
+        ).filterNotNull().forEach { step -> steps += LiveProofStep(step, "not_run", detail) }
+    }
+
+    private fun markNoticeArchiveAfterCurrentGroupsNotRun(detail: String) {
+        listOf(
+            "select-targets",
+            "inventory-catalogue",
+            "select-attachment",
+            "resolve-attachment",
+            "group-notice",
+            "notice-archive",
+            "cleanup",
+        ).forEach { step -> steps += LiveProofStep(step, "not_run", detail) }
+    }
+
+    private fun markNoticeArchiveAfterTargetSelectionNotRun(detail: String) {
+        listOf(
+            "inventory-catalogue",
+            "select-attachment",
+            "resolve-attachment",
+            "group-notice",
+            "notice-archive",
+            "cleanup",
+        ).forEach { step -> steps += LiveProofStep(step, "not_run", detail) }
+    }
+
+    private fun markNoticeArchiveMutationStepsNotRun(detail: String) {
+        listOf(
+            "inventory-catalogue",
+            "select-attachment",
+            "resolve-attachment",
+            "group-notice",
+            "cleanup",
+        ).forEach { step -> steps += LiveProofStep(step, "not_run", detail) }
     }
 
     private fun markInventoryCatalogueProofStepsNotRun(
@@ -268,6 +408,7 @@ internal class LiveProofRunner(
             "select-attachment",
             "resolve-attachment",
             "group-notice",
+            "notice-archive",
             "cleanup",
         ).filterNotNull().forEach { step -> steps += LiveProofStep(step, "not_run", detail) }
     }

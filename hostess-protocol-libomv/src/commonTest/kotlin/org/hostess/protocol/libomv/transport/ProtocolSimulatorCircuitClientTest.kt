@@ -126,6 +126,62 @@ class ProtocolSimulatorCircuitClientTest {
     }
 
     @Test
+    fun `requests group notice archive after MetaBolt-shaped presence sequence`() {
+        val exchange = RecordingPacketExchange(
+            inboundPayloads = mutableListOf(
+                regionHandshake(),
+                agentMovementComplete(),
+                groupNoticesListReply(),
+            ),
+        )
+        val client = ProtocolSimulatorCircuitClient(
+            packetExchange = exchange,
+            sequence = SimulatorPacketSequence(0),
+        )
+
+        val result = assertIs<SimulatorNoticeArchiveResult.Found>(
+            client.requestGroupNoticeArchive(circuit(), GROUP_ID),
+        )
+
+        val entry = result.entries.single()
+        assertEquals("Tonight", entry.subject)
+        assertEquals("venue-proof", entry.fromName)
+        assertEquals(1_717_000_000L, entry.timestamp)
+        assertEquals(true, entry.hasAttachment)
+        assertEquals(3, entry.assetType)
+        assertLowPacket(
+            payload = exchange.sentPayloads().last(),
+            sequence = 5,
+            packetId = 58,
+            body = LibomvPacketTestBytes.uuid(AGENT_ID) +
+                LibomvPacketTestBytes.uuid(SESSION_ID) +
+                LibomvPacketTestBytes.uuid(GROUP_ID),
+        )
+    }
+
+    @Test
+    fun `rejects archive reply for a different group`() {
+        val exchange = RecordingPacketExchange(
+            inboundPayloads = mutableListOf(
+                regionHandshake(),
+                agentMovementComplete(),
+                groupNoticesListReply(groupId = "55555555-5555-5555-5555-555555555555"),
+            ),
+        )
+        val client = ProtocolSimulatorCircuitClient(
+            packetExchange = exchange,
+            sequence = SimulatorPacketSequence(0),
+        )
+
+        val result = assertIs<SimulatorNoticeArchiveResult.Failed>(
+            client.requestGroupNoticeArchive(circuit(), GROUP_ID),
+        )
+
+        assertEquals(SimulatorNoticeArchiveStatus.WRONG_GROUP_REPLY, result.status)
+        assertEquals("protocol simulator send failed", result.redactedMessage)
+    }
+
+    @Test
     fun `handshake timeout prevents current-groups packet send`() {
         val exchange = RecordingPacketExchange()
         val client = ProtocolSimulatorCircuitClient(
@@ -261,6 +317,20 @@ class ProtocolSimulatorCircuitClientTest {
             byteArrayOf(pingId.toByte()) +
             u32(0L)
 
+    private fun groupNoticesListReply(
+        groupId: String = GROUP_ID,
+        noticeId: String = "99999999-9999-9999-9999-999999999999",
+    ): ByteArray =
+        LibomvPacketTestBytes.lowHeader(sequence = 104, packetId = 59, flags = 0) +
+            LibomvPacketTestBytes.uuid(AGENT_ID) +
+            LibomvPacketTestBytes.uuid(groupId) +
+            byteArrayOf(1) +
+            LibomvPacketTestBytes.uuid(noticeId) +
+            u32(1_717_000_000L) +
+            variable2("venue-proof") +
+            variable2("Tonight") +
+            byteArrayOf(1, 3)
+
     private fun noticePacket(): LibomvNoticePacket = LibomvNoticePacket(
         agentId = AGENT_ID,
         sessionId = SESSION_ID,
@@ -278,6 +348,14 @@ class ProtocolSimulatorCircuitClientTest {
         attachment = null,
         binaryBucket = ByteArray(0),
     )
+
+    private fun variable2(value: String): ByteArray {
+        val bytes = value.encodeToByteArray() + 0.toByte()
+        return byteArrayOf(
+            (bytes.size and 0xFF).toByte(),
+            ((bytes.size ushr 8) and 0xFF).toByte(),
+        ) + bytes
+    }
 
     private class RecordingPacketExchange(
         private val inboundPayloads: MutableList<ByteArray> = mutableListOf(),

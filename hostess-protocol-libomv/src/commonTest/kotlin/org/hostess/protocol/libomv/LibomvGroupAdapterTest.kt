@@ -3,14 +3,18 @@ package org.hostess.protocol.libomv
 import org.hostess.core.domain.HostessInstant
 import org.hostess.core.domain.AccountLabel
 import org.hostess.core.domain.CoreFailureReason
+import org.hostess.core.domain.GroupMembership
 import org.hostess.core.domain.HostessSession
 import org.hostess.core.domain.SessionId
 import org.hostess.core.ports.GroupListResult
+import org.hostess.core.ports.GroupNoticeArchiveEntry
+import org.hostess.core.ports.GroupNoticeArchiveResult
 import org.hostess.core.ports.SimulatorPresenceProof
 import org.hostess.core.ports.SimulatorPresenceProofResult
 import org.hostess.core.ports.SimulatorPresenceProofStatus
 import org.hostess.protocol.libomv.runtime.CurrentGroupsFetchResult
 import org.hostess.protocol.libomv.runtime.CurrentGroupsSource
+import org.hostess.protocol.libomv.runtime.GroupNoticeArchiveSource
 import org.hostess.protocol.libomv.runtime.ProtocolGroupRuntime
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -85,6 +89,40 @@ class LibomvGroupAdapterTest {
         assertEquals(CoreFailureReason.GROUP_LIST_FAILED, failure.failure.reason)
     }
 
+    @Test
+    fun `notice archive routes through protocol runtime`() {
+        val session = hostessSession()
+        val group = groupMembership()
+        val clientSession = activeClientSession(session)
+        val adapter = LibomvGroupAdapter(
+            clientSession = clientSession,
+            groupRuntime = ProtocolGroupRuntime(
+                clientSession = clientSession,
+                noticeArchiveSource = GroupNoticeArchiveSource { _, requestedGroup ->
+                    GroupNoticeArchiveResult.Success(requestedGroup, listOf(archiveEntry()))
+                },
+            ),
+        )
+
+        val archive = assertIs<GroupNoticeArchiveResult.Success>(adapter.noticeArchive(session, group))
+
+        assertEquals(group, archive.group)
+        assertEquals("Tonight", archive.entries.single().subject)
+    }
+
+    @Test
+    fun `notice archive fallback still fails closed without runtime`() {
+        val session = hostessSession()
+        val group = groupMembership()
+        val adapter = LibomvGroupAdapter(clientSession = LibomvClientSession.active(session))
+
+        val failure = assertIs<GroupNoticeArchiveResult.Failure>(adapter.noticeArchive(session, group))
+
+        assertEquals(group, failure.group)
+        assertEquals(CoreFailureReason.GROUP_LIST_FAILED, failure.failure.reason)
+        assertEquals("notice archive runtime unavailable", failure.failure.redactedMessage)
+    }
+
     private fun hostessSession(): HostessSession = HostessSession(
         sessionId = SessionId("live-session"),
         accountLabel = AccountLabel("venue-proof"),
@@ -108,5 +146,16 @@ class LibomvGroupAdapterTest {
         regionHandshakeReplyStatus = SimulatorPresenceProofStatus.PASSED,
         agentMovementStatus = SimulatorPresenceProofStatus.PASSED,
         agentUpdateStatus = SimulatorPresenceProofStatus.PASSED,
+    )
+
+    private fun groupMembership(): GroupMembership =
+        GroupMembership.fromValues("33333333-3333-3333-3333-333333333333", "Venue Hosts", true, true)
+
+    private fun archiveEntry(): GroupNoticeArchiveEntry = GroupNoticeArchiveEntry(
+        subject = "Tonight",
+        fromName = "venue-proof",
+        timestamp = 1_717_000_000L,
+        hasAttachment = true,
+        assetType = 3,
     )
 }

@@ -22,6 +22,7 @@ internal data class LiveProofStep(
             "select-attachment",
             "resolve-attachment",
             "group-notice",
+            "notice-archive",
             "cleanup",
             "logout",
         )
@@ -40,6 +41,9 @@ internal data class LiveProofStep(
             "attachmentSelectionStatus",
             "attachmentResolutionStatus",
             "noticeSendStatus",
+            "noticeArchiveStatus",
+            "noticeArchiveTargetCount",
+            "noticeArchiveMatchedTargetCount",
             "androidProbeStatus",
         )
         fun passed(name: String, detail: String? = null): LiveProofStep = LiveProofStep(name, "passed", detail)
@@ -55,6 +59,8 @@ internal data class LiveProofStep(
         fun statusFields(default: String = "not_run"): Map<String, String> =
             statusFieldNames.associateWith { default }
                 .plus("inventoryItemCount" to "0")
+                .plus("noticeArchiveTargetCount" to "0")
+                .plus("noticeArchiveMatchedTargetCount" to "0")
 
         fun after(step: String): String {
             val index = orderedSteps.indexOf(step)

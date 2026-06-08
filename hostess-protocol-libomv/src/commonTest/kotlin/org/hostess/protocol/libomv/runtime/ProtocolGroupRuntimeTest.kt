@@ -3,9 +3,12 @@ package org.hostess.protocol.libomv.runtime
 import org.hostess.core.domain.HostessInstant
 import org.hostess.core.domain.AccountLabel
 import org.hostess.core.domain.CoreFailureReason
+import org.hostess.core.domain.GroupMembership
 import org.hostess.core.domain.HostessSession
 import org.hostess.core.domain.SessionId
 import org.hostess.core.ports.GroupListResult
+import org.hostess.core.ports.GroupNoticeArchiveEntry
+import org.hostess.core.ports.GroupNoticeArchiveResult
 import org.hostess.core.ports.SimulatorPresenceProof
 import org.hostess.core.ports.SimulatorPresenceProofResult
 import org.hostess.core.ports.SimulatorPresenceProofStatus
@@ -183,6 +186,40 @@ class ProtocolGroupRuntimeTest {
         assertEquals("hostess session mismatch", failure.failure.redactedMessage)
     }
 
+    @Test
+    fun `notice archive delegates through archive source`() {
+        val session = hostessSession()
+        val group = groupMembership()
+        val runtime = ProtocolGroupRuntime(
+            clientSession = activeClientSession(session),
+            noticeArchiveSource = GroupNoticeArchiveSource { _, requestedGroup ->
+                GroupNoticeArchiveResult.Success(requestedGroup, listOf(archiveEntry()))
+            },
+        )
+
+        val result = assertIs<GroupNoticeArchiveResult.Success>(runtime.noticeArchive(session, group))
+
+        assertEquals(group, result.group)
+        assertEquals("Tonight", result.entries.single().subject)
+        assertEquals(true, result.entries.single().hasAttachment)
+    }
+
+    @Test
+    fun `notice archive rejects mismatched session without calling source`() {
+        val runtime = ProtocolGroupRuntime(
+            clientSession = activeClientSession(hostessSession("live-session")),
+            noticeArchiveSource = FailsIfCalledArchiveSource,
+        )
+        val group = groupMembership()
+
+        val result = runtime.noticeArchive(hostessSession("other-session"), group)
+
+        val failure = assertIs<GroupNoticeArchiveResult.Failure>(result)
+        assertEquals(group, failure.group)
+        assertEquals(CoreFailureReason.GROUP_LIST_FAILED, failure.failure.reason)
+        assertEquals("hostess session mismatch", failure.failure.redactedMessage)
+    }
+
     private fun runtime(
         session: HostessSession,
         groups: List<LibomvGroupSnapshot>,
@@ -232,6 +269,15 @@ class ProtocolGroupRuntimeTest {
         }
     }
 
+    private object FailsIfCalledArchiveSource : GroupNoticeArchiveSource {
+        override fun noticeArchive(
+            identity: LibomvSessionIdentity,
+            group: GroupMembership,
+        ): GroupNoticeArchiveResult {
+            error("archive source must not be called for a rejected session")
+        }
+    }
+
     private companion object {
         const val AGENT_ID = "11111111-1111-1111-1111-111111111111"
         const val SIM_HOST = "203.0.113.8"
@@ -246,5 +292,18 @@ class ProtocolGroupRuntimeTest {
             agentMovementStatus = SimulatorPresenceProofStatus.PASSED,
             agentUpdateStatus = SimulatorPresenceProofStatus.PASSED,
         )
+
+        fun groupMembership(): GroupMembership =
+            GroupMembership.fromValues(GROUP_ID, "Venue Hosts", canSendNotices = true, acceptsNotices = true)
+
+        fun archiveEntry(): GroupNoticeArchiveEntry = GroupNoticeArchiveEntry(
+            subject = "Tonight",
+            fromName = "venue-proof",
+            timestamp = 1_717_000_000L,
+            hasAttachment = true,
+            assetType = 3,
+        )
+
+        const val GROUP_ID = "33333333-3333-3333-3333-333333333333"
     }
 }

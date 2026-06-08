@@ -7,6 +7,7 @@ import org.hostess.core.domain.HostessSession
 interface GroupPort {
     fun currentGroups(session: HostessSession): GroupListResult
     fun simulatorPresence(session: HostessSession): SimulatorPresenceProofResult
+    fun noticeArchive(session: HostessSession, group: GroupMembership): GroupNoticeArchiveResult
 }
 
 sealed interface GroupListResult {
@@ -44,3 +45,23 @@ enum class SimulatorPresenceProofStatus(val reportValue: String) {
     FAILED("failed"),
     NOT_RUN("not_run"),
 }
+
+sealed interface GroupNoticeArchiveResult {
+    data class Success(
+        val group: GroupMembership,
+        val entries: List<GroupNoticeArchiveEntry>,
+    ) : GroupNoticeArchiveResult
+
+    data class Failure(
+        val group: GroupMembership,
+        val failure: CoreFailure,
+    ) : GroupNoticeArchiveResult
+}
+
+data class GroupNoticeArchiveEntry(
+    val subject: String,
+    val fromName: String,
+    val timestamp: Long?,
+    val hasAttachment: Boolean,
+    val assetType: Int?,
+)

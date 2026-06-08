@@ -31,6 +31,8 @@ import org.hostess.core.domain.SessionId
 import org.hostess.core.ports.AttachmentResolutionResult
 import org.hostess.core.ports.ClockPort
 import org.hostess.core.ports.GroupListResult
+import org.hostess.core.ports.GroupNoticeArchiveEntry
+import org.hostess.core.ports.GroupNoticeArchiveResult
 import org.hostess.core.ports.GroupPort
 import org.hostess.core.ports.InventoryItemListResult
 import org.hostess.core.ports.InventoryPort
@@ -140,6 +142,92 @@ class LiveProofRunnerTest {
             assertEquals(1, ports.sessionPort.logoutCalls)
             assertEquals(1, ports.groupPort.simulatorPresenceCalls)
             assertEquals(0, ports.groupPort.currentGroupsCalls)
+            assertEquals(0, ports.noticePort.groups.size)
+        }
+    }
+
+    @Test
+    fun `notice archive scope reads archive per selected target and does not send`() {
+        withReport { reportPath ->
+            val ports = Ports()
+
+            val exit = runner(
+                ports.runtime(),
+                reportPath,
+                inputs(
+                    proofScope = LiveProofScope.NOTICE_ARCHIVE,
+                    targets = listOf("Venue Hosts", "Event Notices"),
+                    subject = null,
+                    body = null,
+                    authorisedLiveSend = false,
+                    existingAttachmentName = null,
+                ),
+            ).run()
+
+            val report = reportPath.readText()
+            assertEquals(CommandResult.SUCCESS, exit)
+            assertContains(report, "\"status\": \"passed\"")
+            assertContains(report, "\"proofScope\": \"notice-archive\"")
+            assertContains(report, "\"currentGroupsStatus\": \"passed\"")
+            assertContains(report, "\"noticeArchiveStatus\": \"passed\"")
+            assertContains(report, "\"noticeArchiveTargetCount\": \"2\"")
+            assertContains(report, "\"noticeArchiveMatchedTargetCount\": \"0\"")
+            assertContains(report, "\"detail\": \"target=Venue Hosts; entries=1; bodyEcho=not_run\"")
+            assertContains(report, "\"detail\": \"target=Event Notices; entries=1; bodyEcho=not_run\"")
+            assertContains(report, "\"noticeSendStatus\": \"not_run\"")
+            assertContains(report, "\"inventoryCatalogueStatus\": \"not_run\"")
+            assertContains(report, "\"attachmentResolutionStatus\": \"not_run\"")
+            assertContains(report, "\"logoutStatus\": \"passed\"")
+            assertEquals(1, ports.sessionPort.loginCalls)
+            assertEquals(1, ports.sessionPort.logoutCalls)
+            assertEquals(1, ports.groupPort.currentGroupsCalls)
+            assertEquals(0, ports.groupPort.simulatorPresenceCalls)
+            assertEquals(listOf("Venue Hosts", "Event Notices"), ports.groupPort.noticeArchiveGroups.map { it.displayName.value })
+            assertEquals(0, ports.inventoryPort.calls)
+            assertEquals(0, ports.noticePort.groups.size)
+            assertFalse(RAW_UUID.containsMatchIn(report))
+        }
+    }
+
+    @Test
+    fun `notice archive scope logs out after archive proof gap and stays read only`() {
+        withReport { reportPath ->
+            val ports = Ports(
+                groupPort = RecordingGroupPort(
+                    archiveResult = { group ->
+                        GroupNoticeArchiveResult.Failure(
+                            group = group,
+                            failure = CoreFailure(
+                                CoreFailureReason.GROUP_LIST_FAILED,
+                                "notice archive proof_gap",
+                            ),
+                        )
+                    },
+                ),
+            )
+
+            val exit = runner(
+                ports.runtime(),
+                reportPath,
+                inputs(
+                    proofScope = LiveProofScope.NOTICE_ARCHIVE,
+                    targets = listOf("Venue Hosts"),
+                    subject = null,
+                    body = null,
+                    authorisedLiveSend = false,
+                    existingAttachmentName = null,
+                ),
+            ).run()
+
+            val report = reportPath.readText()
+            assertEquals(CommandResult.UNAVAILABLE, exit)
+            assertContains(report, "\"status\": \"proof_gap\"")
+            assertContains(report, "\"noticeArchiveStatus\": \"proof_gap\"")
+            assertContains(report, "notice archive proof_gap")
+            assertContains(report, "\"noticeSendStatus\": \"not_run\"")
+            assertContains(report, "\"logoutStatus\": \"passed\"")
+            assertEquals(1, ports.groupPort.noticeArchiveGroups.size)
+            assertEquals(0, ports.inventoryPort.calls)
             assertEquals(0, ports.noticePort.groups.size)
         }
     }
@@ -501,9 +589,13 @@ class LiveProofRunnerTest {
         private val presenceResult: SimulatorPresenceProofResult = SimulatorPresenceProofResult.Success(
             presenceProof(),
         ),
+        private val archiveResult: (GroupMembership) -> GroupNoticeArchiveResult = { group ->
+            GroupNoticeArchiveResult.Success(group, listOf(archiveEntry()))
+        },
     ) : GroupPort {
         var currentGroupsCalls = 0
         var simulatorPresenceCalls = 0
+        val noticeArchiveGroups = mutableListOf<GroupMembership>()
 
         override fun currentGroups(session: HostessSession): GroupListResult {
             currentGroupsCalls += 1
@@ -513,6 +605,11 @@ class LiveProofRunnerTest {
         override fun simulatorPresence(session: HostessSession): SimulatorPresenceProofResult {
             simulatorPresenceCalls += 1
             return presenceResult
+        }
+
+        override fun noticeArchive(session: HostessSession, group: GroupMembership): GroupNoticeArchiveResult {
+            noticeArchiveGroups += group
+            return archiveResult(group)
         }
     }
 
@@ -591,6 +688,14 @@ class LiveProofRunnerTest {
             regionHandshakeReplyStatus = SimulatorPresenceProofStatus.PASSED,
             agentMovementStatus = SimulatorPresenceProofStatus.PASSED,
             agentUpdateStatus = SimulatorPresenceProofStatus.PASSED,
+        )
+
+        fun archiveEntry(): GroupNoticeArchiveEntry = GroupNoticeArchiveEntry(
+            subject = "Tonight",
+            fromName = "venue-proof",
+            timestamp = 1_717_000_000L,
+            hasAttachment = true,
+            assetType = 3,
         )
     }
 }

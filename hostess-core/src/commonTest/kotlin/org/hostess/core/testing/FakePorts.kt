@@ -26,6 +26,8 @@ import org.hostess.core.domain.SessionId
 import org.hostess.core.ports.AttachmentResolutionResult
 import org.hostess.core.ports.ClockPort
 import org.hostess.core.ports.GroupListResult
+import org.hostess.core.ports.GroupNoticeArchiveEntry
+import org.hostess.core.ports.GroupNoticeArchiveResult
 import org.hostess.core.ports.GroupPort
 import org.hostess.core.ports.InventoryItemListResult
 import org.hostess.core.ports.InventoryPort
@@ -60,9 +62,11 @@ class FakeSessionPort(
 class FakeGroupPort(
     var result: GroupListResult = GroupListResult.Success(emptyList()),
     var presenceResult: SimulatorPresenceProofResult = SimulatorPresenceProofResult.Success(defaultPresenceProof()),
+    var archiveResult: GroupNoticeArchiveResult? = null,
 ) : GroupPort {
     val sessions = mutableListOf<HostessSession>()
     val presenceSessions = mutableListOf<HostessSession>()
+    val archiveRequests = mutableListOf<Pair<HostessSession, GroupMembership>>()
 
     override fun currentGroups(session: HostessSession): GroupListResult {
         sessions += session
@@ -72,6 +76,11 @@ class FakeGroupPort(
     override fun simulatorPresence(session: HostessSession): SimulatorPresenceProofResult {
         presenceSessions += session
         return presenceResult
+    }
+
+    override fun noticeArchive(session: HostessSession, group: GroupMembership): GroupNoticeArchiveResult {
+        archiveRequests += session to group
+        return archiveResult ?: GroupNoticeArchiveResult.Success(group, listOf(defaultArchiveEntry()))
     }
 }
 
@@ -162,6 +171,14 @@ fun defaultPresenceProof(): SimulatorPresenceProof = SimulatorPresenceProof(
     regionHandshakeReplyStatus = SimulatorPresenceProofStatus.PASSED,
     agentMovementStatus = SimulatorPresenceProofStatus.PASSED,
     agentUpdateStatus = SimulatorPresenceProofStatus.PASSED,
+)
+
+fun defaultArchiveEntry(): GroupNoticeArchiveEntry = GroupNoticeArchiveEntry(
+    subject = "Tonight",
+    fromName = "proof-account",
+    timestamp = 1_717_000_000L,
+    hasAttachment = true,
+    assetType = 3,
 )
 
 fun defaultAttachment(): AttachmentRef = AttachmentRef(

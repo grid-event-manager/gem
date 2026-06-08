@@ -19,6 +19,10 @@ internal object LibomvUuidCodec {
     fun packetBytes(value: String): ByteArray? =
         parseBytes(value)
 
+    fun canonicalFromPacketBytes(value: ByteArray): String? =
+        value.takeIf { it.size == ID_BYTES }
+            ?.let { format(it.copyOf()) }
+
     private fun parseBytes(value: String): ByteArray? {
         if (value.length != ID_TEXT_LENGTH) {
             return null

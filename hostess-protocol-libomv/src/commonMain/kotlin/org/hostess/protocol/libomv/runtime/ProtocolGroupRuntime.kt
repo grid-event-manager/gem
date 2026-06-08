@@ -2,8 +2,10 @@ package org.hostess.protocol.libomv.runtime
 
 import org.hostess.core.domain.CoreFailure
 import org.hostess.core.domain.CoreFailureReason
+import org.hostess.core.domain.GroupMembership
 import org.hostess.core.domain.HostessSession
 import org.hostess.core.ports.GroupListResult
+import org.hostess.core.ports.GroupNoticeArchiveResult
 import org.hostess.core.ports.SimulatorPresenceProof
 import org.hostess.core.ports.SimulatorPresenceProofResult
 import org.hostess.core.ports.SimulatorPresenceProofStatus
@@ -18,6 +20,7 @@ class ProtocolGroupRuntime internal constructor(
     private val clientSession: LibomvClientSession,
     private val currentGroupsSource: CurrentGroupsSource = CurrentGroupsSource.unavailable(),
     private val simulatorPresenceSource: SimulatorPresenceSource = SimulatorPresenceSource.unavailable(),
+    private val noticeArchiveSource: GroupNoticeArchiveSource = GroupNoticeArchiveSource.unavailable(),
 ) {
     fun currentGroups(session: HostessSession): GroupListResult {
         val identity = when (val result = clientSession.requireIdentity(session)) {
@@ -45,6 +48,23 @@ class ProtocolGroupRuntime internal constructor(
             is LibomvSessionIdentityResult.Success -> result.identity
         }
         return simulatorPresenceSource.simulatorPresence(identity)
+    }
+
+    fun noticeArchive(session: HostessSession, group: GroupMembership): GroupNoticeArchiveResult {
+        val identity = when (val result = clientSession.requireIdentity(session)) {
+            is LibomvSessionIdentityResult.Failure -> {
+                val message = result.failure.redactedMessage ?: "notice archive blocked"
+                return GroupNoticeArchiveResult.Failure(
+                    group = group,
+                    failure = result.failure.copy(
+                        reason = CoreFailureReason.GROUP_LIST_FAILED,
+                        redactedMessage = message,
+                    ),
+                )
+            }
+            is LibomvSessionIdentityResult.Success -> result.identity
+        }
+        return noticeArchiveSource.noticeArchive(identity, group)
     }
 
     private fun mapCurrentGroups(result: CurrentGroupsFetchResult.Success): GroupListResult =
@@ -81,6 +101,20 @@ internal fun interface SimulatorPresenceSource {
                     agentUpdateStatus = SimulatorPresenceProofStatus.NOT_RUN,
                     redactedMessage = message,
                 ),
+                failure = CoreFailure(CoreFailureReason.GROUP_LIST_FAILED, redactedMessage = message),
+            )
+        }
+    }
+}
+
+internal fun interface GroupNoticeArchiveSource {
+    fun noticeArchive(identity: LibomvSessionIdentity, group: GroupMembership): GroupNoticeArchiveResult
+
+    companion object {
+        fun unavailable(): GroupNoticeArchiveSource = GroupNoticeArchiveSource { _, group ->
+            val message = "notice archive runtime unavailable"
+            GroupNoticeArchiveResult.Failure(
+                group = group,
                 failure = CoreFailure(CoreFailureReason.GROUP_LIST_FAILED, redactedMessage = message),
             )
         }

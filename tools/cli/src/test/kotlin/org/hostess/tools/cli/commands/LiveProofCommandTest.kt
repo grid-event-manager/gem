@@ -151,6 +151,102 @@ class LiveProofCommandTest {
     }
 
     @Test
+    fun `notice archive scope does not require send notice inputs`() {
+        val directory = Files.createTempDirectory("hostess-live-proof-notice-archive")
+        try {
+            val reportPath = directory.resolve("live-proof.json")
+            val output = RecordingCliOutput()
+
+            val exitCode = CommandRegistry.default(CliCompositionRoot()).execute(
+                listOf(
+                    "live-proof",
+                    "--mode",
+                    "live",
+                    "--proof-scope",
+                    "notice-archive",
+                    "--report",
+                    reportPath.toString(),
+                    "--grid",
+                    "second-life",
+                    "--account",
+                    "venue-proof",
+                    "--credential-env",
+                    "HOSTESS_PROOF_CREDENTIAL",
+                    "--proof-account-attested",
+                    "--scripted-agent-attested",
+                    "--operator",
+                    "test-operator",
+                    "--proof-account-label",
+                    "test-proof-account",
+                    "--target",
+                    "Venue Hosts",
+                ),
+                output,
+            )
+
+            val report = reportPath.readText()
+            assertEquals(3, exitCode)
+            assertFalse(output.lines.any { it.contains("missing required live proof input") })
+            assertContains(report, "\"proofScope\": \"notice-archive\"")
+            assertContains(report, "\"targetCount\": \"1\"")
+            assertContains(report, "\"loginStatus\": \"blocked\"")
+            assertContains(report, "\"noticeArchiveStatus\": \"not_run\"")
+            assertContains(report, "\"noticeSendStatus\": \"not_run\"")
+            assertFalse(report.contains("Tonight"))
+            assertFalse(report.contains("HOSTESS_PROOF_CREDENTIAL"))
+        } finally {
+            directory.toFile().deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `notice archive scope requires target display name only from send inputs`() {
+        val directory = Files.createTempDirectory("hostess-live-proof-notice-archive-target")
+        try {
+            val reportPath = directory.resolve("live-proof.json")
+            val output = RecordingCliOutput()
+
+            val exitCode = CommandRegistry.default(CliCompositionRoot()).execute(
+                listOf(
+                    "live-proof",
+                    "--mode",
+                    "live",
+                    "--proof-scope",
+                    "notice-archive",
+                    "--report",
+                    reportPath.toString(),
+                    "--grid",
+                    "second-life",
+                    "--account",
+                    "venue-proof",
+                    "--credential-env",
+                    "HOSTESS_PROOF_CREDENTIAL",
+                    "--proof-account-attested",
+                    "--scripted-agent-attested",
+                    "--operator",
+                    "test-operator",
+                    "--proof-account-label",
+                    "test-proof-account",
+                ),
+                output,
+            )
+
+            val report = reportPath.readText()
+            assertEquals(2, exitCode)
+            assertTrue(output.lines.any { it.contains("target display name") })
+            assertFalse(output.lines.any { it.contains("authorised-live-send") })
+            assertFalse(output.lines.any { it.contains("subject") })
+            assertFalse(output.lines.any { it.contains("body") })
+            assertFalse(output.lines.any { it.contains("existing-attachment-name") })
+            assertContains(report, "\"proofScope\": \"notice-archive\"")
+            assertContains(report, "\"noticeArchiveStatus\": \"not_run\"")
+            assertContains(report, "\"noticeSendStatus\": \"not_run\"")
+        } finally {
+            directory.toFile().deleteRecursively()
+        }
+    }
+
+    @Test
     fun `read groups scope does not require send inputs`() {
         val directory = Files.createTempDirectory("hostess-live-proof-read-groups")
         try {

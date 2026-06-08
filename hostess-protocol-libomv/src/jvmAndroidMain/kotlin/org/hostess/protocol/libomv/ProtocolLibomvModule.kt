@@ -6,9 +6,12 @@ import org.hostess.core.ports.NoticePort
 import org.hostess.core.ports.SessionPort
 import org.hostess.protocol.libomv.runtime.CurrentGroupsSource
 import org.hostess.protocol.libomv.runtime.DefaultLibomvPlatformAdapterBundle
+import org.hostess.protocol.libomv.runtime.GroupNoticeArchiveSource
 import org.hostess.protocol.libomv.runtime.InventoryRuntimeSource
 import org.hostess.protocol.libomv.runtime.LibomvPlatformAdapterBundle
+import org.hostess.protocol.libomv.runtime.NoticeRuntimeSource
 import org.hostess.protocol.libomv.runtime.ProtocolCurrentGroupsSource
+import org.hostess.protocol.libomv.runtime.ProtocolGroupNoticeArchiveSource
 import org.hostess.protocol.libomv.runtime.ProtocolGroupRuntime
 import org.hostess.protocol.libomv.runtime.ProtocolInventoryHttpSource
 import org.hostess.protocol.libomv.runtime.ProtocolInventoryRuntime
@@ -16,7 +19,6 @@ import org.hostess.protocol.libomv.runtime.ProtocolLoginRuntime
 import org.hostess.protocol.libomv.runtime.ProtocolNoticeCircuitSource
 import org.hostess.protocol.libomv.runtime.ProtocolNoticeRuntime
 import org.hostess.protocol.libomv.runtime.ProtocolSimulatorPresenceSource
-import org.hostess.protocol.libomv.runtime.NoticeRuntimeSource
 import org.hostess.protocol.libomv.runtime.SimulatorPresenceSource
 import org.hostess.protocol.libomv.transport.AgentDataUpdateRequestTransport
 import org.hostess.protocol.libomv.transport.EventQueueGetClient
@@ -68,11 +70,17 @@ object ProtocolLibomvModule {
         } else {
             SimulatorPresenceSource.unavailable()
         }
+        val noticeArchiveSource = if (bundle.transportLoad) {
+            ProtocolGroupNoticeArchiveSource(bundle.circuitSender)
+        } else {
+            GroupNoticeArchiveSource.unavailable()
+        }
         val groupRuntime = if (runtimeReady) {
             ProtocolGroupRuntime(
                 clientSession = clientSession,
                 currentGroupsSource = currentGroupsSource,
                 simulatorPresenceSource = simulatorPresenceSource,
+                noticeArchiveSource = noticeArchiveSource,
             )
         } else {
             null

@@ -34,6 +34,59 @@ internal class ProtocolSimulatorCircuitClient(
             LibomvNoticePacketCodec.improvedInstantMessage(packet, sequence.next())
         }
 
+    fun requestGroupNoticeArchive(circuit: SimulatorCircuit, groupId: String): SimulatorNoticeArchiveResult {
+        val canonicalGroupId = LibomvUuidCodec.canonicalOrNull(groupId)
+        if (!circuit.isUsable() || canonicalGroupId == null) {
+            return SimulatorNoticeArchiveResult.Failed(
+                status = SimulatorNoticeArchiveStatus.REQUEST_INVALID,
+                redactedMessage = REDACTED_SEND_FAILURE,
+            )
+        }
+        val endpoint = SimulatorEndpoint(circuit.simulatorIp, circuit.simulatorPort)
+        when (val presence = ensurePresence(circuit)) {
+            is SimulatorPresenceResult.Failed -> return SimulatorNoticeArchiveResult.Failed(
+                status = presence.status.toArchiveStatus(),
+                redactedMessage = REDACTED_SEND_FAILURE,
+            )
+            is SimulatorPresenceResult.Present -> Unit
+        }
+
+        try {
+            packetExchange.send(
+                endpoint,
+                listOf(LibomvPacketCodec.groupNoticesListRequest(circuit, canonicalGroupId, sequence.next())),
+            )
+        } catch (ex: Exception) {
+            return SimulatorNoticeArchiveResult.Failed(
+                status = SimulatorNoticeArchiveStatus.REQUEST_SEND_FAILED,
+                redactedMessage = REDACTED_SEND_FAILURE,
+            )
+        }
+
+        return try {
+            when (
+                val result = waitForPacket(
+                    endpoint = endpoint,
+                    receiveTimeoutMillis = ARCHIVE_RECEIVE_TIMEOUT_MILLIS,
+                    maxAttempts = ARCHIVE_RECEIVE_ATTEMPTS,
+                    wantedType = SimulatorPacketType.GROUP_NOTICES_LIST_REPLY,
+                    timeoutStatus = SimulatorPresenceStatus.HANDSHAKE_TIMEOUT,
+                )
+            ) {
+                is WaitForPacketResult.Failed -> SimulatorNoticeArchiveResult.Failed(
+                    status = result.status.toArchiveWaitStatus(),
+                    redactedMessage = REDACTED_SEND_FAILURE,
+                )
+                is WaitForPacketResult.Found -> result.payload.toArchiveResult(canonicalGroupId)
+            }
+        } catch (ex: Exception) {
+            SimulatorNoticeArchiveResult.Failed(
+                status = SimulatorNoticeArchiveStatus.REQUEST_SEND_FAILED,
+                redactedMessage = REDACTED_SEND_FAILURE,
+            )
+        }
+    }
+
     fun ensurePresence(circuit: SimulatorCircuit): SimulatorPresenceResult {
         if (!circuit.isUsable()) {
             return SimulatorPresenceResult.Failed(
@@ -115,6 +168,46 @@ internal class ProtocolSimulatorCircuitClient(
     private fun WaitForPacketResult.Failed.toPresenceFailure(): SimulatorPresenceResult.Failed =
         SimulatorPresenceResult.Failed(status, REDACTED_SEND_FAILURE)
 
+    private fun SimulatorPresenceStatus.toArchiveStatus(): SimulatorNoticeArchiveStatus =
+        when (this) {
+            SimulatorPresenceStatus.CIRCUIT_INVALID -> SimulatorNoticeArchiveStatus.REQUEST_INVALID
+            SimulatorPresenceStatus.HANDSHAKE_TIMEOUT,
+            SimulatorPresenceStatus.HANDSHAKE_MALFORMED,
+            SimulatorPresenceStatus.MOVEMENT_TIMEOUT,
+            -> SimulatorNoticeArchiveStatus.PRESENCE_PROOF_GAP
+            SimulatorPresenceStatus.SEND_FAILED,
+            SimulatorPresenceStatus.USE_CIRCUIT_CODE_FAILED,
+            SimulatorPresenceStatus.PING_REPLY_FAILED,
+            SimulatorPresenceStatus.HANDSHAKE_REPLY_FAILED,
+            SimulatorPresenceStatus.COMPLETE_AGENT_MOVEMENT_FAILED,
+            SimulatorPresenceStatus.AGENT_UPDATE_FAILED,
+            -> SimulatorNoticeArchiveStatus.PRESENCE_TRANSPORT_GAP
+        }
+
+    private fun SimulatorPresenceStatus.toArchiveWaitStatus(): SimulatorNoticeArchiveStatus =
+        when (this) {
+            SimulatorPresenceStatus.PING_REPLY_FAILED,
+            SimulatorPresenceStatus.SEND_FAILED,
+            -> SimulatorNoticeArchiveStatus.REQUEST_SEND_FAILED
+            else -> SimulatorNoticeArchiveStatus.REPLY_TIMEOUT
+        }
+
+    private fun ByteArray.toArchiveResult(groupId: String): SimulatorNoticeArchiveResult {
+        val reply = LibomvPacketCodec.groupNoticesListReply(this)
+            ?: return SimulatorNoticeArchiveResult.Failed(
+                status = SimulatorNoticeArchiveStatus.REPLY_MALFORMED,
+                redactedMessage = REDACTED_SEND_FAILURE,
+            )
+        return if (reply.groupId == groupId) {
+            SimulatorNoticeArchiveResult.Found(reply.entries)
+        } else {
+            SimulatorNoticeArchiveResult.Failed(
+                status = SimulatorNoticeArchiveStatus.WRONG_GROUP_REPLY,
+                redactedMessage = REDACTED_SEND_FAILURE,
+            )
+        }
+    }
+
     private fun sendAfterPresence(
         circuit: SimulatorCircuit,
         payload: () -> ByteArray,
@@ -158,7 +251,7 @@ internal class ProtocolSimulatorCircuitClient(
                     }
                     replies += 1
                 }
-                wantedType -> return WaitForPacketResult.Found(replies)
+                wantedType -> return WaitForPacketResult.Found(replies, inbound.payload)
                 SimulatorPacketType.UNKNOWN,
                 SimulatorPacketType.GROUP_NOTICES_LIST_REPLY,
                 SimulatorPacketType.GROUP_NOTICE_REQUESTED,
@@ -171,7 +264,11 @@ internal class ProtocolSimulatorCircuitClient(
     }
 
     private sealed interface WaitForPacketResult {
-        data class Found(val pingReplies: Int) : WaitForPacketResult
+        data class Found(
+            val pingReplies: Int,
+            val payload: ByteArray,
+        ) : WaitForPacketResult
+
         data class Failed(val status: SimulatorPresenceStatus) : WaitForPacketResult
     }
 
@@ -220,5 +317,7 @@ internal class ProtocolSimulatorCircuitClient(
         const val HANDSHAKE_RECEIVE_ATTEMPTS: Int = 12
         const val MOVEMENT_RECEIVE_TIMEOUT_MILLIS: Int = 250
         const val MOVEMENT_RECEIVE_ATTEMPTS: Int = 12
+        const val ARCHIVE_RECEIVE_TIMEOUT_MILLIS: Int = 250
+        const val ARCHIVE_RECEIVE_ATTEMPTS: Int = 12
     }
 }

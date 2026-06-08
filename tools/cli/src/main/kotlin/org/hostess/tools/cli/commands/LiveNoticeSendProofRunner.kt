@@ -11,7 +11,6 @@ import org.hostess.core.domain.InventoryItemKind
 import org.hostess.core.domain.InventoryItemQuery
 import org.hostess.core.domain.NoticeDispatchResult
 import org.hostess.core.domain.NoticeDraft
-import org.hostess.core.domain.TargetSelectionResult
 import org.hostess.core.domain.AccountLabel
 import org.hostess.core.ports.AttachmentResolutionResult
 import org.hostess.core.ports.CredentialHandle
@@ -104,29 +103,21 @@ internal class LiveNoticeSendProofRunner(
         }
 
     private fun selectTargets(groups: List<GroupMembership>): GroupTargetSet? {
-        var targetSet = runtime.targetSelectionService.emptyTargetSet(groups)
-        for (displayName in inputs.targetDisplayNames) {
-            targetSet = when (val result = runtime.targetSelectionService.addTargetByDisplayName(targetSet, displayName)) {
-                is TargetSelectionResult.Changed -> result.targetSet
-                is TargetSelectionResult.Unchanged -> result.targetSet
-                else -> {
-                    val detail = "target group display name unavailable"
-                    terminalFailure = true
-                    steps += LiveProofStep.failed("select-targets", detail)
-                    markNotRunUntilLogout(detail, "inventory-catalogue")
-                    return null
-                }
+        return when (
+            val selection = LiveProofTargetSelector(runtime.targetSelectionService)
+                .select(groups, inputs.targetDisplayNames)
+        ) {
+            is LiveProofTargetSelection.Selected -> {
+                steps += LiveProofStep.passed("select-targets", "targets=${selection.targetSet.selectedCount}")
+                selection.targetSet
+            }
+            is LiveProofTargetSelection.Failed -> {
+                terminalFailure = true
+                steps += LiveProofStep.failed("select-targets", selection.detail)
+                markNotRunUntilLogout(selection.detail, "inventory-catalogue")
+                null
             }
         }
-        if (targetSet.isEmpty()) {
-            val detail = "target group display name unavailable"
-            terminalFailure = true
-            steps += LiveProofStep.failed("select-targets", detail)
-            markNotRunUntilLogout(detail, "inventory-catalogue")
-            return null
-        }
-        steps += LiveProofStep.passed("select-targets", "targets=${targetSet.selectedCount}")
-        return targetSet
     }
 
     private fun inventoryCatalogue(session: HostessSession): List<InventoryItemDescriptor>? =

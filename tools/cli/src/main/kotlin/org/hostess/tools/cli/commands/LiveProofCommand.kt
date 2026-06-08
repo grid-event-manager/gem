@@ -82,6 +82,7 @@ class LiveProofCommand(
     private fun bootstrapBlockedStatusFields(inputs: LiveProofInputs): Map<String, String> =
         when (inputs.proofScope) {
             LiveProofScope.SIMULATOR_PRESENCE,
+            LiveProofScope.NOTICE_ARCHIVE,
             LiveProofScope.READ_GROUPS,
             LiveProofScope.LOGIN_ONLY,
             LiveProofScope.INVENTORY_CATALOGUE,
@@ -102,6 +103,12 @@ class LiveProofCommand(
                 "usage: live-proof --mode live --proof-scope simulator-presence --report <path> " +
                     "--grid <name> --account <label> --credential-env <name> --proof-account-attested " +
                     "--scripted-agent-attested --operator <label> --proof-account-label <label>",
+            )
+            LiveProofScope.NOTICE_ARCHIVE -> output.line(
+                "usage: live-proof --mode live --proof-scope notice-archive --report <path> " +
+                    "--grid <name> --account <label> --credential-env <name> --proof-account-attested " +
+                    "--scripted-agent-attested --operator <label> --proof-account-label <label> " +
+                    "--target <display-name>",
             )
             LiveProofScope.READ_GROUPS -> output.line(
                 "usage: live-proof --mode live --proof-scope read-groups --report <path> " +

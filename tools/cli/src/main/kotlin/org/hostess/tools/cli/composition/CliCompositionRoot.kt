@@ -15,6 +15,8 @@ import org.hostess.core.domain.SessionId
 import org.hostess.core.ports.AttachmentResolutionResult
 import org.hostess.core.ports.ClockPort
 import org.hostess.core.ports.GroupListResult
+import org.hostess.core.ports.GroupNoticeArchiveEntry
+import org.hostess.core.ports.GroupNoticeArchiveResult
 import org.hostess.core.ports.GroupPort
 import org.hostess.core.ports.InventoryItemListResult
 import org.hostess.core.ports.InventoryPort
@@ -134,6 +136,20 @@ private class FakeProofGroupPort(
                 regionHandshakeReplyStatus = SimulatorPresenceProofStatus.PASSED,
                 agentMovementStatus = SimulatorPresenceProofStatus.PASSED,
                 agentUpdateStatus = SimulatorPresenceProofStatus.PASSED,
+            ),
+        )
+
+    override fun noticeArchive(session: HostessSession, group: GroupMembership): GroupNoticeArchiveResult =
+        GroupNoticeArchiveResult.Success(
+            group = group,
+            entries = listOf(
+                GroupNoticeArchiveEntry(
+                    subject = "Fake Notice",
+                    fromName = "fake-proof",
+                    timestamp = 1L,
+                    hasAttachment = true,
+                    assetType = 3,
+                ),
             ),
         )
 }

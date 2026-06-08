@@ -51,3 +51,38 @@ internal enum class SimulatorPresenceStatus {
     MOVEMENT_TIMEOUT,
     AGENT_UPDATE_FAILED,
 }
+
+internal sealed interface SimulatorNoticeArchiveResult {
+    data class Found(
+        val entries: List<SimulatorNoticeArchiveEntry>,
+    ) : SimulatorNoticeArchiveResult
+
+    data class Failed(
+        val status: SimulatorNoticeArchiveStatus,
+        val redactedMessage: String,
+    ) : SimulatorNoticeArchiveResult
+}
+
+internal data class SimulatorNoticeArchiveEntry(
+    val noticeId: String,
+    val timestamp: Long,
+    val fromName: String,
+    val subject: String,
+    val hasAttachment: Boolean,
+    val assetType: Int,
+)
+
+internal data class SimulatorNoticeArchiveReply(
+    val groupId: String,
+    val entries: List<SimulatorNoticeArchiveEntry>,
+)
+
+internal enum class SimulatorNoticeArchiveStatus {
+    REQUEST_INVALID,
+    PRESENCE_TRANSPORT_GAP,
+    PRESENCE_PROOF_GAP,
+    REQUEST_SEND_FAILED,
+    REPLY_TIMEOUT,
+    REPLY_MALFORMED,
+    WRONG_GROUP_REPLY,
+}

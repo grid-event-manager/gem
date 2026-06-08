@@ -3,6 +3,8 @@ package org.hostess.core.services
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import org.hostess.core.domain.GroupMembership
+import org.hostess.core.ports.GroupNoticeArchiveResult
 import org.hostess.core.ports.SimulatorPresenceProofResult
 import org.hostess.core.testing.FakeGroupPort
 import org.hostess.core.testing.defaultSession
@@ -17,6 +19,19 @@ class GroupDirectoryServiceTest {
 
         assertIs<SimulatorPresenceProofResult.Success>(result)
         assertEquals(listOf(session), groupPort.presenceSessions)
+        assertEquals(emptyList(), groupPort.sessions)
+    }
+
+    @Test
+    fun `notice archive delegates through group port`() {
+        val groupPort = FakeGroupPort()
+        val session = defaultSession()
+        val group = GroupMembership.fromValues("group", "Venue Hosts", true, true)
+
+        val result = GroupDirectoryService(groupPort).noticeArchive(session, group)
+
+        assertIs<GroupNoticeArchiveResult.Success>(result)
+        assertEquals(listOf(session to group), groupPort.archiveRequests)
         assertEquals(emptyList(), groupPort.sessions)
     }
 }
