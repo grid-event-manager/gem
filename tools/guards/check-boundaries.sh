@@ -29,6 +29,12 @@ TRACK_HS_FULL_PROOF_ARCHIVE_REQUIRED_PATTERN='if[[:space:]]*\(!noticeArchive\(se
 TRACK_INCIDENT_GROUP_MUTATION_PATTERN='EjectGroupMemberRequest|LeaveGroupRequest|GroupRoleChanges|GroupRoleUpdate|InviteGroupRequest|RequestBanAction|SetGroupAcceptNotices'
 TRACK_ANDROID_PROBE_FORBIDDEN_RUNTIME_PATTERN='EnvironmentLoginSecretResolver|AgentDataUpdateRequestTransport|EventQueueGetClient|ProtocolLoginRuntime|ProtocolGroupRuntime|ProtocolInventoryRuntime|ProtocolNoticeRuntime|SimulatorPacketExchange'
 TRACK_I_STALE_NOTICE_COMPLIANCE_PATTERN='NoticeCompliance(Service|Request|Decision|Receipt|Policy|Clock|LedgerResult|Ledgers?)|DefaultNoticeComplianceClock|NoticeSubmission(Count|Projection|LedgerSnapshot|LedgerPort)|NoticeLedgerDay|noticeSubmissionProjectionStatus|noticeSubmissionsProjected|noticeSubmissionLedgerGroupCount|noticeSubmissionLedgerMaxGroupTotal|noticeSubmissionPerGroupHardCap|noticeLedgerConfigured|notice_submission_cap_exceeded|ledger_snapshot_unavailable|ledger_reserve_failed|ledger_record_failed|notice_ledger_unavailable|NoticeRecipientEstimate|NoticeRecipientCount|NoticeRecipientEstimateSource|recipientDeliveryProjected|recipientDeliveryLedgerTotal|recipientDeliveryHardCap|recipientProjectionStatus|recipient_count_|recipient_delivery_|NoticeDeliveryCount|NoticeDeliveryDay|NoticeDeliveryProjection|NoticeDeliveryLedgerSnapshot|NoticeComplianceLedgerPort|HOSTESS_OWKS_COUNT|HOSTESS_MINX_COUNT'
+TRACK_J_CLASSIC_BAKING_PATTERN='AgentSetAppearance|UploadBakedTexture|CreateBakes|DownloadWearables|WearOutfit|RequestSetAppearance'
+TRACK_J_FORBIDDEN_AVATAR_OWNER_PATTERN='(^|[^[:alnum:]_])(AvatarManager|AppearanceHelper|ViewerUtils)([^[:alnum:]_]|$)'
+TRACK_J_DIRECT_AVATAR_SEED_PATTERN='seedCapability'
+TRACK_J_CLI_DIRECT_AVATAR_PATTERN='(^|[^[:alnum:]_])(LibomvAvatarAdapter|ProtocolAvatarRuntime|ProtocolAvatarAppearanceSource)([^[:alnum:]_]|$)'
+TRACK_J_STALE_FULL_PROOF_SIMULATOR_GATE_PATTERN='simulatorPresence\(session\)|LiveProofSimulatorPresenceVerifier'
+TRACK_J_EXTRA_SIMULATOR_EXCHANGE_IMPL_PATTERN='\)[[:space:]]*:[[:space:]]*SimulatorPacketExchange|^[[:space:]]*(class|object)[^=]*:[[:space:]]*SimulatorPacketExchange'
 TRACK_C_ENV_PATTERN='System(::|\.)getenv'
 TRACK_C_FILE_ROUTE_PATTERN='credential-file'
 TRACK_C_UNSUPPORTED_SECRET_PATTERN='keychain|Keychain|KeyStore|plaintext|plain-text|plain text'
@@ -61,7 +67,7 @@ TRACK_G_CLI_RAW_CAPABILITY_PATTERN='seedCapability|capabilityUrl|EventQueueGet|F
 TRACK_F_COMMON_FORBIDDEN_PATTERN='java\.|javax\.|okhttp|android\.|System\.|MessageDigest|NetworkInterface|Datagram|ByteBuffer|UUID|Class\.forName|::class\.java'
 TRACK_F_PARALLEL_PATH_PATTERN='hostess-core-kmp|hostess-protocol-android|AndroidProtocolLibomvModule|JvmProtocolLibomvModule|GroupReader|CurrentGroupsClient|LoginRuntimeAndroid|Manager|Utils|Helpers|Common'
 TRACK_F_PLATFORM_API_PATTERN='okhttp3\.|OkHttpClient|System(::|\.)getenv|NetworkInterface|java\.net\.Datagram|Datagram(Packet|Socket)|javax\.xml|org\.xml\.sax|DocumentBuilderFactory|java\.util\.UUID|MessageDigest|java\.nio\.ByteBuffer'
-TRACK_F_OWNER_DECLARATION_PREFIX='^[[:space:]]*(internal[[:space:]]+|private[[:space:]]+)?(data[[:space:]]+class|class|object|interface|fun[[:space:]]+interface|value[[:space:]]+class)[[:space:]]+'
+TRACK_F_OWNER_DECLARATION_PREFIX='^[[:space:]]*(internal[[:space:]]+|private[[:space:]]+|public[[:space:]]+)?(open[[:space:]]+|sealed[[:space:]]+)?(data[[:space:]]+class|class|object|interface|fun[[:space:]]+interface|value[[:space:]]+class)[[:space:]]+'
 
 add_existing() {
     local -n target="$1"
@@ -871,6 +877,57 @@ add_existing track_i_public_doc_targets \
     "apps/desktop/README.md" \
     "apps/android/README.md"
 
+track_j_main_targets=()
+add_existing track_j_main_targets \
+    "hostess-core/src/commonMain" \
+    "hostess-core/src/jvmMain" \
+    "hostess-core/src/androidMain" \
+    "hostess-core/src/jvmAndroidMain" \
+    "hostess-core/src/main" \
+    "hostess-protocol-libomv/src/commonMain" \
+    "hostess-protocol-libomv/src/jvmMain" \
+    "hostess-protocol-libomv/src/androidMain" \
+    "hostess-protocol-libomv/src/jvmAndroidMain" \
+    "hostess-protocol-libomv/src/main" \
+    "tools/cli/src/main" \
+    "apps/desktop/src/main" \
+    "apps/android/src/main"
+
+track_j_avatar_source_targets=()
+add_existing track_j_avatar_source_targets \
+    "hostess-protocol-libomv/src/commonMain/kotlin/org/hostess/protocol/libomv/runtime/ProtocolAvatarAppearanceSource.kt"
+
+track_j_cli_command_targets=()
+add_existing track_j_cli_command_targets \
+    "tools/cli/src/main/kotlin/org/hostess/tools/cli/commands"
+
+track_j_full_proof_targets=()
+add_existing track_j_full_proof_targets \
+    "tools/cli/src/main/kotlin/org/hostess/tools/cli/commands/LiveNoticeSendProofRunner.kt"
+
+track_j_simulator_exchange_impl_targets=()
+while IFS= read -r path; do
+    case "$path" in
+        "hostess-protocol-libomv/src/commonMain/kotlin/org/hostess/protocol/libomv/transport/SimulatorPacketExchange.kt") ;;
+        "hostess-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/transport/UdpSimulatorDatagramSender.kt") ;;
+        *) track_j_simulator_exchange_impl_targets+=("$path") ;;
+    esac
+done < <(find \
+    "hostess-core/src/commonMain" \
+    "hostess-core/src/jvmMain" \
+    "hostess-core/src/androidMain" \
+    "hostess-core/src/jvmAndroidMain" \
+    "hostess-core/src/main" \
+    "hostess-protocol-libomv/src/commonMain" \
+    "hostess-protocol-libomv/src/jvmMain" \
+    "hostess-protocol-libomv/src/androidMain" \
+    "hostess-protocol-libomv/src/jvmAndroidMain" \
+    "hostess-protocol-libomv/src/main" \
+    "tools/cli/src/main" \
+    "apps/desktop/src/main" \
+    "apps/android/src/main" \
+    -type f -name '*.kt' 2>/dev/null || true)
+
 check_no_hits \
     "hostess-core forbidden dependencies" \
     "$CORE_FORBIDDEN_PATTERN" \
@@ -1139,6 +1196,36 @@ check_no_hits \
     "$TRACK_I_STALE_NOTICE_COMPLIANCE_PATTERN" \
     "${track_i_public_doc_targets[@]}"
 
+check_no_hits \
+    "Track J forbids classic avatar baking production paths" \
+    "$TRACK_J_CLASSIC_BAKING_PATTERN" \
+    "${track_j_main_targets[@]}"
+
+check_no_hits \
+    "Track J forbidden avatar owner names" \
+    "$TRACK_J_FORBIDDEN_AVATAR_OWNER_PATTERN" \
+    "${track_j_main_targets[@]}"
+
+check_no_hits \
+    "Track J avatar appearance source does not seed capabilities directly" \
+    "$TRACK_J_DIRECT_AVATAR_SEED_PATTERN" \
+    "${track_j_avatar_source_targets[@]}"
+
+check_no_hits \
+    "Track J CLI commands do not construct protocol avatar runtime" \
+    "$TRACK_J_CLI_DIRECT_AVATAR_PATTERN" \
+    "${track_j_cli_command_targets[@]}"
+
+check_no_hits \
+    "Track J full proof no stale simulator-presence gate" \
+    "$TRACK_J_STALE_FULL_PROOF_SIMULATOR_GATE_PATTERN" \
+    "${track_j_full_proof_targets[@]}"
+
+check_no_hits \
+    "Track J no extra SimulatorPacketExchange implementations" \
+    "$TRACK_J_EXTRA_SIMULATOR_EXCHANGE_IMPL_PATTERN" \
+    "${track_j_simulator_exchange_impl_targets[@]}"
+
 check_exact_owner_count "Track G single InventoryPort owner" "InventoryPort" 1 "${track_g_main_targets[@]}"
 check_exact_owner_count "Track G single InventoryDirectoryService owner" "InventoryDirectoryService" 1 "${track_g_main_targets[@]}"
 check_exact_owner_count "Track G single ProtocolCapabilitySeedClient owner" "ProtocolCapabilitySeedClient" 1 "${track_g_main_targets[@]}"
@@ -1148,6 +1235,12 @@ check_exact_owner_count "Track H single LibomvInventoryPermissionMapping owner" 
 check_exact_owner_count "Track H single ProtocolSimulatorCircuitClient owner" "ProtocolSimulatorCircuitClient" 1 "${track_f_owner_targets[@]}"
 check_exact_owner_count "Track H single LibomvNoticePacketCodec owner" "LibomvNoticePacketCodec" 1 "${track_f_owner_targets[@]}"
 check_exact_owner_count "Track H single ProtocolNoticeCircuitSource owner" "ProtocolNoticeCircuitSource" 1 "${track_f_owner_targets[@]}"
+check_exact_owner_count "Track J single AvatarPort owner" "AvatarPort" 1 "${track_f_owner_targets[@]}"
+check_exact_owner_count "Track J single AvatarReadinessService owner" "AvatarReadinessService" 1 "${track_f_owner_targets[@]}"
+check_exact_owner_count "Track J single CurrentOutfitVersionSource owner" "CurrentOutfitVersionSource" 1 "${track_f_owner_targets[@]}"
+check_exact_owner_count "Track J single LibomvAvatarAdapter owner" "LibomvAvatarAdapter" 1 "${track_f_owner_targets[@]}"
+check_exact_owner_count "Track J single ProtocolAvatarRuntime owner" "ProtocolAvatarRuntime" 1 "${track_f_owner_targets[@]}"
+check_exact_owner_count "Track J single ProtocolAvatarAppearanceSource owner" "ProtocolAvatarAppearanceSource" 1 "${track_f_owner_targets[@]}"
 
 check_no_hits \
     "Track D viewer identity provider outside protocol module" \
@@ -1437,6 +1530,36 @@ check_pattern_matches \
     "self-test Track I stale notice compliance pattern" \
     "$TRACK_I_STALE_NOTICE_COMPLIANCE_PATTERN" \
     'NoticeComplianceService; NoticeSubmissionLedgerPort; noticeSubmissionProjectionStatus; noticeLedgerConfigured'
+
+check_pattern_matches \
+    "self-test Track J classic baking pattern" \
+    "$TRACK_J_CLASSIC_BAKING_PATTERN" \
+    'client.Appearance.RequestSetAppearance(true); AgentSetAppearance'
+
+check_pattern_matches \
+    "self-test Track J forbidden avatar owner pattern" \
+    "$TRACK_J_FORBIDDEN_AVATAR_OWNER_PATTERN" \
+    'class AvatarManager'
+
+check_pattern_matches \
+    "self-test Track J direct avatar seed pattern" \
+    "$TRACK_J_DIRECT_AVATAR_SEED_PATTERN" \
+    'identity.seedCapability'
+
+check_pattern_matches \
+    "self-test Track J CLI direct avatar pattern" \
+    "$TRACK_J_CLI_DIRECT_AVATAR_PATTERN" \
+    'ProtocolAvatarRuntime(clientSession).ensureReady(session)'
+
+check_pattern_matches \
+    "self-test Track J stale full-proof simulator gate pattern" \
+    "$TRACK_J_STALE_FULL_PROOF_SIMULATOR_GATE_PATTERN" \
+    'LiveProofSimulatorPresenceVerifier(groupDirectoryService).verify(session)'
+
+check_pattern_matches \
+    "self-test Track J extra simulator exchange implementation pattern" \
+    "$TRACK_J_EXTRA_SIMULATOR_EXCHANGE_IMPL_PATTERN" \
+    ') : SimulatorPacketExchange {'
 
 if [[ "$failures" -ne 0 ]]; then
     exit 1

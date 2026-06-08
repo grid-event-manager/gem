@@ -23,6 +23,7 @@ class AndroidCompatibilityProbeTest {
         assertTrue(result.trackDsLoginPackageLoad)
         assertTrue(result.trackGGridLoad)
         assertTrue(result.trackHNoticeLoad)
+        assertTrue(result.trackJAvatarLoad)
         assertTrue(result.noLiveGridContact)
         assertTrue(result.noUiSurface)
         assertNull(result.blockedReason)
@@ -40,7 +41,8 @@ class AndroidCompatibilityProbeTest {
             trackDsLoginPackageLoad = true,
             trackGGridLoad = false,
             trackHNoticeLoad = false,
-            reason = "Android compatibility probe failed lanes=adapterLoad,runtimeLoad,transportLoad,trackGGridLoad,trackHNoticeLoad",
+            trackJAvatarLoad = false,
+            reason = "Android compatibility probe failed lanes=adapterLoad,runtimeLoad,transportLoad,trackGGridLoad,trackHNoticeLoad,trackJAvatarLoad",
         )
 
         assertEquals("android_gap", result.status)
@@ -53,6 +55,7 @@ class AndroidCompatibilityProbeTest {
         assertTrue(result.trackDsLoginPackageLoad)
         assertFalse(result.trackGGridLoad)
         assertFalse(result.trackHNoticeLoad)
+        assertFalse(result.trackJAvatarLoad)
         assertTrue(result.noLiveGridContact)
         assertTrue(result.noUiSurface)
         val reason = assertNotNull(result.blockedReason)
@@ -61,5 +64,6 @@ class AndroidCompatibilityProbeTest {
         assertContains(reason, "transportLoad")
         assertContains(reason, "trackGGridLoad")
         assertContains(reason, "trackHNoticeLoad")
+        assertContains(reason, "trackJAvatarLoad")
     }
 }

@@ -4,6 +4,7 @@ import org.hostess.core.domain.GroupMembership
 import org.hostess.core.domain.NoticeDraft
 import org.hostess.core.domain.NoticeDraftValidation
 import org.hostess.core.domain.TargetSelectionResult
+import org.hostess.core.services.AvatarReadinessService
 import org.hostess.core.services.LoginComplianceService
 import org.hostess.core.services.NoticeDispatchService
 import org.hostess.core.services.TargetSelectionService
@@ -23,6 +24,7 @@ class AndroidCompatibilityProbe {
         val trackDsLoginPackageLoad = probeTrackDsLoginPackageLoad()
         val trackGGridLoad = probeTrackGGridLoad()
         val trackHNoticeLoad = probeTrackHNoticeLoad()
+        val trackJAvatarLoad = loadState?.avatarLoad == true && probeTrackJAvatarLoad()
 
         return if (
             coreCompile &&
@@ -33,7 +35,8 @@ class AndroidCompatibilityProbe {
             trackDComplianceLoad &&
             trackDsLoginPackageLoad &&
             trackGGridLoad &&
-            trackHNoticeLoad
+            trackHNoticeLoad &&
+            trackJAvatarLoad
         ) {
             AndroidCompatibilityResult.passed()
         } else {
@@ -47,6 +50,7 @@ class AndroidCompatibilityProbe {
                 trackDsLoginPackageLoad = trackDsLoginPackageLoad,
                 trackGGridLoad = trackGGridLoad,
                 trackHNoticeLoad = trackHNoticeLoad,
+                trackJAvatarLoad = trackJAvatarLoad,
                 reason = blockedReason(
                     coreCompile,
                     adapterLoad,
@@ -57,6 +61,7 @@ class AndroidCompatibilityProbe {
                     trackDsLoginPackageLoad,
                     trackGGridLoad,
                     trackHNoticeLoad,
+                    trackJAvatarLoad,
                     runtimeResult.exceptionOrNull(),
                 ),
             )
@@ -105,6 +110,12 @@ class AndroidCompatibilityProbe {
                 .getOrDefault(false)
         }
 
+    private fun probeTrackJAvatarLoad(): Boolean =
+        TRACK_J_AVATAR_CLASSES.all { className ->
+            runCatching { Class.forName(className, false, javaClass.classLoader).name.isNotBlank() }
+                .getOrDefault(false)
+        }
+
     private fun blockedReason(
         coreCompile: Boolean,
         adapterLoad: Boolean,
@@ -115,6 +126,7 @@ class AndroidCompatibilityProbe {
         trackDsLoginPackageLoad: Boolean,
         trackGGridLoad: Boolean,
         trackHNoticeLoad: Boolean,
+        trackJAvatarLoad: Boolean,
         failure: Throwable?,
     ): String {
         val failedLanes = listOfNotNull(
@@ -127,6 +139,7 @@ class AndroidCompatibilityProbe {
             "trackDsLoginPackageLoad".takeUnless { trackDsLoginPackageLoad },
             "trackGGridLoad".takeUnless { trackGGridLoad },
             "trackHNoticeLoad".takeUnless { trackHNoticeLoad },
+            "trackJAvatarLoad".takeUnless { trackJAvatarLoad },
         )
         val cause = failure?.let { " cause=${it::class.java.simpleName}" }.orEmpty()
         return "Android compatibility probe failed lanes=${failedLanes.joinToString(",")}$cause"
@@ -138,11 +151,14 @@ class AndroidCompatibilityProbe {
 
     private companion object {
         fun defaultProtocolLoad(): AndroidProtocolLoadState {
-            val loadState = ProtocolLibomvModule.liveRuntime().loadState
+            val runtime = ProtocolLibomvModule.liveRuntime()
+            val avatarService = AvatarReadinessService(runtime.avatarPort)
+            val loadState = runtime.loadState
             return AndroidProtocolLoadState(
                 adapterLoad = loadState.adapterLoad,
                 runtimeLoad = loadState.runtimeLoad,
                 transportLoad = loadState.transportLoad,
+                avatarLoad = avatarService::class.java.name.isNotBlank(),
             )
         }
 
@@ -169,6 +185,14 @@ class AndroidCompatibilityProbe {
             "org.hostess.protocol.libomv.transport.LibomvNoticePacketCodec",
             "org.hostess.protocol.libomv.runtime.ProtocolNoticeCircuitSource",
         )
+        val TRACK_J_AVATAR_CLASSES = listOf(
+            "org.hostess.core.services.AvatarReadinessService",
+            "org.hostess.core.ports.AvatarPort",
+            "org.hostess.core.ports.AvatarReadinessProof",
+            "org.hostess.protocol.libomv.LibomvAvatarAdapter",
+            "org.hostess.protocol.libomv.runtime.ProtocolAvatarRuntime",
+            "org.hostess.protocol.libomv.runtime.ProtocolAvatarAppearanceSource",
+        )
     }
 }
 
@@ -176,6 +200,7 @@ internal data class AndroidProtocolLoadState(
     val adapterLoad: Boolean,
     val runtimeLoad: Boolean,
     val transportLoad: Boolean,
+    val avatarLoad: Boolean,
 )
 
 data class AndroidCompatibilityResult(
@@ -189,6 +214,7 @@ data class AndroidCompatibilityResult(
     val trackDsLoginPackageLoad: Boolean,
     val trackGGridLoad: Boolean,
     val trackHNoticeLoad: Boolean,
+    val trackJAvatarLoad: Boolean,
     val noLiveGridContact: Boolean,
     val noUiSurface: Boolean,
     val blockedReason: String?,
@@ -205,6 +231,7 @@ data class AndroidCompatibilityResult(
             trackDsLoginPackageLoad = true,
             trackGGridLoad = true,
             trackHNoticeLoad = true,
+            trackJAvatarLoad = true,
             noLiveGridContact = true,
             noUiSurface = true,
             blockedReason = null,
@@ -220,6 +247,7 @@ data class AndroidCompatibilityResult(
             trackDsLoginPackageLoad: Boolean,
             trackGGridLoad: Boolean,
             trackHNoticeLoad: Boolean,
+            trackJAvatarLoad: Boolean,
             reason: String,
         ): AndroidCompatibilityResult = AndroidCompatibilityResult(
             status = "android_gap",
@@ -232,6 +260,7 @@ data class AndroidCompatibilityResult(
             trackDsLoginPackageLoad = trackDsLoginPackageLoad,
             trackGGridLoad = trackGGridLoad,
             trackHNoticeLoad = trackHNoticeLoad,
+            trackJAvatarLoad = trackJAvatarLoad,
             noLiveGridContact = true,
             noUiSurface = true,
             blockedReason = reason,
