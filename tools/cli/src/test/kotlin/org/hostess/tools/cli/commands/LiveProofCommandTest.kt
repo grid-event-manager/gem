@@ -655,6 +655,57 @@ class LiveProofCommandTest {
     }
 
     @Test
+    fun `second life full proof is frozen during incident even with operator observation`() {
+        val directory = Files.createTempDirectory("hostess-live-proof-incident-freeze")
+        try {
+            val reportPath = directory.resolve("live-proof.json")
+            val output = RecordingCliOutput()
+
+            val exitCode = CommandRegistry.default(CliCompositionRoot()).execute(
+                listOf(
+                    "live-proof",
+                    "--report",
+                    reportPath.toString(),
+                    "--authorised-live-send",
+                    "--operator-observation-ready",
+                    "--grid",
+                    "agni",
+                    "--account",
+                    "venue-proof",
+                    "--credential-env",
+                    "HOSTESS_PROOF_CREDENTIAL",
+                    "--proof-account-attested",
+                    "--scripted-agent-attested",
+                    "--operator",
+                    "test-operator",
+                    "--proof-account-label",
+                    "test-proof-account",
+                    "--target",
+                    "Venue Hosts",
+                    "--subject",
+                    "Tonight",
+                    "--body",
+                    "Doors at eight",
+                    "--existing-attachment-name",
+                    "Venue Landmark",
+                ),
+                output,
+            )
+
+            val report = reportPath.readText()
+            assertEquals(3, exitCode)
+            assertTrue(output.lines.any { it.contains("real Second Life mutation frozen pending incident review") })
+            assertContains(report, "\"status\": \"blocked\"")
+            assertContains(report, "\"noticeSendStatus\": \"blocked\"")
+            assertContains(report, "\"operatorReceiptStatus\": \"blocked\"")
+            assertContains(report, "\"loginStatus\": \"not_run\"")
+            assertFalse(report.contains("HOSTESS_PROOF_CREDENTIAL"))
+        } finally {
+            directory.toFile().deleteRecursively()
+        }
+    }
+
+    @Test
     fun `complete live proof inputs reach shared runtime and fail closed without leaking inputs`() {
         val directory = Files.createTempDirectory("hostess-live-proof-unavailable")
         try {
@@ -669,7 +720,7 @@ class LiveProofCommandTest {
                     "--authorised-live-send",
                     "--operator-observation-ready",
                     "--grid",
-                    "second-life",
+                    "hostess-local",
                     "--account",
                     "venue-proof",
                     "--credential-env",

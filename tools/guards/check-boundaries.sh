@@ -26,6 +26,7 @@ TRACK_HS_DUPLICATE_SIMULATOR_EXCHANGE_PATTERN='SimulatorPacketReceiver|UdpSimula
 TRACK_HS_DIRECT_ARCHIVE_PATTERN='(^|[^[:alnum:]_])(ProtocolGroupNoticeArchiveSource|requestGroupNoticeArchive|GroupNoticesListRequest|GroupNoticesListReply)([^[:alnum:]_]|$)'
 TRACK_HS_FAKE_LIVE_PASS_PATTERN='fake mode.*passed|CommandMode\.FAKE[^;]*ProofReportStatus\.PASSED|ProofReportStatus\.PASSED[^;]*CommandMode\.FAKE'
 TRACK_HS_FULL_PROOF_ARCHIVE_REQUIRED_PATTERN='if[[:space:]]*\(!noticeArchive\(session,[[:space:]]*targetSet\)\)'
+TRACK_INCIDENT_GROUP_MUTATION_PATTERN='EjectGroupMemberRequest|LeaveGroupRequest|GroupRoleChanges|GroupRoleUpdate|InviteGroupRequest|RequestBanAction|SetGroupAcceptNotices'
 TRACK_ANDROID_PROBE_FORBIDDEN_RUNTIME_PATTERN='EnvironmentLoginSecretResolver|AgentDataUpdateRequestTransport|EventQueueGetClient|ProtocolLoginRuntime|ProtocolGroupRuntime|ProtocolInventoryRuntime|ProtocolNoticeRuntime|SimulatorPacketExchange'
 TRACK_I_STALE_NOTICE_COMPLIANCE_PATTERN='NoticeCompliance(Service|Request|Decision|Receipt|Policy|Clock|LedgerResult|Ledgers?)|DefaultNoticeComplianceClock|NoticeSubmission(Count|Projection|LedgerSnapshot|LedgerPort)|NoticeLedgerDay|noticeSubmissionProjectionStatus|noticeSubmissionsProjected|noticeSubmissionLedgerGroupCount|noticeSubmissionLedgerMaxGroupTotal|noticeSubmissionPerGroupHardCap|noticeLedgerConfigured|notice_submission_cap_exceeded|ledger_snapshot_unavailable|ledger_reserve_failed|ledger_record_failed|notice_ledger_unavailable|NoticeRecipientEstimate|NoticeRecipientCount|NoticeRecipientEstimateSource|recipientDeliveryProjected|recipientDeliveryLedgerTotal|recipientDeliveryHardCap|recipientProjectionStatus|recipient_count_|recipient_delivery_|NoticeDeliveryCount|NoticeDeliveryDay|NoticeDeliveryProjection|NoticeDeliveryLedgerSnapshot|NoticeComplianceLedgerPort|HOSTESS_OWKS_COUNT|HOSTESS_MINX_COUNT'
 TRACK_C_ENV_PATTERN='System(::|\.)getenv'
@@ -834,6 +835,22 @@ track_hs_full_proof_targets=()
 add_existing track_hs_full_proof_targets \
     "tools/cli/src/main/kotlin/org/hostess/tools/cli/commands/LiveNoticeSendProofRunner.kt"
 
+track_incident_group_mutation_targets=()
+add_existing track_incident_group_mutation_targets \
+    "hostess-core/src/commonMain" \
+    "hostess-core/src/jvmMain" \
+    "hostess-core/src/androidMain" \
+    "hostess-core/src/jvmAndroidMain" \
+    "hostess-core/src/main" \
+    "hostess-protocol-libomv/src/commonMain" \
+    "hostess-protocol-libomv/src/jvmMain" \
+    "hostess-protocol-libomv/src/androidMain" \
+    "hostess-protocol-libomv/src/jvmAndroidMain" \
+    "hostess-protocol-libomv/src/main" \
+    "tools/cli/src/main" \
+    "apps/desktop/src/main" \
+    "apps/android/src/main"
+
 track_android_probe_targets=()
 add_existing track_android_probe_targets \
     "apps/android/src/main/kotlin/org/hostess/apps/android/AndroidCompatibilityProbe.kt"
@@ -1101,6 +1118,11 @@ check_required_hits \
     "Track HS full proof requires archive read-back" \
     "$TRACK_HS_FULL_PROOF_ARCHIVE_REQUIRED_PATTERN" \
     "${track_hs_full_proof_targets[@]}"
+
+check_no_hits \
+    "Incident freeze forbids group membership mutation packets" \
+    "$TRACK_INCIDENT_GROUP_MUTATION_PATTERN" \
+    "${track_incident_group_mutation_targets[@]}"
 
 check_no_hits \
     "Android compatibility probe forbidden runtime routes" \
@@ -1400,6 +1422,11 @@ check_pattern_matches \
     "self-test Track HS fake live pass pattern" \
     "$TRACK_HS_FAKE_LIVE_PASS_PATTERN" \
     'CommandMode.FAKE returns ProofReportStatus.PASSED'
+
+check_pattern_matches \
+    "self-test incident group mutation pattern" \
+    "$TRACK_INCIDENT_GROUP_MUTATION_PATTERN" \
+    'EjectGroupMemberRequestPacket()'
 
 check_pattern_matches \
     "self-test Android probe forbidden runtime route pattern" \
