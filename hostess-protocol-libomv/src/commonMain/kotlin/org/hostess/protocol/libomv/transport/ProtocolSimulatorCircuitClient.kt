@@ -517,12 +517,12 @@ internal class ProtocolSimulatorCircuitClient(
     }
 
     private class SimulatorNoticeSendObservationCollector {
-        private val packetTypes = mutableListOf<SimulatorPacketType>()
+        private val packets = mutableListOf<SimulatorPacketObservation>()
         private val instantMessages = mutableListOf<SimulatorInstantMessageObservation>()
 
         fun record(payload: ByteArray) {
             val type = LibomvPacketCodec.packetType(payload)
-            packetTypes += type
+            packets += SimulatorPacketObservation(type, LibomvPacketCodec.decodedPacketId(payload))
             if (type == SimulatorPacketType.IMPROVED_INSTANT_MESSAGE) {
                 LibomvPacketCodec.improvedInstantMessageObservation(payload)?.let(instantMessages::add)
             }
@@ -530,7 +530,7 @@ internal class ProtocolSimulatorCircuitClient(
 
         fun redactedSummary(): String = buildList {
             add("transportAck=passed")
-            add("observedPackets=${packetTypes.size}")
+            add("observedPackets=${packets.size}")
             add("packetTypes=${packetTypeSummary()}")
             add("instantMessages=${instantMessages.size}")
             instantMessages.take(MAX_REPORTED_INSTANT_MESSAGES).forEachIndexed { index, message ->
@@ -539,17 +539,26 @@ internal class ProtocolSimulatorCircuitClient(
         }.joinToString("; ")
 
         private fun packetTypeSummary(): String =
-            if (packetTypes.isEmpty()) {
+            if (packets.isEmpty()) {
                 "none"
             } else {
-                packetTypes.groupingBy { it.reportName() }
+                packets.groupingBy(SimulatorPacketObservation::reportName)
                     .eachCount()
                     .entries
                     .joinToString(",") { "${it.key}:${it.value}" }
             }
 
-        private fun SimulatorPacketType.reportName(): String =
-            name.lowercase()
+        private data class SimulatorPacketObservation(
+            val type: SimulatorPacketType,
+            val packetId: Int?,
+        ) {
+            fun reportName(): String =
+                if (type == SimulatorPacketType.UNKNOWN && packetId != null) {
+                    "unknown_$packetId"
+                } else {
+                    type.name.lowercase()
+                }
+        }
 
         private companion object {
             const val MAX_REPORTED_INSTANT_MESSAGES: Int = 3

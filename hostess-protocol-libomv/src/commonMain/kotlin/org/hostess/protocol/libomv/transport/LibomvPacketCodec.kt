@@ -125,6 +125,9 @@ internal object LibomvPacketCodec {
             else -> SimulatorPacketType.UNKNOWN
         }
 
+    fun decodedPacketId(payload: ByteArray): Int? =
+        decodedPacket(payload)?.packetId
+
     fun regionHandshakeInfo(payload: ByteArray): RegionHandshakeInfo? {
         val packet = decodedPacket(payload) ?: return null
         if (packet.packetId != REGION_HANDSHAKE) {

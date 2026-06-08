@@ -271,6 +271,7 @@ class ProtocolSimulatorCircuitClientTest {
 
         val detail = result.redactedDetail.orEmpty()
         assertTrue(detail.contains("transportAck=passed"))
+        assertTrue(detail.contains("unknown_65531:1"))
         assertTrue(detail.contains("improved_instant_message:1"))
         assertTrue(detail.contains("dialog=32"))
         assertTrue(detail.contains("messagePreview=Notice accepted"))
