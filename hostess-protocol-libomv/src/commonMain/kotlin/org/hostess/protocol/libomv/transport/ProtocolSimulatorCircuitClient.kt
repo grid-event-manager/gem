@@ -1,6 +1,7 @@
 package org.hostess.protocol.libomv.transport
 
 import org.hostess.protocol.libomv.mapping.LibomvNoticePacket
+import org.hostess.protocol.libomv.mapping.LibomvUuidCodec
 
 internal data class SimulatorCircuit(
     val agentId: String,
@@ -18,52 +19,153 @@ internal sealed interface SimulatorCircuitSendResult {
 }
 
 internal class ProtocolSimulatorCircuitClient(
-    private val packetSender: SimulatorPacketSender,
+    private val packetExchange: SimulatorPacketExchange,
     private val sequence: SimulatorPacketSequence = SimulatorPacketSequence(),
 ) {
+    private var presentCircuit: SimulatorCircuitKey? = null
+
     fun sendCurrentGroupsRequest(circuit: SimulatorCircuit): SimulatorCircuitSendResult =
-        send(circuit) {
-            listOf(
-                LibomvPacketCodec.useCircuitCode(circuit, sequence.next()),
-                LibomvPacketCodec.completeAgentMovement(circuit, sequence.next()),
-                LibomvPacketCodec.agentDataUpdateRequest(circuit, sequence.next()),
-            )
+        sendAfterPresence(circuit) {
+            LibomvPacketCodec.agentDataUpdateRequest(circuit, sequence.next())
         }
 
     fun sendNotice(circuit: SimulatorCircuit, packet: LibomvNoticePacket): SimulatorCircuitSendResult =
-        send(circuit) {
-            listOf(LibomvNoticePacketCodec.improvedInstantMessage(packet, sequence.next()))
+        sendAfterPresence(circuit) {
+            LibomvNoticePacketCodec.improvedInstantMessage(packet, sequence.next())
         }
 
-    private fun send(
-        circuit: SimulatorCircuit,
-        payloads: () -> List<ByteArray>,
-    ): SimulatorCircuitSendResult {
+    fun ensurePresence(circuit: SimulatorCircuit): SimulatorPresenceResult {
         if (!circuit.isUsable()) {
-            return SimulatorCircuitSendResult.Failed(REDACTED_SEND_FAILURE)
+            return SimulatorPresenceResult.Failed(
+                status = SimulatorPresenceStatus.CIRCUIT_INVALID,
+                redactedMessage = REDACTED_SEND_FAILURE,
+            )
+        }
+        val circuitKey = circuit.toKey()
+        if (presentCircuit == circuitKey) {
+            return SimulatorPresenceResult.Present(pingReplies = 0, cached = true)
         }
         val endpoint = SimulatorEndpoint(circuit.simulatorIp, circuit.simulatorPort)
-        val packetPayloads = try {
-            payloads()
-        } catch (ex: IllegalArgumentException) {
-            return SimulatorCircuitSendResult.Failed(REDACTED_SEND_FAILURE)
-        }
 
         return try {
-            packetSender.send(endpoint, packetPayloads)
-            SimulatorCircuitSendResult.Sent
+            packetExchange.send(endpoint, listOf(LibomvPacketCodec.useCircuitCode(circuit, sequence.next())))
+            val handshake = waitForPacket(
+                endpoint = endpoint,
+                receiveTimeoutMillis = HANDSHAKE_RECEIVE_TIMEOUT_MILLIS,
+                maxAttempts = HANDSHAKE_RECEIVE_ATTEMPTS,
+                wantedType = SimulatorPacketType.REGION_HANDSHAKE,
+            ) ?: return SimulatorPresenceResult.Failed(
+                status = SimulatorPresenceStatus.HANDSHAKE_TIMEOUT,
+                redactedMessage = REDACTED_SEND_FAILURE,
+            )
+            packetExchange.send(endpoint, listOf(LibomvPacketCodec.regionHandshakeReply(circuit, sequence.next())))
+            packetExchange.send(endpoint, listOf(LibomvPacketCodec.completeAgentMovement(circuit, sequence.next())))
+            val movement = waitForPacket(
+                endpoint = endpoint,
+                receiveTimeoutMillis = MOVEMENT_RECEIVE_TIMEOUT_MILLIS,
+                maxAttempts = MOVEMENT_RECEIVE_ATTEMPTS,
+                wantedType = SimulatorPacketType.AGENT_MOVEMENT_COMPLETE,
+                pingReplies = handshake.pingReplies,
+            ) ?: return SimulatorPresenceResult.Failed(
+                status = SimulatorPresenceStatus.MOVEMENT_TIMEOUT,
+                redactedMessage = REDACTED_SEND_FAILURE,
+            )
+            packetExchange.send(endpoint, listOf(LibomvPacketCodec.agentUpdate(circuit, sequence.next())))
+            presentCircuit = circuitKey
+            SimulatorPresenceResult.Present(pingReplies = movement.pingReplies, cached = false)
+        } catch (ex: IllegalArgumentException) {
+            SimulatorPresenceResult.Failed(
+                status = SimulatorPresenceStatus.HANDSHAKE_MALFORMED,
+                redactedMessage = REDACTED_SEND_FAILURE,
+            )
         } catch (ex: Exception) {
-            SimulatorCircuitSendResult.Failed(REDACTED_SEND_FAILURE)
+            SimulatorPresenceResult.Failed(
+                status = SimulatorPresenceStatus.SEND_FAILED,
+                redactedMessage = REDACTED_SEND_FAILURE,
+            )
         }
     }
 
+    private fun sendAfterPresence(
+        circuit: SimulatorCircuit,
+        payload: () -> ByteArray,
+    ): SimulatorCircuitSendResult {
+        val endpoint = SimulatorEndpoint(circuit.simulatorIp, circuit.simulatorPort)
+        return when (val presence = ensurePresence(circuit)) {
+            is SimulatorPresenceResult.Failed -> SimulatorCircuitSendResult.Failed(presence.redactedMessage)
+            is SimulatorPresenceResult.Present -> try {
+                packetExchange.send(endpoint, listOf(payload()))
+                SimulatorCircuitSendResult.Sent
+            } catch (ex: IllegalArgumentException) {
+                SimulatorCircuitSendResult.Failed(REDACTED_SEND_FAILURE)
+            } catch (ex: Exception) {
+                SimulatorCircuitSendResult.Failed(REDACTED_SEND_FAILURE)
+            }
+        }
+    }
+
+    private fun waitForPacket(
+        endpoint: SimulatorEndpoint,
+        receiveTimeoutMillis: Int,
+        maxAttempts: Int,
+        wantedType: SimulatorPacketType,
+        pingReplies: Int = 0,
+    ): WaitForPacketResult? {
+        var replies = pingReplies
+        repeat(maxAttempts) {
+            val inbound = packetExchange.receive(endpoint, receiveTimeoutMillis) ?: return@repeat
+            when (LibomvPacketCodec.packetType(inbound.payload)) {
+                SimulatorPacketType.START_PING_CHECK -> {
+                    val pingId = LibomvPacketCodec.startPingId(inbound.payload) ?: return null
+                    packetExchange.send(
+                        endpoint,
+                        listOf(LibomvPacketCodec.completePingCheck(pingId, sequence.next())),
+                    )
+                    replies += 1
+                }
+                wantedType -> return WaitForPacketResult(replies)
+                SimulatorPacketType.UNKNOWN,
+                SimulatorPacketType.GROUP_NOTICES_LIST_REPLY,
+                SimulatorPacketType.GROUP_NOTICE_REQUESTED,
+                SimulatorPacketType.IMPROVED_INSTANT_MESSAGE,
+                -> Unit
+                else -> Unit
+            }
+        }
+        return null
+    }
+
+    private data class WaitForPacketResult(
+        val pingReplies: Int,
+    )
+
+    private data class SimulatorCircuitKey(
+        val agentId: String,
+        val sessionId: String,
+        val simulatorIp: String,
+        val simulatorPort: Int,
+        val circuitCode: Long,
+    )
+
+    private fun SimulatorCircuit.toKey(): SimulatorCircuitKey =
+        SimulatorCircuitKey(
+            agentId = agentId,
+            sessionId = sessionId,
+            simulatorIp = simulatorIp,
+            simulatorPort = simulatorPort,
+            circuitCode = circuitCode,
+        )
+
     private fun SimulatorCircuit.isUsable(): Boolean =
-        agentId.isNotBlank() &&
-            sessionId.isNotBlank() &&
+        agentId.isUuid() &&
+            sessionId.isUuid() &&
             seedCapability.isNotBlank() &&
             simulatorIp.isIpv4Address() &&
             simulatorPort in 1..MAX_PORT &&
             circuitCode in 1..UNSIGNED_32_MAX
+
+    private fun String.isUuid(): Boolean =
+        LibomvUuidCodec.packetBytes(this) != null
 
     private fun String.isIpv4Address(): Boolean {
         val parts = split(".")
@@ -78,14 +180,9 @@ internal class ProtocolSimulatorCircuitClient(
         const val REDACTED_SEND_FAILURE: String = "protocol simulator send failed"
         const val MAX_PORT: Int = 65535
         const val UNSIGNED_32_MAX: Long = 0xFFFF_FFFFL
+        const val HANDSHAKE_RECEIVE_TIMEOUT_MILLIS: Int = 2_000
+        const val HANDSHAKE_RECEIVE_ATTEMPTS: Int = 12
+        const val MOVEMENT_RECEIVE_TIMEOUT_MILLIS: Int = 250
+        const val MOVEMENT_RECEIVE_ATTEMPTS: Int = 12
     }
-}
-
-internal data class SimulatorEndpoint(
-    val host: String,
-    val port: Int,
-)
-
-internal fun interface SimulatorPacketSender {
-    fun send(endpoint: SimulatorEndpoint, payloads: List<ByteArray>)
 }

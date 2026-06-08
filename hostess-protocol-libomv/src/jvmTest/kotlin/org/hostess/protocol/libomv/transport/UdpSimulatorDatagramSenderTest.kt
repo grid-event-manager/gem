@@ -6,6 +6,7 @@ import java.net.InetAddress
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 
 class UdpSimulatorDatagramSenderTest {
     @Test
@@ -29,6 +30,49 @@ class UdpSimulatorDatagramSenderTest {
         }
     }
 
+    @Test
+    fun `receives only datagrams from requested simulator endpoint`() {
+        DatagramSocket(0, InetAddress.getByName(LOOPBACK)).use { simulator ->
+            UdpSimulatorDatagramSender().use { exchange ->
+                exchange.send(SimulatorEndpoint(LOOPBACK, simulator.localPort), listOf(byteArrayOf(9)))
+                val handshake = simulator.receivePayload()
+
+                DatagramSocket(0, InetAddress.getByName(LOOPBACK)).use { foreign ->
+                    foreign.send(
+                        DatagramPacket(
+                            byteArrayOf(1),
+                            1,
+                            InetAddress.getByName(LOOPBACK),
+                            handshake.sourcePort,
+                        ),
+                    )
+                }
+                simulator.send(
+                    DatagramPacket(
+                        byteArrayOf(2),
+                        1,
+                        InetAddress.getByName(LOOPBACK),
+                        handshake.sourcePort,
+                    ),
+                )
+
+                val inbound = exchange.receive(
+                    endpoint = SimulatorEndpoint(LOOPBACK, simulator.localPort),
+                    timeoutMillis = 2_000,
+                )
+
+                assertContentEquals(byteArrayOf(2), inbound?.payload)
+            }
+        }
+    }
+
+    @Test
+    fun `receive returns null on timeout`() {
+        UdpSimulatorDatagramSender().use { exchange ->
+            assertNull(exchange.receive(SimulatorEndpoint(LOOPBACK, UNUSED_PORT), timeoutMillis = 10))
+        }
+    }
+
     private fun DatagramSocket.receivePayload(): ReceivedDatagram {
         val buffer = ByteArray(16)
         val packet = DatagramPacket(buffer, buffer.size)
@@ -46,5 +90,6 @@ class UdpSimulatorDatagramSenderTest {
 
     private companion object {
         const val LOOPBACK = "127.0.0.1"
+        const val UNUSED_PORT = 9
     }
 }

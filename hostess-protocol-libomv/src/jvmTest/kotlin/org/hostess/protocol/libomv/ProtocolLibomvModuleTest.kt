@@ -39,7 +39,8 @@ import org.hostess.protocol.libomv.transport.ProtocolHttpRequest
 import org.hostess.protocol.libomv.transport.ProtocolHttpResponse
 import org.hostess.protocol.libomv.transport.ProtocolSimulatorCircuitClient
 import org.hostess.protocol.libomv.transport.SimulatorEndpoint
-import org.hostess.protocol.libomv.transport.SimulatorPacketSender
+import org.hostess.protocol.libomv.transport.SimulatorInboundPacket
+import org.hostess.protocol.libomv.transport.SimulatorPacketExchange
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
@@ -136,10 +137,12 @@ class ProtocolLibomvModuleTest {
 
     @Test
     fun `live runtime notice adapter reaches protocol runtime source`() {
-        val packetSender = RecordingSimulatorPacketSender()
+        val packetExchange = RecordingSimulatorPacketExchange(
+            inboundPayloads = mutableListOf(regionHandshake(), agentMovementComplete()),
+        )
         val runtime = ProtocolLibomvModule.liveRuntime(
             platformBundle(
-                circuitSender = ProtocolSimulatorCircuitClient(packetSender),
+                circuitSender = ProtocolSimulatorCircuitClient(packetExchange),
             ),
         )
         val session = fakeActiveUuidSession()
@@ -156,7 +159,7 @@ class ProtocolLibomvModuleTest {
         val status = runtime.noticePort.sendGroupNotice(session, group(), draft(), null)
 
         assertEquals(GroupSendState.SENT, status.state)
-        assertEquals(1, packetSender.payloads.size)
+        assertEquals(5, packetExchange.payloads.size)
     }
 
     @Test
@@ -407,7 +410,7 @@ class ProtocolLibomvModuleTest {
         machineIdentityProvider: HostessMachineIdentityProvider = machineIdentityProvider(),
         clockPort: ClockPort = FixedClockPort,
         md5DigestPort: Md5DigestPort = JvmMd5DigestPort,
-        circuitSender: ProtocolSimulatorCircuitClient = ProtocolSimulatorCircuitClient(NoopSimulatorPacketSender),
+        circuitSender: ProtocolSimulatorCircuitClient = ProtocolSimulatorCircuitClient(NoopSimulatorPacketExchange),
         adapterLoad: Boolean = true,
         runtimeLoad: Boolean = true,
         transportLoad: Boolean = true,
@@ -431,19 +434,46 @@ class ProtocolLibomvModuleTest {
         override fun pause(duration: HostessDelay) = Unit
     }
 
-    private object NoopSimulatorPacketSender : SimulatorPacketSender {
+    private object NoopSimulatorPacketExchange : SimulatorPacketExchange {
         override fun send(endpoint: SimulatorEndpoint, payloads: List<ByteArray>) = Unit
+
+        override fun receive(endpoint: SimulatorEndpoint, timeoutMillis: Int): SimulatorInboundPacket? = null
     }
 
-    private class RecordingSimulatorPacketSender : SimulatorPacketSender {
+    private class RecordingSimulatorPacketExchange(
+        private val inboundPayloads: MutableList<ByteArray> = mutableListOf(),
+    ) : SimulatorPacketExchange {
         var payloads: List<ByteArray> = emptyList()
 
         override fun send(endpoint: SimulatorEndpoint, payloads: List<ByteArray>) {
-            this.payloads = payloads
+            this.payloads = this.payloads + payloads
         }
+
+        override fun receive(endpoint: SimulatorEndpoint, timeoutMillis: Int): SimulatorInboundPacket? =
+            if (inboundPayloads.isEmpty()) {
+                null
+            } else {
+                SimulatorInboundPacket(endpoint, inboundPayloads.removeAt(0))
+            }
     }
 
     private companion object {
         fun secureUrl(host: String, path: String): String = "https" + "://$host$path"
+
+        fun regionHandshake(): ByteArray =
+            org.hostess.protocol.libomv.transport.LibomvZerocodeCodec.encode(
+                org.hostess.protocol.libomv.transport.LibomvPacketTestBytes.lowHeader(
+                    sequence = 101,
+                    packetId = 148,
+                    flags = 0xC0,
+                ),
+            )
+
+        fun agentMovementComplete(): ByteArray =
+            org.hostess.protocol.libomv.transport.LibomvPacketTestBytes.lowHeader(
+                sequence = 102,
+                packetId = 250,
+                flags = 0,
+            )
     }
 }

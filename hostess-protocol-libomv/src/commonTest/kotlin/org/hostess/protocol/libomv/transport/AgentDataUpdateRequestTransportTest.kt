@@ -8,24 +8,26 @@ import kotlin.test.assertIs
 class AgentDataUpdateRequestTransportTest {
     @Test
     fun `passes internal identity to protocol circuit client`() {
-        val sender = RecordingPacketSender()
+        val exchange = RecordingPacketExchange(
+            inboundPayloads = mutableListOf(regionHandshake(), agentMovementComplete()),
+        )
         val transport = AgentDataUpdateRequestTransport(
-            ProtocolSimulatorCircuitClient(sender, SimulatorPacketSequence(0)),
+            ProtocolSimulatorCircuitClient(exchange, SimulatorPacketSequence(0)),
         )
 
         val result = transport.send(identity())
 
         assertEquals(AgentDataUpdateRequestResult.Sent, result)
-        assertEquals(SIM_HOST, sender.endpoint?.host)
-        assertEquals(SIM_PORT, sender.endpoint?.port)
-        assertEquals(3, sender.payloads.size)
+        assertEquals(SIM_HOST, exchange.endpoint?.host)
+        assertEquals(SIM_PORT, exchange.endpoint?.port)
+        assertEquals(5, exchange.payloads.size)
     }
 
     @Test
     fun `maps protocol circuit failure to redacted request failure`() {
         val transport = AgentDataUpdateRequestTransport(
             ProtocolSimulatorCircuitClient(
-                RecordingPacketSender(failure = Exception("cannot reach $SIM_HOST with $AGENT_ID")),
+                RecordingPacketExchange(failure = Exception("cannot reach $SIM_HOST with $AGENT_ID")),
             ),
         )
 
@@ -44,17 +46,33 @@ class AgentDataUpdateRequestTransportTest {
         circuitCode = CIRCUIT_CODE,
     )
 
-    private class RecordingPacketSender(
+    private fun regionHandshake(): ByteArray =
+        LibomvZerocodeCodec.encode(
+            LibomvPacketTestBytes.lowHeader(sequence = 101, packetId = 148, flags = 0xC0),
+        )
+
+    private fun agentMovementComplete(): ByteArray =
+        LibomvPacketTestBytes.lowHeader(sequence = 102, packetId = 250, flags = 0)
+
+    private class RecordingPacketExchange(
+        private val inboundPayloads: MutableList<ByteArray> = mutableListOf(),
         private val failure: Exception? = null,
-    ) : SimulatorPacketSender {
+    ) : SimulatorPacketExchange {
         var endpoint: SimulatorEndpoint? = null
         var payloads: List<ByteArray> = emptyList()
 
         override fun send(endpoint: SimulatorEndpoint, payloads: List<ByteArray>) {
             failure?.let { throw it }
             this.endpoint = endpoint
-            this.payloads = payloads
+            this.payloads = this.payloads + payloads
         }
+
+        override fun receive(endpoint: SimulatorEndpoint, timeoutMillis: Int): SimulatorInboundPacket? =
+            if (inboundPayloads.isEmpty()) {
+                null
+            } else {
+                SimulatorInboundPacket(endpoint, inboundPayloads.removeAt(0))
+            }
     }
 
     private companion object {

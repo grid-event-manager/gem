@@ -41,7 +41,7 @@ internal object LibomvNoticePacketCodec {
         writer.writeVariable2(message)
         writer.writeVariable2(binaryBucket)
 
-        return zeroEncode(writer.toByteArray())
+        return LibomvZerocodeCodec.encode(writer.toByteArray())
     }
 
     private fun LibomvBytePacketWriter.writeUuid(value: String) {
@@ -86,48 +86,12 @@ internal object LibomvNoticePacketCodec {
     private fun Int.toUnsignedLong(): Long =
         toLong() and UNSIGNED_32_MAX
 
-    private fun zeroEncode(unencoded: ByteArray): ByteArray {
-        val headerLength = FIXED_HEADER_BYTES + (unencoded[EXTRA_BYTES_OFFSET].toInt() and BYTE_MASK)
-        val encoded = ByteArray(headerLength + (unencoded.size - headerLength) * ZERO_ENCODE_MAX_EXPANSION)
-        unencoded.copyInto(encoded, destinationOffset = 0, startIndex = 0, endIndex = headerLength)
-        var outputOffset = headerLength
-        var zeroCount = 0
-
-        for (index in headerLength until unencoded.size) {
-            val value = unencoded[index]
-            if (value == 0.toByte()) {
-                zeroCount += 1
-                if (zeroCount == ZERO_RUN_OVERFLOW) {
-                    encoded[outputOffset++] = 0
-                    encoded[outputOffset++] = BYTE_MASK.toByte()
-                    zeroCount = 1
-                }
-            } else {
-                if (zeroCount > 0) {
-                    encoded[outputOffset++] = 0
-                    encoded[outputOffset++] = zeroCount.toByte()
-                    zeroCount = 0
-                }
-                encoded[outputOffset++] = value
-            }
-        }
-
-        if (zeroCount > 0) {
-            encoded[outputOffset++] = 0
-            encoded[outputOffset++] = zeroCount.toByte()
-        }
-
-        return encoded.copyOf(outputOffset)
-    }
-
     private const val RELIABLE_ZEROCODED_FLAGS = 0xC0
     private const val NO_EXTRA_BYTES = 0
     private const val LOW_FREQUENCY_MARKER = 0xFF
     private const val IMPROVED_INSTANT_MESSAGE_PACKET_HIGH = 0
     private const val IMPROVED_INSTANT_MESSAGE_PACKET_LOW = 254
     private const val LOW_HEADER_BYTES = 10
-    private const val FIXED_HEADER_BYTES = 6
-    private const val EXTRA_BYTES_OFFSET = 5
     private const val FIXED_FIELD_BYTES = 103
     private const val VARIABLE_1_LENGTH_BYTES = 1
     private const val VARIABLE_2_LENGTH_BYTES = 2
@@ -136,8 +100,5 @@ internal object LibomvNoticePacketCodec {
     private const val NULL_TERMINATOR_BYTES = 1
     private const val TRUE = 1
     private const val FALSE = 0
-    private const val BYTE_MASK = 0xFF
-    private const val ZERO_RUN_OVERFLOW = 0x100
-    private const val ZERO_ENCODE_MAX_EXPANSION = 2
     private const val UNSIGNED_32_MAX = 0xFFFF_FFFFL
 }

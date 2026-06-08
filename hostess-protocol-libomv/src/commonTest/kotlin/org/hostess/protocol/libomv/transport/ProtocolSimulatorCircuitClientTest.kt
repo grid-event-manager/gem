@@ -1,5 +1,7 @@
 package org.hostess.protocol.libomv.transport
 
+import org.hostess.protocol.libomv.mapping.LibomvNoticePacket
+import org.hostess.protocol.libomv.mapping.LibomvNoticePosition
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
@@ -8,21 +10,22 @@ import kotlin.test.assertIs
 
 class ProtocolSimulatorCircuitClientTest {
     @Test
-    fun `sends current-groups packet sequence through canonical circuit client`() {
-        val sender = RecordingPacketSender()
+    fun `sends current-groups only after MetaBolt-shaped presence sequence`() {
+        val exchange = RecordingPacketExchange(
+            inboundPayloads = mutableListOf(regionHandshake(), agentMovementComplete()),
+        )
         val client = ProtocolSimulatorCircuitClient(
-            packetSender = sender,
+            packetExchange = exchange,
             sequence = SimulatorPacketSequence(0),
         )
 
         val result = client.sendCurrentGroupsRequest(circuit())
 
         assertEquals(SimulatorCircuitSendResult.Sent, result)
-        assertEquals(1, sender.sent.size)
-        assertEquals(SIM_HOST, sender.sent.single().endpoint.host)
-        assertEquals(SIM_PORT, sender.sent.single().endpoint.port)
-        val payloads = sender.sent.single().payloads
-        assertEquals(3, payloads.size)
+        assertEquals(SIM_HOST, exchange.sent.first().endpoint.host)
+        assertEquals(SIM_PORT, exchange.sent.first().endpoint.port)
+        val payloads = exchange.sentPayloads()
+        assertEquals(5, payloads.size)
         assertLowPacket(
             payload = payloads[0],
             sequence = 1,
@@ -34,25 +37,117 @@ class ProtocolSimulatorCircuitClientTest {
         assertLowPacket(
             payload = payloads[1],
             sequence = 2,
+            packetId = 149,
+            flags = 0xC0,
+            body = LibomvPacketTestBytes.uuid(AGENT_ID) +
+                LibomvPacketTestBytes.uuid(SESSION_ID) +
+                u32(4L),
+        )
+        assertLowPacket(
+            payload = payloads[2],
+            sequence = 3,
             packetId = 249,
             body = LibomvPacketTestBytes.uuid(AGENT_ID) +
                 LibomvPacketTestBytes.uuid(SESSION_ID) +
                 u32(CIRCUIT_CODE),
         )
+        assertHighPacketPrefix(
+            payload = payloads[3],
+            sequence = 4,
+            packetId = 4,
+            flags = 0xC0,
+            bodyPrefix = LibomvPacketTestBytes.uuid(AGENT_ID) +
+                LibomvPacketTestBytes.uuid(SESSION_ID),
+        )
         assertLowPacket(
-            payload = payloads[2],
-            sequence = 3,
+            payload = payloads[4],
+            sequence = 5,
             packetId = 386,
             body = LibomvPacketTestBytes.uuid(AGENT_ID) + LibomvPacketTestBytes.uuid(SESSION_ID),
         )
     }
 
     @Test
+    fun `answers simulator pings while waiting for presence packets`() {
+        val exchange = RecordingPacketExchange(
+            inboundPayloads = mutableListOf(
+                startPingCheck(pingId = 7),
+                regionHandshake(),
+                startPingCheck(pingId = 8),
+                agentMovementComplete(),
+            ),
+        )
+        val client = ProtocolSimulatorCircuitClient(
+            packetExchange = exchange,
+            sequence = SimulatorPacketSequence(0),
+        )
+
+        val result = client.sendCurrentGroupsRequest(circuit())
+
+        assertEquals(SimulatorCircuitSendResult.Sent, result)
+        val payloads = exchange.sentPayloads()
+        assertHighPacketPrefix(
+            payload = payloads[1],
+            sequence = 2,
+            packetId = 2,
+            bodyPrefix = byteArrayOf(7),
+        )
+        assertHighPacketPrefix(
+            payload = payloads[4],
+            sequence = 5,
+            packetId = 2,
+            bodyPrefix = byteArrayOf(8),
+        )
+        assertLowPacket(payloads[2], sequence = 3, packetId = 149, flags = 0xC0)
+        assertLowPacket(payloads[3], sequence = 4, packetId = 249)
+        assertHighPacketPrefix(payloads[5], sequence = 6, packetId = 4, flags = 0xC0)
+        assertLowPacket(payloads[6], sequence = 7, packetId = 386)
+    }
+
+    @Test
+    fun `reuses established presence for later notice on same circuit`() {
+        val exchange = RecordingPacketExchange(
+            inboundPayloads = mutableListOf(regionHandshake(), agentMovementComplete()),
+        )
+        val client = ProtocolSimulatorCircuitClient(
+            packetExchange = exchange,
+            sequence = SimulatorPacketSequence(0),
+        )
+
+        assertEquals(SimulatorCircuitSendResult.Sent, client.sendCurrentGroupsRequest(circuit()))
+        assertEquals(SimulatorCircuitSendResult.Sent, client.sendNotice(circuit(), noticePacket()))
+
+        val payloads = exchange.sentPayloads()
+        assertEquals(1, payloads.count { packetId(it) == 3 })
+        assertEquals(1, payloads.count { packetId(it) == 249 })
+        assertLowPacket(payloads[0], sequence = 1, packetId = 3)
+        assertLowPacket(payloads[2], sequence = 3, packetId = 249)
+        assertLowPacket(payloads.last(), sequence = 6, packetId = 254, flags = 0xC0)
+    }
+
+    @Test
+    fun `handshake timeout prevents current-groups packet send`() {
+        val exchange = RecordingPacketExchange()
+        val client = ProtocolSimulatorCircuitClient(
+            packetExchange = exchange,
+            sequence = SimulatorPacketSequence(0),
+        )
+
+        val result = assertIs<SimulatorCircuitSendResult.Failed>(
+            client.sendCurrentGroupsRequest(circuit()),
+        )
+
+        assertEquals("protocol simulator send failed", result.redactedMessage)
+        assertEquals(1, exchange.sentPayloads().size)
+        assertLowPacket(exchange.sentPayloads().single(), sequence = 1, packetId = 3)
+    }
+
+    @Test
     fun `send failures are redacted`() {
-        val sender = RecordingPacketSender(
+        val exchange = RecordingPacketExchange(
             failure = Exception("cannot reach $SIM_HOST:$SIM_PORT for $AGENT_ID"),
         )
-        val client = ProtocolSimulatorCircuitClient(packetSender = sender)
+        val client = ProtocolSimulatorCircuitClient(packetExchange = exchange)
 
         val result = assertIs<SimulatorCircuitSendResult.Failed>(
             client.sendCurrentGroupsRequest(circuit()),
@@ -80,15 +175,15 @@ class ProtocolSimulatorCircuitClientTest {
         )
 
         for (case in cases) {
-            val sender = RecordingPacketSender()
-            val client = ProtocolSimulatorCircuitClient(packetSender = sender)
+            val exchange = RecordingPacketExchange()
+            val client = ProtocolSimulatorCircuitClient(packetExchange = exchange)
 
             val result = assertIs<SimulatorCircuitSendResult.Failed>(
                 client.sendCurrentGroupsRequest(case),
             )
 
             assertEquals("protocol simulator send failed", result.redactedMessage)
-            assertEquals(0, sender.sent.size)
+            assertEquals(0, exchange.sent.size)
         }
     }
 
@@ -96,14 +191,37 @@ class ProtocolSimulatorCircuitClientTest {
         payload: ByteArray,
         sequence: Int,
         packetId: Int,
-        body: ByteArray,
+        flags: Int = 0,
+        body: ByteArray = ByteArray(0),
     ) {
+        val decoded = LibomvPacketTestBytes.zeroDecode(payload)
         val header = LibomvPacketTestBytes.lowHeader(
             sequence = sequence,
             packetId = packetId,
-            flags = 0,
+            flags = flags,
         )
-        assertContentEquals(header + body, payload)
+        assertContentEquals(header + body, decoded.copyOfRange(0, header.size + body.size))
+    }
+
+    private fun assertHighPacketPrefix(
+        payload: ByteArray,
+        sequence: Int,
+        packetId: Int,
+        flags: Int = 0,
+        bodyPrefix: ByteArray = ByteArray(0),
+    ) {
+        val decoded = LibomvPacketTestBytes.zeroDecode(payload)
+        val expected = LibomvPacketTestBytes.highHeader(sequence, packetId, flags) + bodyPrefix
+        assertContentEquals(expected, decoded.copyOfRange(0, expected.size))
+    }
+
+    private fun packetId(payload: ByteArray): Int {
+        val decoded = LibomvPacketTestBytes.zeroDecode(payload)
+        return if (decoded[6] == 0xFF.toByte()) {
+            ((decoded[8].toInt() and 0xFF) shl 8) + (decoded[9].toInt() and 0xFF)
+        } else {
+            decoded[6].toInt() and 0xFF
+        }
     }
 
     private fun u32(value: Long): ByteArray = byteArrayOf(
@@ -130,15 +248,56 @@ class ProtocolSimulatorCircuitClientTest {
         circuitCode = circuitCode,
     )
 
-    private class RecordingPacketSender(
+    private fun regionHandshake(): ByteArray =
+        LibomvZerocodeCodec.encode(
+            LibomvPacketTestBytes.lowHeader(sequence = 101, packetId = 148, flags = 0xC0),
+        )
+
+    private fun agentMovementComplete(): ByteArray =
+        LibomvPacketTestBytes.lowHeader(sequence = 102, packetId = 250, flags = 0)
+
+    private fun startPingCheck(pingId: Int): ByteArray =
+        LibomvPacketTestBytes.highHeader(sequence = 103, packetId = 1, flags = 0) +
+            byteArrayOf(pingId.toByte()) +
+            u32(0L)
+
+    private fun noticePacket(): LibomvNoticePacket = LibomvNoticePacket(
+        agentId = AGENT_ID,
+        sessionId = SESSION_ID,
+        fromGroup = false,
+        targetGroupId = GROUP_ID,
+        fromAgentName = "venue-proof",
+        message = "Gig tonight|Doors at 8",
+        dialog = 32,
+        offline = 0,
+        instantMessageId = "44444444-4444-4444-4444-444444444444",
+        parentEstateId = 0,
+        timestamp = 0,
+        regionId = "00000000-0000-0000-0000-000000000000",
+        position = LibomvNoticePosition.ZERO,
+        attachment = null,
+        binaryBucket = ByteArray(0),
+    )
+
+    private class RecordingPacketExchange(
+        private val inboundPayloads: MutableList<ByteArray> = mutableListOf(),
         private val failure: Exception? = null,
-    ) : SimulatorPacketSender {
+    ) : SimulatorPacketExchange {
         val sent = mutableListOf<SentDatagram>()
 
         override fun send(endpoint: SimulatorEndpoint, payloads: List<ByteArray>) {
             failure?.let { throw it }
             sent += SentDatagram(endpoint, payloads)
         }
+
+        override fun receive(endpoint: SimulatorEndpoint, timeoutMillis: Int): SimulatorInboundPacket? =
+            if (inboundPayloads.isEmpty()) {
+                null
+            } else {
+                SimulatorInboundPacket(endpoint, inboundPayloads.removeAt(0))
+            }
+
+        fun sentPayloads(): List<ByteArray> = sent.flatMap { it.payloads }
     }
 
     private data class SentDatagram(
@@ -149,6 +308,7 @@ class ProtocolSimulatorCircuitClientTest {
     private companion object {
         const val AGENT_ID = "11111111-1111-1111-1111-111111111111"
         const val SESSION_ID = "22222222-2222-2222-2222-222222222222"
+        const val GROUP_ID = "33333333-3333-3333-3333-333333333333"
         const val SIM_HOST = "203.0.113.8"
         const val SIM_PORT = 13000
         const val CIRCUIT_CODE = 0x01020304L

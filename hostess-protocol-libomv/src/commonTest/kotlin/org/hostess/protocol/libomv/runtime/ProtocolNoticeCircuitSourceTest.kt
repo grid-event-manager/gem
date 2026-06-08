@@ -3,10 +3,12 @@ package org.hostess.protocol.libomv.runtime
 import org.hostess.protocol.libomv.LibomvSessionIdentity
 import org.hostess.protocol.libomv.mapping.LibomvNoticePacket
 import org.hostess.protocol.libomv.mapping.LibomvNoticePosition
+import org.hostess.protocol.libomv.transport.LibomvZerocodeCodec
 import org.hostess.protocol.libomv.transport.ProtocolSimulatorCircuitClient
 import org.hostess.protocol.libomv.transport.LibomvPacketTestBytes
 import org.hostess.protocol.libomv.transport.SimulatorEndpoint
-import org.hostess.protocol.libomv.transport.SimulatorPacketSender
+import org.hostess.protocol.libomv.transport.SimulatorInboundPacket
+import org.hostess.protocol.libomv.transport.SimulatorPacketExchange
 import org.hostess.protocol.libomv.transport.SimulatorPacketSequence
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
@@ -16,10 +18,12 @@ import kotlin.test.assertIs
 class ProtocolNoticeCircuitSourceTest {
     @Test
     fun `sends encoded notice packet through simulator circuit client`() {
-        val sender = RecordingPacketSender()
+        val exchange = RecordingPacketExchange(
+            inboundPayloads = mutableListOf(regionHandshake(), agentMovementComplete()),
+        )
         val source = ProtocolNoticeCircuitSource(
             ProtocolSimulatorCircuitClient(
-                packetSender = sender,
+                packetExchange = exchange,
                 sequence = SimulatorPacketSequence(10),
             ),
         )
@@ -27,16 +31,16 @@ class ProtocolNoticeCircuitSourceTest {
         val result = source.send(identity(), noticePacket())
 
         assertEquals(NoticeRuntimeResult.Sent, result)
-        assertEquals(SIM_HOST, sender.endpoint?.host)
-        assertEquals(SIM_PORT, sender.endpoint?.port)
-        assertEquals(1, sender.payloads.size)
+        assertEquals(SIM_HOST, exchange.endpoint?.host)
+        assertEquals(SIM_PORT, exchange.endpoint?.port)
+        assertEquals(5, exchange.payloads.size)
         assertContentEquals(
-            LibomvPacketTestBytes.lowHeader(sequence = 11) +
+            LibomvPacketTestBytes.lowHeader(sequence = 15) +
                 LibomvPacketTestBytes.uuid(AGENT_ID) +
                 LibomvPacketTestBytes.uuid(SESSION_ID) +
                 byteArrayOf(0) +
                 LibomvPacketTestBytes.uuid(GROUP_ID),
-            LibomvPacketTestBytes.zeroDecode(sender.payloads.single()).copyOfRange(
+            LibomvPacketTestBytes.zeroDecode(exchange.payloads.last()).copyOfRange(
                 0,
                 LOW_HEADER_AND_TARGET_BYTES,
             ),
@@ -46,7 +50,7 @@ class ProtocolNoticeCircuitSourceTest {
     @Test
     fun `maps circuit send failure to notice runtime failure`() {
         val source = ProtocolNoticeCircuitSource(
-            ProtocolSimulatorCircuitClient(RecordingPacketSender(failure = Exception("cannot reach $SIM_HOST"))),
+            ProtocolSimulatorCircuitClient(RecordingPacketExchange(failure = Exception("cannot reach $SIM_HOST"))),
         )
 
         val result = assertIs<NoticeRuntimeResult.Failed>(source.send(identity(), noticePacket()))
@@ -84,17 +88,33 @@ class ProtocolNoticeCircuitSourceTest {
         binaryBucket = ByteArray(0),
     )
 
-    private class RecordingPacketSender(
+    private fun regionHandshake(): ByteArray =
+        LibomvZerocodeCodec.encode(
+            LibomvPacketTestBytes.lowHeader(sequence = 101, packetId = 148, flags = 0xC0),
+        )
+
+    private fun agentMovementComplete(): ByteArray =
+        LibomvPacketTestBytes.lowHeader(sequence = 102, packetId = 250, flags = 0)
+
+    private class RecordingPacketExchange(
+        private val inboundPayloads: MutableList<ByteArray> = mutableListOf(),
         private val failure: Exception? = null,
-    ) : SimulatorPacketSender {
+    ) : SimulatorPacketExchange {
         var endpoint: SimulatorEndpoint? = null
         var payloads: List<ByteArray> = emptyList()
 
         override fun send(endpoint: SimulatorEndpoint, payloads: List<ByteArray>) {
             failure?.let { throw it }
             this.endpoint = endpoint
-            this.payloads = payloads
+            this.payloads = this.payloads + payloads
         }
+
+        override fun receive(endpoint: SimulatorEndpoint, timeoutMillis: Int): SimulatorInboundPacket? =
+            if (inboundPayloads.isEmpty()) {
+                null
+            } else {
+                SimulatorInboundPacket(endpoint, inboundPayloads.removeAt(0))
+            }
     }
 
     private companion object {
