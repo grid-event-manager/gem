@@ -1,8 +1,10 @@
 package org.hostess.protocol.libomv.transport
 
+import org.hostess.protocol.libomv.LibomvMapping
 import org.hostess.protocol.libomv.llsd.LlsdValue
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class LibomvOsdLongParserTest {
     @Test
@@ -18,6 +20,14 @@ class LibomvOsdLongParserTest {
     @Test
     fun `trimmed decimal string floors to long`() {
         assertEquals(7L, LibomvOsdLongParser.parse(LlsdValue.ScalarValue(" 7.8 ")))
+    }
+
+    @Test
+    fun `base64 binary group powers return bit field`() {
+        val powers = LibomvOsdLongParser.parse(LlsdValue.ScalarValue("AAA///////8="))
+
+        assertEquals(70368744177663L, powers)
+        assertTrue(powers and LibomvMapping.SEND_NOTICES_POWER != 0L)
     }
 
     @Test

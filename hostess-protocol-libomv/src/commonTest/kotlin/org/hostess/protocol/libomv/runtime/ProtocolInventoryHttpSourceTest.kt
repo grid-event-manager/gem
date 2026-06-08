@@ -63,6 +63,24 @@ class ProtocolInventoryHttpSourceTest {
     }
 
     @Test
+    fun `maps OpenSim caps item owner from permissions`() {
+        val source = ProtocolInventoryHttpSource(
+            RecordingHttpClient {
+                folderResponse(
+                    items = listOf(openSimItemWithoutItemOwner("landmark-item", "Venue Landmark", ROOT_FOLDER_ID)),
+                )
+            },
+        )
+
+        val result = assertIs<InventoryRuntimeItemListResult.Success>(
+            source.listItems(identity(), roots(), capabilityUrl(), InventoryItemQuery()),
+        )
+
+        assertEquals("landmark-item", result.items.single().itemId)
+        assertEquals(AGENT_ID, result.items.single().ownerId)
+    }
+
+    @Test
     fun `malformed top level response fails`() {
         val source = ProtocolInventoryHttpSource(
             RecordingHttpClient { response("<llsd><map><key>not_folders</key><array /></map></llsd>") },
@@ -159,6 +177,24 @@ class ProtocolInventoryHttpSourceTest {
         append("<key>parent_id</key><uuid>").append(parentId).append("</uuid>")
         append("<key>agent_id</key><uuid>").append(AGENT_ID).append("</uuid>")
         append("<key>name</key><string>Folder</string>")
+        append("</map>")
+    }
+
+    private fun openSimItemWithoutItemOwner(
+        itemId: String,
+        name: String,
+        parentId: String,
+    ): String = buildString {
+        append("<map>")
+        append("<key>item_id</key><uuid>").append(itemId).append("</uuid>")
+        append("<key>parent_id</key><uuid>").append(parentId).append("</uuid>")
+        append("<key>asset_id</key><uuid>asset-").append(itemId).append("</uuid>")
+        append("<key>permissions</key><map>")
+        append("<key>owner_id</key><uuid>").append(AGENT_ID).append("</uuid>")
+        append("<key>owner_mask</key><integer>581632</integer>")
+        append("</map>")
+        append("<key>name</key><string>").append(name).append("</string>")
+        append("<key>inv_type</key><integer>3</integer>")
         append("</map>")
     }
 

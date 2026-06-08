@@ -27,7 +27,7 @@ internal object LlsdXml {
         "array" -> LlsdValue.ArrayValue(element.children.mapNotNull(::parseElement))
         "undef" -> LlsdValue.Undefined
         "boolean" -> element.text.trim().asBoolean()?.let(LlsdValue::BooleanValue)
-        "integer", "real", "string", "uuid", "uri" -> LlsdValue.ScalarValue(element.text.trim())
+        "binary", "integer", "real", "string", "uuid", "uri" -> LlsdValue.ScalarValue(element.text.trim())
         else -> null
     }
 

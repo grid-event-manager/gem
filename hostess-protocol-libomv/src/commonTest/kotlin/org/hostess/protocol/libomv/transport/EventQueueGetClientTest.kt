@@ -49,6 +49,23 @@ class EventQueueGetClientTest {
     }
 
     @Test
+    fun `poll maps OpenSim binary group powers`() {
+        val httpClient = RecordingHttpClient(
+            groupEventResponse(
+                groupPowers = "AAA///////8=",
+                groupPowersType = "binary",
+            ),
+        )
+        val client = EventQueueGetClient(httpClient)
+
+        val result = assertIs<EventQueueGetResult.AgentGroupDataUpdate>(
+            client.pollAgentGroupDataUpdate(eventUrl()),
+        )
+
+        assertTrue(result.groups.single().powers and LibomvMapping.SEND_NOTICES_POWER != 0L)
+    }
+
+    @Test
     fun `poll maps invalid group powers to zero instead of proof gap`() {
         val httpClient = RecordingHttpClient(
             groupEventResponse(

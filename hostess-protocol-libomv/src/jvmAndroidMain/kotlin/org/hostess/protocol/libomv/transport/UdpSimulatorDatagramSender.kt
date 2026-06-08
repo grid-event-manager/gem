@@ -4,13 +4,17 @@ import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.InetAddress
 
-internal class UdpSimulatorDatagramSender : SimulatorPacketSender {
+internal class UdpSimulatorDatagramSender(
+    private val socket: DatagramSocket = DatagramSocket(),
+) : SimulatorPacketSender, AutoCloseable {
     override fun send(endpoint: SimulatorEndpoint, payloads: List<ByteArray>) {
         val address = InetAddress.getByName(endpoint.host)
-        DatagramSocket().use { socket ->
-            payloads.forEach { payload ->
-                socket.send(DatagramPacket(payload, payload.size, address, endpoint.port))
-            }
+        payloads.forEach { payload ->
+            socket.send(DatagramPacket(payload, payload.size, address, endpoint.port))
         }
+    }
+
+    override fun close() {
+        socket.close()
     }
 }

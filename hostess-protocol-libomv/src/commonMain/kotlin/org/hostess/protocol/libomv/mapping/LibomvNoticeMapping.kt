@@ -104,6 +104,7 @@ internal object LibomvNoticeMapping {
     }
 
     private fun attachmentBucket(attachment: LibomvNoticeAttachment): ByteArray = buildString {
+        append("<? llsd/xml ?>\n")
         append("<llsd><map>")
         append("<key>item_id</key><uuid>").append(attachment.itemId).append("</uuid>")
         append("<key>owner_id</key><uuid>").append(attachment.ownerId).append("</uuid>")

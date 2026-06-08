@@ -144,11 +144,12 @@ internal class ProtocolInventoryHttpSource(
 
     private fun itemSnapshots(folderResponse: Map<String, LlsdValue>): List<LibomvInventoryItemSnapshot> {
         val items = folderResponse[ITEMS] as? LlsdValue.ArrayValue ?: return emptyList()
+        val folderOwnerId = ownerId(folderResponse)
         return items.values.mapNotNull { value ->
             val fields = (value as? LlsdValue.MapValue)?.values ?: return@mapNotNull null
             LibomvInventoryItemSnapshot(
                 itemId = fields[ITEM_ID]?.asString()?.takeIf(String::isNotBlank) ?: return@mapNotNull null,
-                ownerId = ownerId(fields) ?: return@mapNotNull null,
+                ownerId = itemOwnerId(fields, folderOwnerId) ?: return@mapNotNull null,
                 parentFolderId = fields[PARENT_ID]?.asString()?.takeIf(String::isNotBlank) ?: return@mapNotNull null,
                 assetId = fields[ASSET_ID]?.asString()?.takeIf(String::isNotBlank) ?: return@mapNotNull null,
                 name = fields[NAME]?.asString()?.takeIf(String::isNotBlank) ?: return@mapNotNull null,
@@ -178,6 +179,16 @@ internal class ProtocolInventoryHttpSource(
     private fun ownerId(fields: Map<String, LlsdValue>): String? =
         fields[OWNER_ID]?.asString()?.takeIf(String::isNotBlank)
             ?: fields[AGENT_ID]?.asString()?.takeIf(String::isNotBlank)
+
+    private fun itemOwnerId(fields: Map<String, LlsdValue>, folderOwnerId: String?): String? =
+        ownerId(fields)
+            ?: permissionOwnerId(fields)
+            ?: folderOwnerId
+
+    private fun permissionOwnerId(fields: Map<String, LlsdValue>): String? {
+        val permissions = (fields[PERMISSIONS] as? LlsdValue.MapValue)?.values ?: return null
+        return ownerId(permissions)
+    }
 
     private fun LlsdValue.asInt(): Int? = asLong()
         ?.takeIf { it in Int.MIN_VALUE..Int.MAX_VALUE }

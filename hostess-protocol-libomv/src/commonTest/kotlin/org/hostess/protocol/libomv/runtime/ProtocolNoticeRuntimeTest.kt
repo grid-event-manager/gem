@@ -75,6 +75,7 @@ class ProtocolNoticeRuntimeTest {
         val packet = source.packets.single()
         assertEquals(AttachmentKind.LANDMARK, packet.attachment?.kind)
         val bucket = packet.binaryBucket.decodeToString()
+        assertTrue(bucket.startsWith("<? llsd/xml ?>\n<llsd>"))
         assertTrue(bucket.contains("<key>item_id</key><uuid>$ITEM_ID</uuid>"))
         assertTrue(bucket.contains("<key>owner_id</key><uuid>$OWNER_ID</uuid>"))
     }
@@ -93,6 +94,7 @@ class ProtocolNoticeRuntimeTest {
         assertEquals(GroupSendState.SENT, status.state)
         val packet = source.packets.single()
         assertEquals(AttachmentKind.TEXTURE, packet.attachment?.kind)
+        assertTrue(packet.binaryBucket.decodeToString().startsWith("<? llsd/xml ?>\n<llsd>"))
         assertTrue(packet.binaryBucket.decodeToString().contains(ITEM_ID))
     }
 

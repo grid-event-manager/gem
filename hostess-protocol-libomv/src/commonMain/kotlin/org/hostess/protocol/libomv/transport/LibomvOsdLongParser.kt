@@ -1,6 +1,8 @@
 package org.hostess.protocol.libomv.transport
 
 import org.hostess.protocol.libomv.llsd.LlsdValue
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlin.math.floor
 
 internal object LibomvOsdLongParser {
@@ -10,13 +12,29 @@ internal object LibomvOsdLongParser {
     }
 
     private fun parseScalar(text: String): Long {
-        val number = text.trim()
-            .takeIf(String::isNotBlank)
-            ?.toDoubleOrNull()
-            ?: return 0L
+        val trimmed = text.trim().takeIf(String::isNotBlank) ?: return 0L
+        val number = trimmed.toDoubleOrNull()
+            ?: return parseBinaryLong(trimmed) ?: 0L
         if (number.isNaN() || number.isInfinite()) {
             return 0L
         }
         return floor(number).toLong()
+    }
+
+    @OptIn(ExperimentalEncodingApi::class)
+    private fun parseBinaryLong(text: String): Long? {
+        val bytes = try {
+            Base64.decode(text)
+        } catch (_: IllegalArgumentException) {
+            return null
+        }
+        if (bytes.isEmpty() || bytes.size > Long.SIZE_BYTES) {
+            return null
+        }
+        var value = 0L
+        for (byte in bytes) {
+            value = (value shl Byte.SIZE_BITS) or (byte.toLong() and 0xffL)
+        }
+        return value
     }
 }
