@@ -13,6 +13,18 @@ import kotlin.test.assertIs
 
 class ProtocolCapabilityCacheProviderTest {
     @Test
+    fun `production capability requests include avatar appearance capability`() {
+        assertEquals(
+            setOf(
+                CapabilityName.EVENT_QUEUE_GET,
+                CapabilityName.FETCH_INVENTORY_DESCENDENTS2,
+                CapabilityName.UPDATE_AVATAR_APPEARANCE,
+            ),
+            ProtocolCapabilityCacheProvider.PRODUCTION_CAPABILITY_REQUESTS,
+        )
+    }
+
+    @Test
     fun `cached url avoids seed request`() {
         val httpClient = RecordingHttpClient(seedResponse())
         val session = hostessSession()
@@ -31,6 +43,28 @@ class ProtocolCapabilityCacheProviderTest {
         )
 
         assertEquals(eventUrl(), result.url)
+        assertEquals(emptyList(), httpClient.requests)
+    }
+
+    @Test
+    fun `cached avatar appearance url avoids seed request`() {
+        val httpClient = RecordingHttpClient(seedResponse())
+        val session = hostessSession()
+        val provider = provider(
+            httpClient = httpClient,
+            clientSession = activeClientSession(
+                session = session,
+                capabilityCache = CapabilityCache(
+                    mapOf(CapabilityName.UPDATE_AVATAR_APPEARANCE to updateAvatarAppearanceUrl()),
+                ),
+            ),
+        )
+
+        val result = assertIs<CapabilityUrlResult.Ready>(
+            provider.requireUrl(identity(), CapabilityName.UPDATE_AVATAR_APPEARANCE),
+        )
+
+        assertEquals(updateAvatarAppearanceUrl(), result.url)
         assertEquals(emptyList(), httpClient.requests)
     }
 
@@ -65,6 +99,20 @@ class ProtocolCapabilityCacheProviderTest {
         )
 
         assertEquals("capability url absent: EventQueueGet", result.redactedMessage)
+    }
+
+    @Test
+    fun `missing avatar appearance capability returns mapping gap at lookup`() {
+        val provider = provider(
+            httpClient = RecordingHttpClient(seedResponse(includeUpdateAvatarAppearance = false)),
+            clientSession = activeClientSession(hostessSession()),
+        )
+
+        val result = assertIs<CapabilityUrlResult.MappingGap>(
+            provider.requireUrl(identity(), CapabilityName.UPDATE_AVATAR_APPEARANCE),
+        )
+
+        assertEquals("capability url absent: UpdateAvatarAppearance", result.redactedMessage)
     }
 
     @Test
@@ -163,13 +211,19 @@ class ProtocolCapabilityCacheProviderTest {
         circuitCode = 987654321L,
     )
 
-    private fun seedResponse(includeEventQueue: Boolean = true): ProtocolHttpResponse = response(
+    private fun seedResponse(
+        includeEventQueue: Boolean = true,
+        includeUpdateAvatarAppearance: Boolean = true,
+    ): ProtocolHttpResponse = response(
         buildString {
             append("<llsd><map>")
             if (includeEventQueue) {
                 append("<key>EventQueueGet</key><uri>").append(eventUrl().value).append("</uri>")
             }
             append("<key>FetchInventoryDescendents2</key><uri>").append(fetchDescendentsUrl().value).append("</uri>")
+            if (includeUpdateAvatarAppearance) {
+                append("<key>UpdateAvatarAppearance</key><uri>").append(updateAvatarAppearanceUrl().value).append("</uri>")
+            }
             append("</map></llsd>")
         }.encodeToByteArray(),
     )
@@ -193,6 +247,8 @@ class ProtocolCapabilityCacheProviderTest {
         fun eventUrl(): CapabilityUrl = CapabilityUrl(secureUrl("caps.example", "/event"))
 
         fun fetchDescendentsUrl(): CapabilityUrl = CapabilityUrl(secureUrl("caps.example", "/fetch-descendents"))
+
+        fun updateAvatarAppearanceUrl(): CapabilityUrl = CapabilityUrl(secureUrl("caps.example", "/appearance"))
 
         fun secureUrl(host: String, path: String): String = "https" + "://$host$path"
     }
