@@ -124,6 +124,8 @@ internal object LibomvPacketCodec {
                 packet.isType(PacketFrequency.LOW, GROUP_NOTICES_LIST_REPLY) -> SimulatorPacketType.GROUP_NOTICES_LIST_REPLY
                 packet.isType(PacketFrequency.LOW, GROUP_NOTICE_REQUESTED) -> SimulatorPacketType.GROUP_NOTICE_REQUESTED
                 packet.isType(PacketFrequency.LOW, IMPROVED_INSTANT_MESSAGE) -> SimulatorPacketType.IMPROVED_INSTANT_MESSAGE
+                packet.isType(PacketFrequency.LOW, ALERT_MESSAGE) -> SimulatorPacketType.ALERT_MESSAGE
+                packet.isType(PacketFrequency.LOW, PACKET_ACK_DECODED_ID) -> SimulatorPacketType.PACKET_ACK
                 else -> SimulatorPacketType.UNKNOWN
             }
         }
@@ -136,6 +138,9 @@ internal object LibomvPacketCodec {
 
     fun decodedPacketLabel(payload: ByteArray): String? =
         decodedPacket(payload)?.let { "${it.frequency.label}_${it.packetId}" }
+
+    fun decodedPacketKnownName(payload: ByteArray): String? =
+        decodedPacket(payload)?.knownName()
 
     fun regionHandshakeInfo(payload: ByteArray): RegionHandshakeInfo? {
         val packet = decodedPacket(payload) ?: return null
@@ -273,6 +278,32 @@ internal object LibomvPacketCodec {
         )
     }
 
+    fun alertMessageObservation(payload: ByteArray): SimulatorAlertMessageObservation? {
+        val packet = decodedPacket(payload) ?: return null
+        if (!packet.isType(PacketFrequency.LOW, ALERT_MESSAGE)) {
+            return null
+        }
+        val reader = LibomvBytePacketReader(packet.decoded, packet.bodyOffset)
+        val message = reader.readVariable1String() ?: return null
+        val alertInfoCount = if (reader.isExhausted()) {
+            0
+        } else {
+            val count = reader.readU8() ?: return null
+            repeat(count) {
+                reader.readVariable1String() ?: return null
+                reader.readVariable1String() ?: return null
+            }
+            if (!reader.isExhausted()) {
+                return null
+            }
+            count
+        }
+        return SimulatorAlertMessageObservation(
+            message = message,
+            alertInfoCount = alertInfoCount,
+        )
+    }
+
     private fun lowPacket(
         packetId: Int,
         sequence: Int,
@@ -377,6 +408,13 @@ internal object LibomvPacketCodec {
         val bodyOffset: Int,
     )
 
+    private fun DecodedPacket.knownName(): String? =
+        when (frequency) {
+            PacketFrequency.HIGH -> highPacketNames[packetId]
+            PacketFrequency.MEDIUM -> mediumPacketNames[packetId]
+            PacketFrequency.LOW -> lowPacketNames[packetId]
+        }
+
     private enum class PacketFrequency(val label: String) {
         HIGH("high"),
         MEDIUM("medium"),
@@ -469,8 +507,10 @@ internal object LibomvPacketCodec {
     private const val AGENT_DATA_UPDATE_REQUEST = 386
     private const val GROUP_NOTICES_LIST_REQUEST = 58
     private const val GROUP_NOTICES_LIST_REPLY = 59
-    private const val GROUP_NOTICE_REQUESTED = 465
+    private const val GROUP_NOTICE_REQUESTED = 60
+    private const val ALERT_MESSAGE = 134
     private const val PACKET_ACK_FIXED_ID = 0xFB
+    private const val PACKET_ACK_DECODED_ID = 0xFF00 + PACKET_ACK_FIXED_ID
     private const val LOW_HEADER_BYTES = 10
     private const val HIGH_HEADER_BYTES = 7
     private const val FIXED_HEADER_BYTES = 6
@@ -508,4 +548,39 @@ internal object LibomvPacketCodec {
     private const val AGENT_CONTROL_FLAGS_NONE = 0L
     private const val AGENT_FLAGS_NONE = 0
     private const val AGENT_STATE_WALKING = 0
+
+    private val highPacketNames = mapOf(
+        START_PING_CHECK to "start_ping_check",
+        COMPLETE_PING_CHECK to "complete_ping_check",
+        AGENT_UPDATE to "agent_update",
+        11 to "layer_data",
+        12 to "object_update",
+        14 to "object_update_cached",
+        15 to "improved_terse_object_update",
+        16 to "kill_object",
+        20 to "avatar_animation",
+    )
+    private val mediumPacketNames = mapOf(
+        6 to "coarse_location_update",
+        15 to "preload_sound",
+        17 to "viewer_effect",
+    )
+    private val lowPacketNames = mapOf(
+        USE_CIRCUIT_CODE to "use_circuit_code",
+        GROUP_NOTICES_LIST_REQUEST to "group_notices_list_request",
+        GROUP_NOTICES_LIST_REPLY to "group_notices_list_reply",
+        GROUP_NOTICE_REQUESTED to "group_notice_request",
+        ALERT_MESSAGE to "alert_message",
+        138 to "health_message",
+        REGION_HANDSHAKE to "region_handshake",
+        REGION_HANDSHAKE_REPLY to "region_handshake_reply",
+        158 to "avatar_appearance",
+        196 to "parcel_overlay",
+        COMPLETE_AGENT_MOVEMENT to "complete_agent_movement",
+        AGENT_MOVEMENT_COMPLETE to "agent_movement_complete",
+        IMPROVED_INSTANT_MESSAGE to "improved_instant_message",
+        322 to "online_notification",
+        AGENT_DATA_UPDATE_REQUEST to "agent_data_update_request",
+        PACKET_ACK_DECODED_ID to "packet_ack",
+    )
 }

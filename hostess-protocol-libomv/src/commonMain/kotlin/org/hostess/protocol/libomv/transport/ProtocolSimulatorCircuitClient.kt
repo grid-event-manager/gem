@@ -519,12 +519,21 @@ internal class ProtocolSimulatorCircuitClient(
     private class SimulatorNoticeSendObservationCollector {
         private val packets = mutableListOf<SimulatorPacketObservation>()
         private val instantMessages = mutableListOf<SimulatorInstantMessageObservation>()
+        private val alertMessages = mutableListOf<SimulatorAlertMessageObservation>()
 
         fun record(payload: ByteArray) {
             val type = LibomvPacketCodec.packetType(payload)
-            packets += SimulatorPacketObservation(type, LibomvPacketCodec.decodedPacketLabel(payload))
-            if (type == SimulatorPacketType.IMPROVED_INSTANT_MESSAGE) {
-                LibomvPacketCodec.improvedInstantMessageObservation(payload)?.let(instantMessages::add)
+            packets += SimulatorPacketObservation(
+                type = type,
+                packetLabel = LibomvPacketCodec.decodedPacketLabel(payload),
+                knownName = LibomvPacketCodec.decodedPacketKnownName(payload),
+            )
+            when (type) {
+                SimulatorPacketType.IMPROVED_INSTANT_MESSAGE ->
+                    LibomvPacketCodec.improvedInstantMessageObservation(payload)?.let(instantMessages::add)
+                SimulatorPacketType.ALERT_MESSAGE ->
+                    LibomvPacketCodec.alertMessageObservation(payload)?.let(alertMessages::add)
+                else -> Unit
             }
         }
 
@@ -533,8 +542,12 @@ internal class ProtocolSimulatorCircuitClient(
             add("observedPackets=${packets.size}")
             add("packetTypes=${packetTypeSummary()}")
             add("instantMessages=${instantMessages.size}")
+            add("alertMessages=${alertMessages.size}")
             instantMessages.take(MAX_REPORTED_INSTANT_MESSAGES).forEachIndexed { index, message ->
                 add("im[$index]={${message.summary}}")
+            }
+            alertMessages.take(MAX_REPORTED_ALERT_MESSAGES).forEachIndexed { index, message ->
+                add("alert[$index]={${message.summary}}")
             }
         }.joinToString("; ")
 
@@ -551,17 +564,19 @@ internal class ProtocolSimulatorCircuitClient(
         private data class SimulatorPacketObservation(
             val type: SimulatorPacketType,
             val packetLabel: String?,
+            val knownName: String?,
         ) {
             fun reportName(): String =
-                if (type == SimulatorPacketType.UNKNOWN && packetLabel != null) {
-                    "unknown_$packetLabel"
-                } else {
-                    type.name.lowercase()
+                when {
+                    type == SimulatorPacketType.UNKNOWN && knownName != null -> knownName
+                    type == SimulatorPacketType.UNKNOWN && packetLabel != null -> "unknown_$packetLabel"
+                    else -> type.name.lowercase()
                 }
         }
 
         private companion object {
             const val MAX_REPORTED_INSTANT_MESSAGES: Int = 3
+            const val MAX_REPORTED_ALERT_MESSAGES: Int = 3
         }
     }
 

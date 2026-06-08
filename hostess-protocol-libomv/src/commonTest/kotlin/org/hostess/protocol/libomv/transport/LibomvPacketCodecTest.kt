@@ -76,6 +76,35 @@ class LibomvPacketCodecTest {
     }
 
     @Test
+    fun `reports known simulator packet names separately from raw packet labels`() {
+        val alert = alertMessage("Group notice blocked")
+
+        assertEquals(SimulatorPacketType.ALERT_MESSAGE, LibomvPacketCodec.packetType(alert))
+        assertEquals("low_134", LibomvPacketCodec.decodedPacketLabel(alert))
+        assertEquals("alert_message", LibomvPacketCodec.decodedPacketKnownName(alert))
+    }
+
+    @Test
+    fun `parses alert message diagnostics`() {
+        val alert = alertMessage("No permission for 33333333-3333-3333-3333-333333333333")
+
+        val observation = LibomvPacketCodec.alertMessageObservation(alert)
+
+        assertEquals(
+            "No permission for 33333333-3333-3333-3333-333333333333",
+            observation?.message,
+        )
+        assertEquals(1, observation?.alertInfoCount)
+    }
+
+    @Test
+    fun `rejects malformed alert message diagnostics`() {
+        val malformed = LibomvPacketTestBytes.lowHeader(sequence = 91, packetId = 134, flags = 0)
+
+        assertNull(LibomvPacketCodec.alertMessageObservation(malformed))
+    }
+
+    @Test
     fun `regionHandshakeInfo detects true AgentAppearanceService fixture`() {
         val info = LibomvPacketCodec.regionHandshakeInfo(
             LibomvPacketTestBytes.regionHandshakeWithRegionProtocols(regionProtocols = 1L),
@@ -123,4 +152,16 @@ class LibomvPacketCodecTest {
         ((value ushr 8) and 0xFF).toByte(),
         (value and 0xFF).toByte(),
     )
+
+    private fun alertMessage(message: String): ByteArray =
+        LibomvPacketTestBytes.lowHeader(sequence = 91, packetId = 134, flags = 0) +
+            variable1(message) +
+            byteArrayOf(1) +
+            variable1("detail") +
+            variable1("redacted")
+
+    private fun variable1(value: String): ByteArray {
+        val bytes = value.encodeToByteArray() + 0.toByte()
+        return byteArrayOf(bytes.size.toByte()) + bytes
+    }
 }

@@ -1,5 +1,7 @@
 package org.hostess.protocol.libomv.transport
 
+import org.hostess.core.services.SafeDiagnosticRedaction
+
 internal data class SimulatorEndpoint(
     val host: String,
     val port: Int,
@@ -24,6 +26,8 @@ internal enum class SimulatorPacketType {
     GROUP_NOTICES_LIST_REPLY,
     GROUP_NOTICE_REQUESTED,
     IMPROVED_INSTANT_MESSAGE,
+    ALERT_MESSAGE,
+    PACKET_ACK,
     UNKNOWN,
 }
 
@@ -41,13 +45,31 @@ internal data class SimulatorInstantMessageObservation(
             add("fromGroup=$fromGroup")
             add("messageLength=${message.length}")
             if (message.isNotBlank()) {
-                add("messagePreview=${message.take(MAX_MESSAGE_PREVIEW)}")
+                add("messagePreview=${SafeDiagnosticRedaction.excerpt(message, MAX_MESSAGE_PREVIEW)}")
             }
             add("binaryBucketBytes=$binaryBucketBytes")
         }.joinToString(",")
 
     private companion object {
         const val MAX_MESSAGE_PREVIEW: Int = 96
+    }
+}
+
+internal data class SimulatorAlertMessageObservation(
+    val message: String,
+    val alertInfoCount: Int,
+) {
+    val summary: String
+        get() = buildList {
+            add("messageLength=${message.length}")
+            if (message.isNotBlank()) {
+                add("messagePreview=${SafeDiagnosticRedaction.excerpt(message, MAX_MESSAGE_PREVIEW)}")
+            }
+            add("alertInfoCount=$alertInfoCount")
+        }.joinToString(",")
+
+    private companion object {
+        const val MAX_MESSAGE_PREVIEW: Int = 160
     }
 }
 

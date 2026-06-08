@@ -271,10 +271,34 @@ class ProtocolSimulatorCircuitClientTest {
 
         val detail = result.redactedDetail.orEmpty()
         assertTrue(detail.contains("transportAck=passed"))
-        assertTrue(detail.contains("unknown_low_65531:1"))
+        assertTrue(detail.contains("packet_ack:1"))
         assertTrue(detail.contains("improved_instant_message:1"))
         assertTrue(detail.contains("dialog=32"))
         assertTrue(detail.contains("messagePreview=Notice accepted"))
+    }
+
+    @Test
+    fun `records post-send simulator alert messages in sent detail`() {
+        val exchange = RecordingPacketExchange(
+            inboundPayloads = mutableListOf(
+                regionHandshake(),
+                agentMovementComplete(),
+                simulatorPacketAck(5),
+                alertMessage("No permission for group $GROUP_ID"),
+            ),
+        )
+        val client = ProtocolSimulatorCircuitClient(
+            packetExchange = exchange,
+            sequence = SimulatorPacketSequence(0),
+        )
+
+        val result = assertIs<SimulatorCircuitSendResult.Sent>(client.sendNotice(circuit(), noticePacket()))
+
+        val detail = result.redactedDetail.orEmpty()
+        assertTrue(detail.contains("alert_message:1"))
+        assertTrue(detail.contains("alertMessages=1"))
+        assertTrue(detail.contains("messagePreview=No permission for group [redacted-id]"))
+        assertFalse(detail.contains(GROUP_ID))
     }
 
     @Test
@@ -570,6 +594,11 @@ class ProtocolSimulatorCircuitClientTest {
             variable1("Second Life") +
             variable2(message) +
             variable2("")
+
+    private fun alertMessage(message: String): ByteArray =
+        LibomvPacketTestBytes.lowHeader(sequence = 107, packetId = 134, flags = 0x40) +
+            variable1(message) +
+            byteArrayOf(0)
 
     private fun simulatorPacketAck(ackedSequence: Long): ByteArray =
         byteArrayOf(
