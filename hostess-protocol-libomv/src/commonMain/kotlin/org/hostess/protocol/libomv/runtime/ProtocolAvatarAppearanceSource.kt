@@ -38,9 +38,6 @@ internal class ProtocolAvatarAppearanceSource(
             ?: return AvatarAppearanceUpdateResult.ProofGap(
                 "avatar appearance response invalid: ${bodyDiagnostic(body)}",
             )
-        if (fields[ERROR_KEY] != null) {
-            return AvatarAppearanceUpdateResult.ProofGap(invalidResponseDiagnostic(fields))
-        }
         return when (fields[SUCCESS_KEY]?.asBoolean()) {
             true -> AvatarAppearanceUpdateResult.Success
             false,

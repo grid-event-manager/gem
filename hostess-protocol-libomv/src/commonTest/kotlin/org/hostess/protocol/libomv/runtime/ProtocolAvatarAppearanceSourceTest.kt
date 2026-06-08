@@ -36,6 +36,15 @@ class ProtocolAvatarAppearanceSourceTest {
     }
 
     @Test
+    fun `success response with undef error and appearance payload passes`() {
+        val result = ProtocolAvatarAppearanceSource(
+            RecordingHttpClient { response(successResponseWithAppearancePayload()) },
+        ).updateServerAppearance(identity(), 958, capabilityUrl())
+
+        assertEquals(AvatarAppearanceUpdateResult.Success, result)
+    }
+
+    @Test
     fun `http non success and protocol exception are transport gaps`() {
         val statusFailure = ProtocolAvatarAppearanceSource(
             RecordingHttpClient { response("<llsd><map /></llsd>", statusCode = 503) },
@@ -118,6 +127,18 @@ class ProtocolAvatarAppearanceSourceTest {
 
     private fun successResponse(): ProtocolHttpResponse =
         response("<llsd><map><key>success</key><boolean>true</boolean></map></llsd>")
+
+    private fun successResponseWithAppearancePayload(): String = """
+        <llsd><map>
+          <key>agent_id</key><uuid>$AGENT_ID</uuid>
+          <key>avatar_scale</key><array><real>0.45</real><real>0.60</real><real>1.72</real></array>
+          <key>cof_version</key><integer>958</integer>
+          <key>error</key><undef/>
+          <key>success</key><boolean>true</boolean>
+          <key>textures</key><array><uuid>$AGENT_ID</uuid></array>
+          <key>visual_params</key><array><integer>76</integer></array>
+        </map></llsd>
+    """.trimIndent()
 
     private fun response(
         body: String,
