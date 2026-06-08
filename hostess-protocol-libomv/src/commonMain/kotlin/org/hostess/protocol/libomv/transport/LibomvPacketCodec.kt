@@ -120,6 +120,59 @@ internal object LibomvPacketCodec {
             else -> SimulatorPacketType.UNKNOWN
         }
 
+    fun packetAckSequences(payload: ByteArray): List<Long>? {
+        appendedAckSequences(payload)?.let { return it }
+        val decoded = try {
+            LibomvZerocodeCodec.decode(payload)
+        } catch (ex: IllegalArgumentException) {
+            return null
+        }
+        if (decoded.size < FIXED_HEADER_BYTES + FIXED_PACKET_ID_BYTES + U8_BYTES) {
+            return null
+        }
+        val extraLength = decoded[EXTRA_BYTES_OFFSET].toInt() and BYTE_MASK
+        val markerOffset = FIXED_HEADER_BYTES + extraLength
+        if (decoded.size < markerOffset + FIXED_PACKET_ID_BYTES + U8_BYTES) {
+            return null
+        }
+        if (
+            decoded[markerOffset] != LOW_FREQUENCY_MARKER.toByte() ||
+            decoded[markerOffset + 1] != LOW_FREQUENCY_MARKER.toByte() ||
+            decoded[markerOffset + 2] != LOW_FREQUENCY_MARKER.toByte() ||
+            decoded[markerOffset + 3] != PACKET_ACK_FIXED_ID.toByte()
+        ) {
+            return null
+        }
+        val countOffset = markerOffset + FIXED_PACKET_ID_BYTES
+        val count = decoded[countOffset].toInt() and BYTE_MASK
+        val expectedSize = countOffset + U8_BYTES + (count * U32_BYTES)
+        if (decoded.size != expectedSize) {
+            return null
+        }
+        val reader = LibomvBytePacketReader(decoded, countOffset + U8_BYTES)
+        return List(count) {
+            reader.readU32() ?: return null
+        }
+    }
+
+    private fun appendedAckSequences(payload: ByteArray): List<Long>? {
+        if (payload.size < FIXED_HEADER_BYTES + U8_BYTES || (payload[0].toInt() and APPENDED_ACKS_FLAG) == 0) {
+            return null
+        }
+        val count = payload.last().toInt() and BYTE_MASK
+        val ackStart = payload.size - U8_BYTES - (count * U32_BYTES)
+        if (count == 0 || ackStart < FIXED_HEADER_BYTES) {
+            return null
+        }
+        return List(count) { index ->
+            val offset = ackStart + (index * U32_BYTES)
+            ((payload[offset].toLong() and BYTE_MASK_LONG) shl 24) +
+                ((payload[offset + 1].toLong() and BYTE_MASK_LONG) shl 16) +
+                ((payload[offset + 2].toLong() and BYTE_MASK_LONG) shl 8) +
+                (payload[offset + 3].toLong() and BYTE_MASK_LONG)
+        }
+    }
+
     fun startPingId(payload: ByteArray): Int? {
         val packet = decodedPacket(payload) ?: return null
         if (packet.packetId != START_PING_CHECK || packet.decoded.size <= packet.bodyOffset) {
@@ -290,6 +343,7 @@ internal object LibomvPacketCodec {
     private const val LOW_FREQUENCY_MARKER = 0xFF
     private const val BYTE_MASK = 0xFF
     private const val BYTE_MASK_LONG = 0xFFL
+    private const val APPENDED_ACKS_FLAG = 0x10
     private const val RELIABLE_FLAGS = 0x40
     private const val RELIABLE_ZEROCODED_FLAGS = 0xC0
     private const val SELF_APPEARANCE_SUPPORT_FLAG = 4L

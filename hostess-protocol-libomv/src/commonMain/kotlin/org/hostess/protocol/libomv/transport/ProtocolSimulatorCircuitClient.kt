@@ -31,8 +31,12 @@ internal class ProtocolSimulatorCircuitClient(
         }
 
     fun sendNotice(circuit: SimulatorCircuit, packet: LibomvNoticePacket): SimulatorCircuitSendResult =
-        sendAfterPresence(circuit) {
-            LibomvNoticePacketCodec.improvedInstantMessage(packet, sequence.next())
+        sendReliableAfterPresence(circuit) {
+            val packetSequence = sequence.next()
+            ReliablePayload(
+                sequenceNumber = packetSequence.toLong(),
+                bytes = LibomvNoticePacketCodec.improvedInstantMessage(packet, packetSequence),
+            )
         }
 
     fun requestGroupNoticeArchive(circuit: SimulatorCircuit, groupId: String): SimulatorNoticeArchiveResult {
@@ -264,6 +268,58 @@ internal class ProtocolSimulatorCircuitClient(
         }
     }
 
+    private fun sendReliableAfterPresence(
+        circuit: SimulatorCircuit,
+        payload: () -> ReliablePayload,
+    ): SimulatorCircuitSendResult {
+        val endpoint = SimulatorEndpoint(circuit.simulatorIp, circuit.simulatorPort)
+        return when (val presence = ensurePresence(circuit)) {
+            is SimulatorPresenceResult.Failed -> SimulatorCircuitSendResult.Failed(presence.redactedMessage)
+            is SimulatorPresenceResult.Present -> {
+                val reliable = try {
+                    payload()
+                } catch (ex: IllegalArgumentException) {
+                    return SimulatorCircuitSendResult.Failed(REDACTED_SEND_FAILURE)
+                }
+                repeat(RELIABLE_SEND_ATTEMPTS) {
+                    try {
+                        packetExchange.send(endpoint, listOf(reliable.bytes))
+                    } catch (ex: Exception) {
+                        return SimulatorCircuitSendResult.Failed(REDACTED_SEND_FAILURE)
+                    }
+                    when (waitForOutgoingAck(endpoint, reliable.sequenceNumber)) {
+                        OutgoingAckResult.ACKED -> return SimulatorCircuitSendResult.Sent
+                        OutgoingAckResult.FAILED -> return SimulatorCircuitSendResult.Failed(REDACTED_SEND_FAILURE)
+                        OutgoingAckResult.TIMEOUT -> Unit
+                    }
+                }
+                SimulatorCircuitSendResult.Failed(REDACTED_SEND_FAILURE)
+            }
+        }
+    }
+
+    private fun waitForOutgoingAck(endpoint: SimulatorEndpoint, sequenceNumber: Long): OutgoingAckResult {
+        repeat(NOTICE_ACK_RECEIVE_ATTEMPTS) {
+            val inbound = packetExchange.receive(endpoint, NOTICE_ACK_RECEIVE_TIMEOUT_MILLIS) ?: return@repeat
+            if (!ackReliablePacket(endpoint, inbound.payload)) {
+                return OutgoingAckResult.FAILED
+            }
+            val acked = LibomvPacketCodec.packetAckSequences(inbound.payload)
+            if (acked?.contains(sequenceNumber) == true) {
+                return OutgoingAckResult.ACKED
+            }
+            when (LibomvPacketCodec.packetType(inbound.payload)) {
+                SimulatorPacketType.START_PING_CHECK -> {
+                    if (!answerSimulatorPing(endpoint, inbound.payload)) {
+                        return OutgoingAckResult.FAILED
+                    }
+                }
+                else -> Unit
+            }
+        }
+        return OutgoingAckResult.TIMEOUT
+    }
+
     private fun waitForPacket(
         endpoint: SimulatorEndpoint,
         receiveTimeoutMillis: Int,
@@ -356,6 +412,17 @@ internal class ProtocolSimulatorCircuitClient(
         val circuitCode: Long,
     )
 
+    private data class ReliablePayload(
+        val sequenceNumber: Long,
+        val bytes: ByteArray,
+    )
+
+    private enum class OutgoingAckResult {
+        ACKED,
+        TIMEOUT,
+        FAILED,
+    }
+
     private fun SimulatorCircuit.toKey(): SimulatorCircuitKey =
         SimulatorCircuitKey(
             agentId = agentId,
@@ -395,5 +462,8 @@ internal class ProtocolSimulatorCircuitClient(
         const val MOVEMENT_RECEIVE_ATTEMPTS: Int = 12
         const val ARCHIVE_RECEIVE_TIMEOUT_MILLIS: Int = 250
         const val ARCHIVE_RECEIVE_ATTEMPTS: Int = 12
+        const val NOTICE_ACK_RECEIVE_TIMEOUT_MILLIS: Int = 250
+        const val NOTICE_ACK_RECEIVE_ATTEMPTS: Int = 8
+        const val RELIABLE_SEND_ATTEMPTS: Int = 3
     }
 }

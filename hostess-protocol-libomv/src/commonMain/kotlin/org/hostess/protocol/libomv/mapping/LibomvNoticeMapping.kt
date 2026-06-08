@@ -67,7 +67,7 @@ internal object LibomvNoticeMapping {
         val sessionId = LibomvUuidCodec.canonicalOrNull(identity.sessionId) ?: return LibomvNoticeMappingResult.Failure
         val targetGroupId = LibomvUuidCodec.canonicalOrNull(group.groupId.value)
             ?: return LibomvNoticeMappingResult.Failure
-        val noticeAttachment = attachment?.let(::noticeAttachment)
+        val noticeAttachment = attachment?.let { noticeAttachment(it, agentId) }
             ?: if (attachment == null) null else return LibomvNoticeMappingResult.Failure
         val bucket = noticeAttachment?.let(::attachmentBucket) ?: ByteArray(0)
 
@@ -77,7 +77,7 @@ internal object LibomvNoticeMapping {
                 sessionId = sessionId,
                 fromGroup = false,
                 targetGroupId = targetGroupId,
-                fromAgentName = session.accountLabel.value,
+                fromAgentName = identity.agentName?.takeIf(String::isNotBlank) ?: session.accountLabel.value,
                 message = "${draft.subject}|${draft.message}",
                 dialog = GROUP_NOTICE_DIALOG,
                 offline = ONLINE,
@@ -93,9 +93,9 @@ internal object LibomvNoticeMapping {
         )
     }
 
-    private fun noticeAttachment(attachment: AttachmentRef): LibomvNoticeAttachment? {
+    private fun noticeAttachment(attachment: AttachmentRef, agentId: String): LibomvNoticeAttachment? {
         val itemId = LibomvUuidCodec.canonicalOrNull(attachment.attachmentId.value) ?: return null
-        val ownerId = LibomvUuidCodec.canonicalOrNull(attachment.ownerId.value) ?: return null
+        val ownerId = LibomvUuidCodec.canonicalOrNull(agentId) ?: return null
         return LibomvNoticeAttachment(
             itemId = itemId,
             ownerId = ownerId,

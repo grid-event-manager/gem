@@ -32,6 +32,7 @@ class LibomvClientSessionTest {
         assertEquals(13000, identity.simulatorPort)
         assertEquals(123456789L, identity.regionHandle)
         assertEquals(987654321L, identity.circuitCode)
+        assertEquals("Venue Host", identity.agentName)
         assertEquals(
             CapabilityUrl("https://caps.example/event"),
             clientSession.capabilityCache(identity)?.urlFor(CapabilityName.EVENT_QUEUE_GET),
@@ -166,9 +167,10 @@ class LibomvClientSessionTest {
         seedCapability = "seed-capability",
         simulatorIp = "203.0.113.8",
         simulatorPort = 13000,
-        regionHandle = 123456789L,
-        circuitCode = 987654321L,
-        inventoryRoots = LoginInventoryRoots(
+            regionHandle = 123456789L,
+            circuitCode = 987654321L,
+            agentName = "Venue Host",
+            inventoryRoots = LoginInventoryRoots(
             inventoryRootId = "inventory-root-id",
             inventorySkeleton = listOf(
                 LoginInventoryFolder(
@@ -197,5 +199,6 @@ class LibomvClientSessionTest {
         simulatorPort = 13000,
         regionHandle = 123456789L,
         circuitCode = 987654321L,
+        agentName = "Venue Host",
     )
 }

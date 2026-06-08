@@ -74,6 +74,7 @@ class ProtocolLoginRuntimeTest {
         assertEquals(13000, identity.simulatorPort)
         assertEquals((1024L shl 32) or 2048L, identity.regionHandle)
         assertEquals(123456789L, identity.circuitCode)
+        assertEquals("Venue Host", identity.agentName)
         val roots = assertIs<LoginInventoryRootsResult.Success>(clientSession.inventoryRoots(session)).roots
         assertEquals("inventory-root-id", roots.inventoryRootId)
         assertEquals("landmarks-folder-id", roots.inventorySkeleton.single().folderId)
@@ -141,6 +142,7 @@ class ProtocolLoginRuntimeTest {
         assertEquals(13000, identity.simulatorPort)
         assertEquals((1024L shl 32) or 2048L, identity.regionHandle)
         assertEquals(123456789L, identity.circuitCode)
+        assertEquals("Venue Host", identity.agentName)
         val roots = assertIs<LoginInventoryRootsResult.Success>(clientSession.inventoryRoots(session)).roots
         assertEquals("xml-inventory-root-id", roots.inventoryRootId)
         assertEquals("xml-landmarks-folder-id", roots.inventorySkeleton.single().folderId)

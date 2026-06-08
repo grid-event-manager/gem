@@ -49,7 +49,7 @@ class ProtocolNoticeRuntimeTest {
         assertEquals(SESSION_ID, packet.sessionId)
         assertFalse(packet.fromGroup)
         assertEquals(GROUP_ID, packet.targetGroupId)
-        assertEquals("venue-proof", packet.fromAgentName)
+        assertEquals("Venue Host", packet.fromAgentName)
         assertEquals("Gig tonight|Doors at 8", packet.message)
         assertEquals(LibomvNoticeMapping.GROUP_NOTICE_DIALOG, packet.dialog)
         assertEquals(LibomvNoticeMapping.ONLINE, packet.offline)
@@ -61,7 +61,7 @@ class ProtocolNoticeRuntimeTest {
     }
 
     @Test
-    fun `landmark attachment serializes item owner and kind`() {
+    fun `landmark attachment serializes logged in agent owner and kind`() {
         val source = RecordingNoticeRuntimeSource()
 
         val status = runtime(hostessSession(), source).sendGroupNotice(
@@ -77,7 +77,7 @@ class ProtocolNoticeRuntimeTest {
         val bucket = packet.binaryBucket.decodeToString()
         assertTrue(bucket.startsWith("<? llsd/xml ?>\n<llsd>"))
         assertTrue(bucket.contains("<key>item_id</key><uuid>$ITEM_ID</uuid>"))
-        assertTrue(bucket.contains("<key>owner_id</key><uuid>$OWNER_ID</uuid>"))
+        assertTrue(bucket.contains("<key>owner_id</key><uuid>$AGENT_ID</uuid>"))
     }
 
     @Test
@@ -96,6 +96,7 @@ class ProtocolNoticeRuntimeTest {
         assertEquals(AttachmentKind.TEXTURE, packet.attachment?.kind)
         assertTrue(packet.binaryBucket.decodeToString().startsWith("<? llsd/xml ?>\n<llsd>"))
         assertTrue(packet.binaryBucket.decodeToString().contains(ITEM_ID))
+        assertTrue(packet.binaryBucket.decodeToString().contains(AGENT_ID))
     }
 
     @Test
@@ -221,6 +222,7 @@ class ProtocolNoticeRuntimeTest {
         simulatorPort = 13000,
         regionHandle = 123456789L,
         circuitCode = 987654321L,
+        agentName = "Venue Host",
     )
 
     private fun draft(

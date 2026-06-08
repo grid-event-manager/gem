@@ -19,7 +19,7 @@ class ProtocolNoticeCircuitSourceTest {
     @Test
     fun `sends encoded notice packet through simulator circuit client`() {
         val exchange = RecordingPacketExchange(
-            inboundPayloads = mutableListOf(regionHandshake(), agentMovementComplete()),
+            inboundPayloads = mutableListOf(regionHandshake(), agentMovementComplete(), simulatorPacketAck(15)),
         )
         val source = ProtocolNoticeCircuitSource(
             ProtocolSimulatorCircuitClient(
@@ -95,6 +95,25 @@ class ProtocolNoticeCircuitSourceTest {
 
     private fun agentMovementComplete(): ByteArray =
         LibomvPacketTestBytes.lowHeader(sequence = 102, packetId = 250, flags = 0)
+
+    private fun simulatorPacketAck(ackedSequence: Long): ByteArray =
+        byteArrayOf(
+            0,
+            0,
+            0,
+            0,
+            103,
+            0,
+            0xFF.toByte(),
+            0xFF.toByte(),
+            0xFF.toByte(),
+            0xFB.toByte(),
+            1,
+            (ackedSequence and 0xFF).toByte(),
+            ((ackedSequence ushr 8) and 0xFF).toByte(),
+            ((ackedSequence ushr 16) and 0xFF).toByte(),
+            ((ackedSequence ushr 24) and 0xFF).toByte(),
+        )
 
     private class RecordingPacketExchange(
         private val inboundPayloads: MutableList<ByteArray> = mutableListOf(),

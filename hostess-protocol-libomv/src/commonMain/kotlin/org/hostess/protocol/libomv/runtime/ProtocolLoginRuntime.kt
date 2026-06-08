@@ -93,6 +93,7 @@ class ProtocolLoginRuntime private constructor(
                     simulatorPort = mapped.value.simulatorPort,
                     regionHandle = mapped.value.regionHandle,
                     circuitCode = mapped.value.circuitCode,
+                    agentName = loginPackage.agentName(),
                     inventoryRoots = mapped.value.inventoryRoots,
                 )
                 SessionLoginResult.Success(session)
@@ -139,6 +140,8 @@ class ProtocolLoginRuntime private constructor(
 
     private fun loginFailure(message: String): SessionLoginResult.Failure =
         SessionLoginResult.Failure(CoreFailure(CoreFailureReason.LOGIN_FAILED, redactedMessage = message))
+
+    private fun LoginPackage.agentName(): String = "$first $last".trim()
 }
 
 fun interface LoginSecretResolver {

@@ -12,7 +12,7 @@ class ProtocolSimulatorCircuitClientTest {
     @Test
     fun `sends current-groups only after MetaBolt-shaped presence sequence`() {
         val exchange = RecordingPacketExchange(
-            inboundPayloads = mutableListOf(regionHandshake(), agentMovementComplete()),
+            inboundPayloads = mutableListOf(regionHandshake(), agentMovementComplete(), simulatorPacketAck(6)),
         )
         val client = ProtocolSimulatorCircuitClient(
             packetExchange = exchange,
@@ -137,7 +137,7 @@ class ProtocolSimulatorCircuitClientTest {
     @Test
     fun `reuses established presence for later notice on same circuit`() {
         val exchange = RecordingPacketExchange(
-            inboundPayloads = mutableListOf(regionHandshake(), agentMovementComplete()),
+            inboundPayloads = mutableListOf(regionHandshake(), agentMovementComplete(), simulatorPacketAck(6)),
         )
         val client = ProtocolSimulatorCircuitClient(
             packetExchange = exchange,
@@ -154,6 +154,28 @@ class ProtocolSimulatorCircuitClientTest {
         assertPacketAck(payloads[1], ackedSequence = 101)
         assertLowPacket(payloads[3], sequence = 3, packetId = 249)
         assertLowPacket(payloads.last(), sequence = 6, packetId = 254, flags = 0xC0)
+    }
+
+    @Test
+    fun `notice send fails when simulator does not acknowledge reliable packet`() {
+        val exchange = RecordingPacketExchange(
+            inboundPayloads = mutableListOf(regionHandshake(), agentMovementComplete()),
+        )
+        val client = ProtocolSimulatorCircuitClient(
+            packetExchange = exchange,
+            sequence = SimulatorPacketSequence(0),
+        )
+
+        val result = assertIs<SimulatorCircuitSendResult.Failed>(
+            client.sendNotice(circuit(), noticePacket()),
+        )
+
+        assertEquals("protocol simulator send failed", result.redactedMessage)
+        val noticePayloads = exchange.sentPayloads().filter { packetId(it) == 254 }
+        assertEquals(3, noticePayloads.size)
+        noticePayloads.forEach { payload ->
+            assertLowPacket(payload, sequence = 5, packetId = 254, flags = 0xC0)
+        }
     }
 
     @Test
@@ -411,6 +433,21 @@ class ProtocolSimulatorCircuitClientTest {
             variable2("venue-proof") +
             variable2("Tonight") +
             byteArrayOf(1, 3)
+
+    private fun simulatorPacketAck(ackedSequence: Long): ByteArray =
+        byteArrayOf(
+            0,
+            0,
+            0,
+            0,
+            105,
+            0,
+            0xFF.toByte(),
+            0xFF.toByte(),
+            0xFF.toByte(),
+            0xFB.toByte(),
+            1,
+        ) + u32(ackedSequence)
 
     private fun noticePacket(): LibomvNoticePacket = LibomvNoticePacket(
         agentId = AGENT_ID,

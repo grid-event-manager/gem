@@ -16,6 +16,7 @@ class LibomvClientSession private constructor(
     private var simulatorPort: Int?,
     private var regionHandle: Long?,
     private var circuitCode: Long?,
+    private var agentName: String?,
     private var inventoryRoots: LoginInventoryRoots,
     private var capabilityCache: CapabilityCache,
 ) {
@@ -36,6 +37,7 @@ class LibomvClientSession private constructor(
         simulatorPort: Int? = null,
         regionHandle: Long? = null,
         circuitCode: Long? = null,
+        agentName: String? = null,
         inventoryRoots: LoginInventoryRoots = LoginInventoryRoots.empty(),
         capabilityCache: CapabilityCache = CapabilityCache.empty(),
     ) {
@@ -46,6 +48,7 @@ class LibomvClientSession private constructor(
         this.simulatorPort = simulatorPort
         this.regionHandle = regionHandle
         this.circuitCode = circuitCode
+        this.agentName = agentName
         this.inventoryRoots = inventoryRoots
         this.capabilityCache = capabilityCache
     }
@@ -58,6 +61,7 @@ class LibomvClientSession private constructor(
         simulatorPort = null
         regionHandle = null
         circuitCode = null
+        agentName = null
         inventoryRoots = LoginInventoryRoots.empty()
         capabilityCache = CapabilityCache.empty()
     }
@@ -115,6 +119,7 @@ class LibomvClientSession private constructor(
                 simulatorPort = activeSimulatorPort,
                 regionHandle = activeRegionHandle,
                 circuitCode = activeCircuitCode,
+                agentName = agentName?.takeIf(String::isNotBlank),
             ),
         )
     }
@@ -156,6 +161,7 @@ class LibomvClientSession private constructor(
             simulatorPort = null,
             regionHandle = null,
             circuitCode = null,
+            agentName = null,
             inventoryRoots = LoginInventoryRoots.empty(),
             capabilityCache = CapabilityCache.empty(),
         )
@@ -169,6 +175,7 @@ class LibomvClientSession private constructor(
             simulatorPort = null,
             regionHandle = null,
             circuitCode = null,
+            agentName = null,
             inventoryRoots = LoginInventoryRoots.empty(),
             capabilityCache = CapabilityCache.empty(),
         )
@@ -181,6 +188,7 @@ class LibomvClientSession private constructor(
             simulatorPort: Int? = null,
             regionHandle: Long? = null,
             circuitCode: Long? = null,
+            agentName: String? = null,
             inventoryRoots: LoginInventoryRoots = LoginInventoryRoots.empty(),
             capabilityCache: CapabilityCache = CapabilityCache.empty(),
         ): LibomvClientSession = LibomvClientSession(
@@ -192,6 +200,7 @@ class LibomvClientSession private constructor(
             simulatorPort = simulatorPort,
             regionHandle = regionHandle,
             circuitCode = circuitCode,
+            agentName = agentName,
             inventoryRoots = inventoryRoots,
             capabilityCache = capabilityCache,
         )
@@ -206,6 +215,7 @@ internal data class LibomvSessionIdentity(
     val simulatorPort: Int,
     val regionHandle: Long,
     val circuitCode: Long,
+    val agentName: String? = null,
 )
 
 internal sealed interface LibomvSessionIdentityResult {
