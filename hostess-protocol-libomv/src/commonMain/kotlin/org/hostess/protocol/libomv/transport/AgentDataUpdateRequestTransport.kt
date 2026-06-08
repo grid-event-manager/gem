@@ -11,7 +11,7 @@ internal class AgentDataUpdateRequestTransport(
 ) : AgentDataUpdateRequester {
     override fun send(identity: LibomvSessionIdentity): AgentDataUpdateRequestResult {
         return when (val result = circuitClient.sendCurrentGroupsRequest(identity.toSimulatorCircuit())) {
-            SimulatorCircuitSendResult.Sent -> AgentDataUpdateRequestResult.Sent
+            is SimulatorCircuitSendResult.Sent -> AgentDataUpdateRequestResult.Sent
             is SimulatorCircuitSendResult.Failed -> AgentDataUpdateRequestResult.Failed(result.redactedMessage)
         }
     }

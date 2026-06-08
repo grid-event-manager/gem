@@ -27,18 +27,34 @@ internal class LibomvBytePacketReader(
             else -> null
         }
 
-    fun readVariable2String(): String? {
-        val size = readU16() ?: return null
+    fun readVariable1String(): String? {
+        val size = readU8() ?: return null
         val value = readBytes(size) ?: return null
-        val trimmed = value.dropLastWhile { it == 0.toByte() }.toByteArray()
+        return value.trimmedStringOrNull()
+    }
+
+    fun readVariable2String(): String? {
+        val value = readVariable2Bytes() ?: return null
+        return value.trimmedStringOrNull()
+    }
+
+    fun readVariable2Bytes(): ByteArray? {
+        val size = readU16() ?: return null
+        return readBytes(size)
+    }
+
+    fun skipBytes(size: Int): Boolean = readBytes(size) != null
+
+    fun isExhausted(): Boolean = offset == bytes.size
+
+    private fun ByteArray.trimmedStringOrNull(): String? {
+        val trimmed = dropLastWhile { it == 0.toByte() }.toByteArray()
         return try {
             trimmed.decodeToString()
         } catch (ex: IllegalArgumentException) {
             null
         }
     }
-
-    fun isExhausted(): Boolean = offset == bytes.size
 
     private fun readU16(): Int? {
         val values = readBytes(U16_BYTES) ?: return null

@@ -41,7 +41,7 @@ class ProtocolNoticeRuntime internal constructor(
         }
 
         return when (val result = noticeSource.send(identity, packet)) {
-            NoticeRuntimeResult.Sent -> GroupSendStatus(group, GroupSendState.SENT)
+            is NoticeRuntimeResult.Sent -> GroupSendStatus(group, GroupSendState.SENT, detail = result.redactedDetail)
             is NoticeRuntimeResult.Failed -> failed(group, redactedProtocolFailure(result.message))
         }
     }
@@ -71,6 +71,6 @@ internal fun interface NoticeRuntimeSource {
 }
 
 internal sealed interface NoticeRuntimeResult {
-    data object Sent : NoticeRuntimeResult
+    data class Sent(val redactedDetail: String? = null) : NoticeRuntimeResult
     data class Failed(val message: String) : NoticeRuntimeResult
 }

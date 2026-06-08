@@ -27,6 +27,30 @@ internal enum class SimulatorPacketType {
     UNKNOWN,
 }
 
+internal data class SimulatorInstantMessageObservation(
+    val dialog: Int,
+    val offline: Int,
+    val fromGroup: Boolean,
+    val message: String,
+    val binaryBucketBytes: Int,
+) {
+    val summary: String
+        get() = buildList {
+            add("dialog=$dialog")
+            add("offline=$offline")
+            add("fromGroup=$fromGroup")
+            add("messageLength=${message.length}")
+            if (message.isNotBlank()) {
+                add("messagePreview=${message.take(MAX_MESSAGE_PREVIEW)}")
+            }
+            add("binaryBucketBytes=$binaryBucketBytes")
+        }.joinToString(",")
+
+    private companion object {
+        const val MAX_MESSAGE_PREVIEW: Int = 96
+    }
+}
+
 internal sealed interface SimulatorPresenceResult {
     data class Present(
         val pingReplies: Int,

@@ -14,7 +14,7 @@ internal data class SimulatorCircuit(
 )
 
 internal sealed interface SimulatorCircuitSendResult {
-    data object Sent : SimulatorCircuitSendResult
+    data class Sent(val redactedDetail: String? = null) : SimulatorCircuitSendResult
     data class Failed(val redactedMessage: String) : SimulatorCircuitSendResult
 }
 
@@ -276,7 +276,7 @@ internal class ProtocolSimulatorCircuitClient(
             is SimulatorPresenceResult.Failed -> SimulatorCircuitSendResult.Failed(presence.redactedMessage)
             is SimulatorPresenceResult.Present -> try {
                 packetExchange.send(endpoint, listOf(payload()))
-                SimulatorCircuitSendResult.Sent
+                SimulatorCircuitSendResult.Sent()
             } catch (ex: IllegalArgumentException) {
                 SimulatorCircuitSendResult.Failed(REDACTED_SEND_FAILURE)
             } catch (ex: Exception) {
@@ -298,14 +298,20 @@ internal class ProtocolSimulatorCircuitClient(
                 } catch (ex: IllegalArgumentException) {
                     return SimulatorCircuitSendResult.Failed(REDACTED_SEND_FAILURE)
                 }
+                val observations = SimulatorNoticeSendObservationCollector()
                 repeat(RELIABLE_SEND_ATTEMPTS) { attempt ->
                     try {
                         packetExchange.send(endpoint, listOf(reliable.bytesForAttempt(attempt)))
                     } catch (ex: Exception) {
                         return SimulatorCircuitSendResult.Failed(REDACTED_SEND_FAILURE)
                     }
-                    when (waitForOutgoingAck(circuit, endpoint, reliable.sequenceNumber)) {
-                        OutgoingAckResult.ACKED -> return SimulatorCircuitSendResult.Sent
+                    when (waitForOutgoingAck(circuit, endpoint, reliable.sequenceNumber, observations)) {
+                        OutgoingAckResult.ACKED -> {
+                            if (drainNoticeSendObservations(endpoint, observations) == OutgoingAckResult.FAILED) {
+                                return SimulatorCircuitSendResult.Failed(REDACTED_SEND_FAILURE)
+                            }
+                            return SimulatorCircuitSendResult.Sent(observations.redactedSummary())
+                        }
                         OutgoingAckResult.FAILED -> return SimulatorCircuitSendResult.Failed(REDACTED_SEND_FAILURE)
                         OutgoingAckResult.TIMEOUT -> Unit
                     }
@@ -319,6 +325,7 @@ internal class ProtocolSimulatorCircuitClient(
         circuit: SimulatorCircuit,
         endpoint: SimulatorEndpoint,
         sequenceNumber: Long,
+        observations: SimulatorNoticeSendObservationCollector,
     ): OutgoingAckResult {
         var keepAliveSent = false
         var observedPackets = 0
@@ -340,6 +347,7 @@ internal class ProtocolSimulatorCircuitClient(
             if (!ackReliablePacket(endpoint, inbound.payload)) {
                 return OutgoingAckResult.FAILED
             }
+            observations.record(inbound.payload)
             val acked = LibomvPacketCodec.packetAckSequences(inbound.payload)
             if (acked?.contains(sequenceNumber) == true) {
                 return OutgoingAckResult.ACKED
@@ -354,6 +362,39 @@ internal class ProtocolSimulatorCircuitClient(
             }
         }
         return OutgoingAckResult.TIMEOUT
+    }
+
+    private fun drainNoticeSendObservations(
+        endpoint: SimulatorEndpoint,
+        observations: SimulatorNoticeSendObservationCollector,
+    ): OutgoingAckResult {
+        var observedPackets = 0
+        var receiveTimeouts = 0
+        while (
+            observedPackets < NOTICE_POST_ACK_RECEIVE_PACKET_LIMIT &&
+            receiveTimeouts < NOTICE_POST_ACK_RECEIVE_TIMEOUT_LIMIT
+        ) {
+            val inbound = packetExchange.receive(endpoint, NOTICE_POST_ACK_RECEIVE_TIMEOUT_MILLIS)
+            if (inbound == null) {
+                receiveTimeouts += 1
+                continue
+            }
+            observedPackets += 1
+            receiveTimeouts = 0
+            if (!ackReliablePacket(endpoint, inbound.payload)) {
+                return OutgoingAckResult.FAILED
+            }
+            observations.record(inbound.payload)
+            when (LibomvPacketCodec.packetType(inbound.payload)) {
+                SimulatorPacketType.START_PING_CHECK -> {
+                    if (!answerSimulatorPing(endpoint, inbound.payload)) {
+                        return OutgoingAckResult.FAILED
+                    }
+                }
+                else -> Unit
+            }
+        }
+        return OutgoingAckResult.ACKED
     }
 
     private fun sendAvatarKeepAlive(endpoint: SimulatorEndpoint, circuit: SimulatorCircuit): Boolean =
@@ -475,6 +516,46 @@ internal class ProtocolSimulatorCircuitClient(
         FAILED,
     }
 
+    private class SimulatorNoticeSendObservationCollector {
+        private val packetTypes = mutableListOf<SimulatorPacketType>()
+        private val instantMessages = mutableListOf<SimulatorInstantMessageObservation>()
+
+        fun record(payload: ByteArray) {
+            val type = LibomvPacketCodec.packetType(payload)
+            packetTypes += type
+            if (type == SimulatorPacketType.IMPROVED_INSTANT_MESSAGE) {
+                LibomvPacketCodec.improvedInstantMessageObservation(payload)?.let(instantMessages::add)
+            }
+        }
+
+        fun redactedSummary(): String = buildList {
+            add("transportAck=passed")
+            add("observedPackets=${packetTypes.size}")
+            add("packetTypes=${packetTypeSummary()}")
+            add("instantMessages=${instantMessages.size}")
+            instantMessages.take(MAX_REPORTED_INSTANT_MESSAGES).forEachIndexed { index, message ->
+                add("im[$index]={${message.summary}}")
+            }
+        }.joinToString("; ")
+
+        private fun packetTypeSummary(): String =
+            if (packetTypes.isEmpty()) {
+                "none"
+            } else {
+                packetTypes.groupingBy { it.reportName() }
+                    .eachCount()
+                    .entries
+                    .joinToString(",") { "${it.key}:${it.value}" }
+            }
+
+        private fun SimulatorPacketType.reportName(): String =
+            name.lowercase()
+
+        private companion object {
+            const val MAX_REPORTED_INSTANT_MESSAGES: Int = 3
+        }
+    }
+
     private fun SimulatorCircuit.toKey(): SimulatorCircuitKey =
         SimulatorCircuitKey(
             agentId = agentId,
@@ -517,6 +598,9 @@ internal class ProtocolSimulatorCircuitClient(
         const val NOTICE_ACK_RECEIVE_TIMEOUT_MILLIS: Int = 250
         const val NOTICE_ACK_RECEIVE_PACKET_LIMIT: Int = 128
         const val NOTICE_ACK_RECEIVE_TIMEOUT_LIMIT: Int = 8
+        const val NOTICE_POST_ACK_RECEIVE_TIMEOUT_MILLIS: Int = 250
+        const val NOTICE_POST_ACK_RECEIVE_PACKET_LIMIT: Int = 20
+        const val NOTICE_POST_ACK_RECEIVE_TIMEOUT_LIMIT: Int = 4
         const val RELIABLE_SEND_ATTEMPTS: Int = 3
     }
 }

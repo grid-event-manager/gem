@@ -227,6 +227,40 @@ internal object LibomvPacketCodec {
         return SimulatorNoticeArchiveReply(groupId = groupId, entries = entries)
     }
 
+    fun improvedInstantMessageObservation(payload: ByteArray): SimulatorInstantMessageObservation? {
+        val packet = decodedPacket(payload) ?: return null
+        if (packet.packetId != IMPROVED_INSTANT_MESSAGE) {
+            return null
+        }
+        val reader = LibomvBytePacketReader(packet.decoded, packet.bodyOffset)
+        reader.readUuid() ?: return null
+        reader.readUuid() ?: return null
+        val fromGroup = reader.readBool() ?: return null
+        reader.readUuid() ?: return null
+        reader.readU32() ?: return null
+        reader.readUuid() ?: return null
+        if (!reader.skipBytes(VECTOR3_BYTES)) {
+            return null
+        }
+        val offline = reader.readU8() ?: return null
+        val dialog = reader.readU8() ?: return null
+        reader.readUuid() ?: return null
+        reader.readU32() ?: return null
+        reader.readVariable1String() ?: return null
+        val message = reader.readVariable2String() ?: return null
+        val binaryBucket = reader.readVariable2Bytes() ?: return null
+        if (!reader.isExhausted()) {
+            return null
+        }
+        return SimulatorInstantMessageObservation(
+            dialog = dialog,
+            offline = offline,
+            fromGroup = fromGroup,
+            message = message,
+            binaryBucketBytes = binaryBucket.size,
+        )
+    }
+
     private fun lowPacket(
         packetId: Int,
         sequence: Int,

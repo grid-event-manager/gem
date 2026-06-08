@@ -255,7 +255,10 @@ internal class LiveNoticeSendProofRunner(
                 val failed = dispatch.result.statuses.firstOrNull { it.state != GroupSendState.SENT }
                 if (failed == null) {
                     statusFields["noticeSendStatus"] = "passed"
-                    steps += LiveProofStep.passed("group-notice", "targets=${targetSet.selectedCount}")
+                    steps += LiveProofStep.passed(
+                        "group-notice",
+                        sendNoticeDetail(targetSet, dispatch.result.statuses.mapNotNull { it.detail }),
+                    )
                     true
                 } else {
                     val detail = failed.detail ?: failed.state.name.lowercase()
@@ -267,6 +270,16 @@ internal class LiveNoticeSendProofRunner(
             }
         }
     }
+
+    private fun sendNoticeDetail(
+        targetSet: GroupTargetSet,
+        sentDetails: List<String>,
+    ): String =
+        if (sentDetails.isEmpty()) {
+            "targets=${targetSet.selectedCount}"
+        } else {
+            "targets=${targetSet.selectedCount}; ${sentDetails.joinToString("; ")}"
+        }
 
     private fun noticeFailed(detail: String): Boolean {
         statusFields["noticeSendStatus"] = classifyStatus(detail)

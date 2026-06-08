@@ -30,7 +30,7 @@ class ProtocolNoticeCircuitSourceTest {
 
         val result = source.send(identity(), noticePacket())
 
-        assertEquals(NoticeRuntimeResult.Sent, result)
+        assertIs<NoticeRuntimeResult.Sent>(result)
         assertEquals(SIM_HOST, exchange.endpoint?.host)
         assertEquals(SIM_PORT, exchange.endpoint?.port)
         assertEquals(6, exchange.payloads.size)

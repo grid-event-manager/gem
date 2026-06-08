@@ -11,7 +11,7 @@ internal class ProtocolNoticeCircuitSource(
 ) : NoticeRuntimeSource {
     override fun send(identity: LibomvSessionIdentity, packet: LibomvNoticePacket): NoticeRuntimeResult =
         when (val result = circuitClient.sendNotice(identity.toSimulatorCircuit(), packet)) {
-            SimulatorCircuitSendResult.Sent -> NoticeRuntimeResult.Sent
+            is SimulatorCircuitSendResult.Sent -> NoticeRuntimeResult.Sent(result.redactedDetail)
             is SimulatorCircuitSendResult.Failed -> NoticeRuntimeResult.Failed(result.redactedMessage)
         }
 }

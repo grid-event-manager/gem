@@ -90,7 +90,7 @@ class LibomvNoticeAdapterTest {
         override fun send(identity: LibomvSessionIdentity, packet: LibomvNoticePacket): NoticeRuntimeResult {
             identities += identity
             packets += packet
-            return NoticeRuntimeResult.Sent
+            return NoticeRuntimeResult.Sent()
         }
     }
 

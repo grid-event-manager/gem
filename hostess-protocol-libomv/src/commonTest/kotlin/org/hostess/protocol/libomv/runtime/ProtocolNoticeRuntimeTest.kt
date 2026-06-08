@@ -61,6 +61,24 @@ class ProtocolNoticeRuntimeTest {
     }
 
     @Test
+    fun `sent notice preserves redacted transport detail`() {
+        val session = hostessSession()
+        val source = RecordingNoticeRuntimeSource(
+            NoticeRuntimeResult.Sent("transportAck=passed; instantMessages=1"),
+        )
+
+        val status = runtime(session, source).sendGroupNotice(
+            session = session,
+            group = group(),
+            draft = draft(),
+            attachment = null,
+        )
+
+        assertEquals(GroupSendState.SENT, status.state)
+        assertEquals("transportAck=passed; instantMessages=1", status.detail)
+    }
+
+    @Test
     fun `landmark attachment serializes logged in agent owner and kind`() {
         val source = RecordingNoticeRuntimeSource()
 
@@ -264,7 +282,7 @@ class ProtocolNoticeRuntimeTest {
     )
 
     private class RecordingNoticeRuntimeSource(
-        private val result: NoticeRuntimeResult = NoticeRuntimeResult.Sent,
+        private val result: NoticeRuntimeResult = NoticeRuntimeResult.Sent(),
     ) : NoticeRuntimeSource {
         val identities = mutableListOf<LibomvSessionIdentity>()
         val packets = mutableListOf<LibomvNoticePacket>()
