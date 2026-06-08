@@ -24,6 +24,9 @@ import org.hostess.core.domain.InventoryItemQuery
 import org.hostess.core.domain.NoticeDraft
 import org.hostess.core.domain.SessionId
 import org.hostess.core.ports.AttachmentResolutionResult
+import org.hostess.core.ports.AvatarPort
+import org.hostess.core.ports.AvatarReadinessProof
+import org.hostess.core.ports.AvatarReadinessResult
 import org.hostess.core.ports.ClockPort
 import org.hostess.core.ports.GroupListResult
 import org.hostess.core.ports.GroupNoticeArchiveEntry
@@ -56,6 +59,17 @@ class FakeSessionPort(
     override fun logout(session: HostessSession): SessionLogoutResult {
         logoutRequests += session
         return logoutResult
+    }
+}
+
+class FakeAvatarPort(
+    var result: AvatarReadinessResult = AvatarReadinessResult.Success(AvatarReadinessProof.success()),
+) : AvatarPort {
+    val sessions = mutableListOf<HostessSession>()
+
+    override fun ensureReady(session: HostessSession): AvatarReadinessResult {
+        sessions += session
+        return result
     }
 }
 
