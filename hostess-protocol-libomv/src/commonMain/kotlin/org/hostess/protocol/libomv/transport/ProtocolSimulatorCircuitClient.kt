@@ -298,13 +298,13 @@ internal class ProtocolSimulatorCircuitClient(
                 } catch (ex: IllegalArgumentException) {
                     return SimulatorCircuitSendResult.Failed(REDACTED_SEND_FAILURE)
                 }
-                repeat(RELIABLE_SEND_ATTEMPTS) {
+                repeat(RELIABLE_SEND_ATTEMPTS) { attempt ->
                     try {
-                        packetExchange.send(endpoint, listOf(reliable.bytes))
+                        packetExchange.send(endpoint, listOf(reliable.bytesForAttempt(attempt)))
                     } catch (ex: Exception) {
                         return SimulatorCircuitSendResult.Failed(REDACTED_SEND_FAILURE)
                     }
-                    when (waitForOutgoingAck(endpoint, reliable.sequenceNumber)) {
+                    when (waitForOutgoingAck(circuit, endpoint, reliable.sequenceNumber)) {
                         OutgoingAckResult.ACKED -> return SimulatorCircuitSendResult.Sent
                         OutgoingAckResult.FAILED -> return SimulatorCircuitSendResult.Failed(REDACTED_SEND_FAILURE)
                         OutgoingAckResult.TIMEOUT -> Unit
@@ -315,9 +315,28 @@ internal class ProtocolSimulatorCircuitClient(
         }
     }
 
-    private fun waitForOutgoingAck(endpoint: SimulatorEndpoint, sequenceNumber: Long): OutgoingAckResult {
-        repeat(NOTICE_ACK_RECEIVE_ATTEMPTS) {
-            val inbound = packetExchange.receive(endpoint, NOTICE_ACK_RECEIVE_TIMEOUT_MILLIS) ?: return@repeat
+    private fun waitForOutgoingAck(
+        circuit: SimulatorCircuit,
+        endpoint: SimulatorEndpoint,
+        sequenceNumber: Long,
+    ): OutgoingAckResult {
+        var keepAliveSent = false
+        var observedPackets = 0
+        var receiveTimeouts = 0
+        while (
+            observedPackets < NOTICE_ACK_RECEIVE_PACKET_LIMIT &&
+            receiveTimeouts < NOTICE_ACK_RECEIVE_TIMEOUT_LIMIT
+        ) {
+            val inbound = packetExchange.receive(endpoint, NOTICE_ACK_RECEIVE_TIMEOUT_MILLIS)
+            if (inbound == null) {
+                receiveTimeouts += 1
+                if (!keepAliveSent && !sendAvatarKeepAlive(endpoint, circuit)) {
+                    return OutgoingAckResult.FAILED
+                }
+                keepAliveSent = true
+                continue
+            }
+            observedPackets += 1
             if (!ackReliablePacket(endpoint, inbound.payload)) {
                 return OutgoingAckResult.FAILED
             }
@@ -336,6 +355,14 @@ internal class ProtocolSimulatorCircuitClient(
         }
         return OutgoingAckResult.TIMEOUT
     }
+
+    private fun sendAvatarKeepAlive(endpoint: SimulatorEndpoint, circuit: SimulatorCircuit): Boolean =
+        try {
+            packetExchange.send(endpoint, listOf(LibomvPacketCodec.agentUpdate(circuit, sequence.next())))
+            true
+        } catch (ex: Exception) {
+            false
+        }
 
     private fun waitForPacket(
         endpoint: SimulatorEndpoint,
@@ -437,7 +464,10 @@ internal class ProtocolSimulatorCircuitClient(
     private data class ReliablePayload(
         val sequenceNumber: Long,
         val bytes: ByteArray,
-    )
+    ) {
+        fun bytesForAttempt(attempt: Int): ByteArray =
+            if (attempt == 0) bytes else LibomvPacketCodec.asResent(bytes)
+    }
 
     private enum class OutgoingAckResult {
         ACKED,
@@ -485,7 +515,8 @@ internal class ProtocolSimulatorCircuitClient(
         const val ARCHIVE_RECEIVE_TIMEOUT_MILLIS: Int = 250
         const val ARCHIVE_RECEIVE_ATTEMPTS: Int = 12
         const val NOTICE_ACK_RECEIVE_TIMEOUT_MILLIS: Int = 250
-        const val NOTICE_ACK_RECEIVE_ATTEMPTS: Int = 8
+        const val NOTICE_ACK_RECEIVE_PACKET_LIMIT: Int = 128
+        const val NOTICE_ACK_RECEIVE_TIMEOUT_LIMIT: Int = 8
         const val RELIABLE_SEND_ATTEMPTS: Int = 3
     }
 }

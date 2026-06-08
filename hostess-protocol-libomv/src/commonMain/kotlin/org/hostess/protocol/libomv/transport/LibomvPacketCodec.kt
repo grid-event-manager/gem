@@ -109,6 +109,11 @@ internal object LibomvPacketCodec {
             (payload[4].toLong() and BYTE_MASK_LONG)
     }
 
+    fun asResent(payload: ByteArray): ByteArray =
+        payload.copyOf().also { resent ->
+            resent[0] = (resent[0].toInt() or RESENT_FLAG).toByte()
+        }
+
     fun packetType(payload: ByteArray): SimulatorPacketType =
         when (decodedPacket(payload)?.packetId) {
             REGION_HANDSHAKE -> SimulatorPacketType.REGION_HANDSHAKE
@@ -432,6 +437,7 @@ internal object LibomvPacketCodec {
     private const val TERRAIN_ID_FIELD_COUNT = 8
     private const val TERRAIN_FLOAT_FIELD_COUNT = 8
     private const val APPENDED_ACKS_FLAG = 0x10
+    private const val RESENT_FLAG = 0x20
     private const val RELIABLE_FLAGS = 0x40
     private const val RELIABLE_ZEROCODED_FLAGS = 0xC0
     private const val SELF_APPEARANCE_SUPPORT_FLAG = 4L

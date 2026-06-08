@@ -214,6 +214,45 @@ class ProtocolSimulatorCircuitClientTest {
     }
 
     @Test
+    fun `keeps avatar traffic alive while waiting for delayed notice ack`() {
+        val exchange = RecordingPacketExchange(
+            inboundPayloads = mutableListOf(regionHandshake(), agentMovementComplete(), null, simulatorPacketAck(5)),
+        )
+        val client = ProtocolSimulatorCircuitClient(
+            packetExchange = exchange,
+            sequence = SimulatorPacketSequence(0),
+        )
+
+        val result = client.sendNotice(circuit(), noticePacket())
+
+        assertEquals(SimulatorCircuitSendResult.Sent, result)
+        val payloads = exchange.sentPayloads()
+        assertLowPacket(payloads[5], sequence = 5, packetId = 254, flags = 0xC0)
+        assertHighPacketPrefix(payloads[6], sequence = 6, packetId = 4, flags = 0xC0)
+    }
+
+    @Test
+    fun `drains simulator traffic burst while waiting for notice ack`() {
+        val simulatorTraffic = List(24) { layerData(sequence = 300 + it) }
+        val exchange = RecordingPacketExchange(
+            inboundPayloads = (
+                listOf(regionHandshake(), agentMovementComplete()) +
+                    simulatorTraffic +
+                    simulatorPacketAck(5)
+                ).toMutableList(),
+        )
+        val client = ProtocolSimulatorCircuitClient(
+            packetExchange = exchange,
+            sequence = SimulatorPacketSequence(0),
+        )
+
+        val result = client.sendNotice(circuit(), noticePacket())
+
+        assertEquals(SimulatorCircuitSendResult.Sent, result)
+        assertEquals(1, exchange.sentPayloads().count { packetId(it) == 254 })
+    }
+
+    @Test
     fun `notice send fails when simulator does not acknowledge reliable packet`() {
         val exchange = RecordingPacketExchange(
             inboundPayloads = mutableListOf(regionHandshake(), agentMovementComplete()),
@@ -230,9 +269,9 @@ class ProtocolSimulatorCircuitClientTest {
         assertEquals("protocol simulator send failed", result.redactedMessage)
         val noticePayloads = exchange.sentPayloads().filter { packetId(it) == 254 }
         assertEquals(3, noticePayloads.size)
-        noticePayloads.forEach { payload ->
-            assertLowPacket(payload, sequence = 5, packetId = 254, flags = 0xC0)
-        }
+        assertLowPacket(noticePayloads[0], sequence = 5, packetId = 254, flags = 0xC0)
+        assertLowPacket(noticePayloads[1], sequence = 5, packetId = 254, flags = 0xE0)
+        assertLowPacket(noticePayloads[2], sequence = 5, packetId = 254, flags = 0xE0)
     }
 
     @Test
@@ -533,7 +572,7 @@ class ProtocolSimulatorCircuitClientTest {
     }
 
     private class RecordingPacketExchange(
-        private val inboundPayloads: MutableList<ByteArray> = mutableListOf(),
+        private val inboundPayloads: MutableList<ByteArray?> = mutableListOf(),
         private val failure: Exception? = null,
     ) : SimulatorPacketExchange {
         val sent = mutableListOf<SentDatagram>()
@@ -547,7 +586,7 @@ class ProtocolSimulatorCircuitClientTest {
             if (inboundPayloads.isEmpty()) {
                 null
             } else {
-                SimulatorInboundPacket(endpoint, inboundPayloads.removeAt(0))
+                inboundPayloads.removeAt(0)?.let { SimulatorInboundPacket(endpoint, it) }
             }
 
         fun sentPayloads(): List<ByteArray> = sent.flatMap { it.payloads }
