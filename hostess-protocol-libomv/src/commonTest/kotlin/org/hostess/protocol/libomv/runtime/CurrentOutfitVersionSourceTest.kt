@@ -11,7 +11,7 @@ import kotlin.test.assertIs
 class CurrentOutfitVersionSourceTest {
     @Test
     fun `single current outfit folder version wins over login cof version`() {
-        val result = CurrentOutfitVersionSource.currentVersion(
+        val result = CurrentOutfitVersionSource().currentVersion(
             identity = identity(),
             roots = roots(folder(typeDefault = CurrentOutfitVersionSource.CURRENT_OUTFIT_FOLDER_TYPE, version = 7)),
             appearanceState = LoginAppearanceState(agentAppearanceService = true, cofVersion = 9),
@@ -22,7 +22,7 @@ class CurrentOutfitVersionSourceTest {
 
     @Test
     fun `login cof version is fallback when skeleton has no current outfit version`() {
-        val result = CurrentOutfitVersionSource.currentVersion(
+        val result = CurrentOutfitVersionSource().currentVersion(
             identity = identity(),
             roots = roots(folder(typeDefault = 3, version = 7)),
             appearanceState = LoginAppearanceState(agentAppearanceService = true, cofVersion = 9),
@@ -33,7 +33,7 @@ class CurrentOutfitVersionSourceTest {
 
     @Test
     fun `multiple current outfit folders do not guess and use login fallback`() {
-        val result = CurrentOutfitVersionSource.currentVersion(
+        val result = CurrentOutfitVersionSource().currentVersion(
             identity = identity(),
             roots = roots(
                 folder(typeDefault = CurrentOutfitVersionSource.CURRENT_OUTFIT_FOLDER_TYPE, version = 7),
@@ -47,7 +47,7 @@ class CurrentOutfitVersionSourceTest {
 
     @Test
     fun `absent cof sources return redacted unavailable result`() {
-        val result = CurrentOutfitVersionSource.currentVersion(
+        val result = CurrentOutfitVersionSource().currentVersion(
             identity = identity(),
             roots = roots(folder(typeDefault = CurrentOutfitVersionSource.CURRENT_OUTFIT_FOLDER_TYPE, version = -1)),
             appearanceState = LoginAppearanceState.empty(),

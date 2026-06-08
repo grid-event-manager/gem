@@ -4,8 +4,8 @@ import org.hostess.protocol.libomv.LibomvSessionIdentity
 import org.hostess.protocol.libomv.mapping.LoginAppearanceState
 import org.hostess.protocol.libomv.mapping.LoginInventoryRoots
 
-internal object CurrentOutfitVersionSource {
-    fun currentVersion(
+internal open class CurrentOutfitVersionSource {
+    open fun currentVersion(
         identity: LibomvSessionIdentity,
         roots: LoginInventoryRoots,
         appearanceState: LoginAppearanceState,
@@ -20,7 +20,9 @@ internal object CurrentOutfitVersionSource {
             ?: CurrentOutfitVersionResult.Unavailable("cof version unavailable")
     }
 
-    const val CURRENT_OUTFIT_FOLDER_TYPE: Int = 46
+    companion object {
+        const val CURRENT_OUTFIT_FOLDER_TYPE: Int = 46
+    }
 }
 
 internal sealed interface CurrentOutfitVersionResult {
