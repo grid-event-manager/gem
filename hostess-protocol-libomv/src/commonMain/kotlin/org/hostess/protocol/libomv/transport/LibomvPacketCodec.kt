@@ -217,7 +217,7 @@ internal object LibomvPacketCodec {
         if (!packet.isType(PacketFrequency.LOW, GROUP_NOTICES_LIST_REPLY)) {
             return null
         }
-        val reader = LibomvBytePacketReader(packet.decoded, packet.bodyOffset)
+        val reader = packet.bodyReader() ?: return null
         reader.readUuid() ?: return null
         val groupId = reader.readUuid() ?: return null
         val entryCount = reader.readU8() ?: return null
@@ -249,7 +249,7 @@ internal object LibomvPacketCodec {
         if (!packet.isType(PacketFrequency.LOW, IMPROVED_INSTANT_MESSAGE)) {
             return null
         }
-        val reader = LibomvBytePacketReader(packet.decoded, packet.bodyOffset)
+        val reader = packet.bodyReader() ?: return null
         reader.readUuid() ?: return null
         reader.readUuid() ?: return null
         val fromGroup = reader.readBool() ?: return null
@@ -283,7 +283,7 @@ internal object LibomvPacketCodec {
         if (!packet.isType(PacketFrequency.LOW, ALERT_MESSAGE)) {
             return null
         }
-        val reader = LibomvBytePacketReader(packet.decoded, packet.bodyOffset)
+        val reader = packet.bodyReader() ?: return null
         val message = reader.readVariable1String() ?: return null
         val alertInfoCount = if (reader.isExhausted()) {
             0
@@ -406,7 +406,24 @@ internal object LibomvPacketCodec {
         val decoded: ByteArray,
         val packetId: Int,
         val bodyOffset: Int,
-    )
+    ) {
+        fun bodyReader(): LibomvBytePacketReader? {
+            val endOffset = bodyEndOffset() ?: return null
+            return LibomvBytePacketReader(decoded, bodyOffset, endOffset)
+        }
+
+        private fun bodyEndOffset(): Int? {
+            if ((decoded.firstOrNull()?.toInt()?.and(APPENDED_ACKS_FLAG) ?: 0) == 0) {
+                return decoded.size
+            }
+            val count = decoded.lastOrNull()?.toInt()?.and(BYTE_MASK) ?: return null
+            val ackStart = decoded.size - U8_BYTES - (count * U32_BYTES)
+            if (count == 0 || ackStart < bodyOffset) {
+                return null
+            }
+            return ackStart
+        }
+    }
 
     private fun DecodedPacket.knownName(): String? =
         when (frequency) {

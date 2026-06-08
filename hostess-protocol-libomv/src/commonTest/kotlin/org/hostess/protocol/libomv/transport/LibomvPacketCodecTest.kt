@@ -98,6 +98,21 @@ class LibomvPacketCodecTest {
     }
 
     @Test
+    fun `parses alert message diagnostics with appended packet acks`() {
+        val alert = alertMessage("No permission for 33333333-3333-3333-3333-333333333333", flags = 0x10) +
+            u32BigEndian(6) +
+            byteArrayOf(1)
+
+        val observation = LibomvPacketCodec.alertMessageObservation(alert)
+
+        assertEquals(
+            "No permission for 33333333-3333-3333-3333-333333333333",
+            observation?.message,
+        )
+        assertEquals(1, observation?.alertInfoCount)
+    }
+
+    @Test
     fun `rejects malformed alert message diagnostics`() {
         val malformed = LibomvPacketTestBytes.lowHeader(sequence = 91, packetId = 134, flags = 0)
 
@@ -153,8 +168,8 @@ class LibomvPacketCodecTest {
         (value and 0xFF).toByte(),
     )
 
-    private fun alertMessage(message: String): ByteArray =
-        LibomvPacketTestBytes.lowHeader(sequence = 91, packetId = 134, flags = 0) +
+    private fun alertMessage(message: String, flags: Int = 0): ByteArray =
+        LibomvPacketTestBytes.lowHeader(sequence = 91, packetId = 134, flags = flags) +
             variable1(message) +
             byteArrayOf(1) +
             variable1("detail") +

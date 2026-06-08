@@ -5,6 +5,7 @@ import org.hostess.protocol.libomv.mapping.LibomvUuidCodec
 internal class LibomvBytePacketReader(
     private val bytes: ByteArray,
     private var offset: Int,
+    private val endOffset: Int = bytes.size,
 ) {
     fun readUuid(): String? =
         readBytes(ID_BYTES)?.let(LibomvUuidCodec::canonicalFromPacketBytes)
@@ -45,7 +46,7 @@ internal class LibomvBytePacketReader(
 
     fun skipBytes(size: Int): Boolean = readBytes(size) != null
 
-    fun isExhausted(): Boolean = offset == bytes.size
+    fun isExhausted(): Boolean = offset == endOffset
 
     private fun ByteArray.trimmedStringOrNull(): String? {
         val trimmed = dropLastWhile { it == 0.toByte() }.toByteArray()
@@ -63,7 +64,7 @@ internal class LibomvBytePacketReader(
     }
 
     private fun readBytes(size: Int): ByteArray? {
-        if (size < 0 || offset + size > bytes.size) {
+        if (size < 0 || offset + size > endOffset) {
             return null
         }
         val value = bytes.copyOfRange(offset, offset + size)

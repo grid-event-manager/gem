@@ -93,9 +93,7 @@ class ProtocolNoticeRuntimeTest {
         val packet = source.packets.single()
         assertEquals(AttachmentKind.LANDMARK, packet.attachment?.kind)
         val bucket = packet.binaryBucket.decodeToString()
-        assertTrue(bucket.startsWith("<? llsd/xml ?>\n<llsd>"))
-        assertTrue(bucket.contains("<key>item_id</key><uuid>$ITEM_ID</uuid>"))
-        assertTrue(bucket.contains("<key>owner_id</key><uuid>$AGENT_ID</uuid>"))
+        assertEquals(metaboltAttachmentBucket(), bucket)
     }
 
     @Test
@@ -112,9 +110,7 @@ class ProtocolNoticeRuntimeTest {
         assertEquals(GroupSendState.SENT, status.state)
         val packet = source.packets.single()
         assertEquals(AttachmentKind.TEXTURE, packet.attachment?.kind)
-        assertTrue(packet.binaryBucket.decodeToString().startsWith("<? llsd/xml ?>\n<llsd>"))
-        assertTrue(packet.binaryBucket.decodeToString().contains(ITEM_ID))
-        assertTrue(packet.binaryBucket.decodeToString().contains(AGENT_ID))
+        assertEquals(metaboltAttachmentBucket(), packet.binaryBucket.decodeToString())
     }
 
     @Test
@@ -263,6 +259,12 @@ class ProtocolNoticeRuntimeTest {
         ownerId = AttachmentOwnerId(OWNER_ID),
         kind = kind,
     )
+
+    private fun metaboltAttachmentBucket(): String =
+        "<llsd><map>" +
+            "<key>item_id</key><uuid>$ITEM_ID</uuid>" +
+            "<key>owner_id</key><uuid>$AGENT_ID</uuid>" +
+            "</map></llsd>"
 
     private fun group(
         id: String = GROUP_ID,
