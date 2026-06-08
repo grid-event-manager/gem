@@ -1,15 +1,19 @@
 package org.hostess.protocol.libomv
 
+import org.hostess.core.ports.AvatarPort
 import org.hostess.core.ports.GroupPort
 import org.hostess.core.ports.InventoryPort
 import org.hostess.core.ports.NoticePort
 import org.hostess.core.ports.SessionPort
+import org.hostess.protocol.libomv.runtime.CurrentOutfitVersionSource
 import org.hostess.protocol.libomv.runtime.CurrentGroupsSource
 import org.hostess.protocol.libomv.runtime.DefaultLibomvPlatformAdapterBundle
 import org.hostess.protocol.libomv.runtime.GroupNoticeArchiveSource
 import org.hostess.protocol.libomv.runtime.InventoryRuntimeSource
 import org.hostess.protocol.libomv.runtime.LibomvPlatformAdapterBundle
 import org.hostess.protocol.libomv.runtime.NoticeRuntimeSource
+import org.hostess.protocol.libomv.runtime.ProtocolAvatarAppearanceSource
+import org.hostess.protocol.libomv.runtime.ProtocolAvatarRuntime
 import org.hostess.protocol.libomv.runtime.ProtocolCurrentGroupsSource
 import org.hostess.protocol.libomv.runtime.ProtocolGroupNoticeArchiveSource
 import org.hostess.protocol.libomv.runtime.ProtocolGroupRuntime
@@ -30,6 +34,7 @@ data class LibomvProtocolRuntime(
     val groupPort: GroupPort,
     val inventoryPort: InventoryPort,
     val noticePort: NoticePort,
+    val avatarPort: AvatarPort,
     val clientSession: LibomvClientSession,
     val protocolAvailable: Boolean,
     val loadState: LibomvProtocolLoadState,
@@ -123,12 +128,24 @@ object ProtocolLibomvModule {
         } else {
             null
         }
+        val avatarRuntime = if (runtimeReady && bundle.transportLoad && capabilityProvider != null) {
+            ProtocolAvatarRuntime(
+                clientSession = clientSession,
+                circuitClient = bundle.circuitSender,
+                capabilityUrlProvider = capabilityProvider,
+                currentOutfitVersionSource = CurrentOutfitVersionSource(),
+                appearanceSource = ProtocolAvatarAppearanceSource(bundle.httpClient),
+            )
+        } else {
+            null
+        }
         return runtimeFor(
             clientSession = clientSession,
             groupRuntime = groupRuntime,
             inventoryRuntime = inventoryRuntime,
             loginRuntime = loginRuntime,
             noticeRuntime = noticeRuntime,
+            avatarRuntime = avatarRuntime,
             loadState = LibomvProtocolLoadState(
                 adapterLoad = bundle.adapterLoad,
                 runtimeLoad = bundle.runtimeLoad,
@@ -143,17 +160,20 @@ object ProtocolLibomvModule {
         inventoryRuntime: ProtocolInventoryRuntime?,
         loginRuntime: ProtocolLoginRuntime?,
         noticeRuntime: ProtocolNoticeRuntime?,
+        avatarRuntime: ProtocolAvatarRuntime?,
         loadState: LibomvProtocolLoadState,
     ): LibomvProtocolRuntime {
         val sessionAdapter = LibomvSessionAdapter(clientSession, loginRuntime)
         val groupAdapter = LibomvGroupAdapter(clientSession, groupRuntime)
         val inventoryAdapter = LibomvInventoryAdapter(clientSession, inventoryRuntime)
         val noticeAdapter = LibomvNoticeAdapter(clientSession, noticeRuntime)
+        val avatarAdapter = LibomvAvatarAdapter(avatarRuntime)
         return LibomvProtocolRuntime(
             sessionPort = sessionAdapter,
             groupPort = groupAdapter,
             inventoryPort = inventoryAdapter,
             noticePort = noticeAdapter,
+            avatarPort = avatarAdapter,
             clientSession = clientSession,
             protocolAvailable = clientSession.isProtocolAvailable(),
             loadState = loadState,

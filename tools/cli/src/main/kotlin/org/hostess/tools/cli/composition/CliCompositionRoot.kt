@@ -13,6 +13,9 @@ import org.hostess.core.domain.InventoryItemId
 import org.hostess.core.domain.InventoryItemQuery
 import org.hostess.core.domain.SessionId
 import org.hostess.core.ports.AttachmentResolutionResult
+import org.hostess.core.ports.AvatarPort
+import org.hostess.core.ports.AvatarReadinessProof
+import org.hostess.core.ports.AvatarReadinessResult
 import org.hostess.core.ports.ClockPort
 import org.hostess.core.ports.GroupListResult
 import org.hostess.core.ports.GroupNoticeArchiveEntry
@@ -29,6 +32,7 @@ import org.hostess.core.ports.SimulatorPresenceProof
 import org.hostess.core.ports.SimulatorPresenceProofResult
 import org.hostess.core.ports.SimulatorPresenceProofStatus
 import org.hostess.core.services.AttachmentService
+import org.hostess.core.services.AvatarReadinessService
 import org.hostess.core.services.DefaultRedactionPort
 import org.hostess.core.services.GroupDirectoryService
 import org.hostess.core.services.InventoryDirectoryService
@@ -57,8 +61,10 @@ class CliCompositionRoot(
         val groupPort = FakeProofGroupPort(fakeGroups)
         val inventoryPort = FakeProofInventoryPort()
         val noticePort = FakeProofNoticePort()
+        val avatarPort = FakeProofAvatarPort()
         return CliRuntime(
             sessionService = SessionService(sessionPort, LoginComplianceService(), DefaultRedactionPort),
+            avatarReadinessService = AvatarReadinessService(avatarPort),
             groupDirectoryService = GroupDirectoryService(groupPort),
             inventoryDirectoryService = InventoryDirectoryService(inventoryPort),
             inventorySelectionService = InventorySelectionService(),
@@ -78,6 +84,7 @@ class CliCompositionRoot(
         val protocolRuntime = ProtocolLibomvModule.liveRuntime()
         return CliRuntime(
             sessionService = SessionService(protocolRuntime.sessionPort, LoginComplianceService(), DefaultRedactionPort),
+            avatarReadinessService = AvatarReadinessService(protocolRuntime.avatarPort),
             groupDirectoryService = GroupDirectoryService(protocolRuntime.groupPort),
             inventoryDirectoryService = InventoryDirectoryService(protocolRuntime.inventoryPort),
             inventorySelectionService = InventorySelectionService(),
@@ -104,6 +111,7 @@ class CliCompositionRoot(
 
 data class CliRuntime(
     val sessionService: SessionService,
+    val avatarReadinessService: AvatarReadinessService,
     val groupDirectoryService: GroupDirectoryService,
     val inventoryDirectoryService: InventoryDirectoryService,
     val inventorySelectionService: InventorySelectionService,
@@ -152,6 +160,11 @@ private class FakeProofGroupPort(
                 ),
             ),
         )
+}
+
+private class FakeProofAvatarPort : AvatarPort {
+    override fun ensureReady(session: HostessSession): AvatarReadinessResult =
+        AvatarReadinessResult.Success(AvatarReadinessProof.success())
 }
 
 private class FakeProofInventoryPort : InventoryPort {

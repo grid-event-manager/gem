@@ -29,6 +29,9 @@ import org.hostess.core.domain.InventoryItemQuery
 import org.hostess.core.domain.NoticeDraft
 import org.hostess.core.domain.SessionId
 import org.hostess.core.ports.AttachmentResolutionResult
+import org.hostess.core.ports.AvatarPort
+import org.hostess.core.ports.AvatarReadinessProof
+import org.hostess.core.ports.AvatarReadinessResult
 import org.hostess.core.ports.ClockPort
 import org.hostess.core.ports.GroupListResult
 import org.hostess.core.ports.GroupNoticeArchiveEntry
@@ -46,6 +49,7 @@ import org.hostess.core.ports.SimulatorPresenceProof
 import org.hostess.core.ports.SimulatorPresenceProofResult
 import org.hostess.core.ports.SimulatorPresenceProofStatus
 import org.hostess.core.services.AttachmentService
+import org.hostess.core.services.AvatarReadinessService
 import org.hostess.core.services.GroupDirectoryService
 import org.hostess.core.services.InventoryDirectoryService
 import org.hostess.core.services.InventorySelectionService
@@ -547,6 +551,7 @@ class LiveProofRunnerTest {
     ) {
         fun runtime(): CliRuntime = CliRuntime(
             sessionService = SessionService(sessionPort, LoginComplianceService(), Redactor),
+            avatarReadinessService = AvatarReadinessService(FakeAvatarPort),
             groupDirectoryService = GroupDirectoryService(groupPort),
             inventoryDirectoryService = InventoryDirectoryService(inventoryPort),
             inventorySelectionService = InventorySelectionService(),
@@ -560,6 +565,11 @@ class LiveProofRunnerTest {
             proofReportWriter = ProofReportWriter(),
             protocolAvailable = true,
         )
+    }
+
+    private object FakeAvatarPort : AvatarPort {
+        override fun ensureReady(session: HostessSession): AvatarReadinessResult =
+            AvatarReadinessResult.Success(AvatarReadinessProof.success())
     }
 
     private class RecordingSessionPort(

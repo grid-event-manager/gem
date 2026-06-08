@@ -3,7 +3,14 @@ package org.hostess.tools.cli
 import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertIs
 import kotlin.test.assertTrue
+import org.hostess.core.domain.AccountLabel
+import org.hostess.core.domain.HostessInstant
+import org.hostess.core.domain.HostessSession
+import org.hostess.core.domain.SessionId
+import org.hostess.core.ports.AvatarReadinessProofStatus
+import org.hostess.core.ports.AvatarReadinessResult
 import org.hostess.tools.cli.composition.CliCompositionRoot
 
 class CliCompositionRootTest {
@@ -54,4 +61,34 @@ class CliCompositionRootTest {
             directory.toFile().deleteRecursively()
         }
     }
+
+    @Test
+    fun `fake runtime includes avatar readiness service without enabling fake live proof`() {
+        val runtime = CliCompositionRoot().runtime(CommandMode.FAKE)
+
+        val result = assertIs<AvatarReadinessResult.Success>(
+            runtime.avatarReadinessService.ensureReady(session()),
+        )
+
+        assertEquals(AvatarReadinessProofStatus.PASSED, result.proof.avatarReadinessStatus)
+    }
+
+    @Test
+    fun `live runtime includes avatar readiness service through protocol composition`() {
+        val runtime = CliCompositionRoot().runtime(CommandMode.LIVE)
+
+        val result = assertIs<AvatarReadinessResult.Failure>(
+            runtime.avatarReadinessService.ensureReady(session()),
+        )
+
+        assertEquals(AvatarReadinessProofStatus.RUNTIME_GAP, result.proof.avatarReadinessStatus)
+        assertEquals(AvatarReadinessProofStatus.NOT_RUN, result.proof.simulatorPresenceStatus)
+    }
+
+    private fun session(): HostessSession = HostessSession(
+        sessionId = SessionId("composition-session"),
+        accountLabel = AccountLabel("venue-proof"),
+        startedAt = HostessInstant.EPOCH,
+        isActive = true,
+    )
 }

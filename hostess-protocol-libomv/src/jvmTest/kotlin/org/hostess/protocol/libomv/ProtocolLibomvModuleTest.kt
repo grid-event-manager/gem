@@ -14,12 +14,16 @@ import org.hostess.core.domain.InventoryItemQuery
 import org.hostess.core.domain.NoticeDraft
 import org.hostess.core.domain.SessionId
 import org.hostess.core.domain.TargetSelectionResult
+import org.hostess.core.ports.AvatarReadinessProofStatus
+import org.hostess.core.ports.AvatarReadinessResult
 import org.hostess.core.ports.ClockPort
 import org.hostess.core.ports.CredentialHandle
 import org.hostess.core.ports.GroupListResult
 import org.hostess.core.ports.InventoryItemListResult
 import org.hostess.core.ports.LoginRequest
 import org.hostess.core.ports.SessionLoginResult
+import org.hostess.protocol.libomv.mapping.LoginAppearanceState
+import org.hostess.protocol.libomv.mapping.LoginInventoryFolder
 import org.hostess.protocol.libomv.mapping.LoginKeys
 import org.hostess.protocol.libomv.mapping.LoginInventoryRoots
 import org.hostess.protocol.libomv.runtime.EnvironmentLoginSecretResolver
@@ -60,6 +64,7 @@ class ProtocolLibomvModuleTest {
         assertSame(runtime.clientSession, (runtime.groupPort as LibomvGroupAdapter).clientSession)
         assertSame(runtime.clientSession, (runtime.inventoryPort as LibomvInventoryAdapter).clientSession)
         assertSame(runtime.clientSession, (runtime.noticePort as LibomvNoticeAdapter).clientSession)
+        assertIs<LibomvAvatarAdapter>(runtime.avatarPort)
         assertTrue(runtime.loadState.adapterLoad)
         assertTrue(runtime.loadState.runtimeLoad)
         assertTrue(runtime.loadState.transportLoad)
@@ -223,6 +228,62 @@ class ProtocolLibomvModuleTest {
     }
 
     @Test
+    fun `live runtime avatar adapter reaches protocol avatar runtime source`() {
+        val httpClient = SequencedHttpClient(
+            listOf(
+                seedCapabilitiesBody().encodeToByteArray(),
+                avatarAppearanceSuccessBody().encodeToByteArray(),
+            ),
+        )
+        val packetExchange = RecordingSimulatorPacketExchange(
+            inboundPayloads = mutableListOf(regionHandshake(), agentMovementComplete()),
+        )
+        val runtime = ProtocolLibomvModule.liveRuntime(
+            platformBundle(
+                httpClient = httpClient,
+                circuitSender = ProtocolSimulatorCircuitClient(packetExchange),
+            ),
+        )
+        val session = fakeActiveUuidSession()
+        runtime.clientSession.activate(
+            session = session,
+            agentId = "11111111-1111-1111-1111-111111111111",
+            seedCapability = secureUrl("caps.example", "/seed"),
+            simulatorIp = "203.0.113.8",
+            simulatorPort = 13000,
+            regionHandle = 123456789L,
+            circuitCode = 987654321L,
+            inventoryRoots = LoginInventoryRoots(
+                inventoryRootId = "44444444-4444-4444-4444-444444444444",
+                inventorySkeleton = listOf(
+                    LoginInventoryFolder(
+                        folderId = "55555555-5555-5555-5555-555555555555",
+                        parentId = "44444444-4444-4444-4444-444444444444",
+                        ownerId = "11111111-1111-1111-1111-111111111111",
+                        name = "Current Outfit",
+                        typeDefault = 46,
+                        version = 17,
+                    ),
+                ),
+                libraryRootId = null,
+                libraryOwnerId = null,
+                librarySkeleton = emptyList(),
+            ),
+            appearanceState = LoginAppearanceState(agentAppearanceService = true, cofVersion = 19),
+        )
+
+        val result = assertIs<AvatarReadinessResult.Success>(runtime.avatarPort.ensureReady(session))
+
+        assertEquals(AvatarReadinessProofStatus.PASSED, result.proof.serverAppearanceStatus)
+        assertEquals(2, httpClient.requests.size)
+        assertEquals(secureUrl("caps.example", "/seed"), httpClient.requests[0].url)
+        assertEquals(secureUrl("caps.example", "/appearance"), httpClient.requests[1].url)
+        val body = assertIs<ProtocolHttpBody.TextBody>(httpClient.requests[1].body).content
+        assertContains(body, "<key>cof_version</key><integer>17</integer>")
+        assertFalse(body.contains("11111111-1111-1111-1111-111111111111"))
+    }
+
+    @Test
     fun `injected bundle booleans drive load state and fail closed`() {
         val runtimeBlocked = ProtocolLibomvModule.liveRuntime(
             platformBundle(
@@ -236,6 +297,11 @@ class ProtocolLibomvModuleTest {
         assertFalse(runtimeBlocked.loadState.transportLoad)
         val login = assertIs<SessionLoginResult.Failure>(runtimeBlocked.sessionPort.login(loginRequest()))
         assertEquals("protocol runtime unavailable", login.failure.redactedMessage)
+        val avatarBlocked = assertIs<AvatarReadinessResult.Failure>(
+            runtimeBlocked.avatarPort.ensureReady(fakeActiveUuidSession()),
+        )
+        assertEquals(AvatarReadinessProofStatus.RUNTIME_GAP, avatarBlocked.proof.avatarReadinessStatus)
+        assertEquals(AvatarReadinessProofStatus.NOT_RUN, avatarBlocked.proof.simulatorPresenceStatus)
 
         val transportBlocked = ProtocolLibomvModule.liveRuntime(platformBundle(transportLoad = false))
         val session = fakeActiveUuidSession()
@@ -254,6 +320,10 @@ class ProtocolLibomvModuleTest {
         assertTrue(transportBlocked.loadState.runtimeLoad)
         assertFalse(transportBlocked.loadState.transportLoad)
         assertEquals("current groups unavailable", groups.failure.redactedMessage)
+        val avatarTransportBlocked = assertIs<AvatarReadinessResult.Failure>(
+            transportBlocked.avatarPort.ensureReady(session),
+        )
+        assertEquals(AvatarReadinessProofStatus.RUNTIME_GAP, avatarTransportBlocked.proof.avatarReadinessStatus)
     }
 
     private fun loginRequest(): LoginRequest = LoginRequest(
@@ -350,6 +420,15 @@ class ProtocolLibomvModuleTest {
           <map>
             <key>EventQueueGet</key><uri>${secureUrl("caps.example", "/event")}</uri>
             <key>FetchInventoryDescendents2</key><uri>${secureUrl("caps.example", "/fetch-descendents")}</uri>
+            <key>UpdateAvatarAppearance</key><uri>${secureUrl("caps.example", "/appearance")}</uri>
+          </map>
+        </llsd>
+    """.trimIndent()
+
+    private fun avatarAppearanceSuccessBody(): String = """
+        <llsd>
+          <map>
+            <key>success</key><boolean>true</boolean>
           </map>
         </llsd>
     """.trimIndent()
@@ -461,12 +540,8 @@ class ProtocolLibomvModuleTest {
         fun secureUrl(host: String, path: String): String = "https" + "://$host$path"
 
         fun regionHandshake(): ByteArray =
-            org.hostess.protocol.libomv.transport.LibomvZerocodeCodec.encode(
-                org.hostess.protocol.libomv.transport.LibomvPacketTestBytes.lowHeader(
-                    sequence = 101,
-                    packetId = 148,
-                    flags = 0xC0,
-                ),
+            org.hostess.protocol.libomv.transport.LibomvPacketTestBytes.regionHandshakeWithRegionProtocols(
+                regionProtocols = 1L,
             )
 
         fun agentMovementComplete(): ByteArray =
