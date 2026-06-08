@@ -522,7 +522,7 @@ internal class ProtocolSimulatorCircuitClient(
 
         fun record(payload: ByteArray) {
             val type = LibomvPacketCodec.packetType(payload)
-            packets += SimulatorPacketObservation(type, LibomvPacketCodec.decodedPacketId(payload))
+            packets += SimulatorPacketObservation(type, LibomvPacketCodec.decodedPacketLabel(payload))
             if (type == SimulatorPacketType.IMPROVED_INSTANT_MESSAGE) {
                 LibomvPacketCodec.improvedInstantMessageObservation(payload)?.let(instantMessages::add)
             }
@@ -550,11 +550,11 @@ internal class ProtocolSimulatorCircuitClient(
 
         private data class SimulatorPacketObservation(
             val type: SimulatorPacketType,
-            val packetId: Int?,
+            val packetLabel: String?,
         ) {
             fun reportName(): String =
-                if (type == SimulatorPacketType.UNKNOWN && packetId != null) {
-                    "unknown_$packetId"
+                if (type == SimulatorPacketType.UNKNOWN && packetLabel != null) {
+                    "unknown_$packetLabel"
                 } else {
                     type.name.lowercase()
                 }

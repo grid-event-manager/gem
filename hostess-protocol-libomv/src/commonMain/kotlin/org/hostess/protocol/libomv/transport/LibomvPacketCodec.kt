@@ -115,22 +115,31 @@ internal object LibomvPacketCodec {
         }
 
     fun packetType(payload: ByteArray): SimulatorPacketType =
-        when (decodedPacket(payload)?.packetId) {
-            REGION_HANDSHAKE -> SimulatorPacketType.REGION_HANDSHAKE
-            START_PING_CHECK -> SimulatorPacketType.START_PING_CHECK
-            AGENT_MOVEMENT_COMPLETE -> SimulatorPacketType.AGENT_MOVEMENT_COMPLETE
-            GROUP_NOTICES_LIST_REPLY -> SimulatorPacketType.GROUP_NOTICES_LIST_REPLY
-            GROUP_NOTICE_REQUESTED -> SimulatorPacketType.GROUP_NOTICE_REQUESTED
-            IMPROVED_INSTANT_MESSAGE -> SimulatorPacketType.IMPROVED_INSTANT_MESSAGE
-            else -> SimulatorPacketType.UNKNOWN
+        when (val packet = decodedPacket(payload)) {
+            null -> SimulatorPacketType.UNKNOWN
+            else -> when {
+                packet.isType(PacketFrequency.LOW, REGION_HANDSHAKE) -> SimulatorPacketType.REGION_HANDSHAKE
+                packet.isType(PacketFrequency.HIGH, START_PING_CHECK) -> SimulatorPacketType.START_PING_CHECK
+                packet.isType(PacketFrequency.LOW, AGENT_MOVEMENT_COMPLETE) -> SimulatorPacketType.AGENT_MOVEMENT_COMPLETE
+                packet.isType(PacketFrequency.LOW, GROUP_NOTICES_LIST_REPLY) -> SimulatorPacketType.GROUP_NOTICES_LIST_REPLY
+                packet.isType(PacketFrequency.LOW, GROUP_NOTICE_REQUESTED) -> SimulatorPacketType.GROUP_NOTICE_REQUESTED
+                packet.isType(PacketFrequency.LOW, IMPROVED_INSTANT_MESSAGE) -> SimulatorPacketType.IMPROVED_INSTANT_MESSAGE
+                else -> SimulatorPacketType.UNKNOWN
+            }
         }
+
+    private fun DecodedPacket.isType(frequency: PacketFrequency, packetId: Int): Boolean =
+        this.frequency == frequency && this.packetId == packetId
 
     fun decodedPacketId(payload: ByteArray): Int? =
         decodedPacket(payload)?.packetId
 
+    fun decodedPacketLabel(payload: ByteArray): String? =
+        decodedPacket(payload)?.let { "${it.frequency.label}_${it.packetId}" }
+
     fun regionHandshakeInfo(payload: ByteArray): RegionHandshakeInfo? {
         val packet = decodedPacket(payload) ?: return null
-        if (packet.packetId != REGION_HANDSHAKE) {
+        if (!packet.isType(PacketFrequency.LOW, REGION_HANDSHAKE)) {
             return null
         }
         val reader = RegionHandshakeBodyReader(packet.decoded, packet.bodyOffset)
@@ -192,7 +201,7 @@ internal object LibomvPacketCodec {
 
     fun startPingId(payload: ByteArray): Int? {
         val packet = decodedPacket(payload) ?: return null
-        if (packet.packetId != START_PING_CHECK || packet.decoded.size <= packet.bodyOffset) {
+        if (!packet.isType(PacketFrequency.HIGH, START_PING_CHECK) || packet.decoded.size <= packet.bodyOffset) {
             return null
         }
         return packet.decoded[packet.bodyOffset].toInt() and BYTE_MASK
@@ -200,7 +209,7 @@ internal object LibomvPacketCodec {
 
     fun groupNoticesListReply(payload: ByteArray): SimulatorNoticeArchiveReply? {
         val packet = decodedPacket(payload) ?: return null
-        if (packet.packetId != GROUP_NOTICES_LIST_REPLY) {
+        if (!packet.isType(PacketFrequency.LOW, GROUP_NOTICES_LIST_REPLY)) {
             return null
         }
         val reader = LibomvBytePacketReader(packet.decoded, packet.bodyOffset)
@@ -232,7 +241,7 @@ internal object LibomvPacketCodec {
 
     fun improvedInstantMessageObservation(payload: ByteArray): SimulatorInstantMessageObservation? {
         val packet = decodedPacket(payload) ?: return null
-        if (packet.packetId != IMPROVED_INSTANT_MESSAGE) {
+        if (!packet.isType(PacketFrequency.LOW, IMPROVED_INSTANT_MESSAGE)) {
             return null
         }
         val reader = LibomvBytePacketReader(packet.decoded, packet.bodyOffset)
@@ -338,13 +347,22 @@ internal object LibomvPacketCodec {
             decoded[markerOffset] == LOW_FREQUENCY_MARKER.toByte() &&
                 decoded.size >= markerOffset + LOW_PACKET_ID_BYTES &&
                 decoded[markerOffset + 1] == LOW_FREQUENCY_MARKER.toByte() -> DecodedPacket(
+                    frequency = PacketFrequency.LOW,
                     decoded = decoded,
                     packetId = ((decoded[markerOffset + 2].toInt() and BYTE_MASK) shl 8) +
                         (decoded[markerOffset + 3].toInt() and BYTE_MASK),
                     bodyOffset = markerOffset + LOW_PACKET_ID_BYTES,
                 )
+            decoded[markerOffset] == LOW_FREQUENCY_MARKER.toByte() &&
+                decoded.size >= markerOffset + MEDIUM_PACKET_ID_BYTES -> DecodedPacket(
+                    frequency = PacketFrequency.MEDIUM,
+                    decoded = decoded,
+                    packetId = decoded[markerOffset + 1].toInt() and BYTE_MASK,
+                    bodyOffset = markerOffset + MEDIUM_PACKET_ID_BYTES,
+                )
             decoded[markerOffset] == LOW_FREQUENCY_MARKER.toByte() -> null
             else -> DecodedPacket(
+                frequency = PacketFrequency.HIGH,
                 decoded = decoded,
                 packetId = decoded[markerOffset].toInt() and BYTE_MASK,
                 bodyOffset = markerOffset + HIGH_PACKET_ID_BYTES,
@@ -353,10 +371,17 @@ internal object LibomvPacketCodec {
     }
 
     private data class DecodedPacket(
+        val frequency: PacketFrequency,
         val decoded: ByteArray,
         val packetId: Int,
         val bodyOffset: Int,
     )
+
+    private enum class PacketFrequency(val label: String) {
+        HIGH("high"),
+        MEDIUM("medium"),
+        LOW("low"),
+    }
 
     private class RegionHandshakeBodyReader(
         private val bytes: ByteArray,
@@ -452,6 +477,7 @@ internal object LibomvPacketCodec {
     private const val FIXED_PACKET_ID_BYTES = 4
     private const val EXTRA_BYTES_OFFSET = 5
     private const val LOW_PACKET_ID_BYTES = 4
+    private const val MEDIUM_PACKET_ID_BYTES = 2
     private const val HIGH_PACKET_ID_BYTES = 1
     private const val ID_BYTES = 16
     private const val U32_BYTES = 4

@@ -55,6 +55,27 @@ class LibomvPacketCodecTest {
     }
 
     @Test
+    fun `reports medium frequency packet labels`() {
+        val packet = LibomvPacketTestBytes.mediumHeader(sequence = 88, packetId = 7) + byteArrayOf(1, 2, 3)
+
+        assertEquals(SimulatorPacketType.UNKNOWN, LibomvPacketCodec.packetType(packet))
+        assertEquals(7, LibomvPacketCodec.decodedPacketId(packet))
+        assertEquals("medium_7", LibomvPacketCodec.decodedPacketLabel(packet))
+    }
+
+    @Test
+    fun `keeps low and high packet ids in their own frequency families`() {
+        val highStartPing = LibomvPacketTestBytes.highHeader(sequence = 89, packetId = 1) + byteArrayOf(3)
+        val lowTestMessage = LibomvPacketTestBytes.lowHeader(sequence = 90, packetId = 1, flags = 0) +
+            byteArrayOf(3)
+
+        assertEquals(SimulatorPacketType.START_PING_CHECK, LibomvPacketCodec.packetType(highStartPing))
+        assertEquals(SimulatorPacketType.UNKNOWN, LibomvPacketCodec.packetType(lowTestMessage))
+        assertEquals("high_1", LibomvPacketCodec.decodedPacketLabel(highStartPing))
+        assertEquals("low_1", LibomvPacketCodec.decodedPacketLabel(lowTestMessage))
+    }
+
+    @Test
     fun `regionHandshakeInfo detects true AgentAppearanceService fixture`() {
         val info = LibomvPacketCodec.regionHandshakeInfo(
             LibomvPacketTestBytes.regionHandshakeWithRegionProtocols(regionProtocols = 1L),
