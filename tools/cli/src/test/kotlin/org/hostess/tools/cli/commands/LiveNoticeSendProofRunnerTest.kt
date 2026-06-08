@@ -62,6 +62,7 @@ import org.hostess.core.services.TargetSelectionService
 import org.hostess.tools.cli.CommandResult
 import org.hostess.tools.cli.RecordingCliOutput
 import org.hostess.tools.cli.composition.CliRuntime
+import org.hostess.tools.cli.composition.LoginStartLocationProbe
 import org.hostess.tools.cli.report.ProofReportWriter
 
 class LiveNoticeSendProofRunnerTest {
@@ -109,10 +110,13 @@ class LiveNoticeSendProofRunnerTest {
             assertContains(report, "\"noticeArchiveTargetCount\": \"2\"")
             assertContains(report, "\"noticeArchiveMatchedTargetCount\": \"2\"")
             assertContains(report, "\"existingAttachmentDisplayName\": \"Venue Landmark\"")
+            assertContains(report, "\"loginStartLocationStatus\": \"passed\"")
+            assertContains(report, "\"loginStartLocation\": \"uri:London City&76&174&23\"")
             assertStepOrder(
                 report,
                 listOf(
                     "validate-inputs",
+                    "login-start-location",
                     "login",
                     "avatar-readiness",
                     "current-groups",
@@ -208,6 +212,27 @@ class LiveNoticeSendProofRunnerTest {
             assertEquals(0, ports.groupPort.currentGroupsCalls)
             assertEquals(0, ports.inventoryPort.listQueries.size)
             assertEquals(0, ports.inventoryPort.resolveRequests)
+            assertEquals(0, ports.noticePort.groups.size)
+        }
+    }
+
+    @Test
+    fun `second life full proof blocks before login when start location is not London City`() {
+        withReport { reportPath ->
+            val ports = Ports(loginStartLocation = "last")
+
+            val exit = runner(ports.runtime(), reportPath, inputs()).run()
+
+            val report = reportPath.readText()
+            assertEquals(CommandResult.UNAVAILABLE, exit)
+            assertContains(report, "\"status\": \"blocked\"")
+            assertContains(report, "\"loginStartLocationStatus\": \"blocked\"")
+            assertContains(report, "\"loginStartLocation\": \"last\"")
+            assertContains(report, "Agni proof start location uncontrolled")
+            assertContains(report, "\"loginStatus\": \"not_run\"")
+            assertEquals(0, ports.sessionPort.loginCalls)
+            assertEquals(0, ports.sessionPort.logoutCalls)
+            assertEquals(0, ports.groupPort.currentGroupsCalls)
             assertEquals(0, ports.noticePort.groups.size)
         }
     }
@@ -526,6 +551,7 @@ class LiveNoticeSendProofRunnerTest {
         val noticePort: RecordingNoticePort = RecordingNoticePort(),
         val avatarPort: RecordingAvatarPort = RecordingAvatarPort(),
         private val clock: RecordingClockPort = RecordingClockPort(),
+        private val loginStartLocation: String? = "uri:London City&76&174&23",
     ) {
         fun runtime(): CliRuntime = CliRuntime(
             sessionService = SessionService(sessionPort, LoginComplianceService(), Redactor),
@@ -542,6 +568,7 @@ class LiveNoticeSendProofRunnerTest {
             ),
             proofReportWriter = ProofReportWriter(),
             protocolAvailable = true,
+            loginStartLocationProbe = LoginStartLocationProbe { _ -> loginStartLocation },
         )
     }
 

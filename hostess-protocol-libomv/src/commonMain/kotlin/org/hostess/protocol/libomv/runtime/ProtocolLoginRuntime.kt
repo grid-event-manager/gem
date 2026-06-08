@@ -153,6 +153,18 @@ fun interface LoginSecretResolver {
     }
 }
 
+class ProtocolLoginStartLocationProbe(
+    private val secretResolver: LoginSecretResolver,
+) {
+    fun startLocation(handle: CredentialHandle): String? =
+        secretResolver.resolve(handle)?.startLocation
+
+    companion object {
+        fun unavailable(): ProtocolLoginStartLocationProbe =
+            ProtocolLoginStartLocationProbe(LoginSecretResolver.unavailable())
+    }
+}
+
 data class LoginSecret(
     val loginUri: String,
     val firstName: String,

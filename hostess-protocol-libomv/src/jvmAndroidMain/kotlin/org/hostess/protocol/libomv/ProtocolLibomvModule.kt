@@ -19,6 +19,7 @@ import org.hostess.protocol.libomv.runtime.ProtocolGroupNoticeArchiveSource
 import org.hostess.protocol.libomv.runtime.ProtocolGroupRuntime
 import org.hostess.protocol.libomv.runtime.ProtocolInventoryHttpSource
 import org.hostess.protocol.libomv.runtime.ProtocolInventoryRuntime
+import org.hostess.protocol.libomv.runtime.ProtocolLoginStartLocationProbe
 import org.hostess.protocol.libomv.runtime.ProtocolLoginRuntime
 import org.hostess.protocol.libomv.runtime.ProtocolNoticeCircuitSource
 import org.hostess.protocol.libomv.runtime.ProtocolNoticeRuntime
@@ -35,6 +36,7 @@ data class LibomvProtocolRuntime(
     val inventoryPort: InventoryPort,
     val noticePort: NoticePort,
     val avatarPort: AvatarPort,
+    val loginStartLocationProbe: ProtocolLoginStartLocationProbe,
     val clientSession: LibomvClientSession,
     val protocolAvailable: Boolean,
     val loadState: LibomvProtocolLoadState,
@@ -146,6 +148,11 @@ object ProtocolLibomvModule {
             loginRuntime = loginRuntime,
             noticeRuntime = noticeRuntime,
             avatarRuntime = avatarRuntime,
+            loginStartLocationProbe = if (runtimeReady) {
+                ProtocolLoginStartLocationProbe(bundle.secretResolver)
+            } else {
+                ProtocolLoginStartLocationProbe.unavailable()
+            },
             loadState = LibomvProtocolLoadState(
                 adapterLoad = bundle.adapterLoad,
                 runtimeLoad = bundle.runtimeLoad,
@@ -161,6 +168,7 @@ object ProtocolLibomvModule {
         loginRuntime: ProtocolLoginRuntime?,
         noticeRuntime: ProtocolNoticeRuntime?,
         avatarRuntime: ProtocolAvatarRuntime?,
+        loginStartLocationProbe: ProtocolLoginStartLocationProbe,
         loadState: LibomvProtocolLoadState,
     ): LibomvProtocolRuntime {
         val sessionAdapter = LibomvSessionAdapter(clientSession, loginRuntime)
@@ -174,6 +182,7 @@ object ProtocolLibomvModule {
             inventoryPort = inventoryAdapter,
             noticePort = noticeAdapter,
             avatarPort = avatarAdapter,
+            loginStartLocationProbe = loginStartLocationProbe,
             clientSession = clientSession,
             protocolAvailable = clientSession.isProtocolAvailable(),
             loadState = loadState,

@@ -655,7 +655,7 @@ class LiveProofCommandTest {
     }
 
     @Test
-    fun `second life full proof with operator observation reaches shared runtime`() {
+    fun `second life full proof with operator observation blocks when start location is uncontrolled`() {
         val directory = Files.createTempDirectory("hostess-live-proof-operator-ready")
         try {
             val reportPath = directory.resolve("live-proof.json")
@@ -694,10 +694,11 @@ class LiveProofCommandTest {
 
             val report = reportPath.readText()
             assertEquals(3, exitCode)
-            assertTrue(output.lines.any { it == "live-proof live blocked: login blocked" })
+            assertTrue(output.lines.any { it == "live-proof live blocked: Agni proof start location uncontrolled" })
             assertContains(report, "\"status\": \"blocked\"")
             assertContains(report, "\"loginComplianceStatus\": \"passed\"")
-            assertContains(report, "\"loginStatus\": \"blocked\"")
+            assertContains(report, "\"loginStartLocationStatus\": \"blocked\"")
+            assertContains(report, "\"loginStatus\": \"not_run\"")
             assertContains(report, "\"noticeSendStatus\": \"not_run\"")
             assertContains(report, "\"operatorReceiptStatus\": \"pending\"")
             assertContains(report, "\"operatorObservationReady\": \"true\"")

@@ -141,6 +141,21 @@ class ProtocolLibomvModuleTest {
     }
 
     @Test
+    fun `live runtime start location probe uses shared login resolver`() {
+        val resolver = EnvironmentLoginSecretResolver { name ->
+            when (name) {
+                "HOSTESS_SL_SECRET" -> envSecretJson(startLocation = "uri:London City&76&174&23")
+                else -> null
+            }
+        }
+        val runtime = ProtocolLibomvModule.liveRuntime(platformBundle(secretResolver = resolver))
+
+        val startLocation = runtime.loginStartLocationProbe.startLocation(CredentialHandle("HOSTESS_SL_SECRET"))
+
+        assertEquals("uri:London City&76&174&23", startLocation)
+    }
+
+    @Test
     fun `live runtime notice adapter reaches protocol runtime source`() {
         val packetExchange = RecordingSimulatorPacketExchange(
             inboundPayloads = mutableListOf(regionHandshake(), agentMovementComplete(), simulatorPacketAck(5)),
@@ -394,13 +409,13 @@ class ProtocolLibomvModuleTest {
         }
     }
 
-    private fun envSecretJson(): String = """
+    private fun envSecretJson(startLocation: String = "last"): String = """
         {
           "loginUri": "${secureUrl("login.example", "/cgi-bin/login.cgi")}",
           "firstName": "Venue",
           "lastName": "Host",
           "sharedSecret": "secret12",
-          "startLocation": "last"
+          "startLocation": "$startLocation"
         }
     """.trimIndent()
 

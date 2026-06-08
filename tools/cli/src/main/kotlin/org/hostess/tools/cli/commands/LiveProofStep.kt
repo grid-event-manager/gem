@@ -14,6 +14,7 @@ internal data class LiveProofStep(
     companion object {
         private val orderedSteps = listOf(
             "validate-inputs",
+            "login-start-location",
             "login",
             "avatar-readiness",
             "current-groups",
@@ -28,6 +29,7 @@ internal data class LiveProofStep(
         )
         val statusFieldNames = listOf(
             "credentialStatus",
+            "loginStartLocationStatus",
             "loginStatus",
             "avatarReadinessStatus",
             "simulatorPresenceStatus",

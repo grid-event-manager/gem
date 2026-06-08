@@ -36,6 +36,7 @@ internal class LiveNoticeSendProofRunner(
 ) {
     private val steps = mutableListOf<LiveProofStep>()
     private val statusFields = LiveProofStep.statusFields().toMutableMap()
+    private val reportInputs = inputs.toReportInputs(CommandMode.LIVE).toMutableMap()
     private var cleanupStatus = "not_applicable"
     private var terminalFailure = false
 
@@ -48,6 +49,7 @@ internal class LiveNoticeSendProofRunner(
             return finish(ProofReportStatus.BLOCKED, detail)
         }
         steps += LiveProofStep.passed("validate-inputs")
+        statusFields += inputs.loginComplianceStatusFields()
         if (!operatorObservationReady()) {
             val detail = "operator observation unavailable"
             statusFields["operatorReceiptStatus"] = "blocked"
@@ -58,6 +60,9 @@ internal class LiveNoticeSendProofRunner(
             "pending"
         } else {
             "not_applicable"
+        }
+        if (!loginStartLocation()) {
+            return finish(ProofReportStatus.BLOCKED, "Agni proof start location uncontrolled")
         }
 
         val session = login() ?: return finish(ProofReportStatus.BLOCKED, "login blocked")
@@ -84,6 +89,37 @@ internal class LiveNoticeSendProofRunner(
 
     private fun operatorObservationReady(): Boolean =
         !inputs.requiresOperatorObservation() || inputs.operatorObservationReady
+
+    private fun loginStartLocation(): Boolean {
+        if (!inputs.requiresOperatorObservation()) {
+            statusFields["loginStartLocationStatus"] = "not_applicable"
+            return true
+        }
+        val startLocation = runtime.loginStartLocationProbe.startLocation(
+            CredentialHandle(inputs.credentialHandle.orEmpty()),
+        )
+        if (startLocation.isNullOrBlank()) {
+            val detail = "Agni proof start location unavailable"
+            statusFields["credentialStatus"] = "blocked"
+            statusFields["loginStartLocationStatus"] = "blocked"
+            steps += LiveProofStep("login-start-location", "blocked", detail)
+            markNotRunUntilLogout(detail, "login")
+            return false
+        }
+        val normalized = startLocation.trim()
+        reportInputs["loginStartLocation"] = normalized
+        return if (normalized == REQUIRED_AGNI_START_LOCATION) {
+            statusFields["loginStartLocationStatus"] = "passed"
+            steps += LiveProofStep.passed("login-start-location", "start=$REQUIRED_AGNI_START_LOCATION")
+            true
+        } else {
+            val detail = "Agni proof start location uncontrolled"
+            statusFields["loginStartLocationStatus"] = "blocked"
+            steps += LiveProofStep("login-start-location", "blocked", detail)
+            markNotRunUntilLogout(detail, "login")
+            false
+        }
+    }
 
     private fun login(): HostessSession? {
         val loginRequest = LoginRequest(
@@ -365,7 +401,7 @@ internal class LiveNoticeSendProofRunner(
             mode = CommandMode.LIVE.label(),
             status = status,
             statusFields = statusFields,
-            inputs = inputs.toReportInputs(CommandMode.LIVE),
+            inputs = reportInputs,
             results = steps.map(LiveProofStep::toReportMap),
             cleanupStatus = cleanupStatus,
             blockedReason = reason.takeIf { status == ProofReportStatus.BLOCKED },
@@ -376,5 +412,6 @@ internal class LiveNoticeSendProofRunner(
 
     private companion object {
         val FORBIDDEN_TARGET: Regex = Regex("^(Omnivrz|Omniverse)$", RegexOption.IGNORE_CASE)
+        const val REQUIRED_AGNI_START_LOCATION: String = "uri:London City&76&174&23"
     }
 }

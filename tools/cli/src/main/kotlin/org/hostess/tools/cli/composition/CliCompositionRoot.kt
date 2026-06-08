@@ -17,6 +17,7 @@ import org.hostess.core.ports.AvatarPort
 import org.hostess.core.ports.AvatarReadinessProof
 import org.hostess.core.ports.AvatarReadinessResult
 import org.hostess.core.ports.ClockPort
+import org.hostess.core.ports.CredentialHandle
 import org.hostess.core.ports.GroupListResult
 import org.hostess.core.ports.GroupNoticeArchiveEntry
 import org.hostess.core.ports.GroupNoticeArchiveResult
@@ -97,6 +98,9 @@ class CliCompositionRoot(
             ),
             proofReportWriter = ProofReportWriter(),
             protocolAvailable = protocolRuntime.protocolAvailable,
+            loginStartLocationProbe = LoginStartLocationProbe { handle ->
+                protocolRuntime.loginStartLocationProbe.startLocation(handle)
+            },
         )
     }
 
@@ -121,7 +125,16 @@ data class CliRuntime(
     val noticeDispatchService: NoticeDispatchService,
     val proofReportWriter: ProofReportWriter,
     val protocolAvailable: Boolean,
+    val loginStartLocationProbe: LoginStartLocationProbe = LoginStartLocationProbe.unavailable(),
 )
+
+fun interface LoginStartLocationProbe {
+    fun startLocation(handle: CredentialHandle): String?
+
+    companion object {
+        fun unavailable(): LoginStartLocationProbe = LoginStartLocationProbe { null }
+    }
+}
 
 private class FakeProofSessionPort(
     private val session: HostessSession,
