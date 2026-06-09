@@ -23,6 +23,8 @@ local.properties
 *.jks
 *.keystore
 dist/
+apps/*/bin/
+tools/*/bin/
 
 # Internal project/process material belongs in the private sibling repo.
 /reference/
