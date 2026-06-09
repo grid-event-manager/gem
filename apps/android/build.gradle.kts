@@ -24,6 +24,7 @@ android {
 dependencies {
     implementation(project(":hostess-core"))
     implementation(project(":hostess-protocol-libomv"))
+    androidTestImplementation(project(":hostess-credential-vault"))
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.runner)
     testImplementation(kotlin("test-junit"))

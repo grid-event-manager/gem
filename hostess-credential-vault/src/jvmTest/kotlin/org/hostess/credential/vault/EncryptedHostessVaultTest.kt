@@ -47,8 +47,8 @@ class EncryptedHostessVaultTest {
         )
         val listed = assertIs<AccountProfileStoreListResult.Listed>(service.listProfiles())
         assertEquals(listOf(added.profile), listed.profiles)
-        assertEncryptedFileDoesNotContain(vaultPath, "venue-password")
-        assertEncryptedFileDoesNotContain(vaultPath, "jackraybold resident")
+        assertVaultFileDoesNotContain(vaultPath, "venue-password")
+        assertVaultFileDoesNotContain(vaultPath, "jackraybold resident")
 
         assertEquals(
             CredentialServiceUpdatePasswordResult.Updated,
@@ -58,7 +58,7 @@ class EncryptedHostessVaultTest {
             ready.credentialVault.resolve(added.profile.credentialHandle),
         )
         assertEquals("changed-password", updated.material.sharedSecret.revealForLogin())
-        assertEncryptedFileDoesNotContain(vaultPath, "changed-password")
+        assertVaultFileDoesNotContain(vaultPath, "changed-password")
 
         assertIs<CredentialServiceDeleteResult.Deleted>(service.deleteProfiles(setOf(added.profile.profileId)))
         val afterDelete = assertIs<AccountProfileStoreListResult.Listed>(service.listProfiles())
@@ -166,7 +166,7 @@ class EncryptedHostessVaultTest {
     private fun loginName(input: String): SecondLifeLoginName =
         assertIs<SecondLifeLoginNameResult.Valid>(SecondLifeLoginName.fromUserInput(input)).loginName
 
-    private fun assertEncryptedFileDoesNotContain(
+    private fun assertVaultFileDoesNotContain(
         vaultPath: Path,
         value: String,
     ) {

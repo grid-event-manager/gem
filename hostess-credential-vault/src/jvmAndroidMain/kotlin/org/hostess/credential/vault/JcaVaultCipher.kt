@@ -15,11 +15,18 @@ class JcaVaultCipher(
         val jcaKey = key as? JcaVaultKeyMaterial
             ?: return JcaVaultCipherEncryptResult.CryptoFailed("unsupported_key_material")
         return try {
-            val nonce = ByteArray(NONCE_BYTES)
-            secureRandom.nextBytes(nonce)
-            val header = VaultEnvelope.header(nonce)
             val cipher = Cipher.getInstance(ALGORITHM)
-            cipher.init(Cipher.ENCRYPT_MODE, jcaKey.secretKey, GCMParameterSpec(TAG_BITS, nonce))
+            val nonce = if (jcaKey.requiresProviderGeneratedIv) {
+                cipher.init(Cipher.ENCRYPT_MODE, jcaKey.secretKey)
+                cipher.iv?.takeIf { it.size == NONCE_BYTES }
+                    ?: return JcaVaultCipherEncryptResult.CryptoFailed("crypto_failed")
+            } else {
+                ByteArray(NONCE_BYTES).also { generatedNonce ->
+                    secureRandom.nextBytes(generatedNonce)
+                    cipher.init(Cipher.ENCRYPT_MODE, jcaKey.secretKey, GCMParameterSpec(TAG_BITS, generatedNonce))
+                }
+            }
+            val header = VaultEnvelope.header(nonce)
             cipher.updateAAD(header)
             val ciphertext = cipher.doFinal(plaintext)
             JcaVaultCipherEncryptResult.Encrypted(VaultEnvelope.encode(header, ciphertext))

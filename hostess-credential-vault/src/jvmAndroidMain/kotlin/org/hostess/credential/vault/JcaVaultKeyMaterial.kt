@@ -5,6 +5,7 @@ import javax.crypto.spec.SecretKeySpec
 
 class JcaVaultKeyMaterial internal constructor(
     internal val secretKey: SecretKey,
+    internal val requiresProviderGeneratedIv: Boolean = false,
 ) : VaultKeyMaterial {
     override fun toString(): String = "[redacted]"
 
