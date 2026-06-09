@@ -55,5 +55,5 @@ class HostessVaultCredentialRecord(
     val startLocation: String?,
 ) {
     override fun toString(): String =
-        "HostessVaultCredentialRecord(credentialHandle=$credentialHandle, loginUri=$loginUri, loginName=$loginName, sharedSecret=[redacted], startLocation=$startLocation)"
+        "HostessVaultCredentialRecord(credentialHandle=$credentialHandle, loginUri=$loginUri, loginName=$loginName, secret=[redacted], startLocation=$startLocation)"
 }
