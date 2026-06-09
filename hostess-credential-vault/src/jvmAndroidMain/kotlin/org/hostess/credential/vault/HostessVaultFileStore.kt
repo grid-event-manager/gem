@@ -36,9 +36,9 @@ class HostessVaultFileStore(
         return try {
             if (parent != null) {
                 Files.createDirectories(parent)
-                tempFile = Files.createTempFile(parent, "${vaultFile.fileName}", ".tmp")
+                tempFile = Files.createTempFile(parent, vaultFile.tempPrefix(), ".tmp")
             } else {
-                tempFile = Files.createTempFile("${vaultFile.fileName}", ".tmp")
+                tempFile = Files.createTempFile(vaultFile.tempPrefix(), ".tmp")
             }
             FileChannel.open(
                 tempFile,
@@ -114,6 +114,13 @@ class HostessVaultFileStore(
         } catch (_: SecurityException) {
             // Best-effort cleanup only; the caller already returns the storage failure.
         }
+    }
+
+    private fun Path.tempPrefix(): String =
+        fileName.toString().padEnd(MIN_TEMP_PREFIX_LENGTH, '_')
+
+    private companion object {
+        const val MIN_TEMP_PREFIX_LENGTH: Int = 3
     }
 }
 

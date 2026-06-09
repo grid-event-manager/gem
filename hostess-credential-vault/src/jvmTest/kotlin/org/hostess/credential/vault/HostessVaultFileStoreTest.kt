@@ -38,6 +38,15 @@ class HostessVaultFileStoreTest {
     }
 
     @Test
+    fun `write handles short vault filenames`() = withTempDirectory { dir ->
+        val vaultPath = dir.resolve("v")
+        val store = HostessVaultFileStore(vaultPath)
+
+        assertIs<HostessVaultFileWriteResult.Written>(store.writeAtomic(byteArrayOf(1, 2, 3)))
+        assertTrue(Files.exists(vaultPath))
+    }
+
+    @Test
     fun `write failure removes sibling temp file`() = withTempDirectory { dir ->
         val vaultPath = dir.resolve("vault.bin")
         Files.createDirectory(vaultPath)
