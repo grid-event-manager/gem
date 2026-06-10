@@ -1,7 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
         android:icon="@drawable/ic_hostess"
-        android:label="Hostess">
+        android:label="${appLabel}">
         <activity
             android:name=".HostessAndroidActivity"
             android:exported="true">

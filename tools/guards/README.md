@@ -22,6 +22,9 @@ Track B owner rules:
 - Core, CLI, desktop, and Android production source must not call protocol runtime classes or the protocol HTTP transport contract directly.
 - Runtime and transport composition belongs inside `:hostess-protocol-libomv`; app and proof shells must use the existing core service/port/adapter path.
 - Legacy HTTP/TLS, private-reference, GUI, METAbolt, and WinForms names remain forbidden in production source.
+- `:hostess-ui` must exist and remains shared Compose UI over `hostess-core`; it must not import protocol runtime/transport, vault/native credential, `NoticePort`, `sendGroupNotice`, or UI-side selected-group send loops.
+- Track B UI visible labels live in `HostessText.kt`; style constants live under `org/hostess/ui/design`; production WebView/HTML/CSS/JS prototype routes and staged placeholder code are forbidden.
+- Android and desktop app shells may compose services, but must not add platform-specific screen trees or duplicate product behaviour.
 
 Track C owner rules:
 
