@@ -7,7 +7,7 @@ import kotlin.test.assertTrue
 class HostessTextTest {
     @Test
     fun fixedKeysCoverPrototypeCopy() {
-        assertEquals(54, HostessTextKey.fixedKeys.size)
+        assertEquals(59, HostessTextKey.fixedKeys.size)
         assertTrue(HostessTextKey.AppName in HostessTextKey.fixedKeys)
         assertTrue(HostessTextKey.Username in HostessTextKey.fixedKeys)
         assertTrue(HostessTextKey.Menu in HostessTextKey.fixedKeys)
@@ -21,13 +21,18 @@ class HostessTextTest {
         assertTrue(HostessTextKey.GroupsUnavailable in HostessTextKey.fixedKeys)
         assertTrue(HostessTextKey.RemovingFailedLogin in HostessTextKey.fixedKeys)
         assertTrue(HostessTextKey.BlankStatus in HostessTextKey.fixedKeys)
+        assertTrue(HostessTextKey.Theme in HostessTextKey.fixedKeys)
+        assertTrue(HostessTextKey.Light in HostessTextKey.fixedKeys)
+        assertTrue(HostessTextKey.Dark in HostessTextKey.fixedKeys)
+        assertTrue(HostessTextKey.ThemePreferenceUnavailable in HostessTextKey.fixedKeys)
+        assertTrue(HostessTextKey.ThemePreferenceSaveFailed in HostessTextKey.fixedKeys)
     }
 
     @Test
     fun englishCatalogueProvidesPrototypeCopy() {
         val catalogue = EnglishHostessTextCatalogue
 
-        assertEquals("Hostess", catalogue.text(HostessTextKey.AppName))
+        assertEquals("Ella Hostess", catalogue.text(HostessTextKey.AppName))
         assertEquals("User Name", catalogue.text(HostessTextKey.Username))
         assertEquals("Password", catalogue.text(HostessTextKey.Password))
         assertEquals("Show", catalogue.text(HostessTextKey.Show))
@@ -51,6 +56,11 @@ class HostessTextTest {
         assertEquals("Online", catalogue.text(HostessTextKey.Online))
         assertEquals("Offline", catalogue.text(HostessTextKey.Offline))
         assertEquals("", catalogue.text(HostessTextKey.BlankStatus))
+        assertEquals("Theme", catalogue.text(HostessTextKey.Theme))
+        assertEquals("Light", catalogue.text(HostessTextKey.Light))
+        assertEquals("Dark", catalogue.text(HostessTextKey.Dark))
+        assertEquals("Theme preference unavailable", catalogue.text(HostessTextKey.ThemePreferenceUnavailable))
+        assertEquals("Theme preference could not be saved", catalogue.text(HostessTextKey.ThemePreferenceSaveFailed))
     }
 
     @Test

@@ -17,6 +17,7 @@ class HostessUiRuntimeTest {
         assertNotNull(runtime.savedLoginAuthenticationServiceOrNull())
         assertNotNull(runtime.loginProfileAuthenticationServiceOrNull())
         assertNotNull(runtime.savedAccountManagementServiceOrNull())
+        assertTrue(runtime.themePreferenceService.loadPreference().preference.name.isNotBlank())
     }
 
     @Test
@@ -38,5 +39,14 @@ class HostessUiRuntimeTest {
 
         assertTrue(request.proofAccountAttested)
         assertTrue(request.scriptedAgentAttested)
+    }
+
+    @Test
+    fun themePreferenceServiceIsSuppliedByRuntimeComposition() {
+        val runtime = FakeHostessUiRuntime.ready()
+        val snapshot = runtime.themePreferenceService.loadPreference()
+
+        assertNull(snapshot.warning)
+        assertTrue(snapshot.preference.name.isNotBlank())
     }
 }

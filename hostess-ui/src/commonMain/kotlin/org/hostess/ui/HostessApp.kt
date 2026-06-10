@@ -1,6 +1,8 @@
 package org.hostess.ui
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -21,6 +23,9 @@ import org.hostess.ui.controllers.InventoryBrowserController
 import org.hostess.ui.controllers.LoginController
 import org.hostess.ui.controllers.NoticeComposerController
 import org.hostess.ui.controllers.SettingsController
+import org.hostess.ui.controllers.ThemeController
+import org.hostess.ui.design.HaccuHostessPaletteProvider
+import org.hostess.ui.design.HostessDesignTokens
 import org.hostess.ui.design.HostessTheme
 import org.hostess.ui.screens.ComposeScreen
 import org.hostess.ui.runtime.HostessUiRuntime
@@ -44,6 +49,11 @@ fun HostessApp(
     var groupTargetController by remember(runtime) { mutableStateOf(GroupTargetController(runtime)) }
     var inventoryController by remember(runtime) { mutableStateOf(InventoryBrowserController(runtime)) }
     val coroutineScope = rememberCoroutineScope()
+    val osDark = isSystemInDarkTheme()
+    var themeController by remember(runtime) { mutableStateOf(ThemeController.initial(runtime, osDark)) }
+    LaunchedEffect(runtime, osDark) {
+        themeController = themeController.refresh(osDark)
+    }
 
     fun runLoginWorkflow() {
         val started = loginController
@@ -103,7 +113,11 @@ fun HostessApp(
         }
     }
 
-    HostessTheme.Provide {
+    HostessTheme.Provide(
+        tokens = HostessDesignTokens(
+            colors = HaccuHostessPaletteProvider.colors(themeController.state.resolvedMode),
+        ),
+    ) {
         val route = appController.state.route
         HostessAppScaffold(
             topBar = {

@@ -37,6 +37,7 @@ import org.hostess.core.services.NoticeDispatchService
 import org.hostess.core.services.NoticeDraftService
 import org.hostess.core.services.SessionService
 import org.hostess.core.services.TargetSelectionService
+import org.hostess.core.theme.ThemePreferenceService
 import org.hostess.core.ports.AccountProfileIdSource
 import org.hostess.core.ports.AccountProfileStore
 import org.hostess.core.ports.AccountProfileStoreDeleteResult
@@ -83,6 +84,7 @@ object FakeHostessUiRuntime {
         inventoryListSucceeds: Boolean = true,
         attachmentSucceeds: Boolean = true,
         noticeRecorder: FakeNoticeRecorder = FakeNoticeRecorder(),
+        themePreferenceStore: FakeThemePreferenceStore = FakeThemePreferenceStore(),
     ): HostessUiRuntime {
         val profileStore = InMemoryAccountProfileStore(profiles)
         val vault = InMemoryCredentialVault()
@@ -105,6 +107,7 @@ object FakeHostessUiRuntime {
             inventoryListSucceeds = inventoryListSucceeds,
             attachmentSucceeds = attachmentSucceeds,
             noticeRecorder = noticeRecorder,
+            themePreferenceStore = themePreferenceStore,
         )
     }
 
@@ -136,6 +139,7 @@ object FakeHostessUiRuntime {
         inventoryListSucceeds: Boolean = true,
         attachmentSucceeds: Boolean = true,
         noticeRecorder: FakeNoticeRecorder = FakeNoticeRecorder(),
+        themePreferenceStore: FakeThemePreferenceStore = FakeThemePreferenceStore(),
     ): HostessUiRuntime {
         val sessionPort = FakeSessionPort(loginSucceeds)
         val inventoryPort = FakeInventoryPort(inventoryListing, inventoryListSucceeds, attachmentSucceeds)
@@ -164,6 +168,7 @@ object FakeHostessUiRuntime {
                     evidenceSource = ScriptedAgentEvidenceSource.OPERATOR_ATTESTED,
                 )
             },
+            themePreferenceService = ThemePreferenceService(themePreferenceStore),
         )
     }
 

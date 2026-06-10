@@ -1,0 +1,93 @@
+package org.hostess.ui.design
+
+import androidx.compose.ui.graphics.Color
+
+object HaccuHostessPaletteProvider : HostessPaletteProvider {
+    override fun colors(mode: ResolvedThemeMode): HostessColors =
+        when (mode) {
+            ResolvedThemeMode.LIGHT -> lightColors()
+            ResolvedThemeMode.DARK -> darkColors()
+        }
+
+    private fun lightColors(): HostessColors =
+        HostessColors(
+            page = Color(0xFFFFFFFF),
+            surface = Color(0xFFFAFAF8),
+            surfaceStrong = Color(0xFFFFFFFF),
+            ink = Color(0xFF000000),
+            body = Color(0xFF444444),
+            muted = Color(0xFF777777),
+            line = Color(0xFFE0E0E0),
+            lineStrong = Color(0xFFE0E0E0),
+            primary = Color(0xFF4A7A8A),
+            primaryInk = Color(0xFFFFFFFF),
+            secondary = Color(0xFF444444),
+            danger = Color(0xFFB5544D),
+            dangerFill = Color(0xFFA84A43),
+            successBackground = Color(0xFFFAFAF8),
+            successInk = Color(0xFF4A7A8A),
+            selectedBackground = Color(0xFFFAFAF8),
+            topBar = Color(0xFFFFFFFF),
+            brandMark = Color(0xFF5A778C),
+            shellBorder = Color(0xFFE0E0E0),
+            disabledBackground = Color(0xFFE0E0E0),
+            disabledInk = Color(0xFF777777),
+            selectedInk = Color(0xFF4A7A8A),
+            topBarInk = Color(0xFF000000),
+            brandMarkInk = Color(0xFFFFFFFF),
+            statusBackground = Color(0xFFFAFAF8),
+            focusRing = Color(0x294A7A8A),
+            menuSurface = Color(0xFFFFFFFF),
+            menuHover = Color(0xFFFAFAF8),
+            menuActive = Color(0xFFE0E0E0),
+            fieldSurface = Color(0xFFFFFFFF),
+            fieldBorder = Color(0xFFE0E0E0),
+            brandWordmark = Color(0xFF888888),
+            brandAccent = Color(0xFF8B0101),
+            toggleTrack = Color(0xFFE0E0E0),
+            toggleTrackSelected = Color(0xFF4A7A8A),
+            toggleKnob = Color(0xFFFFFFFF),
+            toggleBorder = Color(0xFFE0E0E0),
+        )
+
+    private fun darkColors(): HostessColors =
+        HostessColors(
+            page = Color(0xFF2A3441),
+            surface = Color(0xFF243039),
+            surfaceStrong = Color(0xFF2F3D4A),
+            ink = Color(0xFFFFFFFF),
+            body = Color(0xFFC0C8D0),
+            muted = Color(0xFFA0B0BC),
+            line = Color(0xFF2E3F4E),
+            lineStrong = Color(0xFF3A4D5E),
+            primary = Color(0xFF4A7A8A),
+            primaryInk = Color(0xFFFFFFFF),
+            secondary = Color(0xFF8AB4C4),
+            danger = Color(0xFFB5544D),
+            dangerFill = Color(0xFFA84A43),
+            successBackground = Color(0xFF1A2530),
+            successInk = Color(0xFF8AB4C4),
+            selectedBackground = Color(0xFF222E3A),
+            topBar = Color(0xFF243039),
+            brandMark = Color(0xFF4A7A8A),
+            shellBorder = Color(0xFF2E3F4E),
+            disabledBackground = Color(0xFF2E3F4E),
+            disabledInk = Color(0xFFA0B0BC),
+            selectedInk = Color(0xFFFFFFFF),
+            topBarInk = Color(0xFFFFFFFF),
+            brandMarkInk = Color(0xFFFFFFFF),
+            statusBackground = Color(0xFF1A2530),
+            focusRing = Color(0x294A7A8A),
+            menuSurface = Color(0xFF243039),
+            menuHover = Color(0xFF1E2A35),
+            menuActive = Color(0xFF222E3A),
+            fieldSurface = Color(0xFF253040),
+            fieldBorder = Color(0xFF3A4D5E),
+            brandWordmark = Color(0xFF8AB4C4),
+            brandAccent = Color(0xFF4A7A8A),
+            toggleTrack = Color(0xFF2E3F4E),
+            toggleTrackSelected = Color(0xFF4A7A8A),
+            toggleKnob = Color(0xFFFFFFFF),
+            toggleBorder = Color(0xFF3A4D5E),
+        )
+}

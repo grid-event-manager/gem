@@ -56,6 +56,11 @@ sealed interface HostessTextKey {
     data object Online : HostessTextKey
     data object Offline : HostessTextKey
     data object BlankStatus : HostessTextKey
+    data object Theme : HostessTextKey
+    data object Light : HostessTextKey
+    data object Dark : HostessTextKey
+    data object ThemePreferenceUnavailable : HostessTextKey
+    data object ThemePreferenceSaveFailed : HostessTextKey
     data class SelectedCount(val count: Int) : HostessTextKey
 
     companion object {
@@ -114,6 +119,11 @@ sealed interface HostessTextKey {
             Online,
             Offline,
             BlankStatus,
+            Theme,
+            Light,
+            Dark,
+            ThemePreferenceUnavailable,
+            ThemePreferenceSaveFailed,
         )
     }
 }
@@ -124,7 +134,7 @@ interface HostessTextCatalogue {
 
 object EnglishHostessTextCatalogue : HostessTextCatalogue {
     override fun text(key: HostessTextKey): String = when (key) {
-        HostessTextKey.AppName -> "Hostess"
+        HostessTextKey.AppName -> "Ella Hostess"
         HostessTextKey.Username -> "User Name"
         HostessTextKey.Password -> "Password"
         HostessTextKey.Show -> "Show"
@@ -179,6 +189,11 @@ object EnglishHostessTextCatalogue : HostessTextCatalogue {
         HostessTextKey.Online -> "Online"
         HostessTextKey.Offline -> "Offline"
         HostessTextKey.BlankStatus -> ""
+        HostessTextKey.Theme -> "Theme"
+        HostessTextKey.Light -> "Light"
+        HostessTextKey.Dark -> "Dark"
+        HostessTextKey.ThemePreferenceUnavailable -> "Theme preference unavailable"
+        HostessTextKey.ThemePreferenceSaveFailed -> "Theme preference could not be saved"
         is HostessTextKey.SelectedCount -> "${key.count} selected"
     }
 }
