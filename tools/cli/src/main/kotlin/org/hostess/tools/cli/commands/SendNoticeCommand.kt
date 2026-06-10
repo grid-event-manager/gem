@@ -71,21 +71,27 @@ class SendNoticeCommand(
             }
         }
 
-        val draft = runtime.noticeDraftService.createDraft(
-            subject = subject,
-            message = arguments.option("body").orEmpty(),
-            targetSet = targetSet,
-        )
         val attachmentResult = resolveAttachment(arguments, runtime, session, output)
         if (attachmentResult is AttachmentCommandResult.Invalid) {
             return CommandResult.USAGE_ERROR
         }
+        val validAttachment = when (attachmentResult) {
+            is AttachmentCommandResult.Valid -> attachmentResult
+            is AttachmentCommandResult.Invalid -> return CommandResult.USAGE_ERROR
+        }
+
+        val draft = runtime.noticeDraftService.createDraft(
+            subject = subject,
+            message = arguments.option("body").orEmpty(),
+            targetSet = targetSet,
+            attachments = listOf(validAttachment.request),
+        )
 
         return when (
             val dispatch = runtime.noticeDispatchService.dispatch(
                 session = session,
                 draft = draft,
-                attachment = (attachmentResult as AttachmentCommandResult.Valid).attachment,
+                attachment = validAttachment.attachment,
             )
         ) {
             is NoticeDispatchResult.Rejected -> {
@@ -184,7 +190,11 @@ class SendNoticeCommand(
         session: HostessSession,
         output: CliOutput,
     ): AttachmentCommandResult {
-        val kind = arguments.option("attachment-kind") ?: return AttachmentCommandResult.Valid(null)
+        val kind = arguments.option("attachment-kind")
+        if (kind == null) {
+            output.line("send-notice usage error: missing attachment-kind")
+            return AttachmentCommandResult.Invalid
+        }
         val itemId = arguments.option("attachment-id")
         if (itemId == null) {
             output.line("send-notice usage error: missing attachment-id")
@@ -198,7 +208,7 @@ class SendNoticeCommand(
         val request = ExistingInventoryAttachment(attachmentKind, InventoryItemId(itemId))
 
         return when (val result = runtime.attachmentService.resolveAttachment(session, request)) {
-            is AttachmentResolutionResult.Resolved -> AttachmentCommandResult.Valid(result.attachment)
+            is AttachmentResolutionResult.Resolved -> AttachmentCommandResult.Valid(request, result.attachment)
             is AttachmentResolutionResult.Failed -> {
                 output.line("send-notice attachment failed: ${result.failure.redactedMessage ?: "unavailable"}")
                 AttachmentCommandResult.Invalid
@@ -216,7 +226,7 @@ class SendNoticeCommand(
         output.line("send-notice usage error: $reason")
         output.line(
             "usage: send-notice --mode fake --target <display-name> --subject <subject> --body <body> " +
-                "--report <path>",
+                "--attachment-kind <landmark|texture> --attachment-id <inventory-item-id> --report <path>",
         )
         return CommandResult.USAGE_ERROR
     }
@@ -250,7 +260,10 @@ class SendNoticeCommand(
         }
 
     private sealed interface AttachmentCommandResult {
-        data class Valid(val attachment: AttachmentRef?) : AttachmentCommandResult
+        data class Valid(
+            val request: ExistingInventoryAttachment,
+            val attachment: AttachmentRef,
+        ) : AttachmentCommandResult
         data object Invalid : AttachmentCommandResult
     }
 

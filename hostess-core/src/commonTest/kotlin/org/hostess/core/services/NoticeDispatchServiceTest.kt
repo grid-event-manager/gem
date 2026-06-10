@@ -8,6 +8,7 @@ import org.hostess.core.domain.AccountLabel
 import org.hostess.core.domain.AttachmentKind
 import org.hostess.core.domain.AttachmentOwnerId
 import org.hostess.core.domain.AttachmentRef
+import org.hostess.core.domain.ExistingInventoryAttachment
 import org.hostess.core.domain.GroupDisplayName
 import org.hostess.core.domain.GroupId
 import org.hostess.core.domain.GroupMembership
@@ -43,6 +44,7 @@ class NoticeDispatchServiceTest {
             subject = "Opening set",
             message = "Tonight at 8",
             targetSet = selectedTargets(),
+            attachments = listOf(existingLandmarkAttachment()),
         )
 
         val result = assertIs<NoticeDispatchResult.Sent>(
@@ -80,6 +82,27 @@ class NoticeDispatchServiceTest {
     }
 
     @Test
+    fun `dispatch rejects missing attachment without calling notice port`() {
+        val events = mutableListOf<String>()
+        val noticePort = FakeNoticePort(events)
+        val service = service(noticePort, FakeClockPort(events))
+        val invalidDraft = NoticeDraft(
+            subject = "Opening set",
+            message = "Tonight at 8",
+            targetSet = selectedTargets(),
+        )
+
+        val result = assertIs<NoticeDispatchResult.Rejected>(
+            service.dispatch(session(), invalidDraft),
+        )
+
+        val validation = assertIs<NoticeDraftValidation.Invalid>(result.validation)
+        assertTrue(NoticeDraftInvalidReason.MISSING_ATTACHMENT in validation.reasons)
+        assertTrue(events.isEmpty())
+        assertTrue(noticePort.calls.isEmpty())
+    }
+
+    @Test
     fun `dispatch forwards resolved attachment to each selected group`() {
         val noticePort = FakeNoticePort()
         val service = service(noticePort, FakeClockPort())
@@ -92,6 +115,7 @@ class NoticeDispatchServiceTest {
             subject = "Opening set",
             message = "Tonight at 8",
             targetSet = selectedTargets(),
+            attachments = listOf(existingLandmarkAttachment()),
         )
 
         assertIs<NoticeDispatchResult.Sent>(
@@ -135,4 +159,7 @@ class NoticeDispatchServiceTest {
         noticePort = noticePort,
         clockPort = clockPort,
     )
+
+    private fun existingLandmarkAttachment(): ExistingInventoryAttachment =
+        ExistingInventoryAttachment(AttachmentKind.LANDMARK, InventoryItemId("landmark-item"))
 }

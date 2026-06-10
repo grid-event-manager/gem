@@ -74,7 +74,7 @@ internal class LiveNoticeSendProofRunner(
         val items = inventoryCatalogue(session) ?: return finishAfterLogout(session, "inventory catalogue unavailable")
         val selected = selectAttachment(items) ?: return finishAfterLogout(session, "attachment selection blocked")
         val attachment = resolveAttachment(session, selected.request) ?: return finishAfterLogout(session, "attachment resolution failed")
-        if (!sendNotice(session, targetSet, attachment)) {
+        if (!sendNotice(session, targetSet, selected.request, attachment)) {
             return finishAfterLogout(session, "group notice failed")
         }
         if (!noticeArchive(session, targetSet)) {
@@ -276,9 +276,15 @@ internal class LiveNoticeSendProofRunner(
     private fun sendNotice(
         session: HostessSession,
         targetSet: GroupTargetSet,
+        request: org.hostess.core.domain.ExistingInventoryAttachment,
         attachment: AttachmentRef,
     ): Boolean {
-        val draft = NoticeDraft(inputs.subject.orEmpty(), inputs.body.orEmpty(), targetSet)
+        val draft = NoticeDraft(
+            subject = inputs.subject.orEmpty(),
+            message = inputs.body.orEmpty(),
+            targetSet = targetSet,
+            attachments = listOf(request),
+        )
         return when (
             val dispatch = runtime.noticeDispatchService.dispatch(
                 session = session,

@@ -53,15 +53,18 @@ class NoticeReadinessFlowTest {
     }
 
     @Test
-    fun `pasted subject and message create a valid draft without asset read`() {
+    fun `pasted subject message and selected attachment create a valid draft without asset read`() {
         val selected = selectedTargets()
+        val request = ExistingInventoryAttachment(AttachmentKind.LANDMARK, InventoryItemId("venue-landmark"))
         val draft = NoticeDraftService().createDraft(
             subject = "Tonight at 8",
             message = "Doors open at 7:45. Landmark attached.",
             targetSet = selected,
+            attachments = listOf(request),
         )
 
         assertEquals("Doors open at 7:45. Landmark attached.", draft.message)
+        assertEquals(listOf(request), draft.attachments)
         assertEquals(NoticeDraftValidation.Valid, NoticeDraftService().validateForSend(draft))
     }
 
@@ -105,6 +108,7 @@ class NoticeReadinessFlowTest {
             subject = "Tonight at 8",
             message = "Operator pasted this text from an external notecard viewer.",
             targetSet = targetSet,
+            attachments = listOf(ExistingInventoryAttachment(AttachmentKind.LANDMARK, InventoryItemId("venue-landmark"))),
         )
         val attachment = assertIs<AttachmentResolutionResult.Resolved>(
             AttachmentService(inventoryPort).resolveAttachment(

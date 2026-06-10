@@ -1,6 +1,9 @@
 package org.hostess.apps.android
 
+import org.hostess.core.domain.AttachmentKind
+import org.hostess.core.domain.ExistingInventoryAttachment
 import org.hostess.core.domain.GroupMembership
+import org.hostess.core.domain.InventoryItemId
 import org.hostess.core.domain.NoticeDraft
 import org.hostess.core.domain.NoticeDraftValidation
 import org.hostess.core.domain.TargetSelectionResult
@@ -85,6 +88,9 @@ class AndroidCompatibilityProbe {
             subject = "Android compatibility probe",
             message = "No live send.",
             targetSet = selectedTargetSet,
+            attachments = listOf(
+                ExistingInventoryAttachment(AttachmentKind.LANDMARK, InventoryItemId("android-probe-landmark")),
+            ),
         )
         return draft.validateForSend() == NoticeDraftValidation.Valid
     }

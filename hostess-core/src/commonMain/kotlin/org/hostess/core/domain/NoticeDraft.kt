@@ -13,8 +13,14 @@ class NoticeDraft(
             if (subject.isBlank()) {
                 add(NoticeDraftInvalidReason.BLANK_SUBJECT)
             }
+            if (message.isBlank()) {
+                add(NoticeDraftInvalidReason.BLANK_MESSAGE)
+            }
             if (targetSet.isEmpty()) {
                 add(NoticeDraftInvalidReason.EMPTY_TARGET_SET)
+            }
+            if (attachments.isEmpty()) {
+                add(NoticeDraftInvalidReason.MISSING_ATTACHMENT)
             }
             if (attachments.size > 1) {
                 add(NoticeDraftInvalidReason.TOO_MANY_ATTACHMENTS)
@@ -47,6 +53,8 @@ sealed interface NoticeDraftValidation {
 
 enum class NoticeDraftInvalidReason {
     BLANK_SUBJECT,
+    BLANK_MESSAGE,
     EMPTY_TARGET_SET,
+    MISSING_ATTACHMENT,
     TOO_MANY_ATTACHMENTS,
 }

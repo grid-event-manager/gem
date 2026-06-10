@@ -28,6 +28,10 @@ class CliCompositionRootTest {
                 "Tonight",
                 "--body",
                 "Doors at eight",
+                "--attachment-kind",
+                "landmark",
+                "--attachment-id",
+                "welcome-area",
             ),
             output,
         )

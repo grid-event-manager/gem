@@ -23,6 +23,33 @@ class NoticeDraftTest {
     }
 
     @Test
+    fun `validates nonblank message requirement`() {
+        val invalid = assertIs<NoticeDraftValidation.Invalid>(
+            NoticeDraft(
+                subject = "Opening set",
+                message = " ",
+                targetSet = selectedTargets(),
+                attachments = listOf(landmarkAttachment()),
+            ).validateForSend(),
+        )
+
+        assertEquals(setOf(NoticeDraftInvalidReason.BLANK_MESSAGE), invalid.reasons)
+    }
+
+    @Test
+    fun `validates selected attachment requirement`() {
+        val invalid = assertIs<NoticeDraftValidation.Invalid>(
+            NoticeDraft(
+                subject = "Opening set",
+                message = "Tonight at 8",
+                targetSet = selectedTargets(),
+            ).validateForSend(),
+        )
+
+        assertEquals(setOf(NoticeDraftInvalidReason.MISSING_ATTACHMENT), invalid.reasons)
+    }
+
+    @Test
     fun `validates one attachment invariant`() {
         val draft = NoticeDraft(
             subject = "Opening set",
@@ -79,4 +106,7 @@ class NoticeDraftTest {
         canSendNotices = true,
         acceptsNotices = null,
     )
+
+    private fun landmarkAttachment(): ExistingInventoryAttachment =
+        ExistingInventoryAttachment(AttachmentKind.LANDMARK, InventoryItemId("landmark-item"))
 }
