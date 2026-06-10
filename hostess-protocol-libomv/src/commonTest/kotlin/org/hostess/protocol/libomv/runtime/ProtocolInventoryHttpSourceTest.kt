@@ -15,6 +15,7 @@ import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertTrue
 
 class ProtocolInventoryHttpSourceTest {
     @Test
@@ -57,11 +58,26 @@ class ProtocolInventoryHttpSourceTest {
             source.listDirectory(identity(), roots(), capabilityUrl(), InventoryItemQuery()),
         )
 
-        assertEquals(listOf(CHILD_FOLDER_ID), result.folders.map { it.folderId })
-        assertEquals(listOf("Folder"), result.folders.map { it.name })
+        assertEquals(listOf(ROOT_FOLDER_ID, CHILD_FOLDER_ID), result.folders.map { it.folderId })
+        assertEquals(listOf(null, ROOT_FOLDER_ID), result.folders.map { it.parentFolderId })
+        assertEquals(listOf("Inventory", "Folder"), result.folders.map { it.name })
         assertEquals(listOf("root-landmark", "child-notecard"), result.items.map { it.itemId })
         assertEquals(2, httpClient.requests.size)
         assertContains(assertIs<ProtocolHttpBody.TextBody>(httpClient.requests[1].body).content, CHILD_FOLDER_ID)
+    }
+
+    @Test
+    fun `empty successful response still returns fetched root folder`() {
+        val source = ProtocolInventoryHttpSource(RecordingHttpClient { emptyFolderResponse() })
+
+        val result = assertIs<InventoryRuntimeDirectoryListResult.Success>(
+            source.listDirectory(identity(), roots(), capabilityUrl(), InventoryItemQuery()),
+        )
+
+        assertEquals(listOf(ROOT_FOLDER_ID), result.folders.map { it.folderId })
+        assertEquals(listOf(null), result.folders.map { it.parentFolderId })
+        assertEquals(listOf("Inventory"), result.folders.map { it.name })
+        assertTrue(result.items.isEmpty())
     }
 
     @Test

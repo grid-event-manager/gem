@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.toggleable
@@ -95,7 +96,7 @@ fun HostessCheckboxCard(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = spacing.tapTarget)
+            .height(spacing.controlHeight)
             .toggleable(
                 value = checked,
                 enabled = enabled,
@@ -148,7 +149,7 @@ fun HostessSegmentButton(
     OutlinedButton(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier.heightIn(min = spacing.tapTarget),
+        modifier = modifier.height(spacing.controlHeight),
         shape = HostessTheme.shapes.control,
         border = BorderStroke(
             width = spacing.borderWidth,

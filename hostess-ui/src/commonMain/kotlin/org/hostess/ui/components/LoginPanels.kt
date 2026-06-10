@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -173,6 +174,7 @@ private fun LoginUsernameField(
                 modifier = Modifier
                     .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable, enabled)
                     .fillMaxWidth()
+                    .height(HostessTheme.spacing.controlHeight)
                     .testTag(HostessTestTags.AccountName),
             )
             ExposedDropdownMenu(

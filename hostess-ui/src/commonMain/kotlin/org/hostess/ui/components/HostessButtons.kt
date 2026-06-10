@@ -3,7 +3,7 @@ package org.hostess.ui.components
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.defaultMinSize
-import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -28,7 +28,7 @@ fun HostessPrimaryButton(
     Button(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier.heightIn(min = spacing.tapTarget),
+        modifier = modifier.height(spacing.controlHeight),
         shape = HostessTheme.shapes.control,
         contentPadding = PaddingValues(horizontal = spacing.panelPadding),
         colors = ButtonDefaults.buttonColors(
@@ -56,8 +56,8 @@ fun HostessSecondaryButton(
         onClick = onClick,
         enabled = enabled,
         modifier = modifier
-            .heightIn(min = spacing.tapTarget)
-            .defaultMinSize(minWidth = spacing.tapTarget),
+            .height(spacing.controlHeight)
+            .defaultMinSize(minWidth = spacing.controlHeight),
         shape = HostessTheme.shapes.control,
         border = BorderStroke(spacing.borderWidth, colors.lineStrong),
         contentPadding = PaddingValues(horizontal = spacing.panelPadding),
@@ -85,8 +85,8 @@ fun HostessPlainButton(
         onClick = onClick,
         enabled = enabled,
         modifier = modifier
-            .heightIn(min = spacing.tapTarget)
-            .defaultMinSize(minWidth = spacing.tapTarget),
+            .height(spacing.controlHeight)
+            .defaultMinSize(minWidth = spacing.controlHeight),
         shape = HostessTheme.shapes.control,
         border = BorderStroke(spacing.borderWidth, colors.lineStrong),
         contentPadding = PaddingValues(horizontal = spacing.inlineGap),

@@ -20,6 +20,7 @@ data class HostessSpacing(
     val panelPadding: Dp = 16.dp,
     val fieldGap: Dp = 8.dp,
     val rowGap: Dp = 10.dp,
+    val controlHeight: Dp = 56.dp,
     val fieldHorizontalPadding: Dp = 12.dp,
     val rowVerticalPadding: Dp = 9.dp,
     val rowHorizontalPadding: Dp = 12.dp,

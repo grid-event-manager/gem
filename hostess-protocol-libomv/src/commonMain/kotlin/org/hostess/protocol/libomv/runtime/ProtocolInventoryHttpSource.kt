@@ -71,9 +71,14 @@ internal class ProtocolInventoryHttpSource(
             ?: return InventorySnapshotListResult.Failed("inventory root unavailable")
         val pending = ArrayDeque<FolderRequest>()
         val visited = mutableSetOf<String>()
-        val folders = mutableListOf<LibomvInventoryFolderSnapshot>()
+        val folders = linkedMapOf<String, LibomvInventoryFolderSnapshot>()
         val items = mutableListOf<LibomvInventoryItemSnapshot>()
-        pending += FolderRequest(rootId, identity.agentId)
+        pending += FolderRequest(
+            folderId = rootId,
+            ownerId = identity.agentId,
+            parentFolderId = null,
+            name = ROOT_FOLDER_NAME,
+        )
 
         while (pending.isNotEmpty()) {
             if (visited.size >= FOLDER_CAP) {
@@ -90,20 +95,29 @@ internal class ProtocolInventoryHttpSource(
             val folderResponses = responseFolders(response)
                 ?: return InventorySnapshotListResult.Failed("inventory response invalid")
             for (folderResponse in folderResponses) {
+                folders.addFolder(fetchedFolder(folderResponse, folder))
                 items += itemSnapshots(folderResponse)
                 val childFolders = childFolders(
                     folderResponse = folderResponse,
                     fallbackOwnerId = folder.ownerId,
                     fallbackParentFolderId = folder.folderId,
                 )
-                folders += childFolders.map { it.snapshot }
+                childFolders.forEach { folders.addFolder(it.snapshot) }
                 pending += childFolders
                     .map { it.request }
                     .filterNot { it.folderId in visited }
             }
         }
 
-        return InventorySnapshotListResult.Success(folders, items)
+        return InventorySnapshotListResult.Success(folders.values.toList(), items)
+    }
+
+    private fun MutableMap<String, LibomvInventoryFolderSnapshot>.addFolder(
+        folder: LibomvInventoryFolderSnapshot,
+    ) {
+        if (folder.folderId !in this) {
+            this[folder.folderId] = folder
+        }
     }
 
     private fun fetchFolder(
@@ -167,6 +181,18 @@ internal class ProtocolInventoryHttpSource(
         }
     }
 
+    private fun fetchedFolder(
+        folderResponse: Map<String, LlsdValue>,
+        request: FolderRequest,
+    ): LibomvInventoryFolderSnapshot = LibomvInventoryFolderSnapshot(
+        folderId = folderResponse[FOLDER_ID]?.asString()?.takeIf(String::isNotBlank)
+            ?: request.folderId,
+        parentFolderId = request.parentFolderId,
+        name = folderResponse[NAME]?.asString()?.takeIf(String::isNotBlank)
+            ?: request.name
+            ?: request.folderId,
+    )
+
     private fun childFolders(
         folderResponse: Map<String, LlsdValue>,
         fallbackOwnerId: String,
@@ -189,6 +215,9 @@ internal class ProtocolInventoryHttpSource(
                 request = FolderRequest(
                     folderId = folderId,
                     ownerId = ownerId,
+                    parentFolderId = fields[PARENT_ID]?.asString()?.takeIf(String::isNotBlank)
+                        ?: fallbackParentFolderId,
+                    name = fields[NAME]?.asString()?.takeIf(String::isNotBlank),
                 ),
             )
         }
@@ -231,6 +260,8 @@ internal class ProtocolInventoryHttpSource(
     private data class FolderRequest(
         val folderId: String,
         val ownerId: String,
+        val parentFolderId: String?,
+        val name: String?,
     )
 
     private data class ChildFolder(
@@ -261,6 +292,7 @@ internal class ProtocolInventoryHttpSource(
     private companion object {
         const val LLSD_XML = "application/llsd+xml"
         const val FOLDER_CAP = 200
+        const val ROOT_FOLDER_NAME = "Inventory"
         const val TEXTURE_INVENTORY_TYPE = 0
         const val LANDMARK_INVENTORY_TYPE = 3
 

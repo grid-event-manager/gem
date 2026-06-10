@@ -59,14 +59,11 @@ fun InventoryBrowser(
                 .testTag(HostessTestTags.InventoryList),
             verticalArrangement = Arrangement.spacedBy(HostessTheme.spacing.fieldGap),
         ) {
-            if (state.errorKey != null) {
-                InventoryPaneStatus(textCatalogue.text(state.errorKey))
-            }
+            val hasRows = state.visibleFolderRows.isNotEmpty() || state.visibleAssetRows.isNotEmpty()
             when {
                 state.loading -> InventoryPaneStatus(textCatalogue.text(HostessTextKey.LoadingInventory))
-                state.visibleFolderRows.isEmpty() && state.visibleAssetRows.isEmpty() -> {
-                    InventoryPaneStatus(textCatalogue.text(HostessTextKey.InventoryEmpty))
-                }
+                state.errorKey != null && !hasRows -> InventoryPaneStatus(textCatalogue.text(state.errorKey))
+                !hasRows -> InventoryPaneStatus(textCatalogue.text(HostessTextKey.InventoryEmpty))
                 else -> {
                     state.visibleFolderRows.forEach { row ->
                         InventoryFolderRow(

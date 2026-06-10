@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -30,9 +31,15 @@ fun HostessTextField(
     val spacing = HostessTheme.spacing
     val textFieldModifier = Modifier
         .fillMaxWidth()
-        .heightIn(
-            min = minHeight ?: spacing.tapTarget,
-            max = maxHeight ?: Dp.Infinity,
+        .then(
+            if (minHeight == null && maxHeight == null) {
+                Modifier.height(spacing.controlHeight)
+            } else {
+                Modifier.heightIn(
+                    min = minHeight ?: spacing.controlHeight,
+                    max = maxHeight ?: Dp.Infinity,
+                )
+            },
         )
     Column(
         modifier = modifier,
@@ -89,7 +96,7 @@ fun HostessPasswordField(
                 colors = hostessTextFieldColors(),
                 modifier = Modifier
                     .weight(weight = 1f)
-                    .heightIn(min = spacing.tapTarget)
+                    .height(spacing.controlHeight)
                     .onFocusChanged { focusState ->
                         if (focusState.isFocused) {
                             onPasswordFocus()
