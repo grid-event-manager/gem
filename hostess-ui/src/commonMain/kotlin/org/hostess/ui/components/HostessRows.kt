@@ -1,0 +1,171 @@
+package org.hostess.ui.components
+
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextOverflow
+import org.hostess.ui.design.HostessTheme
+
+@Composable
+fun HostessSelectableRow(
+    title: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    subtitle: String? = null,
+    leading: @Composable (RowScope.() -> Unit)? = null,
+    trailing: @Composable (RowScope.() -> Unit)? = null,
+) {
+    val colors = HostessTheme.colors
+    val spacing = HostessTheme.spacing
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(min = spacing.sessionStripMinHeight)
+            .clickable(onClick = onClick),
+        color = if (selected) colors.selectedBackground else colors.surfaceStrong,
+        contentColor = colors.ink,
+        border = BorderStroke(spacing.borderWidth, colors.line),
+    ) {
+        Row(
+            modifier = Modifier.padding(
+                horizontal = spacing.rowHorizontalPadding,
+                vertical = spacing.rowVerticalPadding,
+            ),
+            horizontalArrangement = Arrangement.spacedBy(spacing.rowGap),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (leading != null) {
+                leading()
+            }
+            Column(modifier = Modifier.weight(weight = 1f)) {
+                Text(
+                    text = title,
+                    color = colors.ink,
+                    style = HostessTheme.typeScale.body,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                if (subtitle != null) {
+                    Text(
+                        text = subtitle,
+                        color = colors.muted,
+                        style = HostessTheme.typeScale.smallLabel,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+            if (trailing != null) {
+                trailing()
+            }
+        }
+    }
+}
+
+@Composable
+fun HostessCheckboxCard(
+    text: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+) {
+    val colors = HostessTheme.colors
+    val spacing = HostessTheme.spacing
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(min = spacing.tapTarget)
+            .toggleable(
+                value = checked,
+                enabled = enabled,
+                role = Role.Checkbox,
+                onValueChange = onCheckedChange,
+            ),
+        shape = HostessTheme.shapes.control,
+        color = if (checked) colors.selectedBackground else colors.surfaceStrong,
+        contentColor = colors.ink,
+        border = BorderStroke(spacing.borderWidth, colors.lineStrong),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = spacing.fieldHorizontalPadding),
+            horizontalArrangement = Arrangement.spacedBy(spacing.rowGap),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Checkbox(
+                checked = checked,
+                onCheckedChange = null,
+                enabled = enabled,
+                colors = CheckboxDefaults.colors(
+                    checkedColor = colors.primary,
+                    uncheckedColor = colors.lineStrong,
+                    checkmarkColor = colors.primaryInk,
+                    disabledCheckedColor = colors.disabledBackground,
+                    disabledUncheckedColor = colors.line,
+                ),
+            )
+            Text(
+                text = text,
+                color = if (enabled) colors.ink else colors.disabledInk,
+                style = HostessTheme.typeScale.button,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
+@Composable
+fun HostessSegmentButton(
+    text: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+) {
+    val colors = HostessTheme.colors
+    val spacing = HostessTheme.spacing
+    OutlinedButton(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = modifier.heightIn(min = spacing.tapTarget),
+        shape = HostessTheme.shapes.control,
+        border = BorderStroke(
+            width = spacing.borderWidth,
+            color = if (selected) colors.primary else colors.lineStrong,
+        ),
+        contentPadding = PaddingValues(horizontal = spacing.fieldGap),
+        colors = ButtonDefaults.outlinedButtonColors(
+            containerColor = if (selected) colors.selectedBackground else colors.surfaceStrong,
+            contentColor = if (selected) colors.selectedInk else colors.ink,
+            disabledContainerColor = colors.disabledBackground,
+            disabledContentColor = colors.disabledInk,
+        ),
+    ) {
+        Text(
+            text = text,
+            style = HostessTheme.typeScale.button,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}

@@ -1,0 +1,32 @@
+package org.hostess.ui.design
+
+import androidx.compose.runtime.Immutable
+import androidx.compose.ui.graphics.Color
+
+@Immutable
+data class HostessColors(
+    val page: Color = Color(0xFFDCE3EC),
+    val surface: Color = Color(0xFFF8FAFC),
+    val surfaceStrong: Color = Color(0xFFFFFFFF),
+    val ink: Color = Color(0xFF151923),
+    val muted: Color = Color(0xFF5D6675),
+    val line: Color = Color(0xFFD5DBE5),
+    val lineStrong: Color = Color(0xFFBAC4D1),
+    val primary: Color = Color(0xFF0F766E),
+    val primaryInk: Color = Color(0xFFFFFFFF),
+    val secondary: Color = Color(0xFF315A9A),
+    val danger: Color = Color(0xFFA32936),
+    val successBackground: Color = Color(0xFFDFF7EE),
+    val successInk: Color = Color(0xFF116049),
+    val selectedBackground: Color = Color(0xFFE8F5F3),
+    val topBar: Color = Color(0xFF18202B),
+    val brandMark: Color = Color(0xFFF7C948),
+    val shellBorder: Color = Color(0xFFC9D2DF),
+    val disabledBackground: Color = Color(0xFFD5DBE5),
+    val disabledInk: Color = Color(0xFF6F7886),
+    val selectedInk: Color = Color(0xFF07534E),
+    val topBarInk: Color = Color(0xFFF8FAFC),
+    val brandMarkInk: Color = Color(0xFF172033),
+    val statusBackground: Color = Color(0xFFF4F7FB),
+    val focusRing: Color = Color(0x291F766E),
+)

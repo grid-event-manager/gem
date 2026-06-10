@@ -1,0 +1,30 @@
+package org.hostess.ui.design
+
+import androidx.compose.runtime.Immutable
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+
+@Immutable
+data class HostessSpacing(
+    val none: Dp = 0.dp,
+    val borderWidth: Dp = 1.dp,
+    val tapTarget: Dp = 48.dp,
+    val pagePadding: Dp = 14.dp,
+    val shellMaxWidth: Dp = 412.dp,
+    val shellMaxHeight: Dp = 932.dp,
+    val shellMinHeight: Dp = 760.dp,
+    val topBarMinHeight: Dp = 72.dp,
+    val sessionStripMinHeight: Dp = 62.dp,
+    val panelPadding: Dp = 16.dp,
+    val fieldGap: Dp = 8.dp,
+    val rowGap: Dp = 10.dp,
+    val fieldHorizontalPadding: Dp = 12.dp,
+    val rowVerticalPadding: Dp = 9.dp,
+    val rowHorizontalPadding: Dp = 12.dp,
+    val rowIconSize: Dp = 42.dp,
+    val statusPillMinHeight: Dp = 28.dp,
+    val statusPillHorizontalPadding: Dp = 10.dp,
+    val modalInset: Dp = 22.dp,
+    val modalMaxWidth: Dp = 360.dp,
+    val inlineGap: Dp = 12.dp,
+)
