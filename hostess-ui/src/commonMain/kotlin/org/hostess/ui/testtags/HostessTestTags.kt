@@ -29,6 +29,7 @@ object HostessTestTags {
     const val GroupList: String = "data-group-list"
     const val GroupCount: String = "data-group-count"
     const val ViewSettings: String = "data-view-settings"
+    const val SettingsBack: String = "data-settings-back"
     const val DeleteAccountPanel: String = "data-delete-account-panel"
     const val DeleteAccountList: String = "data-delete-account-list"
     const val DeleteAccount: String = "data-delete-account"

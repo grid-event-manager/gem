@@ -15,11 +15,16 @@ data class SettingsUiState(
     val newUsernameDraft: String = "",
     val newPasswordDraft: String = "",
     val newPasswordVisible: Boolean = false,
+    val saveNewAccountEnabled: Boolean = false,
     val deleteExpanded: Boolean = false,
     val selectedDeleteProfileIds: Set<AccountProfileId> = emptySet(),
     val confirmDeleteOpen: Boolean = false,
     val errorKey: HostessTextKey? = null,
+    val errorMessage: String? = null,
 ) {
+    val deleteEnabled: Boolean
+        get() = selectedDeleteProfileIds.isNotEmpty()
+
     companion object {
         fun fromCredentialRuntime(runtimeState: HostessCredentialRuntimeState): SettingsUiState =
             SettingsUiState(credentialRuntime = CredentialRuntimeUiState.from(runtimeState))

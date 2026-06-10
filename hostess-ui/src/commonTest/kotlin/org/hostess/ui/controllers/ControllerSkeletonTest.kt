@@ -64,17 +64,21 @@ class ControllerEntrypointShapeTest {
 
     @Test
     fun settingsControllerOwnsPasswordDeleteAndAccountEntryPoints() {
-        val profileId = AccountProfileId("profile:v1:settings")
+        val profileId = FakeHostessUiRuntime.defaultProfile().profileId
         val selected = SettingsController(runtime)
+            .refreshSavedAccounts()
             .selectSavedAccount(profileId)
             .updateSavedPasswordDraft("settings-password")
             .toggleSavedPasswordVisibility()
             .toggleAddAccountPanel()
+            .updateNewUsernameDraft("settingsavatar")
+            .normalizeNewAccountNameOnPasswordFocus()
             .setDeleteAccountSelected(profileId, true)
         val modalOpen = selected.openDeleteAccounts()
         val controller = modalOpen
-            .confirmDeleteAccounts()
             .cancelDeleteAccounts()
+        val savedNew = selected
+            .updateNewPasswordDraft("new-password")
             .saveNewAccount()
 
         assertEquals(profileId, controller.state.selectedProfileId)
@@ -84,6 +88,8 @@ class ControllerEntrypointShapeTest {
         assertTrue(controller.state.addAccountExpanded)
         assertTrue(controller.state.deleteExpanded)
         assertEquals(setOf(profileId), controller.state.selectedDeleteProfileIds)
+        assertEquals("settingsavatar resident", controller.state.newUsernameDraft)
+        assertTrue(savedNew.state.savedLoginOptions.any { it.loginName == "settingsavatar resident" })
         assertTrue(modalOpen.state.confirmDeleteOpen)
         assertFalse(controller.state.confirmDeleteOpen)
     }

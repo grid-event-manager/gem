@@ -24,6 +24,7 @@ data class HostessSpacing(
     val rowIconSize: Dp = 42.dp,
     val statusPillMinHeight: Dp = 28.dp,
     val statusPillHorizontalPadding: Dp = 10.dp,
+    val scrollListMaxHeight: Dp = 220.dp,
     val modalInset: Dp = 22.dp,
     val modalMaxWidth: Dp = 360.dp,
     val inlineGap: Dp = 12.dp,

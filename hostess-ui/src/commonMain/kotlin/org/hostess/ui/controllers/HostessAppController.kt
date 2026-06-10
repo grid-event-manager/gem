@@ -20,7 +20,7 @@ class HostessAppController(
         copy(state.copy(route = UiRoute.Settings, menuOpen = false))
 
     fun logout(): HostessAppController {
-        // B-10 owns logout wiring; B-06 clears only route-local UI state.
+        state.session?.let(runtime.sessionService::logout)
         return copy(
             state.copy(
                 route = UiRoute.Login,

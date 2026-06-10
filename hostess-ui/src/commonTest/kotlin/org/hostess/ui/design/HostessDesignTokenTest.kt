@@ -43,6 +43,7 @@ class HostessDesignTokenTest {
         assertEquals(72.dp, spacing.topBarMinHeight)
         assertEquals(62.dp, spacing.sessionStripMinHeight)
         assertEquals(16.dp, spacing.panelPadding)
+        assertEquals(220.dp, spacing.scrollListMaxHeight)
         assertEquals(8.dp, spacing.fieldGap)
         assertEquals(10.dp, spacing.rowGap)
         assertEquals(8.dp, shapes.panelRadius)

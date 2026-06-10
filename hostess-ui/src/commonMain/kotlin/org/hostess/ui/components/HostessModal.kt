@@ -23,6 +23,8 @@ fun HostessConfirmModal(
     onConfirm: () -> Unit,
     onCancel: () -> Unit,
     modifier: Modifier = Modifier,
+    confirmModifier: Modifier = Modifier,
+    cancelModifier: Modifier = Modifier,
 ) {
     if (!visible) {
         return
@@ -54,10 +56,12 @@ fun HostessConfirmModal(
                     HostessSecondaryButton(
                         text = confirmText,
                         onClick = onConfirm,
+                        modifier = confirmModifier,
                     )
                     HostessSecondaryButton(
                         text = cancelText,
                         onClick = onCancel,
+                        modifier = cancelModifier,
                     )
                 }
             }
