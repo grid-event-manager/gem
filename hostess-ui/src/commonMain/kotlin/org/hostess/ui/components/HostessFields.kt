@@ -97,7 +97,7 @@ fun HostessPasswordField(
 }
 
 @Composable
-private fun HostessFieldLabel(label: String) {
+fun HostessFieldLabel(label: String) {
     Text(
         text = label,
         color = HostessTheme.colors.muted,
@@ -106,7 +106,7 @@ private fun HostessFieldLabel(label: String) {
 }
 
 @Composable
-private fun hostessTextFieldColors() = OutlinedTextFieldDefaults.colors(
+fun hostessTextFieldColors() = OutlinedTextFieldDefaults.colors(
     focusedTextColor = HostessTheme.colors.ink,
     unfocusedTextColor = HostessTheme.colors.ink,
     disabledTextColor = HostessTheme.colors.disabledInk,

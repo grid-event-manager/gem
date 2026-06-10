@@ -72,12 +72,12 @@ fun SettingsAddAccountPanel(
         if (state.addAccountExpanded) {
             HostessTextField(
                 label = textCatalogue.text(HostessTextKey.Username),
-                value = state.newUsernameDraft,
+                value = state.addUsernameDraft,
                 onValueChange = onUsernameChanged,
             )
             HostessPasswordField(
                 label = textCatalogue.text(HostessTextKey.Password),
-                value = state.newPasswordDraft,
+                value = state.addPasswordDraft,
                 onValueChange = onPasswordChanged,
                 revealText = textCatalogue.text(HostessTextKey.Show),
                 hideText = textCatalogue.text(HostessTextKey.Hide),

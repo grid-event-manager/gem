@@ -58,9 +58,10 @@ class UiStateInitialShapeTest {
         val settings = SettingsUiState.fromCredentialRuntime(FakeHostessUiRuntime.ready().credentialRuntimeState)
 
         assertNull(login.selectedProfileId)
+        assertEquals("", login.usernameDraft)
         assertFalse(login.passwordEnabled)
         assertFalse(login.loginEnabled)
-        assertFalse(login.addLoginExpanded)
+        assertFalse(login.operation.inFlight)
         assertEquals(emptySet(), settings.selectedDeleteProfileIds)
         assertFalse(settings.confirmDeleteOpen)
         assertFalse(settings.copy(selectedDeleteProfileIds = setOf(profileId)).confirmDeleteOpen)

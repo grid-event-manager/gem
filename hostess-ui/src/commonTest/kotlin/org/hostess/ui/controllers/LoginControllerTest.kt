@@ -1,8 +1,10 @@
 package org.hostess.ui.controllers
 
 import org.hostess.core.services.CredentialServiceRevealPasswordResult
+import org.hostess.ui.state.LoginEntryMode
 import org.hostess.ui.state.UiRoute
 import org.hostess.ui.testing.FakeHostessUiRuntime
+import org.hostess.ui.text.HostessTextKey
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -18,7 +20,9 @@ class LoginControllerTest {
             .selectSavedLogin(profile.profileId)
 
         assertEquals(listOf(profile.profileId), controller.state.savedLoginOptions.map { it.profileId })
+        assertEquals(profile.loginName.value, controller.state.usernameDraft)
         assertEquals(profile.profileId, controller.state.selectedProfileId)
+        assertEquals(LoginEntryMode.Saved(profile.profileId), controller.state.entryMode)
         assertEquals("test-password", controller.state.passwordDraft)
         assertFalse(controller.state.passwordVisible)
         assertTrue(controller.state.passwordEnabled)
@@ -31,8 +35,8 @@ class LoginControllerTest {
         val revealed = LoginController(FakeHostessUiRuntime.ready())
             .refreshSavedLogins()
             .selectSavedLogin(profile.profileId)
-            .toggleSavedPasswordVisibility()
-        val hidden = revealed.toggleSavedPasswordVisibility()
+            .togglePasswordVisibility()
+        val hidden = revealed.togglePasswordVisibility()
 
         assertTrue(revealed.state.passwordVisible)
         assertFalse(hidden.state.passwordVisible)
@@ -46,8 +50,9 @@ class LoginControllerTest {
         val loggedIn = LoginController(runtime)
             .refreshSavedLogins()
             .selectSavedLogin(profile.profileId)
-            .updateSavedPasswordDraft("changed-password")
-            .loginSelected()
+            .updatePasswordDraft("changed-password")
+            .beginLogin()
+            .completeLogin()
 
         assertEquals(UiRoute.Compose, loggedIn.appState.route)
         assertEquals(profile.loginName.value, loggedIn.appState.activeAccountLabel)
@@ -63,12 +68,14 @@ class LoginControllerTest {
         val failed = LoginController(runtime)
             .refreshSavedLogins()
             .selectSavedLogin(profile.profileId)
-            .updateSavedPasswordDraft("changed-password")
-            .loginSelected()
+            .updatePasswordDraft("changed-password")
+            .beginLogin()
+            .completeLogin()
 
         assertEquals(UiRoute.Login, failed.appState.route)
         assertEquals(profile.profileId, failed.state.selectedProfileId)
         assertEquals("changed-password", failed.state.passwordDraft)
+        assertEquals(HostessTextKey.LoginFailed, failed.state.operation.errorKey)
         assertEquals("test-password", revealedPassword(runtime, profile.profileId))
     }
 
@@ -79,7 +86,8 @@ class LoginControllerTest {
         val failed = LoginController(runtime)
             .refreshSavedLogins()
             .selectSavedLogin(profile.profileId)
-            .loginSelected()
+            .beginLogin()
+            .completeLogin()
 
         assertEquals(UiRoute.Login, failed.appState.route)
         assertNull(failed.appState.session)
@@ -91,17 +99,17 @@ class LoginControllerTest {
         val runtime = FakeHostessUiRuntime.ready()
         val loggedIn = LoginController(runtime)
             .refreshSavedLogins()
-            .toggleAddLoginPanel()
-            .updateNewUsernameDraft("newhost")
-            .normalizeNewLoginNameOnPasswordFocus()
-            .updateNewPasswordDraft("new-password")
-            .saveAndLogin()
+            .updateUsernameDraft("newhost")
+            .normalizeLoginNameOnPasswordFocus()
+            .updatePasswordDraft("new-password")
+            .beginLogin()
+            .completeLogin()
 
         assertEquals(UiRoute.Compose, loggedIn.appState.route)
         assertEquals("newhost resident", loggedIn.appState.activeAccountLabel)
-        assertEquals("", loggedIn.state.newUsernameDraft)
-        assertEquals("", loggedIn.state.newPasswordDraft)
-        assertFalse(loggedIn.state.newPasswordVisible)
+        assertEquals("", loggedIn.state.usernameDraft)
+        assertEquals("", loggedIn.state.passwordDraft)
+        assertFalse(loggedIn.state.passwordVisible)
     }
 
     @Test
@@ -110,13 +118,39 @@ class LoginControllerTest {
         val controller = LoginController(FakeHostessUiRuntime.unavailable())
             .refreshSavedLogins()
             .selectSavedLogin(profile.profileId)
-            .updateNewUsernameDraft("newhost")
-            .updateNewPasswordDraft("new-password")
-            .saveAndLogin()
+            .updateUsernameDraft("newhost")
+            .updatePasswordDraft("new-password")
+            .beginLogin()
 
         assertFalse(controller.state.passwordEnabled)
         assertFalse(controller.state.loginEnabled)
-        assertFalse(controller.state.saveAndLoginEnabled)
+        assertFalse(controller.state.operation.inFlight)
+    }
+
+    @Test
+    fun beginLoginSetsVisibleProgressBeforeWorkflowCompletes() {
+        val started = LoginController(FakeHostessUiRuntime.ready())
+            .refreshSavedLogins()
+            .updateUsernameDraft("newhost")
+            .normalizeLoginNameOnPasswordFocus()
+            .updatePasswordDraft("new-password")
+            .beginLogin()
+
+        assertTrue(started.state.operation.inFlight)
+        assertEquals(HostessTextKey.SavingLogin, started.state.operation.messageKey)
+    }
+
+    @Test
+    fun typingUsernameClearsSavedSelectionAndUsesNewEntryMode() {
+        val profile = FakeHostessUiRuntime.defaultProfile()
+        val typed = LoginController(FakeHostessUiRuntime.ready())
+            .refreshSavedLogins()
+            .selectSavedLogin(profile.profileId)
+            .updateUsernameDraft("anotherhost")
+
+        assertNull(typed.state.selectedProfileId)
+        assertEquals(LoginEntryMode.New, typed.state.entryMode)
+        assertEquals("anotherhost", typed.state.usernameDraft)
     }
 
     private fun revealedPassword(

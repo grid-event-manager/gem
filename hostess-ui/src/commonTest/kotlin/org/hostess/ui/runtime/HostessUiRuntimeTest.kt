@@ -15,6 +15,8 @@ class HostessUiRuntimeTest {
         assertTrue(runtime.credentialRuntimeState is HostessCredentialRuntimeReady)
         assertNotNull(runtime.credentialServiceOrNull())
         assertNotNull(runtime.savedLoginAuthenticationServiceOrNull())
+        assertNotNull(runtime.loginProfileAuthenticationServiceOrNull())
+        assertNotNull(runtime.savedAccountManagementServiceOrNull())
     }
 
     @Test
@@ -23,6 +25,8 @@ class HostessUiRuntimeTest {
 
         assertNull(runtime.credentialServiceOrNull())
         assertNull(runtime.savedLoginAuthenticationServiceOrNull())
+        assertNull(runtime.loginProfileAuthenticationServiceOrNull())
+        assertNull(runtime.savedAccountManagementServiceOrNull())
     }
 
     @Test

@@ -4,7 +4,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.yield
 import org.hostess.ui.components.HostessAppScaffold
 import org.hostess.ui.components.HostessSendFooter
 import org.hostess.ui.components.HostessTopBar
@@ -21,6 +26,7 @@ import org.hostess.ui.screens.ComposeScreen
 import org.hostess.ui.runtime.HostessUiRuntime
 import org.hostess.ui.screens.LoginScreen
 import org.hostess.ui.screens.SettingsScreen
+import org.hostess.ui.state.LoginEntryMode
 import org.hostess.ui.state.UiRoute
 import org.hostess.ui.text.EnglishHostessTextCatalogue
 import org.hostess.ui.text.HostessTextCatalogue
@@ -37,21 +43,63 @@ fun HostessApp(
     var noticeController by remember(runtime) { mutableStateOf(NoticeComposerController(runtime)) }
     var groupTargetController by remember(runtime) { mutableStateOf(GroupTargetController(runtime)) }
     var inventoryController by remember(runtime) { mutableStateOf(InventoryBrowserController(runtime)) }
+    val coroutineScope = rememberCoroutineScope()
 
-    fun routeAfterLogin(controller: LoginController) {
-        appController = HostessAppController(runtime, controller.appState)
-        if (controller.appState.route == UiRoute.Compose) {
-            val composeNoticeController = NoticeComposerController(
-                runtime = runtime,
-                session = controller.appState.session,
-                avatarReady = true,
-            )
-            groupTargetController = composeNoticeController.refreshGroups()
-            noticeController = composeNoticeController.updateTargetSet(groupTargetController.targetSet)
-            inventoryController = InventoryBrowserController(
-                runtime = runtime,
-                session = controller.appState.session,
-            ).refreshInventory()
+    fun runLoginWorkflow() {
+        val started = loginController
+            .normalizeLoginNameOnPasswordFocus()
+            .beginLogin()
+        loginController = started
+        if (!started.state.operation.inFlight) {
+            return
+        }
+
+        coroutineScope.launch {
+            var current = started
+            if (current.state.entryMode is LoginEntryMode.New) {
+                yield()
+                current = current.showOperation(HostessTextKey.LoggingIn)
+                loginController = current
+            }
+            current = withContext(Dispatchers.Default) {
+                current.completeAuthentication()
+            }
+            loginController = current
+
+            if (current.state.operation.inFlight && current.appState.session != null) {
+                current = current.showOperation(HostessTextKey.PreparingAvatar)
+                loginController = current
+                current = withContext(Dispatchers.Default) {
+                    current.completeAvatarReadiness()
+                }
+                loginController = current
+            }
+
+            if (current.appState.route == UiRoute.Compose) {
+                appController = HostessAppController(runtime, current.appState)
+                current = current.showOperation(HostessTextKey.LoadingGroups)
+                loginController = current
+                val composeNoticeController = NoticeComposerController(
+                    runtime = runtime,
+                    session = current.appState.session,
+                    avatarReady = true,
+                )
+                groupTargetController = withContext(Dispatchers.Default) {
+                    composeNoticeController.refreshGroups()
+                }
+                noticeController = composeNoticeController.updateTargetSet(groupTargetController.targetSet)
+                current = current.showOperation(HostessTextKey.LoadingInventory)
+                loginController = current
+                inventoryController = withContext(Dispatchers.Default) {
+                    InventoryBrowserController(
+                        runtime = runtime,
+                        session = current.appState.session,
+                    ).refreshInventory()
+                }
+                loginController = current.finishLoginOperation()
+            } else {
+                appController = HostessAppController(runtime, current.appState)
+            }
         }
     }
 
@@ -123,34 +171,20 @@ fun HostessApp(
                             onSavedLoginSelected = { profileId ->
                                 loginController = loginController.selectSavedLogin(profileId)
                             },
-                            onSavedPasswordVisibilityToggle = {
-                                loginController = loginController.toggleSavedPasswordVisibility()
+                            onUsernameChanged = { username ->
+                                loginController = loginController.updateUsernameDraft(username)
                             },
-                            onSavedPasswordChanged = { password ->
-                                loginController = loginController.updateSavedPasswordDraft(password)
+                            onPasswordFocus = {
+                                loginController = loginController.normalizeLoginNameOnPasswordFocus()
                             },
-                            onAddLoginToggle = {
-                                loginController = loginController.toggleAddLoginPanel()
+                            onPasswordVisibilityToggle = {
+                                loginController = loginController.togglePasswordVisibility()
                             },
-                            onNewUsernameChanged = { username ->
-                                loginController = loginController.updateNewUsernameDraft(username)
-                            },
-                            onNewPasswordFocus = {
-                                loginController = loginController.normalizeNewLoginNameOnPasswordFocus()
-                            },
-                            onNewPasswordChanged = { password ->
-                                loginController = loginController.updateNewPasswordDraft(password)
-                            },
-                            onNewPasswordVisibilityToggle = {
-                                loginController = loginController.toggleNewPasswordVisibility()
+                            onPasswordChanged = { password ->
+                                loginController = loginController.updatePasswordDraft(password)
                             },
                             onLogin = {
-                                loginController = loginController.loginSelected()
-                                routeAfterLogin(loginController)
-                            },
-                            onSaveAndLogin = {
-                                loginController = loginController.saveAndLogin()
-                                routeAfterLogin(loginController)
+                                runLoginWorkflow()
                             },
                         )
                     }

@@ -42,6 +42,13 @@ sealed interface HostessTextKey {
     data object SendNotices : HostessTextKey
     data object Ready : HostessTextKey
     data object Sending : HostessTextKey
+    data object SavingLogin : HostessTextKey
+    data object LoggingIn : HostessTextKey
+    data object PreparingAvatar : HostessTextKey
+    data object LoadingGroups : HostessTextKey
+    data object LoadingInventory : HostessTextKey
+    data object LoginFailed : HostessTextKey
+    data object RemovingFailedLogin : HostessTextKey
     data object Online : HostessTextKey
     data object Offline : HostessTextKey
     data object BlankStatus : HostessTextKey
@@ -89,6 +96,13 @@ sealed interface HostessTextKey {
             SendNotices,
             Ready,
             Sending,
+            SavingLogin,
+            LoggingIn,
+            PreparingAvatar,
+            LoadingGroups,
+            LoadingInventory,
+            LoginFailed,
+            RemovingFailedLogin,
             Online,
             Offline,
             BlankStatus,
@@ -143,6 +157,13 @@ object EnglishHostessTextCatalogue : HostessTextCatalogue {
         HostessTextKey.SendNotices -> "Send notices"
         HostessTextKey.Ready -> "Ready"
         HostessTextKey.Sending -> "Sending"
+        HostessTextKey.SavingLogin -> "Saving login"
+        HostessTextKey.LoggingIn -> "Logging in"
+        HostessTextKey.PreparingAvatar -> "Preparing avatar"
+        HostessTextKey.LoadingGroups -> "Loading groups"
+        HostessTextKey.LoadingInventory -> "Loading inventory"
+        HostessTextKey.LoginFailed -> "Login failed"
+        HostessTextKey.RemovingFailedLogin -> "Removing failed login"
         HostessTextKey.Online -> "Online"
         HostessTextKey.Offline -> "Offline"
         HostessTextKey.BlankStatus -> ""

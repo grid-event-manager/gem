@@ -63,8 +63,8 @@ class SettingsControllerTest {
         assertEquals(UiRoute.Settings, saved.appState.route)
         assertTrue(saved.state.savedLoginOptions.any { it.loginName == "venuehost resident" })
         assertFalse(saved.state.addAccountExpanded)
-        assertEquals("", saved.state.newUsernameDraft)
-        assertEquals("", saved.state.newPasswordDraft)
+        assertEquals("", saved.state.addUsernameDraft)
+        assertEquals("", saved.state.addPasswordDraft)
         assertFalse(saved.state.newPasswordVisible)
         assertFalse(saved.state.saveNewAccountEnabled)
     }

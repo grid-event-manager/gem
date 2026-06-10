@@ -4,10 +4,10 @@ import org.hostess.core.domain.AccountProfileId
 import org.hostess.core.domain.SecondLifeLoginName
 import org.hostess.core.domain.SecondLifeLoginNameResult
 import org.hostess.core.ports.AccountProfileStoreListResult
-import org.hostess.core.services.CredentialServiceAddResult
-import org.hostess.core.services.CredentialServiceDeleteResult
 import org.hostess.core.services.CredentialServiceRevealPasswordResult
 import org.hostess.core.services.CredentialServiceUpdatePasswordResult
+import org.hostess.core.services.SavedAccountAddResult
+import org.hostess.core.services.SavedAccountDeleteResult
 import org.hostess.ui.runtime.HostessUiRuntime
 import org.hostess.ui.state.AppUiState
 import org.hostess.ui.state.SavedLoginOptionUiState
@@ -91,7 +91,7 @@ class SettingsController(
         copy(state.copy(newPasswordVisible = !state.newPasswordVisible))
 
     fun normalizeNewAccountNameOnPasswordFocus(): SettingsController =
-        when (val result = SecondLifeLoginName.fromUserInput(state.newUsernameDraft)) {
+        when (val result = SecondLifeLoginName.fromUserInput(state.addUsernameDraft)) {
             is SecondLifeLoginNameResult.Valid -> copy(state.withNewAccountDrafts(username = result.loginName.value))
             is SecondLifeLoginNameResult.Invalid -> copy(
                 state.copy(
@@ -103,12 +103,12 @@ class SettingsController(
         }
 
     fun saveNewAccount(): SettingsController {
-        val credentialService = runtime.credentialServiceOrNull()
+        val accountManagementService = runtime.savedAccountManagementServiceOrNull()
             ?: return credentialRuntimeUnavailable()
         if (!state.saveNewAccountEnabled) {
             return copy(state)
         }
-        val normalizedName = when (val result = SecondLifeLoginName.fromUserInput(state.newUsernameDraft)) {
+        val normalizedName = when (val result = SecondLifeLoginName.fromUserInput(state.addUsernameDraft)) {
             is SecondLifeLoginNameResult.Valid -> result.loginName.value
             is SecondLifeLoginNameResult.Invalid -> {
                 return copy(
@@ -120,29 +120,26 @@ class SettingsController(
                 )
             }
         }
-        return when (val added = credentialService.addLogin(normalizedName, state.newPasswordDraft)) {
-            is CredentialServiceAddResult.Saved -> copy(
+        return when (val added = accountManagementService.addAccount(normalizedName, state.addPasswordDraft)) {
+            is SavedAccountAddResult.Saved -> copy(
                 state.copy(
                     savedLoginOptions = refreshedOptions() ?: (state.savedLoginOptions + SavedLoginOptionUiState.from(added.profile)),
                     addAccountExpanded = false,
-                    newUsernameDraft = "",
-                    newPasswordDraft = "",
+                    addUsernameDraft = "",
+                    addPasswordDraft = "",
                     newPasswordVisible = false,
                     saveNewAccountEnabled = false,
                     errorKey = null,
                     errorMessage = null,
                 ),
             )
-            is CredentialServiceAddResult.InvalidLoginName -> copy(
+            is SavedAccountAddResult.InvalidLoginName -> copy(
                 state.copy(errorKey = HostessTextKey.BlankStatus, errorMessage = added.reason.name),
             )
-            CredentialServiceAddResult.InvalidSecret -> copy(
+            SavedAccountAddResult.InvalidSecret -> copy(
                 state.copy(errorKey = HostessTextKey.BlankStatus, errorMessage = null),
             )
-            is CredentialServiceAddResult.ProfileStoreFailure -> copy(
-                state.copy(errorKey = HostessTextKey.BlankStatus, errorMessage = added.message),
-            )
-            is CredentialServiceAddResult.VaultFailure -> copy(
+            is SavedAccountAddResult.CredentialStoreFailed -> copy(
                 state.copy(errorKey = HostessTextKey.BlankStatus, errorMessage = added.message),
             )
         }
@@ -176,17 +173,16 @@ class SettingsController(
         if (selectedIds.isEmpty()) {
             return copy(state.copy(confirmDeleteOpen = false))
         }
-        val credentialService = runtime.credentialServiceOrNull()
+        val accountManagementService = runtime.savedAccountManagementServiceOrNull()
             ?: return credentialRuntimeUnavailable()
         val deletedLoginNames = state.savedLoginOptions
             .filter { it.profileId in selectedIds }
             .map { it.loginName }
             .toSet()
-        return when (val deleted = credentialService.deleteProfiles(selectedIds)) {
-            is CredentialServiceDeleteResult.Deleted -> afterDeleteSuccess(deleted.profileIds, deletedLoginNames)
-            is CredentialServiceDeleteResult.MissingProfiles -> deleteFailure()
-            is CredentialServiceDeleteResult.ProfileStoreFailure -> deleteFailure(deleted.message)
-            is CredentialServiceDeleteResult.VaultFailure -> deleteFailure(deleted.message)
+        return when (val deleted = accountManagementService.deleteAccounts(selectedIds)) {
+            is SavedAccountDeleteResult.Deleted -> afterDeleteSuccess(deleted.profileIds, deletedLoginNames)
+            is SavedAccountDeleteResult.MissingProfiles -> deleteFailure()
+            is SavedAccountDeleteResult.CredentialStoreFailed -> deleteFailure(deleted.message)
         }
     }
 
@@ -214,12 +210,12 @@ class SettingsController(
     }
 
     private fun SettingsUiState.withNewAccountDrafts(
-        username: String = newUsernameDraft,
-        password: String = newPasswordDraft,
+        username: String = addUsernameDraft,
+        password: String = addPasswordDraft,
     ): SettingsUiState =
         copy(
-            newUsernameDraft = username,
-            newPasswordDraft = password,
+            addUsernameDraft = username,
+            addPasswordDraft = password,
             saveNewAccountEnabled = credentialRuntime.ready && username.isNotBlank() && password.isNotBlank(),
             errorKey = null,
             errorMessage = null,

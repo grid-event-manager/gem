@@ -1,10 +1,18 @@
 package org.hostess.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -15,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import org.hostess.core.domain.AccountProfileId
 import org.hostess.ui.design.HostessTheme
+import org.hostess.ui.state.LoginUiState
 import org.hostess.ui.state.SavedLoginOptionUiState
 import org.hostess.ui.testtags.HostessTestTags
 import org.hostess.ui.text.HostessTextCatalogue
@@ -74,43 +83,46 @@ fun SavedLoginDropdown(
 }
 
 @Composable
-fun LoginSavedAccountPanel(
-    selectedProfileId: AccountProfileId?,
-    options: List<SavedLoginOptionUiState>,
-    passwordDraft: String,
-    passwordVisible: Boolean,
-    passwordEnabled: Boolean,
-    loginEnabled: Boolean,
+fun LoginCredentialPanel(
+    state: LoginUiState,
     textCatalogue: HostessTextCatalogue,
     onSavedLoginSelected: (AccountProfileId?) -> Unit,
+    onUsernameChanged: (String) -> Unit,
+    onPasswordFocus: () -> Unit,
     onPasswordVisibilityToggle: () -> Unit,
     onPasswordChanged: (String) -> Unit,
     onLogin: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val operation = state.operation
+    val controlsEnabled = !operation.inFlight
     HostessPanel(modifier = modifier) {
-        SavedLoginDropdown(
-            selectedProfileId = selectedProfileId,
-            options = options,
-            enabled = options.isNotEmpty(),
+        LoginUsernameField(
+            usernameDraft = state.usernameDraft,
+            selectedProfileId = state.selectedProfileId,
+            options = state.savedLoginOptions,
+            enabled = controlsEnabled && state.credentialRuntime.ready,
             textCatalogue = textCatalogue,
-            onSelected = onSavedLoginSelected,
+            onUsernameChanged = onUsernameChanged,
+            onSavedLoginSelected = onSavedLoginSelected,
         )
         HostessPasswordField(
             label = textCatalogue.text(HostessTextKey.Password),
-            value = passwordDraft,
+            value = state.passwordDraft,
             onValueChange = onPasswordChanged,
             revealText = textCatalogue.text(HostessTextKey.Show),
             hideText = textCatalogue.text(HostessTextKey.Hide),
-            revealed = passwordVisible,
+            revealed = state.passwordVisible,
             onRevealChanged = { onPasswordVisibilityToggle() },
-            enabled = passwordEnabled,
+            enabled = controlsEnabled && state.passwordEnabled,
+            onPasswordFocus = onPasswordFocus,
             modifier = Modifier.testTag(HostessTestTags.AccountPassword),
         )
+        LoginOperationText(state, textCatalogue)
         HostessSecondaryButton(
             text = textCatalogue.text(HostessTextKey.Login),
             onClick = onLogin,
-            enabled = loginEnabled,
+            enabled = controlsEnabled && state.loginEnabled,
             modifier = Modifier
                 .fillMaxWidth()
                 .testTag(HostessTestTags.LoginButton),
@@ -118,52 +130,110 @@ fun LoginSavedAccountPanel(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddLoginPanel(
-    expanded: Boolean,
+private fun LoginUsernameField(
     usernameDraft: String,
-    passwordDraft: String,
-    passwordVisible: Boolean,
-    saveAndLoginEnabled: Boolean,
+    selectedProfileId: AccountProfileId?,
+    options: List<SavedLoginOptionUiState>,
+    enabled: Boolean,
     textCatalogue: HostessTextCatalogue,
-    onToggle: () -> Unit,
     onUsernameChanged: (String) -> Unit,
-    onPasswordFocus: () -> Unit,
-    onPasswordChanged: (String) -> Unit,
-    onPasswordVisibilityToggle: () -> Unit,
-    onSaveAndLogin: () -> Unit,
     modifier: Modifier = Modifier,
+    onSavedLoginSelected: (AccountProfileId?) -> Unit,
 ) {
-    HostessPanel(modifier = modifier) {
-        HostessSecondaryButton(
-            text = textCatalogue.text(HostessTextKey.AddNewLogin),
-            onClick = onToggle,
-            modifier = Modifier
-                .fillMaxWidth()
-                .testTag(HostessTestTags.AddAccount),
-        )
-        if (expanded) {
-            HostessTextField(
-                label = textCatalogue.text(HostessTextKey.Username),
+    var expanded by remember { mutableStateOf(false) }
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(HostessTheme.spacing.fieldGap),
+    ) {
+        HostessFieldLabel(textCatalogue.text(HostessTextKey.Username))
+        ExposedDropdownMenuBox(
+            expanded = expanded && options.isNotEmpty(),
+            onExpandedChange = {
+                if (enabled && options.isNotEmpty()) {
+                    expanded = it
+                }
+            },
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            OutlinedTextField(
                 value = usernameDraft,
                 onValueChange = onUsernameChanged,
+                enabled = enabled,
+                singleLine = true,
+                textStyle = HostessTheme.typeScale.body,
+                shape = HostessTheme.shapes.control,
+                colors = hostessTextFieldColors(),
+                trailingIcon = {
+                    if (options.isNotEmpty()) {
+                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                    }
+                },
+                modifier = Modifier
+                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable, enabled)
+                    .fillMaxWidth()
+                    .testTag(HostessTestTags.AccountName),
             )
-            HostessPasswordField(
-                label = textCatalogue.text(HostessTextKey.Password),
-                value = passwordDraft,
-                onValueChange = onPasswordChanged,
-                revealText = textCatalogue.text(HostessTextKey.Show),
-                hideText = textCatalogue.text(HostessTextKey.Hide),
-                revealed = passwordVisible,
-                onRevealChanged = { onPasswordVisibilityToggle() },
-                onPasswordFocus = onPasswordFocus,
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+            ) {
+                DropdownMenuItem(
+                    text = { Text(textCatalogue.text(HostessTextKey.SavedLoginPlaceholder)) },
+                    onClick = {
+                        expanded = false
+                        onSavedLoginSelected(null)
+                    },
+                )
+                options.forEach { option ->
+                    DropdownMenuItem(
+                        text = { Text(option.loginName, style = HostessTheme.typeScale.body) },
+                        onClick = {
+                            expanded = false
+                            onSavedLoginSelected(option.profileId)
+                        },
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LoginOperationText(
+    state: LoginUiState,
+    textCatalogue: HostessTextCatalogue,
+) {
+    val operation = state.operation
+    if (operation.inFlight) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(HostessTheme.spacing.fieldGap),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(HostessTheme.spacing.statusPillMinHeight),
+                strokeWidth = HostessTheme.spacing.borderWidth,
+                color = HostessTheme.colors.primary,
             )
-            HostessSecondaryButton(
-                text = textCatalogue.text(HostessTextKey.SaveAndLogin),
-                onClick = onSaveAndLogin,
-                enabled = saveAndLoginEnabled,
-                modifier = Modifier.fillMaxWidth(),
+            Text(
+                text = textCatalogue.text(operation.messageKey ?: HostessTextKey.LoggingIn),
+                color = HostessTheme.colors.muted,
+                style = HostessTheme.typeScale.smallLabel,
             )
         }
+    }
+    if (operation.errorKey != null || operation.errorMessage != null) {
+        val message = listOfNotNull(
+            operation.errorKey
+                ?.takeUnless { it == HostessTextKey.BlankStatus }
+                ?.let(textCatalogue::text),
+            operation.errorMessage,
+        ).joinToString(": ")
+        Text(
+            text = message,
+            color = HostessTheme.colors.danger,
+            style = HostessTheme.typeScale.smallLabel,
+        )
     }
 }

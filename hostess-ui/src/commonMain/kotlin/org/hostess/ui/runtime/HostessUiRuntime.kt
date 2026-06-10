@@ -8,9 +8,11 @@ import org.hostess.core.services.HostessCredentialRuntimeReady
 import org.hostess.core.services.HostessCredentialRuntimeState
 import org.hostess.core.services.InventoryDirectoryService
 import org.hostess.core.services.InventorySelectionService
+import org.hostess.core.services.LoginProfileAuthenticationService
 import org.hostess.core.services.NoticeDispatchService
 import org.hostess.core.services.NoticeDraftService
 import org.hostess.core.services.SavedLoginAuthenticationService
+import org.hostess.core.services.SavedAccountManagementService
 import org.hostess.core.services.SessionService
 import org.hostess.core.services.TargetSelectionService
 
@@ -34,4 +36,18 @@ data class HostessUiRuntime(
         credentialServiceOrNull()?.let { credentialService ->
             SavedLoginAuthenticationService(credentialService, sessionService)
         }
+
+    fun loginProfileAuthenticationServiceOrNull(): LoginProfileAuthenticationService? =
+        credentialServiceOrNull()?.let { credentialService ->
+            LoginProfileAuthenticationService(
+                credentialService = credentialService,
+                savedLoginAuthenticationService = SavedLoginAuthenticationService(
+                    credentialService = credentialService,
+                    sessionService = sessionService,
+                ),
+            )
+        }
+
+    fun savedAccountManagementServiceOrNull(): SavedAccountManagementService? =
+        credentialServiceOrNull()?.let(::SavedAccountManagementService)
 }

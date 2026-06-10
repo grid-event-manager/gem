@@ -20,8 +20,13 @@ class LoginScreenStateTest {
         assertEquals("Show", catalogue.text(HostessTextKey.Show))
         assertEquals("Hide", catalogue.text(HostessTextKey.Hide))
         assertEquals("Login", catalogue.text(HostessTextKey.Login))
-        assertEquals("Add new login...", catalogue.text(HostessTextKey.AddNewLogin))
-        assertEquals("Save and login", catalogue.text(HostessTextKey.SaveAndLogin))
+        assertEquals("Saving login", catalogue.text(HostessTextKey.SavingLogin))
+        assertEquals("Logging in", catalogue.text(HostessTextKey.LoggingIn))
+        assertEquals("Preparing avatar", catalogue.text(HostessTextKey.PreparingAvatar))
+        assertEquals("Loading groups", catalogue.text(HostessTextKey.LoadingGroups))
+        assertEquals("Loading inventory", catalogue.text(HostessTextKey.LoadingInventory))
+        assertEquals("Login failed", catalogue.text(HostessTextKey.LoginFailed))
+        assertEquals("Removing failed login", catalogue.text(HostessTextKey.RemovingFailedLogin))
     }
 
     @Test
@@ -30,12 +35,12 @@ class LoginScreenStateTest {
 
         assertFalse(state.passwordEnabled)
         assertFalse(state.loginEnabled)
-        assertFalse(state.addLoginExpanded)
-        assertFalse(state.saveAndLoginEnabled)
+        assertFalse(state.operation.inFlight)
+        assertEquals("", state.usernameDraft)
     }
 
     @Test
-    fun addLoginEnablementRequiresBothDraftFieldsAndReadyRuntime() {
+    fun loginEnablementRequiresReadyRuntime() {
         val ready = LoginUiState.fromCredentialRuntime(FakeHostessUiRuntime.ready().credentialRuntimeState)
         val unavailable = LoginUiState.fromCredentialRuntime(FakeHostessUiRuntime.unavailable().credentialRuntimeState)
 
@@ -50,6 +55,5 @@ class LoginScreenStateTest {
         assertEquals("data-account-password", HostessTestTags.AccountPassword)
         assertEquals("data-toggle-password", HostessTestTags.TogglePassword)
         assertEquals("data-login-button", HostessTestTags.LoginButton)
-        assertEquals("data-add-account", HostessTestTags.AddAccount)
     }
 }

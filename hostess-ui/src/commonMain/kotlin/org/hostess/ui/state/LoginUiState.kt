@@ -8,23 +8,40 @@ import org.hostess.ui.text.HostessTextKey
 data class LoginUiState(
     val credentialRuntime: CredentialRuntimeUiState,
     val savedLoginOptions: List<SavedLoginOptionUiState> = emptyList(),
+    val usernameDraft: String = "",
     val selectedProfileId: AccountProfileId? = null,
+    val entryMode: LoginEntryMode = LoginEntryMode.New,
     val passwordDraft: String = "",
     val passwordVisible: Boolean = false,
     val passwordEnabled: Boolean = false,
     val loginEnabled: Boolean = false,
-    val addLoginExpanded: Boolean = false,
-    val newUsernameDraft: String = "",
-    val newPasswordDraft: String = "",
-    val newPasswordVisible: Boolean = false,
-    val saveAndLoginEnabled: Boolean = false,
-    val errorKey: HostessTextKey? = null,
-    val errorMessage: String? = null,
+    val operation: LoginOperationUiState = LoginOperationUiState.Idle,
 ) {
     companion object {
         fun fromCredentialRuntime(runtimeState: HostessCredentialRuntimeState): LoginUiState =
             LoginUiState(credentialRuntime = CredentialRuntimeUiState.from(runtimeState))
     }
+}
+
+data class LoginOperationUiState(
+    val inFlight: Boolean,
+    val messageKey: HostessTextKey?,
+    val errorKey: HostessTextKey?,
+    val errorMessage: String?,
+) {
+    companion object {
+        val Idle: LoginOperationUiState = LoginOperationUiState(
+            inFlight = false,
+            messageKey = null,
+            errorKey = null,
+            errorMessage = null,
+        )
+    }
+}
+
+sealed interface LoginEntryMode {
+    data class Saved(val profileId: AccountProfileId) : LoginEntryMode
+    data object New : LoginEntryMode
 }
 
 data class SavedLoginOptionUiState(
