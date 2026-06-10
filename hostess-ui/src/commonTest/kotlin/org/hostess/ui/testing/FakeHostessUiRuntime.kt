@@ -80,6 +80,7 @@ object FakeHostessUiRuntime {
         groups: List<GroupMembership> = emptyList(),
         groupListSucceeds: Boolean = true,
         inventoryListing: InventoryDirectoryListing = InventoryDirectoryListing(emptyList(), emptyList()),
+        inventoryListSucceeds: Boolean = true,
         attachmentSucceeds: Boolean = true,
         noticeRecorder: FakeNoticeRecorder = FakeNoticeRecorder(),
     ): HostessUiRuntime {
@@ -101,6 +102,7 @@ object FakeHostessUiRuntime {
             groups = groups,
             groupListSucceeds = groupListSucceeds,
             inventoryListing = inventoryListing,
+            inventoryListSucceeds = inventoryListSucceeds,
             attachmentSucceeds = attachmentSucceeds,
             noticeRecorder = noticeRecorder,
         )
@@ -131,11 +133,12 @@ object FakeHostessUiRuntime {
         groups: List<GroupMembership> = emptyList(),
         groupListSucceeds: Boolean = true,
         inventoryListing: InventoryDirectoryListing = InventoryDirectoryListing(emptyList(), emptyList()),
+        inventoryListSucceeds: Boolean = true,
         attachmentSucceeds: Boolean = true,
         noticeRecorder: FakeNoticeRecorder = FakeNoticeRecorder(),
     ): HostessUiRuntime {
         val sessionPort = FakeSessionPort(loginSucceeds)
-        val inventoryPort = FakeInventoryPort(inventoryListing, attachmentSucceeds)
+        val inventoryPort = FakeInventoryPort(inventoryListing, inventoryListSucceeds, attachmentSucceeds)
         return HostessUiRuntime(
             credentialRuntimeState = credentialRuntimeState,
             sessionService = SessionService(
@@ -336,6 +339,7 @@ private class FakeGroupPort(
 
 private class FakeInventoryPort(
     private val inventoryListing: InventoryDirectoryListing,
+    private val inventoryListSucceeds: Boolean,
     private val attachmentSucceeds: Boolean,
 ) : InventoryPort {
     override fun resolveExistingAttachment(
@@ -360,18 +364,30 @@ private class FakeInventoryPort(
         session: HostessSession,
         query: InventoryItemQuery,
     ): InventoryDirectoryListResult =
-        InventoryDirectoryListResult.Success(
-            InventoryDirectoryListing(
-                folders = inventoryListing.folders,
-                items = inventoryListing.items.filter { it.kind in query.kinds },
-            ),
-        )
+        if (inventoryListSucceeds) {
+            InventoryDirectoryListResult.Success(
+                InventoryDirectoryListing(
+                    folders = inventoryListing.folders,
+                    items = inventoryListing.items.filter { it.kind in query.kinds },
+                ),
+            )
+        } else {
+            InventoryDirectoryListResult.Failure(
+                CoreFailure(CoreFailureReason.INVENTORY_LIST_FAILED, "inventory listing failed"),
+            )
+        }
 
     override fun listItems(
         session: HostessSession,
         query: InventoryItemQuery,
     ): InventoryItemListResult =
-        InventoryItemListResult.Success(inventoryListing.items.filter { it.kind in query.kinds })
+        if (inventoryListSucceeds) {
+            InventoryItemListResult.Success(inventoryListing.items.filter { it.kind in query.kinds })
+        } else {
+            InventoryItemListResult.Failure(
+                CoreFailure(CoreFailureReason.INVENTORY_LIST_FAILED, "inventory item listing failed"),
+            )
+        }
 }
 
 private class FakeNoticePort(

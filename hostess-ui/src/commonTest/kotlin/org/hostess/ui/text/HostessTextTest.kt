@@ -7,7 +7,7 @@ import kotlin.test.assertTrue
 class HostessTextTest {
     @Test
     fun fixedKeysCoverPrototypeCopy() {
-        assertEquals(50, HostessTextKey.fixedKeys.size)
+        assertEquals(54, HostessTextKey.fixedKeys.size)
         assertTrue(HostessTextKey.AppName in HostessTextKey.fixedKeys)
         assertTrue(HostessTextKey.Username in HostessTextKey.fixedKeys)
         assertTrue(HostessTextKey.Menu in HostessTextKey.fixedKeys)
@@ -15,6 +15,10 @@ class HostessTextTest {
         assertTrue(HostessTextKey.AddGroups in HostessTextKey.fixedKeys)
         assertTrue(HostessTextKey.SavingLogin in HostessTextKey.fixedKeys)
         assertTrue(HostessTextKey.LoadingInventory in HostessTextKey.fixedKeys)
+        assertTrue(HostessTextKey.InventoryEmpty in HostessTextKey.fixedKeys)
+        assertTrue(HostessTextKey.InventoryUnavailable in HostessTextKey.fixedKeys)
+        assertTrue(HostessTextKey.GroupsEmpty in HostessTextKey.fixedKeys)
+        assertTrue(HostessTextKey.GroupsUnavailable in HostessTextKey.fixedKeys)
         assertTrue(HostessTextKey.RemovingFailedLogin in HostessTextKey.fixedKeys)
         assertTrue(HostessTextKey.BlankStatus in HostessTextKey.fixedKeys)
     }
@@ -38,6 +42,12 @@ class HostessTextTest {
         assertEquals("Are you sure you want to delete these accounts?", catalogue.text(HostessTextKey.DeleteConfirmation))
         assertEquals("Send notices", catalogue.text(HostessTextKey.SendNotices))
         assertEquals("None", catalogue.text(HostessTextKey.None))
+        assertEquals("Loading inventory", catalogue.text(HostessTextKey.LoadingInventory))
+        assertEquals("No inventory", catalogue.text(HostessTextKey.InventoryEmpty))
+        assertEquals("Inventory unavailable", catalogue.text(HostessTextKey.InventoryUnavailable))
+        assertEquals("Loading groups", catalogue.text(HostessTextKey.LoadingGroups))
+        assertEquals("No groups", catalogue.text(HostessTextKey.GroupsEmpty))
+        assertEquals("Groups unavailable", catalogue.text(HostessTextKey.GroupsUnavailable))
         assertEquals("Online", catalogue.text(HostessTextKey.Online))
         assertEquals("Offline", catalogue.text(HostessTextKey.Offline))
         assertEquals("", catalogue.text(HostessTextKey.BlankStatus))

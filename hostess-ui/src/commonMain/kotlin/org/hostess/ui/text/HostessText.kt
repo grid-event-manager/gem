@@ -47,6 +47,10 @@ sealed interface HostessTextKey {
     data object PreparingAvatar : HostessTextKey
     data object LoadingGroups : HostessTextKey
     data object LoadingInventory : HostessTextKey
+    data object InventoryEmpty : HostessTextKey
+    data object InventoryUnavailable : HostessTextKey
+    data object GroupsEmpty : HostessTextKey
+    data object GroupsUnavailable : HostessTextKey
     data object LoginFailed : HostessTextKey
     data object RemovingFailedLogin : HostessTextKey
     data object Online : HostessTextKey
@@ -101,6 +105,10 @@ sealed interface HostessTextKey {
             PreparingAvatar,
             LoadingGroups,
             LoadingInventory,
+            InventoryEmpty,
+            InventoryUnavailable,
+            GroupsEmpty,
+            GroupsUnavailable,
             LoginFailed,
             RemovingFailedLogin,
             Online,
@@ -162,6 +170,10 @@ object EnglishHostessTextCatalogue : HostessTextCatalogue {
         HostessTextKey.PreparingAvatar -> "Preparing avatar"
         HostessTextKey.LoadingGroups -> "Loading groups"
         HostessTextKey.LoadingInventory -> "Loading inventory"
+        HostessTextKey.InventoryEmpty -> "No inventory"
+        HostessTextKey.InventoryUnavailable -> "Inventory unavailable"
+        HostessTextKey.GroupsEmpty -> "No groups"
+        HostessTextKey.GroupsUnavailable -> "Groups unavailable"
         HostessTextKey.LoginFailed -> "Login failed"
         HostessTextKey.RemovingFailedLogin -> "Removing failed login"
         HostessTextKey.Online -> "Online"

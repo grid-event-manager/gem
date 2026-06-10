@@ -26,6 +26,12 @@ class ComposeScreenStateTest {
         assertEquals("Landmark", catalogue.text(HostessTextKey.Landmark))
         assertEquals("Texture", catalogue.text(HostessTextKey.Texture))
         assertEquals("None", catalogue.text(HostessTextKey.None))
+        assertEquals("Loading inventory", catalogue.text(HostessTextKey.LoadingInventory))
+        assertEquals("No inventory", catalogue.text(HostessTextKey.InventoryEmpty))
+        assertEquals("Inventory unavailable", catalogue.text(HostessTextKey.InventoryUnavailable))
+        assertEquals("Loading groups", catalogue.text(HostessTextKey.LoadingGroups))
+        assertEquals("No groups", catalogue.text(HostessTextKey.GroupsEmpty))
+        assertEquals("Groups unavailable", catalogue.text(HostessTextKey.GroupsUnavailable))
     }
 
     @Test
@@ -37,6 +43,7 @@ class ComposeScreenStateTest {
         assertEquals(HostessTextKey.SelectedCount(0), notice.selectedTargetSummary)
         assertEquals(HostessTextKey.None, notice.selectedAttachmentSummary)
         assertEquals(HostessTextKey.None, inventory.attachmentSummary)
+        assertEquals(true, inventory.loading)
         assertEquals(false, notice.sendFooterState.enabled)
     }
 

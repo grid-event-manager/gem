@@ -3,6 +3,10 @@ package org.hostess.ui.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -50,22 +54,35 @@ fun InventoryBrowser(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .heightIn(max = HostessTheme.spacing.inventoryPaneMaxHeight)
+                .verticalScroll(rememberScrollState())
                 .testTag(HostessTestTags.InventoryList),
             verticalArrangement = Arrangement.spacedBy(HostessTheme.spacing.fieldGap),
         ) {
-            state.visibleFolderRows.forEach { row ->
-                InventoryFolderRow(
-                    row = row,
-                    textCatalogue = textCatalogue,
-                    onOpen = { onFolderOpen(row.folderId) },
-                )
+            if (state.errorKey != null) {
+                InventoryPaneStatus(textCatalogue.text(state.errorKey))
             }
-            state.visibleAssetRows.forEach { row ->
-                InventoryAssetRow(
-                    row = row,
-                    textCatalogue = textCatalogue,
-                    onSelect = { onAssetSelected(row.itemId) },
-                )
+            when {
+                state.loading -> InventoryPaneStatus(textCatalogue.text(HostessTextKey.LoadingInventory))
+                state.visibleFolderRows.isEmpty() && state.visibleAssetRows.isEmpty() -> {
+                    InventoryPaneStatus(textCatalogue.text(HostessTextKey.InventoryEmpty))
+                }
+                else -> {
+                    state.visibleFolderRows.forEach { row ->
+                        InventoryFolderRow(
+                            row = row,
+                            textCatalogue = textCatalogue,
+                            onOpen = { onFolderOpen(row.folderId) },
+                        )
+                    }
+                    state.visibleAssetRows.forEach { row ->
+                        InventoryAssetRow(
+                            row = row,
+                            textCatalogue = textCatalogue,
+                            onSelect = { onAssetSelected(row.itemId) },
+                        )
+                    }
+                }
             }
         }
         Text(
@@ -75,6 +92,18 @@ fun InventoryBrowser(
             modifier = Modifier.testTag(HostessTestTags.AttachmentSummary),
         )
     }
+}
+
+@Composable
+private fun InventoryPaneStatus(text: String) {
+    Text(
+        text = text,
+        style = HostessTheme.typeScale.body,
+        color = HostessTheme.colors.muted,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(HostessTheme.spacing.rowHorizontalPadding),
+    )
 }
 
 private const val PathSeparator = " / "

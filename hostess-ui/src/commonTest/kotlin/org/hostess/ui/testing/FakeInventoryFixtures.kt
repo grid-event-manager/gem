@@ -57,6 +57,15 @@ object FakeInventoryFixtures {
             items = emptyList(),
         )
 
+    fun listingWithEmptyLandmarks(): InventoryDirectoryListing =
+        InventoryDirectoryListing(
+            folders = listOf(
+                folder(rootFolderId, null, "Inventory"),
+                folder(landmarksFolderId, rootFolderId, "Landmarks"),
+            ),
+            items = emptyList(),
+        )
+
     private fun folder(
         id: InventoryFolderId,
         parentId: InventoryFolderId?,

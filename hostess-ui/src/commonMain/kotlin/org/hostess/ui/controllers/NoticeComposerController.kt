@@ -34,7 +34,7 @@ class NoticeComposerController(
             is GroupListResult.Success -> GroupTargetController.fromGroups(runtime, result.groups)
             is GroupListResult.Failure -> GroupTargetController(
                 runtime = runtime,
-                state = GroupTargetUiState(errorKey = HostessTextKey.BlankStatus),
+                state = GroupTargetUiState(loading = false, errorKey = HostessTextKey.GroupsUnavailable),
             )
         }
     }

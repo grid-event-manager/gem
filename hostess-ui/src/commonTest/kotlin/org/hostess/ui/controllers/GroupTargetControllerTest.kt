@@ -18,6 +18,7 @@ class GroupTargetControllerTest {
         assertEquals(GroupTargetMode.NONE, controller.state.mode)
         assertEquals(0, controller.state.selectedCount)
         assertFalse(controller.state.pickerVisible)
+        assertFalse(controller.state.loading)
         assertEquals(3, controller.state.rows.size)
         assertTrue(controller.state.rows.none { it.selected })
     }
@@ -91,6 +92,24 @@ class GroupTargetControllerTest {
         assertEquals(GroupTargetMode.ALL, controller.state.mode)
         assertEquals(0, controller.state.selectedCount)
         assertTrue(controller.state.rows.none { it.selected })
+    }
+
+    @Test
+    fun loadingEmptyAndFailureStatesAreExplicitForVisiblePickerProjection() {
+        val initial = GroupTargetController(FakeHostessUiRuntime.ready()).state
+        val empty = refreshedController(emptyList())
+        val failed = NoticeComposerController(
+            runtime = FakeHostessUiRuntime.ready(groupListSucceeds = false),
+            session = FakeInventoryFixtures.session(),
+            avatarReady = true,
+        ).refreshGroups()
+
+        assertTrue(initial.loading)
+        assertFalse(empty.state.loading)
+        assertTrue(empty.state.rows.isEmpty())
+        assertEquals(null, empty.state.errorKey)
+        assertFalse(failed.state.loading)
+        assertEquals(HostessTextKey.GroupsUnavailable, failed.state.errorKey)
     }
 
     private fun refreshedController(groups: List<org.hostess.core.domain.GroupMembership>): GroupTargetController {

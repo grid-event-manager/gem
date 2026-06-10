@@ -36,6 +36,8 @@ fun NoticeEditor(
             value = state.body,
             onValueChange = onBodyChanged,
             singleLine = false,
+            minHeight = HostessTheme.spacing.noticeBodyMinHeight,
+            maxHeight = HostessTheme.spacing.noticeBodyMaxHeight,
             modifier = Modifier.testTag(HostessTestTags.Body),
         )
         Text(

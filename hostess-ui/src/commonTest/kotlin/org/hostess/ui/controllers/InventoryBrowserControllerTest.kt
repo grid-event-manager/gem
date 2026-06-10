@@ -26,6 +26,7 @@ class InventoryBrowserControllerTest {
         assertEquals(listOf("Venues"), controller.state.visibleFolderRows.map { it.displayName })
         assertEquals(listOf("Welcome Area", "No Copy Landmark"), controller.state.visibleAssetRows.map { it.displayName })
         assertEquals(HostessTextKey.None, controller.state.attachmentSummary)
+        assertFalse(controller.state.loading)
         assertNull(controller.state.errorKey)
     }
 
@@ -73,7 +74,8 @@ class InventoryBrowserControllerTest {
 
         assertEquals(fixture.rootFolderId, controller.state.currentFolderId)
         assertTrue(controller.state.shortcuts.rootSelected)
-        assertEquals(HostessTextKey.BlankStatus, controller.state.errorKey)
+        assertEquals(HostessTextKey.InventoryUnavailable, controller.state.errorKey)
+        assertFalse(controller.state.loading)
     }
 
     @Test
@@ -84,8 +86,8 @@ class InventoryBrowserControllerTest {
             .openInventoryFolder(org.hostess.core.domain.InventoryFolderId("folder:missing"))
         val unknownAsset = controller.selectInventoryAsset(InventoryItemId("item:missing"))
 
-        assertEquals(HostessTextKey.BlankStatus, unknownFolder.state.errorKey)
-        assertEquals(HostessTextKey.BlankStatus, unknownAsset.state.errorKey)
+        assertEquals(HostessTextKey.InventoryUnavailable, unknownFolder.state.errorKey)
+        assertEquals(HostessTextKey.InventoryUnavailable, unknownAsset.state.errorKey)
         assertNull(unknownAsset.state.selectedAttachment)
         assertEquals(HostessTextKey.None, unknownAsset.state.attachmentSummary)
     }
@@ -102,11 +104,33 @@ class InventoryBrowserControllerTest {
             .refreshInventory()
             .selectInventoryAsset(fixture.welcomeItemId)
 
-        assertEquals(HostessTextKey.BlankStatus, noCopy.state.errorKey)
+        assertEquals(HostessTextKey.InventoryUnavailable, noCopy.state.errorKey)
         assertNull(noCopy.state.selectedAttachment)
         assertEquals(HostessTextKey.None, noCopy.state.attachmentSummary)
-        assertEquals(HostessTextKey.BlankStatus, attachmentFailure.state.errorKey)
+        assertEquals(HostessTextKey.InventoryUnavailable, attachmentFailure.state.errorKey)
         assertNull(attachmentFailure.state.selectedAttachment)
+    }
+
+    @Test
+    fun loadingEmptyAndFailureStatesAreExplicitForVisiblePaneProjection() {
+        val initial = InventoryBrowserController(FakeHostessUiRuntime.ready(), FakeInventoryFixtures.session()).state
+        val empty = InventoryBrowserController(
+            FakeHostessUiRuntime.ready(inventoryListing = FakeInventoryFixtures.listingWithEmptyLandmarks()),
+            FakeInventoryFixtures.session(),
+        )
+            .refreshInventory()
+        val failed = InventoryBrowserController(
+            FakeHostessUiRuntime.ready(inventoryListSucceeds = false),
+            FakeInventoryFixtures.session(),
+        ).refreshInventory()
+
+        assertTrue(initial.loading)
+        assertFalse(empty.state.loading)
+        assertTrue(empty.state.visibleFolderRows.isEmpty())
+        assertTrue(empty.state.visibleAssetRows.isEmpty())
+        assertNull(empty.state.errorKey)
+        assertFalse(failed.state.loading)
+        assertEquals(HostessTextKey.InventoryUnavailable, failed.state.errorKey)
     }
 
     private fun controllerForFixture(): InventoryBrowserController {

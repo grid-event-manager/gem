@@ -109,6 +109,7 @@ private fun projectTargetState(
     errorKey: HostessTextKey? = null,
 ): GroupTargetUiState =
     GroupTargetUiState(
+        loading = false,
         mode = mode,
         rows = targetSet.availableGroups.map { group ->
             GroupTargetRowUiState(

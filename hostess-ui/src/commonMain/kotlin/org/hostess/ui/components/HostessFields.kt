@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.unit.Dp
 import org.hostess.ui.design.HostessTheme
 
 @Composable
@@ -23,8 +24,16 @@ fun HostessTextField(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     singleLine: Boolean = true,
+    minHeight: Dp? = null,
+    maxHeight: Dp? = null,
 ) {
     val spacing = HostessTheme.spacing
+    val textFieldModifier = Modifier
+        .fillMaxWidth()
+        .heightIn(
+            min = minHeight ?: spacing.tapTarget,
+            max = maxHeight ?: Dp.Infinity,
+        )
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(spacing.fieldGap),
@@ -35,12 +44,12 @@ fun HostessTextField(
             onValueChange = onValueChange,
             enabled = enabled,
             singleLine = singleLine,
+            minLines = if (singleLine) 1 else 5,
+            maxLines = if (singleLine) 1 else Int.MAX_VALUE,
             textStyle = HostessTheme.typeScale.body,
             shape = HostessTheme.shapes.control,
             colors = hostessTextFieldColors(),
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = spacing.tapTarget),
+            modifier = textFieldModifier,
         )
     }
 }

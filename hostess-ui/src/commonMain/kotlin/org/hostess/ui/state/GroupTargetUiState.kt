@@ -4,6 +4,7 @@ import org.hostess.core.domain.GroupId
 import org.hostess.ui.text.HostessTextKey
 
 data class GroupTargetUiState(
+    val loading: Boolean = true,
     val mode: GroupTargetMode = GroupTargetMode.NONE,
     val rows: List<GroupTargetRowUiState> = emptyList(),
     val selectedCount: Int = 0,

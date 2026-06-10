@@ -8,6 +8,7 @@ import org.hostess.core.domain.InventoryItemKind
 import org.hostess.ui.text.HostessTextKey
 
 data class InventoryBrowserUiState(
+    val loading: Boolean = true,
     val currentFolderId: InventoryFolderId? = null,
     val currentPath: List<String> = emptyList(),
     val shortcuts: InventoryShortcutUiState = InventoryShortcutUiState(),

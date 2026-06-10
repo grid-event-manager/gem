@@ -77,6 +77,8 @@ class UiStateInitialShapeTest {
         assertEquals(0, composer.charCount)
         assertEquals(GroupTargetMode.NONE, groups.mode)
         assertFalse(groups.pickerVisible)
+        assertTrue(groups.loading)
+        assertTrue(inventory.loading)
         assertTrue(inventory.shortcuts.landmarksSelected)
         assertNull(inventory.selectedAttachment)
         assertEquals(HostessTextKey.BlankStatus, footer.statusTextKey)

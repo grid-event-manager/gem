@@ -39,7 +39,7 @@ class InventoryBrowserController(
                     state = projectListing(
                         listing = result.listing,
                         currentFolderId = current?.folderId,
-                        errorKey = if (landmarks == null) HostessTextKey.BlankStatus else null,
+                        errorKey = if (landmarks == null) HostessTextKey.InventoryUnavailable else null,
                     ),
                     listing = result.listing,
                 )
@@ -123,6 +123,7 @@ class InventoryBrowserController(
         val currentFolders = currentFolderId?.let { childFolders(listing, it) }.orEmpty()
         val currentItems = currentFolderId?.let { childItems(listing, it) }.orEmpty()
         return state.copy(
+            loading = false,
             currentFolderId = currentFolderId,
             currentPath = currentPath(listing, currentFolderId),
             shortcuts = shortcutState(listing, currentFolderId),
@@ -222,14 +223,15 @@ class InventoryBrowserController(
                 visibleAssetRows = state.visibleAssetRows.map { it.copy(selected = false) },
                 selectedAttachment = null,
                 attachmentSummary = HostessTextKey.None,
-                errorKey = HostessTextKey.BlankStatus,
+                errorKey = HostessTextKey.InventoryUnavailable,
             ),
         )
 
     private fun errorState(): InventoryBrowserController =
         copy(
             state.copy(
-                errorKey = HostessTextKey.BlankStatus,
+                loading = false,
+                errorKey = HostessTextKey.InventoryUnavailable,
             ),
         )
 

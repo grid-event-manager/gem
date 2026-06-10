@@ -4,6 +4,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -60,20 +64,45 @@ fun GroupTargetSelector(
                 verticalArrangement = Arrangement.spacedBy(HostessTheme.spacing.fieldGap),
             ) {
                 Column(
-                    modifier = Modifier.testTag(HostessTestTags.GroupList),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = HostessTheme.spacing.groupPickerMaxHeight)
+                        .verticalScroll(rememberScrollState())
+                        .testTag(HostessTestTags.GroupList),
                     verticalArrangement = Arrangement.spacedBy(HostessTheme.spacing.fieldGap),
                 ) {
-                    state.rows.forEach { row ->
-                        GroupRow(
-                            row = row,
-                            textCatalogue = textCatalogue,
-                            onSelectedChange = { selected ->
-                                onManualGroupSelected(row.displayName, selected)
-                            },
-                        )
+                    if (state.errorKey != null) {
+                        GroupPaneStatus(textCatalogue.text(state.errorKey))
+                    }
+                    when {
+                        state.loading -> GroupPaneStatus(textCatalogue.text(HostessTextKey.LoadingGroups))
+                        state.rows.isEmpty() -> GroupPaneStatus(textCatalogue.text(HostessTextKey.GroupsEmpty))
+                        else -> {
+                            state.rows.forEach { row ->
+                                GroupRow(
+                                    row = row,
+                                    textCatalogue = textCatalogue,
+                                    onSelectedChange = { selected ->
+                                        onManualGroupSelected(row.displayName, selected)
+                                    },
+                                )
+                            }
+                        }
                     }
                 }
             }
         }
     }
+}
+
+@Composable
+private fun GroupPaneStatus(text: String) {
+    Text(
+        text = text,
+        style = HostessTheme.typeScale.body,
+        color = HostessTheme.colors.muted,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(HostessTheme.spacing.rowHorizontalPadding),
+    )
 }
