@@ -18,6 +18,7 @@ import org.hostess.core.services.NoticeDispatchService
 import org.hostess.core.services.NoticeDraftService
 import org.hostess.core.services.SessionService
 import org.hostess.core.services.TargetSelectionService
+import org.hostess.core.theme.ThemePreferenceService
 import org.hostess.credential.vault.HostessVaultRuntimeAccess
 import org.hostess.protocol.libomv.ProtocolLibomvModule
 import org.hostess.protocol.libomv.runtime.CredentialVaultLoginSecretResolver
@@ -27,17 +28,26 @@ import org.hostess.ui.runtime.HostessUiRuntime
 
 object HostessDesktopCompositionRoot {
     fun create(): HostessUiRuntime =
-        HostessRuntimeComposition.create(DesktopVaultComposition.open())
+        HostessRuntimeComposition.create(
+            vaultAccess = DesktopVaultComposition.open(),
+            themePreferenceService = DesktopPreferenceComposition.open(),
+        )
 
     internal fun create(
         osName: String,
         env: Map<String, String>,
         userHome: String,
     ): HostessUiRuntime =
-        HostessRuntimeComposition.create(DesktopVaultComposition.open(osName, env, userHome))
+        HostessRuntimeComposition.create(
+            vaultAccess = DesktopVaultComposition.open(osName, env, userHome),
+            themePreferenceService = DesktopPreferenceComposition.open(osName, env, userHome),
+        )
 
     private object HostessRuntimeComposition {
-        fun create(vaultAccess: HostessVaultRuntimeAccess): HostessUiRuntime {
+        fun create(
+            vaultAccess: HostessVaultRuntimeAccess,
+            themePreferenceService: ThemePreferenceService,
+        ): HostessUiRuntime {
             val protocolRuntime = ProtocolLibomvModule.liveRuntime(vaultAccess.loginSecretResolver())
             return HostessUiRuntime(
                 credentialRuntimeState = vaultAccess.credentialRuntimeState,
@@ -58,6 +68,7 @@ object HostessDesktopCompositionRoot {
                     clockPort = DesktopAppClockPort,
                 ),
                 loginComplianceProvider = HostessUiLoginComplianceProvider,
+                themePreferenceService = themePreferenceService,
             )
         }
 

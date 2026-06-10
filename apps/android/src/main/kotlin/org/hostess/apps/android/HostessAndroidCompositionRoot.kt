@@ -20,6 +20,7 @@ import org.hostess.core.services.NoticeDispatchService
 import org.hostess.core.services.NoticeDraftService
 import org.hostess.core.services.SessionService
 import org.hostess.core.services.TargetSelectionService
+import org.hostess.core.theme.ThemePreferenceService
 import org.hostess.credential.vault.HostessVaultRuntimeAccess
 import org.hostess.protocol.libomv.ProtocolLibomvModule
 import org.hostess.protocol.libomv.runtime.CredentialVaultLoginSecretResolver
@@ -32,10 +33,16 @@ object HostessAndroidCompositionRoot {
         create(context.filesDir)
 
     internal fun create(appFilesDir: File): HostessUiRuntime =
-        HostessRuntimeComposition.create(HostessAndroidVaultComposition.open(appFilesDir))
+        HostessRuntimeComposition.create(
+            vaultAccess = HostessAndroidVaultComposition.open(appFilesDir),
+            themePreferenceService = HostessAndroidPreferenceComposition.open(appFilesDir),
+        )
 
     private object HostessRuntimeComposition {
-        fun create(vaultAccess: HostessVaultRuntimeAccess): HostessUiRuntime {
+        fun create(
+            vaultAccess: HostessVaultRuntimeAccess,
+            themePreferenceService: ThemePreferenceService,
+        ): HostessUiRuntime {
             val protocolRuntime = ProtocolLibomvModule.liveRuntime(vaultAccess.loginSecretResolver())
             return HostessUiRuntime(
                 credentialRuntimeState = vaultAccess.credentialRuntimeState,
@@ -56,6 +63,7 @@ object HostessAndroidCompositionRoot {
                     clockPort = AndroidAppClockPort,
                 ),
                 loginComplianceProvider = HostessUiLoginComplianceProvider,
+                themePreferenceService = themePreferenceService,
             )
         }
 

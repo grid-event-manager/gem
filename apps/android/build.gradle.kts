@@ -14,7 +14,7 @@ android {
         versionCode = 1
         versionName = "0.1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        manifestPlaceholders["appLabel"] = rootProject.name.replaceFirstChar { it.titlecase() }
+        manifestPlaceholders["appLabel"] = "Ella Hostess"
     }
 
     compileOptions {
@@ -30,6 +30,7 @@ android {
 dependencies {
     implementation(project(":hostess-core"))
     implementation(project(":hostess-ui"))
+    implementation(project(":hostess-preferences"))
     implementation(project(":hostess-credential-vault"))
     implementation(project(":hostess-protocol-libomv"))
     implementation(libs.androidx.activity.compose)

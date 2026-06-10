@@ -2,12 +2,14 @@ package org.hostess.apps.android
 
 import java.nio.file.Files
 import java.nio.file.Path
-import java.util.Comparator
 import org.hostess.core.domain.AccountProfileId
 import org.hostess.core.domain.SavedAccountProfile
 import org.hostess.core.domain.SecondLifeLoginName
 import org.hostess.core.domain.SecondLifeLoginNameResult
 import org.hostess.core.ports.CredentialHandle
+import org.hostess.core.theme.ThemePreference
+import org.hostess.core.theme.ThemePreferenceSaveResult
+import org.hostess.preferences.AndroidHostessPreferencePaths
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -26,12 +28,14 @@ class HostessAndroidCompositionRootTest {
             assertNotNull(runtime.groupDirectoryService)
             assertNotNull(runtime.inventoryDirectoryService)
             assertNotNull(runtime.noticeDispatchService)
+            assertEquals(ThemePreferenceSaveResult.Saved, runtime.themePreferenceService.savePreference(ThemePreference.DARK))
+            assertTrue(Files.exists(Path.of(preferenceFile(appFilesDir))))
             val compliance = runtime.loginComplianceProvider.requestFor(fakeProfile())
             assertTrue(compliance.proofAccountAttested)
             assertTrue(compliance.automatedUse)
             assertEquals("Android proof account", compliance.proofAccountLabel)
         } finally {
-            appFilesDir.deleteRecursively()
+            HostessAndroidTestDirectoryCleaner.deleteRecursively(appFilesDir)
         }
     }
 
@@ -44,19 +48,13 @@ class HostessAndroidCompositionRootTest {
             startLocation = null,
         )
 
+    private fun preferenceFile(appFilesDir: Path): String =
+        AndroidHostessPreferencePaths.defaultPreferenceFile(appFilesDir.toString())
+
     private fun loginName(): SecondLifeLoginName =
         when (val result = SecondLifeLoginName.fromUserInput("android proof")) {
             is SecondLifeLoginNameResult.Valid -> result.loginName
             is SecondLifeLoginNameResult.Invalid -> error("invalid test login name")
         }
 
-    private fun Path.deleteRecursively() {
-        if (!Files.exists(this)) {
-            return
-        }
-        Files.walk(this).use { paths ->
-            paths.sorted(Comparator.reverseOrder())
-                .forEach { Files.deleteIfExists(it) }
-        }
-    }
 }

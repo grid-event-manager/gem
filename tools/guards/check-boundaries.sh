@@ -55,6 +55,17 @@ TRACK_C_UI_SPLIT_LOGIN_PATTERN='LoginSavedAccountPanel|AddLoginPanel|addLoginExp
 TRACK_C_UI_FAKE_LOCATION_PATTERN='startLocation\.orEmpty|SavedAccountProfile\.startLocation|London City|Welcome Area|locationLabel = "[^"]+"'
 TRACK_C_UI_SCAFFOLD_REQUIRED_PATTERN='HostessAppScaffold'
 TRACK_C_UI_CUSTOM_ICON_PATTERN='Canvas|drawLine|MenuBarCount|BackIconMidpoint|foundation\.Canvas'
+HS002_TRACK_D_UI_PREFERENCE_ADAPTER_PATTERN='org\.hostess\.preferences|:hostess-preferences'
+HS002_TRACK_D_VAULT_THEME_STORAGE_PATTERN='ThemePreference|themePreference|ui\.properties|preferences'
+HS002_TRACK_D_HACCU_COLOUR_PATTERN='#[0-9A-Fa-f]{6}|Color\(0x'
+HS002_TRACK_D_VISIBLE_LABEL_PATTERN='"(Ella Hostess|Light|Dark|Theme|Theme preference unavailable|Theme preference could not be saved)"'
+HS002_TRACK_D_PROTOTYPE_RUNTIME_PATTERN='WebView|android\.webkit|index-multi|<html|styles\.css|loadDataWithBaseURL'
+HS002_TRACK_D_LOGO_OWNER_PATTERN='fun[[:space:]]+HostessBrandLogoIcon'
+HS002_TRACK_D_TOGGLE_OWNER_PATTERN='fun[[:space:]]+ThemeModeToggle'
+HS002_TRACK_D_PALETTE_OWNER_PATTERN='object[[:space:]]+HaccuHostessPaletteProvider'
+HS002_TRACK_D_ANDROID_LABEL_PATTERN='manifestPlaceholders\["appLabel"\][[:space:]]*=[[:space:]]*"Ella Hostess"'
+HS002_TRACK_D_DESKTOP_VENDOR_PATTERN='vendor[[:space:]]*=[[:space:]]*"Ella Hostess"'
+HS002_TRACK_D_ROOT_PROJECT_LABEL_PATTERN='rootProject\.name\.replaceFirstChar'
 TRACK_D_GENERIC_OWNER_PATTERN='(^|/)(LoginCompliance|NoticeCompliance|.*(Manager|Helper|Utils|Common))\.kt$'
 TRACK_D_SESSION_LOGIN_OVERLOAD_PATTERN='fun[[:space:]]+login\([[:space:]]*request:[[:space:]]*LoginRequest[[:space:]]*\)'
 TRACK_D_SESSION_LOGIN_ONE_ARG_PATTERN='sessionService\.login\([^,\n)]*\)'
@@ -498,6 +509,7 @@ while IFS= read -r path; do
         hostess-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/runtime/EnvironmentLoginSecretResolver.kt) ;;
         hostess-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/runtime/DefaultHostessHardwareAddressSource.kt) ;;
         apps/desktop/src/main/kotlin/org/hostess/apps/desktop/DesktopVaultComposition.kt) ;;
+        apps/desktop/src/main/kotlin/org/hostess/apps/desktop/DesktopPreferenceComposition.kt) ;;
         *) track_f_platform_api_forbidden_targets+=("$path") ;;
     esac
 done < <(find \
@@ -613,6 +625,62 @@ track_c_ui_custom_icon_targets=()
 add_existing track_c_ui_custom_icon_targets \
     "hostess-ui/src/commonMain/kotlin/org/hostess/ui/components/HostessIcons.kt"
 
+hs002_track_d_ui_adapter_targets=()
+add_existing hs002_track_d_ui_adapter_targets \
+    "hostess-ui/build.gradle.kts" \
+    "hostess-ui/src/commonMain" \
+    "hostess-ui/src/jvmMain" \
+    "hostess-ui/src/androidMain"
+
+hs002_track_d_vault_theme_targets=()
+add_existing hs002_track_d_vault_theme_targets \
+    "hostess-credential-vault/build.gradle.kts" \
+    "hostess-credential-vault/src/commonMain" \
+    "hostess-credential-vault/src/jvmMain" \
+    "hostess-credential-vault/src/androidMain" \
+    "hostess-credential-vault/src/jvmAndroidMain"
+
+hs002_track_d_colour_forbidden_targets=()
+while IFS= read -r path; do
+    case "$path" in
+        *"/org/hostess/ui/design/"*) ;;
+        *) hs002_track_d_colour_forbidden_targets+=("$path") ;;
+    esac
+done < <(find \
+    "hostess-ui/src/commonMain/kotlin/org/hostess/ui" \
+    "hostess-ui/src/jvmMain/kotlin/org/hostess/ui" \
+    "hostess-ui/src/androidMain/kotlin/org/hostess/ui" \
+    "apps/desktop/src/main" \
+    "apps/android/src/main" \
+    -type f -name '*.kt' 2>/dev/null || true)
+
+hs002_track_d_visible_label_forbidden_targets=()
+while IFS= read -r path; do
+    case "$path" in
+        *"/HostessText.kt") ;;
+        *) hs002_track_d_visible_label_forbidden_targets+=("$path") ;;
+    esac
+done < <(find \
+    "hostess-ui/src/commonMain" \
+    "hostess-ui/src/jvmMain" \
+    "hostess-ui/src/androidMain" \
+    "apps/desktop/src/main" \
+    "apps/android/src/main" \
+    -type f -name '*.kt' 2>/dev/null || true)
+
+hs002_track_d_prototype_forbidden_targets=()
+add_existing hs002_track_d_prototype_forbidden_targets \
+    "hostess-ui/src/commonMain" \
+    "hostess-ui/src/jvmMain" \
+    "hostess-ui/src/androidMain" \
+    "apps/desktop/src/main" \
+    "apps/android/src/main"
+
+hs002_track_d_root_project_label_targets=()
+add_existing hs002_track_d_root_project_label_targets \
+    "apps/desktop/build.gradle.kts" \
+    "apps/android/build.gradle.kts"
+
 track_c_runtime_forbidden_targets=()
 while IFS= read -r path; do
     case "$path" in
@@ -636,6 +704,7 @@ while IFS= read -r path; do
     case "$path" in
         *"/EnvironmentLoginSecretResolver.kt") ;;
         *"/DesktopVaultComposition.kt") ;;
+        *"/DesktopPreferenceComposition.kt") ;;
         *) track_c_env_forbidden_targets+=("$path") ;;
     esac
 done < <(find \
@@ -1200,6 +1269,61 @@ check_no_hits \
     "${track_c_ui_custom_icon_targets[@]}"
 
 check_no_hits \
+    "HS002 Track D UI has no preference adapter dependency" \
+    "$HS002_TRACK_D_UI_PREFERENCE_ADAPTER_PATTERN" \
+    "${hs002_track_d_ui_adapter_targets[@]}"
+
+check_no_hits \
+    "HS002 Track D vault has no theme preference storage" \
+    "$HS002_TRACK_D_VAULT_THEME_STORAGE_PATTERN" \
+    "${hs002_track_d_vault_theme_targets[@]}"
+
+check_no_hits \
+    "HS002 Track D Haccu colours centralized" \
+    "$HS002_TRACK_D_HACCU_COLOUR_PATTERN" \
+    "${hs002_track_d_colour_forbidden_targets[@]}"
+
+check_no_hits \
+    "HS002 Track D visible labels centralized" \
+    "$HS002_TRACK_D_VISIBLE_LABEL_PATTERN" \
+    "${hs002_track_d_visible_label_forbidden_targets[@]}"
+
+check_no_hits \
+    "HS002 Track D prototype runtime not promoted" \
+    "$HS002_TRACK_D_PROTOTYPE_RUNTIME_PATTERN" \
+    "${hs002_track_d_prototype_forbidden_targets[@]}"
+
+check_required_hits \
+    "HS002 Track D brand logo owner present" \
+    "$HS002_TRACK_D_LOGO_OWNER_PATTERN" \
+    "hostess-ui/src/commonMain/kotlin/org/hostess/ui/components/HostessIcons.kt"
+
+check_required_hits \
+    "HS002 Track D theme toggle owner present" \
+    "$HS002_TRACK_D_TOGGLE_OWNER_PATTERN" \
+    "hostess-ui/src/commonMain/kotlin/org/hostess/ui/components/ThemeModeToggle.kt"
+
+check_required_hits \
+    "HS002 Track D palette provider present" \
+    "$HS002_TRACK_D_PALETTE_OWNER_PATTERN" \
+    "hostess-ui/src/commonMain/kotlin/org/hostess/ui/design/HaccuHostessPaletteProvider.kt"
+
+check_required_hits \
+    "HS002 Track D Android app label explicit" \
+    "$HS002_TRACK_D_ANDROID_LABEL_PATTERN" \
+    "apps/android/build.gradle.kts"
+
+check_required_hits \
+    "HS002 Track D desktop vendor explicit" \
+    "$HS002_TRACK_D_DESKTOP_VENDOR_PATTERN" \
+    "apps/desktop/build.gradle.kts"
+
+check_no_hits \
+    "HS002 Track D app labels do not derive from root project name" \
+    "$HS002_TRACK_D_ROOT_PROJECT_LABEL_PATTERN" \
+    "${hs002_track_d_root_project_label_targets[@]}"
+
+check_no_hits \
     "Track A forbidden vault dependency acquisition" \
     "$TRACK_A_FORBIDDEN_DEP_PATTERN" \
     "${track_a_dependency_targets[@]}"
@@ -1637,6 +1761,61 @@ check_pattern_matches \
     "self-test Track C UI custom icon pattern" \
     "$TRACK_C_UI_CUSTOM_ICON_PATTERN" \
     'Canvas(modifier) { drawLine(color, start, end) }'
+
+check_pattern_matches \
+    "self-test HS002 Track D UI preference adapter pattern" \
+    "$HS002_TRACK_D_UI_PREFERENCE_ADAPTER_PATTERN" \
+    'implementation(project(":hostess-preferences"))'
+
+check_pattern_matches \
+    "self-test HS002 Track D vault theme storage pattern" \
+    "$HS002_TRACK_D_VAULT_THEME_STORAGE_PATTERN" \
+    'ThemePreferenceService(FileThemePreferenceStore(Path.of("ui.properties")))'
+
+check_pattern_matches \
+    "self-test HS002 Track D Haccu colour pattern" \
+    "$HS002_TRACK_D_HACCU_COLOUR_PATTERN" \
+    'val accent = Color(0xFF8B0101)'
+
+check_pattern_matches \
+    "self-test HS002 Track D visible label pattern" \
+    "$HS002_TRACK_D_VISIBLE_LABEL_PATTERN" \
+    '"Ella Hostess"'
+
+check_pattern_matches \
+    "self-test HS002 Track D prototype runtime pattern" \
+    "$HS002_TRACK_D_PROTOTYPE_RUNTIME_PATTERN" \
+    'android.webkit.WebView(context).loadDataWithBaseURL("index-multi", "<html", "text/html", "utf-8", null)'
+
+check_pattern_matches \
+    "self-test HS002 Track D logo owner pattern" \
+    "$HS002_TRACK_D_LOGO_OWNER_PATTERN" \
+    'fun HostessBrandLogoIcon(modifier: Modifier = Modifier)'
+
+check_pattern_matches \
+    "self-test HS002 Track D theme toggle owner pattern" \
+    "$HS002_TRACK_D_TOGGLE_OWNER_PATTERN" \
+    'fun ThemeModeToggle(checked: Boolean, onCheckedChange: (Boolean) -> Unit)'
+
+check_pattern_matches \
+    "self-test HS002 Track D palette provider pattern" \
+    "$HS002_TRACK_D_PALETTE_OWNER_PATTERN" \
+    'object HaccuHostessPaletteProvider : HostessPaletteProvider'
+
+check_pattern_matches \
+    "self-test HS002 Track D Android label pattern" \
+    "$HS002_TRACK_D_ANDROID_LABEL_PATTERN" \
+    'manifestPlaceholders["appLabel"] = "Ella Hostess"'
+
+check_pattern_matches \
+    "self-test HS002 Track D desktop vendor pattern" \
+    "$HS002_TRACK_D_DESKTOP_VENDOR_PATTERN" \
+    'vendor = "Ella Hostess"'
+
+check_pattern_matches \
+    "self-test HS002 Track D root project label pattern" \
+    "$HS002_TRACK_D_ROOT_PROJECT_LABEL_PATTERN" \
+    'manifestPlaceholders["appLabel"] = rootProject.name.replaceFirstChar { it.titlecase() }'
 
 check_pattern_matches \
     "self-test Track A forbidden vault dependency pattern" \
