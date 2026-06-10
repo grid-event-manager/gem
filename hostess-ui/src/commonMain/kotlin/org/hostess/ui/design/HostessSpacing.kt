@@ -29,5 +29,6 @@ data class HostessSpacing(
     val scrollListMaxHeight: Dp = 220.dp,
     val modalInset: Dp = 22.dp,
     val modalMaxWidth: Dp = 360.dp,
+    val modalActionMinWidth: Dp = 112.dp,
     val inlineGap: Dp = 12.dp,
 )

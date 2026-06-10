@@ -11,6 +11,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.window.Dialog
 import org.hostess.ui.design.HostessTheme
 
@@ -48,6 +49,8 @@ fun HostessConfirmModal(
                     text = title,
                     color = colors.ink,
                     style = HostessTheme.typeScale.sectionTitle,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
                 )
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -56,12 +59,18 @@ fun HostessConfirmModal(
                     HostessSecondaryButton(
                         text = confirmText,
                         onClick = onConfirm,
-                        modifier = confirmModifier,
+                        modifier = Modifier
+                            .weight(1f)
+                            .widthIn(min = spacing.modalActionMinWidth)
+                            .then(confirmModifier),
                     )
                     HostessSecondaryButton(
                         text = cancelText,
                         onClick = onCancel,
-                        modifier = cancelModifier,
+                        modifier = Modifier
+                            .weight(1f)
+                            .widthIn(min = spacing.modalActionMinWidth)
+                            .then(cancelModifier),
                     )
                 }
             }

@@ -1,6 +1,7 @@
 package org.hostess.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -59,20 +60,22 @@ fun HostessTopBar(
                     )
                 }
             }
-            HostessIconButton(
-                onClick = onMenuClick,
-                contentDescription = textCatalogue.text(HostessTextKey.Menu),
-                modifier = Modifier.testTag(HostessTestTags.MenuButton),
-            ) {
-                HostessMenuIcon()
+            Box {
+                HostessIconButton(
+                    onClick = onMenuClick,
+                    contentDescription = textCatalogue.text(HostessTextKey.Menu),
+                    modifier = Modifier.testTag(HostessTestTags.MenuButton),
+                ) {
+                    HostessMenuIcon()
+                }
+                HostessOverflowMenu(
+                    expanded = menuOpen,
+                    textCatalogue = textCatalogue,
+                    onDismiss = onMenuDismiss,
+                    onSettingsClick = onSettingsClick,
+                    onLogoutClick = onLogoutClick,
+                )
             }
-            HostessOverflowMenu(
-                expanded = menuOpen,
-                textCatalogue = textCatalogue,
-                onDismiss = onMenuDismiss,
-                onSettingsClick = onSettingsClick,
-                onLogoutClick = onLogoutClick,
-            )
         }
     }
 }

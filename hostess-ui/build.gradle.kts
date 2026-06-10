@@ -5,6 +5,8 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
+val materialIconsCore = libs.compose.material.icons.core
+
 kotlin {
     jvm {
         compilerOptions {
@@ -30,6 +32,7 @@ kotlin {
                 implementation(compose.foundation)
                 implementation(compose.ui)
                 implementation(compose.material3)
+                implementation(materialIconsCore)
                 implementation(libs.kotlinx.coroutines.core)
             }
         }

@@ -1,6 +1,7 @@
 package org.hostess.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -52,15 +53,19 @@ fun SessionStrip(
                     HostessTheme.colors.statusBackground
                 },
             ) {
-                Text(
-                    text = textCatalogue.text(state.statusKey),
-                    style = HostessTheme.typeScale.statusPill,
-                    color = if (state.online) HostessTheme.colors.successInk else HostessTheme.colors.muted,
+                Box(
                     modifier = Modifier
                         .padding(horizontal = HostessTheme.spacing.statusPillHorizontalPadding)
                         .heightIn(min = HostessTheme.spacing.statusPillMinHeight)
                         .testTag(HostessTestTags.SessionStatus),
-                )
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = textCatalogue.text(state.statusKey),
+                        style = HostessTheme.typeScale.statusPill,
+                        color = if (state.online) HostessTheme.colors.successInk else HostessTheme.colors.muted,
+                    )
+                }
             }
         }
     }
