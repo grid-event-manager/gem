@@ -51,6 +51,10 @@ TRACK_J_EXTRA_SIMULATOR_EXCHANGE_IMPL_PATTERN='\)[[:space:]]*:[[:space:]]*Simula
 TRACK_C_ENV_PATTERN='System(::|\.)getenv'
 TRACK_C_FILE_ROUTE_PATTERN='credential-file'
 TRACK_C_UNSUPPORTED_SECRET_PATTERN='keychain|Keychain|KeyStore|plaintext|plain-text|plain text'
+TRACK_C_UI_SPLIT_LOGIN_PATTERN='LoginSavedAccountPanel|AddLoginPanel|addLoginExpanded|newUsernameDraft|newPasswordDraft|saveAndLoginEnabled'
+TRACK_C_UI_FAKE_LOCATION_PATTERN='startLocation\.orEmpty|SavedAccountProfile\.startLocation|London City|Welcome Area|locationLabel = "[^"]+"'
+TRACK_C_UI_SCAFFOLD_REQUIRED_PATTERN='HostessAppScaffold'
+TRACK_C_UI_CUSTOM_ICON_PATTERN='Canvas|drawLine|MenuBarCount|BackIconMidpoint|foundation\.Canvas'
 TRACK_D_GENERIC_OWNER_PATTERN='(^|/)(LoginCompliance|NoticeCompliance|.*(Manager|Helper|Utils|Common))\.kt$'
 TRACK_D_SESSION_LOGIN_OVERLOAD_PATTERN='fun[[:space:]]+login\([[:space:]]*request:[[:space:]]*LoginRequest[[:space:]]*\)'
 TRACK_D_SESSION_LOGIN_ONE_ARG_PATTERN='sessionService\.login\([^,\n)]*\)'
@@ -589,6 +593,25 @@ done < <(find \
     "hostess-ui/src/jvmMain/kotlin/org/hostess/ui" \
     "hostess-ui/src/androidMain/kotlin/org/hostess/ui" \
     -type f -name '*.kt' 2>/dev/null || true)
+
+track_c_ui_split_login_targets=()
+add_existing track_c_ui_split_login_targets \
+    "hostess-ui/src/commonMain"
+
+track_c_ui_fake_location_targets=()
+add_existing track_c_ui_fake_location_targets \
+    "hostess-ui/src/commonMain" \
+    "hostess-core/src/commonMain" \
+    "hostess-protocol-libomv/src/commonMain"
+
+track_c_ui_scaffold_required_targets=()
+add_existing track_c_ui_scaffold_required_targets \
+    "hostess-ui/src/commonMain/kotlin/org/hostess/ui/HostessApp.kt" \
+    "hostess-ui/src/commonMain/kotlin/org/hostess/ui/components/HostessAppScaffold.kt"
+
+track_c_ui_custom_icon_targets=()
+add_existing track_c_ui_custom_icon_targets \
+    "hostess-ui/src/commonMain/kotlin/org/hostess/ui/components/HostessIcons.kt"
 
 track_c_runtime_forbidden_targets=()
 while IFS= read -r path; do
@@ -1157,6 +1180,26 @@ check_no_hits \
     "${production_targets[@]}"
 
 check_no_hits \
+    "Track C UI old split-login route" \
+    "$TRACK_C_UI_SPLIT_LOGIN_PATTERN" \
+    "${track_c_ui_split_login_targets[@]}"
+
+check_no_hits \
+    "Track C UI fake session location route" \
+    "$TRACK_C_UI_FAKE_LOCATION_PATTERN" \
+    "${track_c_ui_fake_location_targets[@]}"
+
+check_required_hits \
+    "Track C UI scaffold owner present" \
+    "$TRACK_C_UI_SCAFFOLD_REQUIRED_PATTERN" \
+    "${track_c_ui_scaffold_required_targets[@]}"
+
+check_no_hits \
+    "Track C UI custom icon route" \
+    "$TRACK_C_UI_CUSTOM_ICON_PATTERN" \
+    "${track_c_ui_custom_icon_targets[@]}"
+
+check_no_hits \
     "Track A forbidden vault dependency acquisition" \
     "$TRACK_A_FORBIDDEN_DEP_PATTERN" \
     "${track_a_dependency_targets[@]}"
@@ -1574,6 +1617,26 @@ check_pattern_matches \
     "self-test Track C unsupported secret store pattern" \
     "$TRACK_C_UNSUPPORTED_SECRET_PATTERN" \
     'keychain lookup'
+
+check_pattern_matches \
+    "self-test Track C UI split-login pattern" \
+    "$TRACK_C_UI_SPLIT_LOGIN_PATTERN" \
+    'LoginSavedAccountPanel(state)'
+
+check_pattern_matches \
+    "self-test Track C UI fake location pattern" \
+    "$TRACK_C_UI_FAKE_LOCATION_PATTERN" \
+    'locationLabel = "London City"'
+
+check_pattern_matches \
+    "self-test Track C UI scaffold pattern" \
+    "$TRACK_C_UI_SCAFFOLD_REQUIRED_PATTERN" \
+    'HostessAppScaffold(content = {})'
+
+check_pattern_matches \
+    "self-test Track C UI custom icon pattern" \
+    "$TRACK_C_UI_CUSTOM_ICON_PATTERN" \
+    'Canvas(modifier) { drawLine(color, start, end) }'
 
 check_pattern_matches \
     "self-test Track A forbidden vault dependency pattern" \

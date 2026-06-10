@@ -32,6 +32,8 @@ Track C owner rules:
 - Raw environment reads are allowed only in the protocol env resolver.
 - The CLI may mention `--credential-file` only at the blocking parser point that rejects the unsupported route.
 - Keychain/plaintext secret-store routes remain forbidden in production source.
+- UI remediation must keep one shared `HostessAppScaffold`, must not resurrect the old split login panels, must not project fake session locations such as `London City` or `Welcome Area`, and must not return to custom-drawn menu/back icons.
+- Retained `startLocation` data fields may still exist for login material/profile storage; they must not feed the current session strip.
 
 Track DS owner rules:
 
