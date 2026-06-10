@@ -8,12 +8,9 @@ import androidx.compose.ui.platform.testTag
 import org.hostess.core.domain.AccountProfileId
 import org.hostess.ui.components.DeleteAccountPanel
 import org.hostess.ui.components.HostessConfirmModal
-import org.hostess.ui.components.SessionStrip
 import org.hostess.ui.components.SettingsAddAccountPanel
-import org.hostess.ui.components.SettingsBackNav
 import org.hostess.ui.components.SettingsSavedAccountPanel
 import org.hostess.ui.design.HostessTheme
-import org.hostess.ui.state.SessionStripUiState
 import org.hostess.ui.state.SettingsUiState
 import org.hostess.ui.testtags.HostessTestTags
 import org.hostess.ui.text.HostessTextCatalogue
@@ -22,9 +19,7 @@ import org.hostess.ui.text.HostessTextKey
 @Composable
 fun SettingsScreen(
     state: SettingsUiState,
-    sessionStripState: SessionStripUiState,
     textCatalogue: HostessTextCatalogue,
-    onBack: () -> Unit,
     onSavedAccountSelected: (AccountProfileId?) -> Unit,
     onSavedPasswordVisibilityToggle: () -> Unit,
     onSavedPasswordChanged: (String) -> Unit,
@@ -47,14 +42,6 @@ fun SettingsScreen(
             .testTag(HostessTestTags.ViewSettings),
         verticalArrangement = Arrangement.spacedBy(HostessTheme.spacing.rowGap),
     ) {
-        SettingsBackNav(
-            text = textCatalogue.text(HostessTextKey.Back),
-            onBack = onBack,
-        )
-        SessionStrip(
-            state = sessionStripState,
-            textCatalogue = textCatalogue,
-        )
         SettingsSavedAccountPanel(
             state = state,
             textCatalogue = textCatalogue,

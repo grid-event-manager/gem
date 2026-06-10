@@ -40,6 +40,8 @@ class HostessDesignTokenTest {
         assertEquals(412.dp, spacing.shellMaxWidth)
         assertEquals(932.dp, spacing.shellMaxHeight)
         assertEquals(760.dp, spacing.shellMinHeight)
+        assertEquals(440.dp, spacing.desktopWindowWidth)
+        assertEquals(780.dp, spacing.desktopWindowHeight)
         assertEquals(72.dp, spacing.topBarMinHeight)
         assertEquals(62.dp, spacing.sessionStripMinHeight)
         assertEquals(16.dp, spacing.panelPadding)

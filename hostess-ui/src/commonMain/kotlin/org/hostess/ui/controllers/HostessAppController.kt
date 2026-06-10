@@ -2,6 +2,7 @@ package org.hostess.ui.controllers
 
 import org.hostess.ui.runtime.HostessUiRuntime
 import org.hostess.ui.state.AppUiState
+import org.hostess.ui.state.SendFooterUiState
 import org.hostess.ui.state.SessionStripUiState
 import org.hostess.ui.state.UiRoute
 import org.hostess.ui.text.HostessTextKey
@@ -26,15 +27,40 @@ class HostessAppController(
                 route = UiRoute.Login,
                 menuOpen = false,
                 activeAccountLabel = "",
-                sessionStrip = SessionStripUiState(statusKey = HostessTextKey.Offline),
+                sessionStrip = SessionStripUiState(
+                    visible = false,
+                    statusKey = HostessTextKey.Offline,
+                    online = false,
+                    locationLabel = "",
+                ),
+                sendFooter = SendFooterUiState(visible = false, statusTextKey = null),
                 operationMessageKey = HostessTextKey.BlankStatus,
                 session = null,
             ),
         )
     }
 
-    fun backFromSettings(): HostessAppController =
-        copy(state.copy(route = UiRoute.Compose, menuOpen = false))
+    fun backFromSettings(): HostessAppController {
+        if (state.session == null) {
+            return copy(
+                state.copy(
+                    route = UiRoute.Login,
+                    menuOpen = false,
+                    activeAccountLabel = "",
+                    sessionStrip = SessionStripUiState(
+                        visible = false,
+                        statusKey = HostessTextKey.Offline,
+                        online = false,
+                        locationLabel = "",
+                    ),
+                    sendFooter = SendFooterUiState(visible = false, statusTextKey = null),
+                    operationMessageKey = HostessTextKey.BlankStatus,
+                    session = null,
+                ),
+            )
+        }
+        return copy(state.copy(route = UiRoute.Compose, menuOpen = false))
+    }
 
     private fun copy(state: AppUiState): HostessAppController =
         HostessAppController(runtime, state)

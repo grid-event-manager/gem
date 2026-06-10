@@ -13,6 +13,8 @@ data class HostessSpacing(
     val shellMaxWidth: Dp = 412.dp,
     val shellMaxHeight: Dp = 932.dp,
     val shellMinHeight: Dp = 760.dp,
+    val desktopWindowWidth: Dp = 440.dp,
+    val desktopWindowHeight: Dp = 780.dp,
     val topBarMinHeight: Dp = 72.dp,
     val sessionStripMinHeight: Dp = 62.dp,
     val panelPadding: Dp = 16.dp,
