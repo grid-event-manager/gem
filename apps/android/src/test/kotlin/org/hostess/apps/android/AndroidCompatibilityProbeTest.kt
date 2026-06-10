@@ -18,6 +18,7 @@ class AndroidCompatibilityProbeTest {
         assertTrue(result.adapterLoad)
         assertTrue(result.runtimeLoad)
         assertTrue(result.transportLoad)
+        assertTrue(result.trackAVaultLoad)
         assertTrue(result.trackCClassLoad)
         assertTrue(result.trackDComplianceLoad)
         assertTrue(result.trackDsLoginPackageLoad)
@@ -36,13 +37,14 @@ class AndroidCompatibilityProbeTest {
             adapterLoad = false,
             runtimeLoad = false,
             transportLoad = false,
+            trackAVaultLoad = false,
             trackCClassLoad = false,
             trackDComplianceLoad = true,
             trackDsLoginPackageLoad = true,
             trackGGridLoad = false,
             trackHNoticeLoad = false,
             trackJAvatarLoad = false,
-            reason = "Android compatibility probe failed lanes=adapterLoad,runtimeLoad,transportLoad,trackGGridLoad,trackHNoticeLoad,trackJAvatarLoad",
+            reason = "Android compatibility probe failed lanes=adapterLoad,runtimeLoad,transportLoad,trackAVaultLoad,trackGGridLoad,trackHNoticeLoad,trackJAvatarLoad",
         )
 
         assertEquals("android_gap", result.status)
@@ -50,6 +52,7 @@ class AndroidCompatibilityProbeTest {
         assertFalse(result.adapterLoad)
         assertFalse(result.runtimeLoad)
         assertFalse(result.transportLoad)
+        assertFalse(result.trackAVaultLoad)
         assertFalse(result.trackCClassLoad)
         assertTrue(result.trackDComplianceLoad)
         assertTrue(result.trackDsLoginPackageLoad)
@@ -62,6 +65,7 @@ class AndroidCompatibilityProbeTest {
         assertContains(reason, "adapterLoad")
         assertContains(reason, "runtimeLoad")
         assertContains(reason, "transportLoad")
+        assertContains(reason, "trackAVaultLoad")
         assertContains(reason, "trackGGridLoad")
         assertContains(reason, "trackHNoticeLoad")
         assertContains(reason, "trackJAvatarLoad")

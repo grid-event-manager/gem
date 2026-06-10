@@ -17,6 +17,11 @@ RUNTIME_SUFFIX='Runtime'
 TRACK_B_OKHTTP_PATTERN="(^|[^[:alnum:]_.])okhttp3\.|(^|[^[:alnum:]_.])${OK_HTTP_CLIENT_SYMBOL}([^[:alnum:]_]|$)"
 TRACK_B_RUNTIME_PATTERN="(^|[^[:alnum:]_.])(${PROTOCOL_PREFIX}Login${RUNTIME_SUFFIX}|${PROTOCOL_PREFIX}Group${RUNTIME_SUFFIX}|${PROTOCOL_PREFIX}Inventory${RUNTIME_SUFFIX}|${PROTOCOL_PREFIX}Notice${RUNTIME_SUFFIX}|${PROTOCOL_PREFIX}HttpClient)([^[:alnum:]_]|$)"
 TRACK_C_RUNTIME_PATTERN='EnvironmentLoginSecretResolver|ProtocolSimulatorCircuitClient|AgentDataUpdateRequestTransport|EventQueueGetClient'
+TRACK_A_FORBIDDEN_DEP_PATTERN='java-keyring|secret-service|multiplatform-settings|KVault|SecureVault|Kassaforte|tink|BouncyCastle|kotlinx\.serialization|protobuf|cbor|EncryptedSharedPreferences|MasterKey|EncryptedFile'
+TRACK_A_STALE_CREDENTIAL_ROUTE_PATTERN='VaultUnlock|passphrase|TOTP|authenticator|platform_deferred|native-store required|VM fallback|plaintext fallback|CredentialManager|PasswordHelper|LoginUtils|VaultManager|VaultHelper|VaultUtils|CommonVault'
+TRACK_A_ANDROIDX_CRYPTO_PATTERN='EncryptedSharedPreferences|EncryptedFile|MasterKey|androidx\.security'
+TRACK_A_RAW_KEY_EXPOSURE_PATTERN='ByteArray.*key|key.*ByteArray|SecretKey'
+TRACK_A_APP_ENV_RESOLVER_PATTERN='EnvironmentLoginSecretResolver'
 TRACK_H_STALE_CIRCUIT_OWNER_PATTERN='BoundedSimulatorCircuit(Client|Sender)'
 TRACK_H_STALE_CLI_LIVE_SEND_PATTERN='sessionProvider|fakeSession\(active = false\)|send-notice --mode live'
 TRACK_H_STALE_FULL_PROOF_PATTERN='sendPlainNotice|runAttachmentProof|runBulkProof|boundedBulkTargetSet|plain-notice|existing-attachment-notice|bulk-notice|existingAttachmentId|--existing-attachment-id|bulkLimit|bulkDelayMs'
@@ -455,6 +460,7 @@ while IFS= read -r path; do
         hostess-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/runtime/JvmMd5DigestPort.kt) ;;
         hostess-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/runtime/EnvironmentLoginSecretResolver.kt) ;;
         hostess-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/runtime/DefaultHostessHardwareAddressSource.kt) ;;
+        apps/desktop/src/main/kotlin/org/hostess/apps/desktop/DesktopVaultComposition.kt) ;;
         *) track_f_platform_api_forbidden_targets+=("$path") ;;
     esac
 done < <(find \
@@ -535,6 +541,7 @@ track_c_env_forbidden_targets=()
 while IFS= read -r path; do
     case "$path" in
         *"/EnvironmentLoginSecretResolver.kt") ;;
+        *"/DesktopVaultComposition.kt") ;;
         *) track_c_env_forbidden_targets+=("$path") ;;
     esac
 done < <(find \
@@ -861,6 +868,55 @@ track_android_probe_targets=()
 add_existing track_android_probe_targets \
     "apps/android/src/main/kotlin/org/hostess/apps/android/AndroidCompatibilityProbe.kt"
 
+track_a_dependency_targets=()
+add_existing track_a_dependency_targets \
+    "gradle/libs.versions.toml" \
+    "settings.gradle.kts" \
+    "build.gradle.kts" \
+    "hostess-core/build.gradle.kts" \
+    "hostess-credential-vault/build.gradle.kts" \
+    "hostess-protocol-libomv/build.gradle.kts" \
+    "tools/cli/build.gradle.kts" \
+    "apps/desktop/build.gradle.kts" \
+    "apps/android/build.gradle.kts"
+
+track_a_production_targets=()
+add_existing track_a_production_targets \
+    "hostess-core/src/commonMain" \
+    "hostess-core/src/jvmMain" \
+    "hostess-core/src/androidMain" \
+    "hostess-core/src/jvmAndroidMain" \
+    "hostess-credential-vault/src/commonMain" \
+    "hostess-credential-vault/src/jvmMain" \
+    "hostess-credential-vault/src/androidMain" \
+    "hostess-credential-vault/src/jvmAndroidMain" \
+    "hostess-protocol-libomv/src/commonMain" \
+    "hostess-protocol-libomv/src/jvmMain" \
+    "hostess-protocol-libomv/src/androidMain" \
+    "hostess-protocol-libomv/src/jvmAndroidMain" \
+    "tools/cli/src/main" \
+    "apps/desktop/src/main" \
+    "apps/android/src/main"
+
+track_a_raw_key_forbidden_targets=()
+add_existing track_a_raw_key_forbidden_targets \
+    "hostess-core/src/commonMain" \
+    "hostess-core/src/jvmMain" \
+    "hostess-core/src/androidMain" \
+    "hostess-core/src/jvmAndroidMain" \
+    "hostess-protocol-libomv/src/commonMain" \
+    "hostess-protocol-libomv/src/jvmMain" \
+    "hostess-protocol-libomv/src/androidMain" \
+    "hostess-protocol-libomv/src/jvmAndroidMain" \
+    "tools/cli/src/main" \
+    "apps/desktop/src/main" \
+    "apps/android/src/main"
+
+track_a_app_composition_targets=()
+add_existing track_a_app_composition_targets \
+    "apps/desktop/src/main" \
+    "apps/android/src/main"
+
 track_i_stale_notice_compliance_targets=()
 add_existing track_i_stale_notice_compliance_targets \
     "hostess-core/src/commonMain" \
@@ -982,6 +1038,37 @@ check_no_hits \
     "Track C unsupported secret stores" \
     "$TRACK_C_UNSUPPORTED_SECRET_PATTERN" \
     "${production_targets[@]}"
+
+check_no_hits \
+    "Track A forbidden vault dependency acquisition" \
+    "$TRACK_A_FORBIDDEN_DEP_PATTERN" \
+    "${track_a_dependency_targets[@]}"
+
+check_no_hits \
+    "Track A stale credential unlock routes" \
+    "$TRACK_A_STALE_CREDENTIAL_ROUTE_PATTERN" \
+    "${track_a_production_targets[@]}"
+
+check_no_hits \
+    "Track A AndroidX crypto route absent" \
+    "$TRACK_A_ANDROIDX_CRYPTO_PATTERN" \
+    "${track_a_production_targets[@]}" \
+    "${track_a_dependency_targets[@]}"
+
+check_no_hits \
+    "Track A raw key exposure outside vault module" \
+    "$TRACK_A_RAW_KEY_EXPOSURE_PATTERN" \
+    "${track_a_raw_key_forbidden_targets[@]}"
+
+check_no_hits \
+    "Track A app composition does not use env secret resolver" \
+    "$TRACK_A_APP_ENV_RESOLVER_PATTERN" \
+    "${track_a_app_composition_targets[@]}"
+
+check_exact_owner_count "Track A single AndroidKeystoreVaultKeySource owner" "AndroidKeystoreVaultKeySource" 1 "${track_a_production_targets[@]}"
+check_exact_owner_count "Track A single LocalUserFileVaultKeySource owner" "LocalUserFileVaultKeySource" 1 "${track_a_production_targets[@]}"
+check_exact_owner_count "Track A single DesktopVaultPaths owner" "DesktopVaultPaths" 1 "${track_a_production_targets[@]}"
+check_exact_owner_count "Track A single CredentialVaultLoginSecretResolver owner" "CredentialVaultLoginSecretResolver" 1 "${track_a_production_targets[@]}"
 
 check_no_old_shared_roots
 
@@ -1330,6 +1417,31 @@ check_pattern_matches \
     "self-test Track C unsupported secret store pattern" \
     "$TRACK_C_UNSUPPORTED_SECRET_PATTERN" \
     'keychain lookup'
+
+check_pattern_matches \
+    "self-test Track A forbidden vault dependency pattern" \
+    "$TRACK_A_FORBIDDEN_DEP_PATTERN" \
+    'implementation("com.example:java-keyring:1.0")'
+
+check_pattern_matches \
+    "self-test Track A stale credential route pattern" \
+    "$TRACK_A_STALE_CREDENTIAL_ROUTE_PATTERN" \
+    'VaultUnlock asks for passphrase'
+
+check_pattern_matches \
+    "self-test Track A AndroidX crypto pattern" \
+    "$TRACK_A_ANDROIDX_CRYPTO_PATTERN" \
+    'EncryptedSharedPreferences.create(...)'
+
+check_pattern_matches \
+    "self-test Track A raw key exposure pattern" \
+    "$TRACK_A_RAW_KEY_EXPOSURE_PATTERN" \
+    'fun exportKey(): SecretKey = key'
+
+check_pattern_matches \
+    "self-test Track A app env resolver pattern" \
+    "$TRACK_A_APP_ENV_RESOLVER_PATTERN" \
+    'EnvironmentLoginSecretResolver()'
 
 check_pattern_matches \
     "self-test Track F common forbidden platform API pattern" \

@@ -19,6 +19,7 @@ class AndroidCompatibilityProbe {
         val adapterLoad = loadState?.adapterLoad ?: false
         val runtimeLoad = loadState?.runtimeLoad ?: false
         val transportLoad = loadState?.transportLoad ?: false
+        val trackAVaultLoad = probeTrackAVaultLoad()
         val trackCClassLoad = runtimeLoad && transportLoad
         val trackDComplianceLoad = probeTrackDComplianceLoad()
         val trackDsLoginPackageLoad = probeTrackDsLoginPackageLoad()
@@ -31,6 +32,7 @@ class AndroidCompatibilityProbe {
             adapterLoad &&
             runtimeLoad &&
             transportLoad &&
+            trackAVaultLoad &&
             trackCClassLoad &&
             trackDComplianceLoad &&
             trackDsLoginPackageLoad &&
@@ -45,6 +47,7 @@ class AndroidCompatibilityProbe {
                 adapterLoad = adapterLoad,
                 runtimeLoad = runtimeLoad,
                 transportLoad = transportLoad,
+                trackAVaultLoad = trackAVaultLoad,
                 trackCClassLoad = trackCClassLoad,
                 trackDComplianceLoad = trackDComplianceLoad,
                 trackDsLoginPackageLoad = trackDsLoginPackageLoad,
@@ -56,6 +59,7 @@ class AndroidCompatibilityProbe {
                     adapterLoad,
                     runtimeLoad,
                     transportLoad,
+                    trackAVaultLoad,
                     trackCClassLoad,
                     trackDComplianceLoad,
                     trackDsLoginPackageLoad,
@@ -92,6 +96,12 @@ class AndroidCompatibilityProbe {
             NoticeDispatchService::class.java,
         ).all { it.name.isNotBlank() }
 
+    private fun probeTrackAVaultLoad(): Boolean =
+        TRACK_A_VAULT_CLASSES.all { className ->
+            runCatching { Class.forName(className, false, javaClass.classLoader).name.isNotBlank() }
+                .getOrDefault(false)
+        }
+
     private fun probeTrackDsLoginPackageLoad(): Boolean =
         TRACK_DS_LOGIN_PACKAGE_CLASSES.all { className ->
             runCatching { Class.forName(className, false, javaClass.classLoader).name.isNotBlank() }
@@ -121,6 +131,7 @@ class AndroidCompatibilityProbe {
         adapterLoad: Boolean,
         runtimeLoad: Boolean,
         transportLoad: Boolean,
+        trackAVaultLoad: Boolean,
         trackCClassLoad: Boolean,
         trackDComplianceLoad: Boolean,
         trackDsLoginPackageLoad: Boolean,
@@ -134,6 +145,7 @@ class AndroidCompatibilityProbe {
             "adapterLoad".takeUnless { adapterLoad },
             "runtimeLoad".takeUnless { runtimeLoad },
             "transportLoad".takeUnless { transportLoad },
+            "trackAVaultLoad".takeUnless { trackAVaultLoad },
             "trackCClassLoad".takeUnless { trackCClassLoad },
             "trackDComplianceLoad".takeUnless { trackDComplianceLoad },
             "trackDsLoginPackageLoad".takeUnless { trackDsLoginPackageLoad },
@@ -162,6 +174,19 @@ class AndroidCompatibilityProbe {
             )
         }
 
+        val TRACK_A_VAULT_CLASSES = listOf(
+            "org.hostess.apps.android.HostessAndroidVaultComposition",
+            "org.hostess.core.services.HostessCredentialRuntimeState",
+            "org.hostess.core.services.HostessCredentialRuntimeReady",
+            "org.hostess.core.services.HostessCredentialRuntimeUnavailable",
+            "org.hostess.core.services.HostessCredentialRuntimeResetRequired",
+            "org.hostess.credential.vault.VaultAccessService",
+            "org.hostess.credential.vault.VaultCredentialRuntimeStateMapper",
+            "org.hostess.credential.vault.AndroidKeystoreVaultKeySource",
+            "org.hostess.credential.vault.EncryptedHostessVault",
+            "org.hostess.credential.vault.VaultFileAccountProfileStore",
+            "org.hostess.protocol.libomv.runtime.CredentialVaultLoginSecretResolver",
+        )
         val TRACK_DS_LOGIN_PACKAGE_CLASSES = listOf(
             "org.hostess.protocol.libomv.runtime.LoginPackageBuilder",
             "org.hostess.protocol.libomv.runtime.LoginPackageSerializer",
@@ -209,6 +234,7 @@ data class AndroidCompatibilityResult(
     val adapterLoad: Boolean,
     val runtimeLoad: Boolean,
     val transportLoad: Boolean,
+    val trackAVaultLoad: Boolean,
     val trackCClassLoad: Boolean,
     val trackDComplianceLoad: Boolean,
     val trackDsLoginPackageLoad: Boolean,
@@ -226,6 +252,7 @@ data class AndroidCompatibilityResult(
             adapterLoad = true,
             runtimeLoad = true,
             transportLoad = true,
+            trackAVaultLoad = true,
             trackCClassLoad = true,
             trackDComplianceLoad = true,
             trackDsLoginPackageLoad = true,
@@ -242,6 +269,7 @@ data class AndroidCompatibilityResult(
             adapterLoad: Boolean,
             runtimeLoad: Boolean,
             transportLoad: Boolean,
+            trackAVaultLoad: Boolean,
             trackCClassLoad: Boolean,
             trackDComplianceLoad: Boolean,
             trackDsLoginPackageLoad: Boolean,
@@ -255,6 +283,7 @@ data class AndroidCompatibilityResult(
             adapterLoad = adapterLoad,
             runtimeLoad = runtimeLoad,
             transportLoad = transportLoad,
+            trackAVaultLoad = trackAVaultLoad,
             trackCClassLoad = trackCClassLoad,
             trackDComplianceLoad = trackDComplianceLoad,
             trackDsLoginPackageLoad = trackDsLoginPackageLoad,

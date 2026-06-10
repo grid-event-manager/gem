@@ -15,6 +15,7 @@ class AndroidCompatibilityProbeInstrumentedTest {
         assertTrue(result.adapterLoad)
         assertTrue(result.runtimeLoad)
         assertTrue(result.transportLoad)
+        assertTrue(result.trackAVaultLoad)
         assertTrue(result.trackCClassLoad)
         assertTrue(result.trackDComplianceLoad)
         assertTrue(result.trackDsLoginPackageLoad)

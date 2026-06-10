@@ -8,6 +8,14 @@ The guard scans production build/source paths. This README and the guard script 
 
 The script also runs self-test fixtures for each forbidden-pattern category on every invocation. Those fixture strings live only in `check-boundaries.sh`; they prove the guard still fails on forbidden examples without allowing those examples in production source.
 
+Track A vault owner rules:
+
+- Vault/keyring/serializer dependencies such as java-keyring, Secret Service wrappers, AndroidX Security Crypto, Tink, Bouncy Castle, kotlinx serialization, protobuf, CBOR, and KMP vault wrappers are forbidden in build files/version catalogues.
+- Saved-login storage must not grow a passphrase, TOTP/authenticator, VM fallback, plaintext fallback, Android Credential Manager, generic password helper, or duplicate vault manager path.
+- `AndroidKeystoreVaultKeySource`, `LocalUserFileVaultKeySource`, `DesktopVaultPaths`, and `CredentialVaultLoginSecretResolver` have one production owner each.
+- Raw key bytes and `SecretKey` must not appear outside `:hostess-credential-vault`; app shells consume `HostessCredentialRuntimeState`.
+- App saved-login composition must not use `EnvironmentLoginSecretResolver`; that route remains proof/CLI only.
+
 Track B owner rules:
 
 - Raw OkHttp package/client symbols are allowed only in `hostess-protocol-libomv/src/main/kotlin/org/hostess/protocol/libomv/transport`.
