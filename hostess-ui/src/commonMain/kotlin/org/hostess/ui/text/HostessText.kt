@@ -21,29 +21,25 @@ sealed interface HostessTextKey {
     data object Ok : HostessTextKey
     data object Cancel : HostessTextKey
     data object Back : HostessTextKey
-    data object Notice : HostessTextKey
     data object Subject : HostessTextKey
     data object Body : HostessTextKey
     data class DraftCharCount(val count: Int) : HostessTextKey
     data object Inventory : HostessTextKey
-    data object Folder : HostessTextKey
     data object Landmarks : HostessTextKey
     data object Textures : HostessTextKey
-    data object Selected : HostessTextKey
-    data object Select : HostessTextKey
-    data object Open : HostessTextKey
     data object None : HostessTextKey
-    data object Landmark : HostessTextKey
-    data object Texture : HostessTextKey
     data object Groups : HostessTextKey
     data object AddAll : HostessTextKey
     data object AddGroups : HostessTextKey
     data object CanSendNotices : HostessTextKey
     data object SendNotices : HostessTextKey
     data object Ready : HostessTextKey
-    data object Sending : HostessTextKey
+    data object MissingSubject : HostessTextKey
+    data object MissingBody : HostessTextKey
+    data object MissingGroups : HostessTextKey
     data object SavingLogin : HostessTextKey
     data object LoggingIn : HostessTextKey
+    data object LoggingOut : HostessTextKey
     data object PreparingAvatar : HostessTextKey
     data object LoadingGroups : HostessTextKey
     data object LoadingInventory : HostessTextKey
@@ -56,7 +52,6 @@ sealed interface HostessTextKey {
     data object Online : HostessTextKey
     data object Offline : HostessTextKey
     data object BlankStatus : HostessTextKey
-    data object Theme : HostessTextKey
     data object Light : HostessTextKey
     data object Dark : HostessTextKey
     data object ThemePreferenceUnavailable : HostessTextKey
@@ -85,28 +80,24 @@ sealed interface HostessTextKey {
             Ok,
             Cancel,
             Back,
-            Notice,
             Subject,
             Body,
             Inventory,
-            Folder,
             Landmarks,
             Textures,
-            Selected,
-            Select,
-            Open,
             None,
-            Landmark,
-            Texture,
             Groups,
             AddAll,
             AddGroups,
             CanSendNotices,
             SendNotices,
             Ready,
-            Sending,
+            MissingSubject,
+            MissingBody,
+            MissingGroups,
             SavingLogin,
             LoggingIn,
+            LoggingOut,
             PreparingAvatar,
             LoadingGroups,
             LoadingInventory,
@@ -119,7 +110,6 @@ sealed interface HostessTextKey {
             Online,
             Offline,
             BlankStatus,
-            Theme,
             Light,
             Dark,
             ThemePreferenceUnavailable,
@@ -154,29 +144,25 @@ object EnglishHostessTextCatalogue : HostessTextCatalogue {
         HostessTextKey.Ok -> "OK"
         HostessTextKey.Cancel -> "Cancel"
         HostessTextKey.Back -> "BACK"
-        HostessTextKey.Notice -> "Notice"
         HostessTextKey.Subject -> "Subject"
         HostessTextKey.Body -> "Body"
         is HostessTextKey.DraftCharCount -> "${key.count} chars"
         HostessTextKey.Inventory -> "Inventory"
-        HostessTextKey.Folder -> "Folder"
         HostessTextKey.Landmarks -> "Landmarks"
         HostessTextKey.Textures -> "Textures"
-        HostessTextKey.Selected -> "Selected"
-        HostessTextKey.Select -> "Select"
-        HostessTextKey.Open -> "Open"
         HostessTextKey.None -> "None"
-        HostessTextKey.Landmark -> "Landmark"
-        HostessTextKey.Texture -> "Texture"
         HostessTextKey.Groups -> "Groups"
         HostessTextKey.AddAll -> "Add all"
-        HostessTextKey.AddGroups -> "Add Groups"
+        HostessTextKey.AddGroups -> "Select..."
         HostessTextKey.CanSendNotices -> "Can send notices"
         HostessTextKey.SendNotices -> "Send notices"
         HostessTextKey.Ready -> "Ready"
-        HostessTextKey.Sending -> "Sending"
+        HostessTextKey.MissingSubject -> "Subject required"
+        HostessTextKey.MissingBody -> "Body required"
+        HostessTextKey.MissingGroups -> "Select groups"
         HostessTextKey.SavingLogin -> "Saving login"
         HostessTextKey.LoggingIn -> "Logging in"
+        HostessTextKey.LoggingOut -> "Logging out"
         HostessTextKey.PreparingAvatar -> "Preparing avatar"
         HostessTextKey.LoadingGroups -> "Loading groups"
         HostessTextKey.LoadingInventory -> "Loading inventory"
@@ -189,7 +175,6 @@ object EnglishHostessTextCatalogue : HostessTextCatalogue {
         HostessTextKey.Online -> "Online"
         HostessTextKey.Offline -> "Offline"
         HostessTextKey.BlankStatus -> ""
-        HostessTextKey.Theme -> "Theme"
         HostessTextKey.Light -> "Light"
         HostessTextKey.Dark -> "Dark"
         HostessTextKey.ThemePreferenceUnavailable -> "Theme preference unavailable"

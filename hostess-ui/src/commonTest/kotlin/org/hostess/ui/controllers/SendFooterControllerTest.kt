@@ -13,22 +13,30 @@ import kotlin.test.assertTrue
 
 class SendFooterControllerTest {
     @Test
-    fun footerStaysBlankAndDisabledUntilEveryLegalSendRequirementExists() {
+    fun footerStaysBlankAndDisabledUntilEveryRequiredSendFieldExists() {
         val fixture = readyFixture()
         val base = fixture.noticeController
 
         val withSubject = base.updateSubject("Tonight")
         val withBody = withSubject.updateBody("Body with emoji \uD83C\uDFA7")
-        val withTarget = withBody.updateTargetSet(fixture.groupController.selectAllGroupsMode().targetSet)
-        val ready = withTarget.updateSelectedAttachment(fixture.selectedAttachment)
+        val ready = withBody.updateTargetSet(fixture.groupController.selectAllGroupsMode().targetSet)
 
         assertFalse(base.state.sendFooterState.enabled)
         assertEquals(HostessTextKey.BlankStatus, base.state.sendFooterState.statusTextKey)
+        assertEquals(
+            listOf(
+                HostessTextKey.MissingSubject,
+                HostessTextKey.MissingBody,
+                HostessTextKey.MissingGroups,
+            ),
+            base.state.sendFooterState.missingRequirementKeys,
+        )
         assertFalse(withSubject.state.sendFooterState.enabled)
         assertFalse(withBody.state.sendFooterState.enabled)
-        assertFalse(withTarget.state.sendFooterState.enabled)
         assertTrue(ready.state.sendFooterState.enabled)
         assertEquals(HostessTextKey.Ready, ready.state.sendFooterState.statusTextKey)
+        assertEquals(emptyList(), ready.state.sendFooterState.missingRequirementKeys)
+        assertFalse(ready.state.sendFooterState.showMissingRequirements)
     }
 
     @Test
@@ -42,7 +50,6 @@ class SendFooterControllerTest {
         ).updateSubject("Tonight")
             .updateBody("Body")
             .updateTargetSet(validTargetSet)
-            .updateSelectedAttachment(fixture.selectedAttachment)
         val avatarBlocked = NoticeComposerController(
             runtime = fixture.runtime,
             session = fixture.session,
@@ -50,7 +57,6 @@ class SendFooterControllerTest {
         ).updateSubject("Tonight")
             .updateBody("Body")
             .updateTargetSet(validTargetSet)
-            .updateSelectedAttachment(fixture.selectedAttachment)
 
         assertFalse(missingSession.state.sendFooterState.enabled)
         assertFalse(avatarBlocked.state.sendFooterState.enabled)
@@ -66,6 +72,7 @@ class SendFooterControllerTest {
 
         assertEquals(0, recorder.sendCallCount)
         assertFalse(afterSend.state.sendAttempted)
+        assertTrue(afterSend.state.sendFooterState.showMissingRequirements)
     }
 
     @Test
@@ -80,7 +87,6 @@ class SendFooterControllerTest {
             .updateSubject("Tonight")
             .updateBody("Body")
             .updateTargetSet(targetSet)
-            .updateSelectedAttachment(fixture.selectedAttachment)
 
         val afterSend = ready.sendNotices()
 
@@ -101,7 +107,6 @@ class SendFooterControllerTest {
             .updateSubject("Tonight")
             .updateBody("Body")
             .updateTargetSet(targetSet)
-            .updateSelectedAttachment(fixture.selectedAttachment)
 
         val afterSend = ready.sendNotices()
 

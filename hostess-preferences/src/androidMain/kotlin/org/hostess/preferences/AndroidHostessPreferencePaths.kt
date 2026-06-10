@@ -2,7 +2,13 @@ package org.hostess.preferences
 
 object AndroidHostessPreferencePaths {
     fun defaultPreferenceFile(appFilesDir: String): String =
-        joinPath(appFilesDir, "Hostess", "preferences", "ui.properties")
+        joinPath(defaultPreferenceDirectory(appFilesDir), "ui.properties")
+
+    fun defaultLastLoginProfileFile(appFilesDir: String): String =
+        joinPath(defaultPreferenceDirectory(appFilesDir), "last-login-profile.txt")
+
+    private fun defaultPreferenceDirectory(appFilesDir: String): String =
+        joinPath(appFilesDir, "Hostess", "preferences")
 
     private fun joinPath(
         first: String,

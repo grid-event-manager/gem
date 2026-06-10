@@ -15,6 +15,7 @@ import org.hostess.core.services.SavedLoginAuthenticationService
 import org.hostess.core.services.SavedAccountManagementService
 import org.hostess.core.services.SessionService
 import org.hostess.core.services.TargetSelectionService
+import org.hostess.core.preferences.LastLoginProfilePreferenceService
 import org.hostess.core.theme.ThemePreferenceService
 
 data class HostessUiRuntime(
@@ -30,6 +31,7 @@ data class HostessUiRuntime(
     val noticeDispatchService: NoticeDispatchService,
     val loginComplianceProvider: HostessLoginComplianceProvider,
     val themePreferenceService: ThemePreferenceService,
+    val lastLoginProfilePreferenceService: LastLoginProfilePreferenceService,
 ) {
     fun credentialServiceOrNull(): CredentialService? =
         (credentialRuntimeState as? HostessCredentialRuntimeReady)?.credentialService

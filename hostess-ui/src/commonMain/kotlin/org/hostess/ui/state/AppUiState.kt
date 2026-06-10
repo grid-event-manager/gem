@@ -10,6 +10,7 @@ data class AppUiState(
     val sessionStrip: SessionStripUiState = SessionStripUiState(),
     val sendFooter: SendFooterUiState = SendFooterUiState(visible = false, statusTextKey = null),
     val operationMessageKey: HostessTextKey? = null,
+    val blockingOperationMessageKey: HostessTextKey? = null,
     val session: HostessSession? = null,
 )
 

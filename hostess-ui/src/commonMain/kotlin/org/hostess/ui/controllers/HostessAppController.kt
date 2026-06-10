@@ -20,6 +20,14 @@ class HostessAppController(
     fun openSettings(): HostessAppController =
         copy(state.copy(route = UiRoute.Settings, menuOpen = false))
 
+    fun beginLogout(): HostessAppController =
+        copy(
+            state.copy(
+                menuOpen = false,
+                blockingOperationMessageKey = HostessTextKey.LoggingOut,
+            ),
+        )
+
     fun logout(): HostessAppController {
         state.session?.let(runtime.sessionService::logout)
         return copy(
@@ -35,6 +43,7 @@ class HostessAppController(
                 ),
                 sendFooter = SendFooterUiState(visible = false, statusTextKey = null),
                 operationMessageKey = HostessTextKey.BlankStatus,
+                blockingOperationMessageKey = null,
                 session = null,
             ),
         )
@@ -55,6 +64,7 @@ class HostessAppController(
                     ),
                     sendFooter = SendFooterUiState(visible = false, statusTextKey = null),
                     operationMessageKey = HostessTextKey.BlankStatus,
+                    blockingOperationMessageKey = null,
                     session = null,
                 ),
             )

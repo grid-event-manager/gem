@@ -37,16 +37,14 @@ class NoticeDraftTest {
     }
 
     @Test
-    fun `validates selected attachment requirement`() {
-        val invalid = assertIs<NoticeDraftValidation.Invalid>(
-            NoticeDraft(
-                subject = "Opening set",
-                message = "Tonight at 8",
-                targetSet = selectedTargets(),
-            ).validateForSend(),
-        )
+    fun `accepts notice without attachment`() {
+        val validation = NoticeDraft(
+            subject = "Opening set",
+            message = "Tonight at 8",
+            targetSet = selectedTargets(),
+        ).validateForSend()
 
-        assertEquals(setOf(NoticeDraftInvalidReason.MISSING_ATTACHMENT), invalid.reasons)
+        assertEquals(NoticeDraftValidation.Valid, validation)
     }
 
     @Test
@@ -72,8 +70,6 @@ class NoticeDraftTest {
             subject = "Opening set",
             message = "Tonight at 8",
             targetSet = selectedTargets(),
-        ).withAttachment(
-            ExistingInventoryAttachment(AttachmentKind.LANDMARK, InventoryItemId("landmark-item")),
         )
 
         val plan = NoticeSendPlan(draft)

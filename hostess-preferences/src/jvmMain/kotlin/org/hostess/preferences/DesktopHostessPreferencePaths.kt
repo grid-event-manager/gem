@@ -5,6 +5,20 @@ object DesktopHostessPreferencePaths {
         osName: String,
         env: Map<String, String>,
         userHome: String,
+    ): String =
+        joinPath(defaultPreferenceDirectory(osName, env, userHome), "ui.properties")
+
+    fun defaultLastLoginProfileFile(
+        osName: String,
+        env: Map<String, String>,
+        userHome: String,
+    ): String =
+        joinPath(defaultPreferenceDirectory(osName, env, userHome), "last-login-profile.txt")
+
+    private fun defaultPreferenceDirectory(
+        osName: String,
+        env: Map<String, String>,
+        userHome: String,
     ): String {
         val normalizedOs = osName.lowercase()
         val base = when {
@@ -15,7 +29,7 @@ object DesktopHostessPreferencePaths {
             else ->
                 env["XDG_DATA_HOME"].orEmpty().ifBlank { joinPath(userHome, ".local", "share") }
         }
-        return joinPath(base, "Hostess", "preferences", "ui.properties")
+        return joinPath(base, "Hostess", "preferences")
     }
 
     private fun joinPath(

@@ -19,9 +19,6 @@ class NoticeDraft(
             if (targetSet.isEmpty()) {
                 add(NoticeDraftInvalidReason.EMPTY_TARGET_SET)
             }
-            if (attachments.isEmpty()) {
-                add(NoticeDraftInvalidReason.MISSING_ATTACHMENT)
-            }
             if (attachments.size > 1) {
                 add(NoticeDraftInvalidReason.TOO_MANY_ATTACHMENTS)
             }
@@ -55,6 +52,5 @@ enum class NoticeDraftInvalidReason {
     BLANK_SUBJECT,
     BLANK_MESSAGE,
     EMPTY_TARGET_SET,
-    MISSING_ATTACHMENT,
     TOO_MANY_ATTACHMENTS,
 }

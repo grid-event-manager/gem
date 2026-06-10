@@ -7,6 +7,7 @@ import org.hostess.core.domain.SavedAccountProfile
 import org.hostess.core.domain.SecondLifeLoginName
 import org.hostess.core.domain.SecondLifeLoginNameResult
 import org.hostess.core.ports.CredentialHandle
+import org.hostess.core.preferences.LastLoginProfilePreferenceSaveResult
 import org.hostess.core.theme.ThemePreference
 import org.hostess.core.theme.ThemePreferenceSaveResult
 import org.hostess.preferences.AndroidHostessPreferencePaths
@@ -30,6 +31,11 @@ class HostessAndroidCompositionRootTest {
             assertNotNull(runtime.noticeDispatchService)
             assertEquals(ThemePreferenceSaveResult.Saved, runtime.themePreferenceService.savePreference(ThemePreference.DARK))
             assertTrue(Files.exists(Path.of(preferenceFile(appFilesDir))))
+            assertEquals(
+                LastLoginProfilePreferenceSaveResult.Saved,
+                runtime.lastLoginProfilePreferenceService.saveProfileId(AccountProfileId("profile:v1:last")),
+            )
+            assertTrue(Files.exists(Path.of(lastLoginProfileFile(appFilesDir))))
             val compliance = runtime.loginComplianceProvider.requestFor(fakeProfile())
             assertTrue(compliance.proofAccountAttested)
             assertTrue(compliance.automatedUse)
@@ -50,6 +56,9 @@ class HostessAndroidCompositionRootTest {
 
     private fun preferenceFile(appFilesDir: Path): String =
         AndroidHostessPreferencePaths.defaultPreferenceFile(appFilesDir.toString())
+
+    private fun lastLoginProfileFile(appFilesDir: Path): String =
+        AndroidHostessPreferencePaths.defaultLastLoginProfileFile(appFilesDir.toString())
 
     private fun loginName(): SecondLifeLoginName =
         when (val result = SecondLifeLoginName.fromUserInput("android proof")) {

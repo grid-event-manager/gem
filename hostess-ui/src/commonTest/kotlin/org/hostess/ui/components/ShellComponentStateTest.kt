@@ -1,6 +1,5 @@
 package org.hostess.ui.components
 
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.hostess.ui.design.HostessSpacing
 import org.hostess.ui.design.HostessTypeScale
@@ -9,6 +8,7 @@ import org.hostess.ui.text.EnglishHostessTextCatalogue
 import org.hostess.ui.text.HostessTextKey
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 
 class ShellComponentStateTest {
     @Test
@@ -35,9 +35,9 @@ class ShellComponentStateTest {
 
         assertEquals(28.dp, spacing.brandLogoSize)
         assertEquals(18.dp, spacing.backIconSize)
-        assertEquals(36.dp, spacing.menuItemMinHeight)
+        assertEquals(30.dp, spacing.menuItemMinHeight)
         assertEquals(12.dp, spacing.menuItemHorizontalPadding)
-        assertEquals(6.dp, spacing.menuItemVerticalPadding)
-        assertEquals(FontWeight.Normal, HostessTypeScale().menuItem.fontWeight)
+        assertEquals(3.dp, spacing.menuItemVerticalPadding)
+        assertNull(HostessTypeScale().menuItem.fontWeight)
     }
 }

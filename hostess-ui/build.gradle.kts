@@ -30,6 +30,7 @@ kotlin {
                 implementation(project(":hostess-core"))
                 implementation(compose.runtime)
                 implementation(compose.foundation)
+                implementation(compose.animation)
                 implementation(compose.ui)
                 implementation(compose.material3)
                 implementation(materialIconsCore)

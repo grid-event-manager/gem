@@ -25,7 +25,7 @@ fun SettingsSavedAccountPanel(
         Text(
             text = textCatalogue.text(HostessTextKey.Settings),
             style = HostessTheme.typeScale.sectionTitle,
-            color = HostessTheme.colors.ink,
+            color = HostessTheme.colors.secondary,
         )
         SettingsErrorText(state)
         SavedLoginDropdown(

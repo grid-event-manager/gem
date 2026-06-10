@@ -20,7 +20,6 @@ class NoticeComposerControllerTest {
         assertEquals(body.length, controller.state.charCount)
         assertFalse(controller.state.draftValid)
         assertTrue(NoticeDraftInvalidReason.EMPTY_TARGET_SET in controller.state.draftInvalidReasons)
-        assertTrue(NoticeDraftInvalidReason.MISSING_ATTACHMENT in controller.state.draftInvalidReasons)
         assertFalse(NoticeDraftInvalidReason.BLANK_MESSAGE in controller.state.draftInvalidReasons)
     }
 

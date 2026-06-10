@@ -27,7 +27,7 @@ fun ThemeModeToggle(
 ) {
     val spacing = HostessTheme.spacing
     val colors = HostessTheme.colors
-    val labelColor = if (enabled) colors.ink else colors.disabledInk
+    val labelColor = if (enabled) colors.secondary else colors.disabledInk
     Row(
         modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(spacing.fieldGap),

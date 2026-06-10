@@ -7,6 +7,7 @@ import org.hostess.core.domain.SavedAccountProfile
 import org.hostess.core.domain.SecondLifeLoginName
 import org.hostess.core.domain.SecondLifeLoginNameResult
 import org.hostess.core.ports.CredentialHandle
+import org.hostess.core.preferences.LastLoginProfilePreferenceSaveResult
 import org.hostess.core.services.HostessCredentialRuntimeReady
 import org.hostess.core.theme.ThemePreference
 import org.hostess.core.theme.ThemePreferenceSaveResult
@@ -41,6 +42,11 @@ class HostessDesktopCompositionRootTest {
             assertNull(initialThemePreference.warning)
             assertEquals(ThemePreferenceSaveResult.Saved, runtime.themePreferenceService.savePreference(ThemePreference.DARK))
             assertTrue(Files.exists(Path.of(preferenceFile(tempDataHome))))
+            assertEquals(
+                LastLoginProfilePreferenceSaveResult.Saved,
+                runtime.lastLoginProfilePreferenceService.saveProfileId(AccountProfileId("profile:v1:last")),
+            )
+            assertTrue(Files.exists(Path.of(lastLoginProfileFile(tempDataHome))))
             val compliance = runtime.loginComplianceProvider.requestFor(fakeProfile())
             assertTrue(compliance.proofAccountAttested)
             assertTrue(compliance.automatedUse)
@@ -61,6 +67,13 @@ class HostessDesktopCompositionRootTest {
 
     private fun preferenceFile(tempDataHome: Path): String =
         DesktopHostessPreferencePaths.defaultPreferenceFile(
+            osName = "Linux",
+            env = mapOf("XDG_DATA_HOME" to tempDataHome.toString()),
+            userHome = tempDataHome.resolve("home").toString(),
+        )
+
+    private fun lastLoginProfileFile(tempDataHome: Path): String =
+        DesktopHostessPreferencePaths.defaultLastLoginProfileFile(
             osName = "Linux",
             env = mapOf("XDG_DATA_HOME" to tempDataHome.toString()),
             userHome = tempDataHome.resolve("home").toString(),

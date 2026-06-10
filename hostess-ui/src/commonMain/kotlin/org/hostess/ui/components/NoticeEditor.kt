@@ -20,11 +20,6 @@ fun NoticeEditor(
     modifier: Modifier = Modifier,
 ) {
     HostessPanel(modifier = modifier) {
-        Text(
-            text = textCatalogue.text(HostessTextKey.Notice),
-            style = HostessTheme.typeScale.sectionTitle,
-            color = HostessTheme.colors.ink,
-        )
         HostessTextField(
             label = textCatalogue.text(HostessTextKey.Subject),
             value = state.subject,

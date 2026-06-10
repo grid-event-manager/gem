@@ -79,10 +79,9 @@ class InventoryBrowserController(
         }
         val descriptor = currentListing.items.firstOrNull { it.itemId == itemId }
             ?: return errorState()
-        val currentItems = currentItems(currentListing)
         return when (
             val selected = runtime.inventorySelectionService.selectExistingAttachment(
-                items = currentItems,
+                items = listOf(descriptor),
                 displayName = InventoryItemDisplayName(descriptor.displayName.value),
                 kind = descriptor.kind,
             )

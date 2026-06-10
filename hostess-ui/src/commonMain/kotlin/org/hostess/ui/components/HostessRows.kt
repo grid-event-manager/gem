@@ -22,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import org.hostess.ui.design.HostessTheme
 
@@ -33,6 +34,8 @@ fun HostessSelectableRow(
     modifier: Modifier = Modifier,
     subtitle: String? = null,
     enabled: Boolean = true,
+    compact: Boolean = false,
+    titleStyle: TextStyle = HostessTheme.typeScale.body,
     leading: @Composable (RowScope.() -> Unit)? = null,
     trailing: @Composable (RowScope.() -> Unit)? = null,
 ) {
@@ -41,16 +44,28 @@ fun HostessSelectableRow(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = spacing.sessionStripMinHeight)
+            .heightIn(
+                min = if (compact) {
+                    spacing.compactRowMinHeight
+                } else {
+                    spacing.sessionStripMinHeight
+                },
+            )
             .clickable(enabled = enabled, onClick = onClick),
-        color = if (selected) colors.selectedBackground else colors.surfaceStrong,
+        color = if (selected) {
+            colors.selectedBackground
+        } else if (compact) {
+            colors.fieldSurface
+        } else {
+            colors.surfaceStrong
+        },
         contentColor = if (enabled) colors.ink else colors.disabledInk,
         border = BorderStroke(spacing.borderWidth, colors.line),
     ) {
         Row(
             modifier = Modifier.padding(
                 horizontal = spacing.rowHorizontalPadding,
-                vertical = spacing.rowVerticalPadding,
+                vertical = if (compact) spacing.compactRowVerticalPadding else spacing.rowVerticalPadding,
             ),
             horizontalArrangement = Arrangement.spacedBy(spacing.rowGap),
             verticalAlignment = Alignment.CenterVertically,
@@ -62,7 +77,7 @@ fun HostessSelectableRow(
                 Text(
                     text = title,
                     color = if (enabled) colors.ink else colors.disabledInk,
-                    style = HostessTheme.typeScale.body,
+                    style = titleStyle,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )

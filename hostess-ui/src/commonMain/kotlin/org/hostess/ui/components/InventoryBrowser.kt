@@ -1,12 +1,13 @@
 package org.hostess.ui.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -30,34 +31,25 @@ fun InventoryBrowser(
     modifier: Modifier = Modifier,
 ) {
     HostessPanel(modifier = modifier) {
-        Text(
-            text = textCatalogue.text(HostessTextKey.Inventory),
-            style = HostessTheme.typeScale.sectionTitle,
-            color = HostessTheme.colors.ink,
-        )
         InventoryShortcutBar(
             state = state.shortcuts,
             textCatalogue = textCatalogue,
             onShortcutSelected = onShortcutSelected,
         )
-        Text(
-            text = textCatalogue.text(HostessTextKey.Folder),
-            style = HostessTheme.typeScale.smallLabel,
-            color = HostessTheme.colors.muted,
-        )
-        Text(
-            text = state.currentPath.joinToString(PathSeparator),
-            style = HostessTheme.typeScale.body,
-            color = HostessTheme.colors.ink,
-            modifier = Modifier.testTag(HostessTestTags.InventoryPath),
-        )
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(max = HostessTheme.spacing.inventoryPaneMaxHeight)
-                .verticalScroll(rememberScrollState())
-                .testTag(HostessTestTags.InventoryList),
-            verticalArrangement = Arrangement.spacedBy(HostessTheme.spacing.fieldGap),
+        if (state.currentPath.isNotEmpty()) {
+            Text(
+                text = state.currentPath.joinToString(PathSeparator),
+                style = HostessTheme.typeScale.body,
+                color = HostessTheme.colors.muted,
+                modifier = Modifier.testTag(HostessTestTags.InventoryPath),
+            )
+        }
+        HostessScrollablePane(
+            minHeight = HostessTheme.spacing.inventoryPaneMinHeight,
+            maxHeight = HostessTheme.spacing.inventoryPaneMaxHeight,
+            testTag = HostessTestTags.InventoryList,
+            contentPadding = PaddingValues(HostessTheme.spacing.fieldGap),
+            verticalArrangement = Arrangement.spacedBy(HostessTheme.spacing.borderWidth),
         ) {
             val hasRows = state.visibleFolderRows.isNotEmpty() || state.visibleAssetRows.isNotEmpty()
             when {
@@ -82,11 +74,35 @@ fun InventoryBrowser(
                 }
             }
         }
+        state.selectedAttachment?.let { attachment ->
+            SelectedAttachmentChip(
+                text = attachment.displayName,
+                modifier = Modifier.testTag(HostessTestTags.AttachmentSummary),
+            )
+        } ?: Box(modifier = Modifier.testTag(HostessTestTags.AttachmentSummary))
+    }
+}
+
+@Composable
+private fun SelectedAttachmentChip(
+    text: String,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier,
+        color = HostessTheme.colors.selectedBackground,
+        contentColor = HostessTheme.colors.secondary,
+        shape = HostessTheme.shapes.control,
+        border = BorderStroke(HostessTheme.spacing.borderWidth, HostessTheme.colors.primary),
+    ) {
         Text(
-            text = textCatalogue.text(state.attachmentSummary),
-            style = HostessTheme.typeScale.smallLabel,
-            color = HostessTheme.colors.muted,
-            modifier = Modifier.testTag(HostessTestTags.AttachmentSummary),
+            text = text,
+            style = HostessTheme.typeScale.body,
+            color = HostessTheme.colors.secondary,
+            modifier = Modifier.padding(
+                horizontal = HostessTheme.spacing.rowHorizontalPadding,
+                vertical = HostessTheme.spacing.menuItemVerticalPadding,
+            ),
         )
     }
 }

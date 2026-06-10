@@ -9,6 +9,7 @@ import org.hostess.core.domain.OperatorLabel
 import org.hostess.core.domain.SavedAccountProfile
 import org.hostess.core.domain.ScriptedAgentEvidenceSource
 import org.hostess.core.ports.ClockPort
+import org.hostess.core.preferences.LastLoginProfilePreferenceService
 import org.hostess.core.services.AttachmentService
 import org.hostess.core.services.AvatarReadinessService
 import org.hostess.core.services.DefaultRedactionPort
@@ -36,12 +37,14 @@ object HostessAndroidCompositionRoot {
         HostessRuntimeComposition.create(
             vaultAccess = HostessAndroidVaultComposition.open(appFilesDir),
             themePreferenceService = HostessAndroidPreferenceComposition.open(appFilesDir),
+            lastLoginProfilePreferenceService = HostessAndroidPreferenceComposition.openLastLoginProfile(appFilesDir),
         )
 
     private object HostessRuntimeComposition {
         fun create(
             vaultAccess: HostessVaultRuntimeAccess,
             themePreferenceService: ThemePreferenceService,
+            lastLoginProfilePreferenceService: LastLoginProfilePreferenceService,
         ): HostessUiRuntime {
             val protocolRuntime = ProtocolLibomvModule.liveRuntime(vaultAccess.loginSecretResolver())
             return HostessUiRuntime(
@@ -64,6 +67,7 @@ object HostessAndroidCompositionRoot {
                 ),
                 loginComplianceProvider = HostessUiLoginComplianceProvider,
                 themePreferenceService = themePreferenceService,
+                lastLoginProfilePreferenceService = lastLoginProfilePreferenceService,
             )
         }
 

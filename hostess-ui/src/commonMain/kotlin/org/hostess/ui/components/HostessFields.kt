@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -107,6 +108,7 @@ fun HostessPasswordField(
                 text = if (revealed) hideText else revealText,
                 onClick = { onRevealChanged(!revealed) },
                 enabled = enabled,
+                modifier = Modifier.width(spacing.passwordRevealButtonWidth),
             )
         }
     }
@@ -126,9 +128,13 @@ fun hostessTextFieldColors() = OutlinedTextFieldDefaults.colors(
     focusedTextColor = HostessTheme.colors.ink,
     unfocusedTextColor = HostessTheme.colors.ink,
     disabledTextColor = HostessTheme.colors.disabledInk,
-    focusedContainerColor = HostessTheme.colors.surfaceStrong,
-    unfocusedContainerColor = HostessTheme.colors.surfaceStrong,
-    disabledContainerColor = HostessTheme.colors.statusBackground,
+    focusedPlaceholderColor = HostessTheme.colors.muted,
+    unfocusedPlaceholderColor = HostessTheme.colors.muted,
+    focusedLabelColor = HostessTheme.colors.muted,
+    unfocusedLabelColor = HostessTheme.colors.muted,
+    focusedContainerColor = HostessTheme.colors.fieldSurface,
+    unfocusedContainerColor = HostessTheme.colors.fieldSurface,
+    disabledContainerColor = HostessTheme.colors.fieldSurface,
     focusedBorderColor = HostessTheme.colors.primary,
     unfocusedBorderColor = HostessTheme.colors.lineStrong,
     disabledBorderColor = HostessTheme.colors.line,

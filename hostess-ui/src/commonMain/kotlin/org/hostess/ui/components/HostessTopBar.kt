@@ -51,6 +51,7 @@ fun HostessTopBar(
                 Text(
                     text = textCatalogue.text(HostessTextKey.AppName),
                     style = HostessTheme.typeScale.brandTitle,
+                    color = HostessTheme.colors.secondary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )

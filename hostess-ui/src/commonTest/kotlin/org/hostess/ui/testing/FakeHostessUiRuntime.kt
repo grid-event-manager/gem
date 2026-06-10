@@ -69,6 +69,10 @@ import org.hostess.core.ports.SessionPort
 import org.hostess.core.ports.SimulatorPresenceProof
 import org.hostess.core.ports.SimulatorPresenceProofResult
 import org.hostess.core.ports.SimulatorPresenceProofStatus
+import org.hostess.core.preferences.LastLoginProfilePreferenceLoadResult
+import org.hostess.core.preferences.LastLoginProfilePreferenceSaveResult
+import org.hostess.core.preferences.LastLoginProfilePreferenceService
+import org.hostess.core.preferences.LastLoginProfilePreferenceStore
 import org.hostess.ui.runtime.HostessLoginComplianceProvider
 import org.hostess.ui.runtime.HostessUiRuntime
 
@@ -85,6 +89,7 @@ object FakeHostessUiRuntime {
         attachmentSucceeds: Boolean = true,
         noticeRecorder: FakeNoticeRecorder = FakeNoticeRecorder(),
         themePreferenceStore: FakeThemePreferenceStore = FakeThemePreferenceStore(),
+        lastLoginProfilePreferenceStore: FakeLastLoginProfilePreferenceStore = FakeLastLoginProfilePreferenceStore(),
     ): HostessUiRuntime {
         val profileStore = InMemoryAccountProfileStore(profiles)
         val vault = InMemoryCredentialVault()
@@ -108,6 +113,7 @@ object FakeHostessUiRuntime {
             attachmentSucceeds = attachmentSucceeds,
             noticeRecorder = noticeRecorder,
             themePreferenceStore = themePreferenceStore,
+            lastLoginProfilePreferenceStore = lastLoginProfilePreferenceStore,
         )
     }
 
@@ -140,6 +146,7 @@ object FakeHostessUiRuntime {
         attachmentSucceeds: Boolean = true,
         noticeRecorder: FakeNoticeRecorder = FakeNoticeRecorder(),
         themePreferenceStore: FakeThemePreferenceStore = FakeThemePreferenceStore(),
+        lastLoginProfilePreferenceStore: FakeLastLoginProfilePreferenceStore = FakeLastLoginProfilePreferenceStore(),
     ): HostessUiRuntime {
         val sessionPort = FakeSessionPort(loginSucceeds)
         val inventoryPort = FakeInventoryPort(inventoryListing, inventoryListSucceeds, attachmentSucceeds)
@@ -169,6 +176,7 @@ object FakeHostessUiRuntime {
                 )
             },
             themePreferenceService = ThemePreferenceService(themePreferenceStore),
+            lastLoginProfilePreferenceService = LastLoginProfilePreferenceService(lastLoginProfilePreferenceStore),
         )
     }
 
@@ -202,6 +210,23 @@ class FakeNoticeRecorder(
         val state = scriptedStates.getOrElse(sentGroups.size) { GroupSendState.SENT }
         sentGroups += group.displayName.value
         return GroupSendStatus(group, state)
+    }
+}
+
+class FakeLastLoginProfilePreferenceStore(
+    private var profileId: AccountProfileId? = null,
+) : LastLoginProfilePreferenceStore {
+    val savedProfileIds = mutableListOf<AccountProfileId>()
+
+    override fun load(): LastLoginProfilePreferenceLoadResult =
+        profileId
+            ?.let(LastLoginProfilePreferenceLoadResult::Loaded)
+            ?: LastLoginProfilePreferenceLoadResult.Missing
+
+    override fun save(profileId: AccountProfileId): LastLoginProfilePreferenceSaveResult {
+        this.profileId = profileId
+        savedProfileIds += profileId
+        return LastLoginProfilePreferenceSaveResult.Saved
     }
 }
 

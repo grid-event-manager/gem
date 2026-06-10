@@ -1,25 +1,13 @@
 package org.hostess.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuAnchorType
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import org.hostess.core.domain.AccountProfileId
@@ -39,48 +27,20 @@ fun SavedLoginDropdown(
     onSelected: (AccountProfileId?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var expanded by remember { mutableStateOf(false) }
     val selected = options.firstOrNull { it.profileId == selectedProfileId }
     val placeholder = textCatalogue.text(HostessTextKey.SavedLoginPlaceholder)
-    Column(
-        modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(HostessTheme.spacing.fieldGap),
-    ) {
-        Text(
-            text = textCatalogue.text(HostessTextKey.Username),
-            style = HostessTheme.typeScale.smallLabel,
-            color = HostessTheme.colors.muted,
-        )
-        HostessSecondaryButton(
-            text = selected?.loginName ?: placeholder,
-            onClick = { expanded = true },
-            enabled = enabled,
-            modifier = Modifier
-                .fillMaxWidth()
-                .testTag(HostessTestTags.AccountName),
-        )
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-        ) {
-            DropdownMenuItem(
-                text = { Text(placeholder, style = HostessTheme.typeScale.body) },
-                onClick = {
-                    expanded = false
-                    onSelected(null)
-                },
-            )
-            options.forEach { option ->
-                DropdownMenuItem(
-                    text = { Text(option.loginName, style = HostessTheme.typeScale.body) },
-                    onClick = {
-                        expanded = false
-                        onSelected(option.profileId)
-                    },
-                )
-            }
-        }
-    }
+    HostessDropdownField(
+        label = textCatalogue.text(HostessTextKey.Username),
+        selectedLabel = selected?.loginName,
+        placeholderLabel = placeholder,
+        options = options.map { option ->
+            HostessDropdownOption(option.profileId, option.loginName)
+        },
+        onSelected = onSelected,
+        enabled = enabled,
+        modifier = modifier,
+        fieldModifier = Modifier.testTag(HostessTestTags.AccountName),
+    )
 }
 
 @Composable
@@ -131,7 +91,6 @@ fun LoginCredentialPanel(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun LoginUsernameField(
     usernameDraft: String,
@@ -143,63 +102,19 @@ private fun LoginUsernameField(
     modifier: Modifier = Modifier,
     onSavedLoginSelected: (AccountProfileId?) -> Unit,
 ) {
-    var expanded by remember { mutableStateOf(false) }
-    Column(
-        modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(HostessTheme.spacing.fieldGap),
-    ) {
-        HostessFieldLabel(textCatalogue.text(HostessTextKey.Username))
-        ExposedDropdownMenuBox(
-            expanded = expanded && options.isNotEmpty(),
-            onExpandedChange = {
-                if (enabled && options.isNotEmpty()) {
-                    expanded = it
-                }
-            },
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            OutlinedTextField(
-                value = usernameDraft,
-                onValueChange = onUsernameChanged,
-                enabled = enabled,
-                singleLine = true,
-                textStyle = HostessTheme.typeScale.body,
-                shape = HostessTheme.shapes.control,
-                colors = hostessTextFieldColors(),
-                trailingIcon = {
-                    if (options.isNotEmpty()) {
-                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
-                    }
-                },
-                modifier = Modifier
-                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable, enabled)
-                    .fillMaxWidth()
-                    .height(HostessTheme.spacing.controlHeight)
-                    .testTag(HostessTestTags.AccountName),
-            )
-            ExposedDropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false },
-            ) {
-                DropdownMenuItem(
-                    text = { Text(textCatalogue.text(HostessTextKey.SavedLoginPlaceholder)) },
-                    onClick = {
-                        expanded = false
-                        onSavedLoginSelected(null)
-                    },
-                )
-                options.forEach { option ->
-                    DropdownMenuItem(
-                        text = { Text(option.loginName, style = HostessTheme.typeScale.body) },
-                        onClick = {
-                            expanded = false
-                            onSavedLoginSelected(option.profileId)
-                        },
-                    )
-                }
-            }
-        }
-    }
+    HostessDropdownTextField(
+        label = textCatalogue.text(HostessTextKey.Username),
+        value = usernameDraft,
+        onValueChange = onUsernameChanged,
+        placeholderLabel = textCatalogue.text(HostessTextKey.SavedLoginPlaceholder),
+        options = options.map { option ->
+            HostessDropdownOption(option.profileId, option.loginName)
+        },
+        onSelected = onSavedLoginSelected,
+        enabled = enabled,
+        modifier = modifier,
+        fieldModifier = Modifier.testTag(HostessTestTags.AccountName),
+    )
 }
 
 @Composable

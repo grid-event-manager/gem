@@ -1,5 +1,10 @@
 package org.hostess.ui.components
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -20,23 +25,39 @@ fun HostessSendFooter(
     if (!state.visible) {
         return
     }
-    HostessPanel(
+    Column(
         modifier = modifier
             .fillMaxWidth()
             .testTag(HostessTestTags.SendBar),
+        verticalArrangement = Arrangement.spacedBy(HostessTheme.spacing.fieldGap),
     ) {
         state.statusTextKey?.let { statusTextKey ->
+            if (textCatalogue.text(statusTextKey).isNotBlank()) {
+                Text(
+                    text = textCatalogue.text(statusTextKey),
+                    style = HostessTheme.typeScale.smallLabel,
+                    color = HostessTheme.colors.secondary,
+                    modifier = Modifier.testTag(HostessTestTags.StatusText),
+                )
+            }
+        }
+        AnimatedVisibility(
+            visible = state.showMissingRequirements && !state.enabled && state.missingRequirementKeys.isNotEmpty(),
+            enter = fadeIn(),
+            exit = fadeOut(),
+        ) {
             Text(
-                text = textCatalogue.text(statusTextKey),
+                text = state.missingRequirementKeys.joinToString(separator = " | ") { textCatalogue.text(it) },
                 style = HostessTheme.typeScale.smallLabel,
-                color = HostessTheme.colors.muted,
+                color = HostessTheme.colors.danger,
                 modifier = Modifier.testTag(HostessTestTags.StatusText),
             )
         }
         HostessPrimaryButton(
             text = textCatalogue.text(state.primaryLabelKey),
             onClick = onPrimaryAction,
-            enabled = state.enabled && !state.sending,
+            enabled = !state.sending,
+            visuallyEnabled = state.enabled && !state.sending,
             modifier = Modifier
                 .fillMaxWidth()
                 .testTag(HostessTestTags.PrimaryAction),

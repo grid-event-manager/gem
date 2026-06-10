@@ -1,11 +1,11 @@
 package org.hostess.ui.design
 
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 
 class HostessDesignTokenTest {
     @Test
@@ -67,7 +67,8 @@ class HostessDesignTokenTest {
         assertEquals(12.sp, typeScale.smallLabel.fontSize)
         assertEquals(14.sp, typeScale.button.fontSize)
         assertEquals(12.sp, typeScale.statusPill.fontSize)
-        assertEquals(FontWeight.Bold, typeScale.brandTitle.fontWeight)
-        assertEquals(FontWeight.Bold, typeScale.sectionTitle.fontWeight)
+        assertNull(typeScale.brandTitle.fontWeight)
+        assertNull(typeScale.sectionTitle.fontWeight)
+        assertNull(typeScale.button.fontWeight)
     }
 }

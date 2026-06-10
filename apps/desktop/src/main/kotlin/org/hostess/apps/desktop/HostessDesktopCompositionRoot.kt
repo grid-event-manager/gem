@@ -7,6 +7,7 @@ import org.hostess.core.domain.OperatorLabel
 import org.hostess.core.domain.SavedAccountProfile
 import org.hostess.core.domain.ScriptedAgentEvidenceSource
 import org.hostess.core.ports.ClockPort
+import org.hostess.core.preferences.LastLoginProfilePreferenceService
 import org.hostess.core.services.AttachmentService
 import org.hostess.core.services.AvatarReadinessService
 import org.hostess.core.services.DefaultRedactionPort
@@ -31,6 +32,7 @@ object HostessDesktopCompositionRoot {
         HostessRuntimeComposition.create(
             vaultAccess = DesktopVaultComposition.open(),
             themePreferenceService = DesktopPreferenceComposition.open(),
+            lastLoginProfilePreferenceService = DesktopPreferenceComposition.openLastLoginProfile(),
         )
 
     internal fun create(
@@ -41,12 +43,14 @@ object HostessDesktopCompositionRoot {
         HostessRuntimeComposition.create(
             vaultAccess = DesktopVaultComposition.open(osName, env, userHome),
             themePreferenceService = DesktopPreferenceComposition.open(osName, env, userHome),
+            lastLoginProfilePreferenceService = DesktopPreferenceComposition.openLastLoginProfile(osName, env, userHome),
         )
 
     private object HostessRuntimeComposition {
         fun create(
             vaultAccess: HostessVaultRuntimeAccess,
             themePreferenceService: ThemePreferenceService,
+            lastLoginProfilePreferenceService: LastLoginProfilePreferenceService,
         ): HostessUiRuntime {
             val protocolRuntime = ProtocolLibomvModule.liveRuntime(vaultAccess.loginSecretResolver())
             return HostessUiRuntime(
@@ -69,6 +73,7 @@ object HostessDesktopCompositionRoot {
                 ),
                 loginComplianceProvider = HostessUiLoginComplianceProvider,
                 themePreferenceService = themePreferenceService,
+                lastLoginProfilePreferenceService = lastLoginProfilePreferenceService,
             )
         }
 

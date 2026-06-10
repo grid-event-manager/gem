@@ -22,8 +22,9 @@ TRACK_B_UI_DIRECT_NOTICE_PATTERN='sendGroupNotice|NoticePort|selectedGroups.*(fo
 TRACK_B_UI_FORBIDDEN_OWNER_PATTERN='(^|[^[:alnum:]_])(UiManager|StyleUtils|CommonUi|ScreenHelpers|CredentialHelper|VaultManager|InventoryBrowserService|NoticeSender|BulkSender)([^[:alnum:]_]|$)'
 TRACK_B_UI_WEBVIEW_PATTERN='WebView|android\.webkit|<html|styles\.css|prototype\.js'
 TRACK_B_UI_STAGED_PATTERN='STAGED_ENTRYPOINT|TODO|NotImplemented|UnsupportedOperationException|error\("not implemented"\)'
-TRACK_B_UI_TEXT_PATTERN='"(Hostess|User Name|Password|Show|Hide|Login|Add new login|Add new login\.\.\.|Save and login|Settings|Add new account|Save new account|Delete account|Delete|Send notices|Online|Offline|Inventory|Landmarks|Textures|Add all|Add Groups)"'
+TRACK_B_UI_TEXT_PATTERN='"(Hostess|User Name|Password|Show|Hide|Login|Add new login|Add new login\.\.\.|Save and login|Settings|Add new account|Save new account|Delete account|Delete|Send notices|Online|Offline|Inventory|Landmarks|Textures|Add all|Select\.\.\.)"'
 TRACK_B_UI_STYLE_PATTERN='#[0-9A-Fa-f]{6}|Color\(|[0-9]+\.dp'
+TRACK_B_UI_DIRECT_CONTROL_PATTERN='(^|[^[:alnum:]_])(OutlinedTextField|DropdownMenu|DropdownMenuItem|ExposedDropdownMenu|ExposedDropdownMenuBox|Button|OutlinedButton|verticalScroll|rememberScrollState|VerticalScrollbar|rememberScrollbarAdapter)[[:space:]]*\('
 TRACK_C_RUNTIME_PATTERN='EnvironmentLoginSecretResolver|ProtocolSimulatorCircuitClient|AgentDataUpdateRequestTransport|EventQueueGetClient'
 TRACK_A_FORBIDDEN_DEP_PATTERN='java-keyring|secret-service|multiplatform-settings|KVault|SecureVault|Kassaforte|tink|BouncyCastle|kotlinx\.serialization|protobuf|cbor|EncryptedSharedPreferences|MasterKey|EncryptedFile'
 TRACK_A_STALE_CREDENTIAL_ROUTE_PATTERN='VaultUnlock|passphrase|TOTP|authenticator|platform_deferred|native-store required|VM fallback|plaintext fallback|CredentialManager|PasswordHelper|LoginUtils|VaultManager|VaultHelper|VaultUtils|CommonVault'
@@ -599,6 +600,25 @@ while IFS= read -r path; do
     case "$path" in
         *"/org/hostess/ui/design/"*) ;;
         *) track_b_ui_style_forbidden_targets+=("$path") ;;
+    esac
+done < <(find \
+    "hostess-ui/src/commonMain/kotlin/org/hostess/ui" \
+    "hostess-ui/src/jvmMain/kotlin/org/hostess/ui" \
+    "hostess-ui/src/androidMain/kotlin/org/hostess/ui" \
+    -type f -name '*.kt' 2>/dev/null || true)
+
+track_b_ui_direct_control_forbidden_targets=()
+while IFS= read -r path; do
+    case "$path" in
+        *"/HostessButtons.kt") ;;
+        *"/HostessDropdowns.kt") ;;
+        *"/HostessFields.kt") ;;
+        *"/HostessOverflowMenu.kt") ;;
+        *"/HostessRows.kt") ;;
+        *"/HostessScrollablePane.kt") ;;
+        *"/HostessScrollablePane.jvm.kt") ;;
+        *"/HostessScrollablePane.android.kt") ;;
+        *) track_b_ui_direct_control_forbidden_targets+=("$path") ;;
     esac
 done < <(find \
     "hostess-ui/src/commonMain/kotlin/org/hostess/ui" \
@@ -1229,6 +1249,11 @@ check_no_hits \
     "${track_b_ui_style_forbidden_targets[@]}"
 
 check_no_hits \
+    "Track B UI raw controls centralized" \
+    "$TRACK_B_UI_DIRECT_CONTROL_PATTERN" \
+    "${track_b_ui_direct_control_forbidden_targets[@]}"
+
+check_no_hits \
     "Track C direct runtime/transport calls outside protocol module" \
     "$TRACK_C_RUNTIME_PATTERN" \
     "${track_c_runtime_forbidden_targets[@]}"
@@ -1721,6 +1746,11 @@ check_pattern_matches \
     "self-test Track B UI style constant pattern" \
     "$TRACK_B_UI_STYLE_PATTERN" \
     'val gap = 12.dp'
+
+check_pattern_matches \
+    "self-test Track B UI raw control pattern" \
+    "$TRACK_B_UI_DIRECT_CONTROL_PATTERN" \
+    'OutlinedTextField(value = name, onValueChange = {})'
 
 check_pattern_matches \
     "self-test Track C direct runtime pattern" \

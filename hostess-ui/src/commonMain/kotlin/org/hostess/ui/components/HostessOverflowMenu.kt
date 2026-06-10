@@ -30,6 +30,7 @@ fun HostessOverflowMenu(
     DropdownMenu(
         expanded = expanded,
         onDismissRequest = onDismiss,
+        containerColor = HostessTheme.colors.menuSurface,
         modifier = modifier
             .background(HostessTheme.colors.menuSurface)
             .testTag(HostessTestTags.AppMenu),
@@ -42,7 +43,6 @@ fun HostessOverflowMenu(
         HostessMenuRow(
             text = textCatalogue.text(HostessTextKey.LogOut),
             onClick = onLogoutClick,
-            danger = true,
             modifier = Modifier.testTag(HostessTestTags.LogOut),
         )
     }
@@ -53,7 +53,6 @@ private fun HostessMenuRow(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    danger: Boolean = false,
 ) {
     val colors = HostessTheme.colors
     val spacing = HostessTheme.spacing
@@ -72,7 +71,7 @@ private fun HostessMenuRow(
         Text(
             text = text,
             style = HostessTheme.typeScale.menuItem,
-            color = if (danger) colors.danger else colors.ink,
+            color = colors.secondary,
         )
     }
 }

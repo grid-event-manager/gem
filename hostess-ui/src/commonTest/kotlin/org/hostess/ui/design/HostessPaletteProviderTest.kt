@@ -3,6 +3,7 @@ package org.hostess.ui.design
 import androidx.compose.ui.graphics.Color
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
 
 class HostessPaletteProviderTest {
     @Test
@@ -29,7 +30,7 @@ class HostessPaletteProviderTest {
 
         assertEquals(Color(0xFF2A3441), colors.page)
         assertEquals(Color(0xFF243039), colors.surface)
-        assertEquals(Color(0xFFFFFFFF), colors.ink)
+        assertEquals(Color(0xFF8AB4C4), colors.ink)
         assertEquals(Color(0xFFC0C8D0), colors.body)
         assertEquals(Color(0xFFA0B0BC), colors.muted)
         assertEquals(Color(0xFF8AB4C4), colors.secondary)
@@ -41,8 +42,23 @@ class HostessPaletteProviderTest {
         assertEquals(Color(0xFF1E2A35), colors.menuHover)
         assertEquals(Color(0xFF222E3A), colors.menuActive)
         assertEquals(Color(0xFF2F3D4A), colors.surfaceStrong)
-        assertEquals(Color(0xFF253040), colors.fieldSurface)
+        assertEquals(Color(0xFF2A3441), colors.fieldSurface)
         assertEquals(Color(0xFF3A4D5E), colors.fieldBorder)
+        assertEquals(Color(0xFF2A3441), colors.menuSurface)
         assertEquals(Color(0xFF2E3F4E), colors.toggleTrack)
+    }
+
+    @Test
+    fun darkPaletteTextTokensAvoidBrightWhite() {
+        val colors = HaccuHostessPaletteProvider.colors(ResolvedThemeMode.DARK)
+        val brightWhite = Color(0xFFFFFFFF)
+
+        assertNotEquals(brightWhite, colors.ink)
+        assertNotEquals(brightWhite, colors.body)
+        assertNotEquals(brightWhite, colors.primaryInk)
+        assertNotEquals(brightWhite, colors.secondary)
+        assertNotEquals(brightWhite, colors.selectedInk)
+        assertNotEquals(brightWhite, colors.topBarInk)
+        assertNotEquals(brightWhite, colors.brandMarkInk)
     }
 }

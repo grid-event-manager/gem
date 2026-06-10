@@ -4,6 +4,7 @@ import org.hostess.core.domain.GroupSendState
 import org.hostess.core.domain.GroupTargetSet
 import org.hostess.core.domain.HostessSession
 import org.hostess.core.domain.NoticeDispatchResult
+import org.hostess.core.domain.NoticeDraftInvalidReason
 import org.hostess.core.domain.NoticeDraftValidation
 import org.hostess.core.domain.PacingPolicy
 import org.hostess.core.ports.GroupListResult
@@ -59,15 +60,26 @@ class NoticeComposerController(
             selectedAttachment = selectedAttachment,
         )
 
+    fun hideSendRequirements(): NoticeComposerController =
+        copy(
+            state.copy(
+                sendFooterState = state.sendFooterState.copy(showMissingRequirements = false),
+            ),
+        )
+
     fun sendNotices(): NoticeComposerController {
-        if (!state.sendFooterState.enabled || session == null || selectedAttachment == null) {
-            return copy(state)
+        if (!state.sendFooterState.enabled || session == null) {
+            return copy(
+                state.copy(
+                    sendFooterState = state.sendFooterState.copy(showMissingRequirements = true),
+                ),
+            )
         }
         val draft = runtime.noticeDraftService.createDraft(
             subject = state.subject,
             message = state.body,
             targetSet = targetSet,
-            attachments = listOf(selectedAttachment.request),
+            attachments = selectedAttachment?.let { listOf(it.request) }.orEmpty(),
         )
         val validation = runtime.noticeDraftService.validateForSend(draft)
         if (validation != NoticeDraftValidation.Valid) {
@@ -78,7 +90,7 @@ class NoticeComposerController(
                 session = session,
                 draft = draft,
                 pacingPolicy = PacingPolicy.NONE,
-                attachment = selectedAttachment.attachmentRef,
+                attachment = selectedAttachment?.attachmentRef,
             )
         ) {
             is NoticeDispatchResult.Sent -> copy(projectDispatchSent(result))
@@ -121,7 +133,6 @@ class NoticeComposerController(
                 },
                 sendFooterState = projectFooter(
                     validation = validation,
-                    attachmentReady = attachmentReady,
                 ),
             )
             is NoticeDraftValidation.Invalid -> state.copy(
@@ -138,7 +149,6 @@ class NoticeComposerController(
                 },
                 sendFooterState = projectFooter(
                     validation = validation,
-                    attachmentReady = attachmentReady,
                 ),
             )
         }
@@ -146,18 +156,41 @@ class NoticeComposerController(
 
     private fun projectFooter(
         validation: NoticeDraftValidation,
-        attachmentReady: Boolean,
     ): SendFooterUiState {
         val ready = session != null &&
             avatarReady &&
-            attachmentReady &&
             validation == NoticeDraftValidation.Valid
+        val missingRequirements = if (ready) {
+            emptyList()
+        } else {
+            missingRequirementKeys(validation)
+        }
         return SendFooterUiState(
             visible = true,
             statusTextKey = if (ready) HostessTextKey.Ready else HostessTextKey.BlankStatus,
+            missingRequirementKeys = missingRequirements,
+            showMissingRequirements = false,
             enabled = ready,
             sending = false,
         )
+    }
+
+    private fun missingRequirementKeys(validation: NoticeDraftValidation): List<HostessTextKey> {
+        val keys = linkedSetOf<HostessTextKey>()
+        if (session == null || !avatarReady) {
+            keys += HostessTextKey.PreparingAvatar
+        }
+        val reasons = (validation as? NoticeDraftValidation.Invalid)?.reasons.orEmpty()
+        if (NoticeDraftInvalidReason.BLANK_SUBJECT in reasons) {
+            keys += HostessTextKey.MissingSubject
+        }
+        if (NoticeDraftInvalidReason.BLANK_MESSAGE in reasons) {
+            keys += HostessTextKey.MissingBody
+        }
+        if (NoticeDraftInvalidReason.EMPTY_TARGET_SET in reasons) {
+            keys += HostessTextKey.MissingGroups
+        }
+        return keys.toList()
     }
 
     private fun projectDispatchSent(result: NoticeDispatchResult.Sent): NoticeComposerUiState {
@@ -172,6 +205,7 @@ class NoticeComposerController(
                 statusTextKey = HostessTextKey.Ready,
                 enabled = true,
                 sending = false,
+                showMissingRequirements = false,
             ),
         )
     }
@@ -189,6 +223,7 @@ class NoticeComposerController(
                 statusTextKey = HostessTextKey.BlankStatus,
                 enabled = false,
                 sending = false,
+                showMissingRequirements = true,
             ),
         )
 }

@@ -9,10 +9,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
 import org.hostess.ui.components.HostessAppScaffold
+import org.hostess.ui.components.HostessOperationModal
 import org.hostess.ui.components.HostessSendFooter
 import org.hostess.ui.components.HostessTopBar
 import org.hostess.ui.components.SessionStrip
@@ -49,6 +51,7 @@ fun HostessApp(
     var noticeController by remember(runtime) { mutableStateOf(NoticeComposerController(runtime)) }
     var groupTargetController by remember(runtime) { mutableStateOf(GroupTargetController(runtime)) }
     var inventoryController by remember(runtime) { mutableStateOf(InventoryBrowserController(runtime)) }
+    var sendFeedbackGeneration by remember(runtime) { mutableStateOf(0) }
     val coroutineScope = rememberCoroutineScope()
     val osDark = isSystemInDarkTheme()
     var themeController by remember(runtime) { mutableStateOf(ThemeController.initial(runtime, osDark)) }
@@ -134,15 +137,23 @@ fun HostessApp(
                         settingsController = SettingsController(runtime, appState = opened.state).refreshSavedAccounts()
                     },
                     onLogoutClick = {
-                        appController = appController.logout()
-                        loginController = LoginController(runtime).refreshSavedLogins()
-                        settingsController = SettingsController(
-                            runtime,
-                            appState = appController.state,
-                        ).refreshSavedAccounts()
-                        noticeController = NoticeComposerController(runtime)
-                        groupTargetController = GroupTargetController(runtime)
-                        inventoryController = InventoryBrowserController(runtime)
+                        val loggingOut = appController.beginLogout()
+                        appController = loggingOut
+                        coroutineScope.launch {
+                            delay(LogoutSpinnerMinimumMillis)
+                            val loggedOut = withContext(Dispatchers.Default) {
+                                HostessAppController(runtime, loggingOut.state).logout()
+                            }
+                            appController = loggedOut
+                            loginController = loginController.refreshSavedLogins()
+                            settingsController = SettingsController(
+                                runtime,
+                                appState = loggedOut.state,
+                            ).refreshSavedAccounts()
+                            noticeController = NoticeComposerController(runtime)
+                            groupTargetController = GroupTargetController(runtime)
+                            inventoryController = InventoryBrowserController(runtime)
+                        }
                     },
                 )
             },
@@ -181,6 +192,17 @@ fun HostessApp(
                         textCatalogue = textCatalogue,
                         onPrimaryAction = {
                             noticeController = noticeController.sendNotices()
+                            if (!noticeController.state.sendFooterState.enabled &&
+                                noticeController.state.sendFooterState.showMissingRequirements
+                            ) {
+                                val generation = ++sendFeedbackGeneration
+                                coroutineScope.launch {
+                                    delay(SendValidationFeedbackMillis)
+                                    if (sendFeedbackGeneration == generation) {
+                                        noticeController = noticeController.hideSendRequirements()
+                                    }
+                                }
+                            }
                         },
                     )
                 }
@@ -309,5 +331,14 @@ fun HostessApp(
                 }
             },
         )
+        appController.state.blockingOperationMessageKey?.let { messageKey ->
+            HostessOperationModal(
+                visible = true,
+                message = textCatalogue.text(messageKey),
+            )
+        }
     }
 }
+
+private const val LogoutSpinnerMinimumMillis: Long = 650L
+private const val SendValidationFeedbackMillis: Long = 3_000L

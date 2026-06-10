@@ -13,18 +13,11 @@ class ComposeScreenStateTest {
     fun composeScreenUsesCanonicalEditorAndInventoryTextKeys() {
         val catalogue = EnglishHostessTextCatalogue
 
-        assertEquals("Notice", catalogue.text(HostessTextKey.Notice))
         assertEquals("Subject", catalogue.text(HostessTextKey.Subject))
         assertEquals("Body", catalogue.text(HostessTextKey.Body))
         assertEquals("Inventory", catalogue.text(HostessTextKey.Inventory))
-        assertEquals("Folder", catalogue.text(HostessTextKey.Folder))
         assertEquals("Landmarks", catalogue.text(HostessTextKey.Landmarks))
         assertEquals("Textures", catalogue.text(HostessTextKey.Textures))
-        assertEquals("Selected", catalogue.text(HostessTextKey.Selected))
-        assertEquals("Select", catalogue.text(HostessTextKey.Select))
-        assertEquals("Open", catalogue.text(HostessTextKey.Open))
-        assertEquals("Landmark", catalogue.text(HostessTextKey.Landmark))
-        assertEquals("Texture", catalogue.text(HostessTextKey.Texture))
         assertEquals("None", catalogue.text(HostessTextKey.None))
         assertEquals("Loading inventory", catalogue.text(HostessTextKey.LoadingInventory))
         assertEquals("No inventory", catalogue.text(HostessTextKey.InventoryEmpty))

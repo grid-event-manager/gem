@@ -1,11 +1,7 @@
 package org.hostess.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -34,12 +30,10 @@ fun DeleteAccountPanel(
             modifier = Modifier.fillMaxWidth(),
         )
         if (state.deleteExpanded) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = HostessTheme.spacing.scrollListMaxHeight)
-                    .verticalScroll(rememberScrollState())
-                    .testTag(HostessTestTags.DeleteAccountList),
+            HostessScrollablePane(
+                minHeight = HostessTheme.spacing.controlHeight,
+                maxHeight = HostessTheme.spacing.scrollListMaxHeight,
+                testTag = HostessTestTags.DeleteAccountList,
                 verticalArrangement = Arrangement.spacedBy(HostessTheme.spacing.fieldGap),
             ) {
                 state.savedLoginOptions.forEach { option ->

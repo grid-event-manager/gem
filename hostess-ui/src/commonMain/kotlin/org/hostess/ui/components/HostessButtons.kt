@@ -22,6 +22,7 @@ fun HostessPrimaryButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    visuallyEnabled: Boolean = enabled,
 ) {
     val colors = HostessTheme.colors
     val spacing = HostessTheme.spacing
@@ -30,10 +31,11 @@ fun HostessPrimaryButton(
         enabled = enabled,
         modifier = modifier.height(spacing.controlHeight),
         shape = HostessTheme.shapes.control,
+        border = BorderStroke(spacing.borderWidth, colors.lineStrong),
         contentPadding = PaddingValues(horizontal = spacing.panelPadding),
         colors = ButtonDefaults.buttonColors(
-            containerColor = colors.primary,
-            contentColor = colors.primaryInk,
+            containerColor = if (visuallyEnabled) colors.primary else colors.disabledBackground,
+            contentColor = if (visuallyEnabled) colors.primaryInk else colors.disabledInk,
             disabledContainerColor = colors.disabledBackground,
             disabledContentColor = colors.disabledInk,
         ),
@@ -62,7 +64,7 @@ fun HostessSecondaryButton(
         border = BorderStroke(spacing.borderWidth, colors.lineStrong),
         contentPadding = PaddingValues(horizontal = spacing.panelPadding),
         colors = ButtonDefaults.outlinedButtonColors(
-            containerColor = colors.surfaceStrong,
+            containerColor = colors.fieldSurface,
             contentColor = if (danger) colors.danger else colors.secondary,
             disabledContainerColor = colors.disabledBackground,
             disabledContentColor = colors.disabledInk,
@@ -91,8 +93,8 @@ fun HostessPlainButton(
         border = BorderStroke(spacing.borderWidth, colors.lineStrong),
         contentPadding = PaddingValues(horizontal = spacing.inlineGap),
         colors = ButtonDefaults.outlinedButtonColors(
-            containerColor = colors.surfaceStrong,
-            contentColor = colors.ink,
+            containerColor = colors.fieldSurface,
+            contentColor = colors.secondary,
             disabledContainerColor = colors.disabledBackground,
             disabledContentColor = colors.disabledInk,
         ),
@@ -127,8 +129,8 @@ fun HostessIconButton(
         border = BorderStroke(spacing.borderWidth, colors.lineStrong),
         contentPadding = PaddingValues(spacing.none),
         colors = ButtonDefaults.outlinedButtonColors(
-            containerColor = colors.surfaceStrong,
-            contentColor = colors.ink,
+            containerColor = colors.fieldSurface,
+            contentColor = colors.secondary,
             disabledContainerColor = colors.disabledBackground,
             disabledContentColor = colors.disabledInk,
         ),

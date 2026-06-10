@@ -3,6 +3,7 @@ package org.hostess.ui.controllers
 import org.hostess.core.services.CredentialServiceRevealPasswordResult
 import org.hostess.ui.state.LoginEntryMode
 import org.hostess.ui.state.UiRoute
+import org.hostess.ui.testing.FakeLastLoginProfilePreferenceStore
 import org.hostess.ui.testing.FakeHostessUiRuntime
 import org.hostess.ui.text.HostessTextKey
 import kotlin.test.Test
@@ -57,8 +58,8 @@ class LoginControllerTest {
         assertEquals(UiRoute.Compose, loggedIn.appState.route)
         assertEquals(profile.loginName.value, loggedIn.appState.activeAccountLabel)
         assertEquals("London City", loggedIn.appState.sessionStrip.locationLabel)
-        assertNull(loggedIn.state.selectedProfileId)
-        assertEquals("", loggedIn.state.passwordDraft)
+        assertEquals(profile.profileId, loggedIn.state.selectedProfileId)
+        assertEquals("changed-password", loggedIn.state.passwordDraft)
         assertEquals("changed-password", revealedPassword(runtime, profile.profileId))
     }
 
@@ -122,9 +123,24 @@ class LoginControllerTest {
 
         assertEquals(UiRoute.Compose, loggedIn.appState.route)
         assertEquals("newhost resident", loggedIn.appState.activeAccountLabel)
-        assertEquals("", loggedIn.state.usernameDraft)
-        assertEquals("", loggedIn.state.passwordDraft)
+        assertEquals("newhost resident", loggedIn.state.usernameDraft)
+        assertEquals("new-password", loggedIn.state.passwordDraft)
         assertFalse(loggedIn.state.passwordVisible)
+    }
+
+    @Test
+    fun refreshSavedLoginsRehydratesLastUsedProfileAndSuccessfulLoginSavesIt() {
+        val profile = FakeHostessUiRuntime.defaultProfile()
+        val lastLoginStore = FakeLastLoginProfilePreferenceStore(profile.profileId)
+        val runtime = FakeHostessUiRuntime.ready(lastLoginProfilePreferenceStore = lastLoginStore)
+        val refreshed = LoginController(runtime).refreshSavedLogins()
+        val loggedIn = refreshed.beginLogin().completeLogin()
+
+        assertEquals(profile.profileId, refreshed.state.selectedProfileId)
+        assertEquals(profile.loginName.value, refreshed.state.usernameDraft)
+        assertEquals("test-password", refreshed.state.passwordDraft)
+        assertEquals(listOf(profile.profileId), lastLoginStore.savedProfileIds)
+        assertEquals(UiRoute.Compose, loggedIn.appState.route)
     }
 
     @Test

@@ -35,7 +35,7 @@ class LoginController(
                     savedLoginOptions = listed.profiles.map(SavedLoginOptionUiState::from),
                     operation = state.operation.clearError(),
                 ),
-            )
+            ).selectPreferredSavedLogin(listed.profiles)
             is AccountProfileStoreListResult.CorruptVault -> credentialRuntimeUnavailable(listed.message)
             is AccountProfileStoreListResult.StorageFailed -> credentialRuntimeUnavailable(listed.message)
         }
@@ -219,36 +219,53 @@ class LoginController(
     private fun routeAfterReadiness(
         profile: SavedAccountProfile,
         session: HostessSession,
-    ): LoginController =
-        when (val readiness = runtime.avatarReadinessService.ensureReady(session)) {
-            is AvatarReadinessResult.Success -> copy(
-                state = state.afterSuccessfulLogin(),
-                appState = appState.copy(
-                    route = UiRoute.Compose,
-                    menuOpen = false,
-                    activeAccountLabel = profile.loginName.value,
-                    sessionStrip = SessionStripUiState(
-                        visible = true,
-                        locationLabel = readiness.proof.regionName.orEmpty(),
-                        statusKey = HostessTextKey.Online,
-                        online = true,
+    ): LoginController {
+        return when (val readiness = runtime.avatarReadinessService.ensureReady(session)) {
+            is AvatarReadinessResult.Success -> {
+                runtime.lastLoginProfilePreferenceService.saveProfileId(profile.profileId)
+                copy(
+                    state = state.afterSuccessfulLogin(),
+                    appState = appState.copy(
+                        route = UiRoute.Compose,
+                        menuOpen = false,
+                        activeAccountLabel = profile.loginName.value,
+                        sessionStrip = SessionStripUiState(
+                            visible = true,
+                            locationLabel = readiness.proof.regionName.orEmpty(),
+                            statusKey = HostessTextKey.Online,
+                            online = true,
+                        ),
+                        operationMessageKey = HostessTextKey.Ready,
+                        session = session,
                     ),
-                    operationMessageKey = HostessTextKey.Ready,
-                    session = session,
-                ),
-            )
+                )
+            }
             is AvatarReadinessResult.Failure -> authenticationFailure(readiness.failure.redactedMessage)
         }
+    }
+
+    private fun selectPreferredSavedLogin(profiles: List<SavedAccountProfile>): LoginController {
+        if (state.selectedProfileId != null && profiles.any { it.profileId == state.selectedProfileId }) {
+            return this
+        }
+        if (state.entryMode == LoginEntryMode.New && (state.usernameDraft.isNotBlank() || state.passwordDraft.isNotBlank())) {
+            return this
+        }
+        val preferredProfileId = runtime.lastLoginProfilePreferenceService.loadPreference().profileId
+        val preferredProfile = profiles.firstOrNull { it.profileId == preferredProfileId }
+            ?: profiles.singleOrNull()
+            ?: return this
+        return revealSavedPassword(preferredProfile.profileId)
+    }
 
     private fun LoginUiState.afterSuccessfulLogin(): LoginUiState =
         copy(
-            usernameDraft = "",
-            selectedProfileId = null,
-            entryMode = LoginEntryMode.New,
-            passwordDraft = "",
+            selectedProfileId = authenticatedProfile?.profileId,
+            entryMode = authenticatedProfile?.let { LoginEntryMode.Saved(it.profileId) } ?: entryMode,
+            usernameDraft = authenticatedProfile?.loginName?.value ?: usernameDraft,
             passwordVisible = false,
-            passwordEnabled = false,
-            loginEnabled = false,
+            passwordEnabled = passwordDraft.isNotBlank(),
+            loginEnabled = passwordDraft.isNotBlank(),
             operation = LoginOperationUiState.Idle,
         )
 

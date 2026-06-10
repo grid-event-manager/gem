@@ -82,24 +82,22 @@ class NoticeDispatchServiceTest {
     }
 
     @Test
-    fun `dispatch rejects missing attachment without calling notice port`() {
+    fun `dispatch sends plain notice when attachment is absent`() {
         val events = mutableListOf<String>()
         val noticePort = FakeNoticePort(events)
         val service = service(noticePort, FakeClockPort(events))
-        val invalidDraft = NoticeDraft(
+        val draft = NoticeDraft(
             subject = "Opening set",
             message = "Tonight at 8",
             targetSet = selectedTargets(),
         )
 
-        val result = assertIs<NoticeDispatchResult.Rejected>(
-            service.dispatch(session(), invalidDraft),
+        val result = assertIs<NoticeDispatchResult.Sent>(
+            service.dispatch(session(), draft),
         )
 
-        val validation = assertIs<NoticeDraftValidation.Invalid>(result.validation)
-        assertTrue(NoticeDraftInvalidReason.MISSING_ATTACHMENT in validation.reasons)
-        assertTrue(events.isEmpty())
-        assertTrue(noticePort.calls.isEmpty())
+        assertEquals(2, result.result.statuses.size)
+        assertEquals(listOf(null, null), noticePort.calls.map { it.attachment })
     }
 
     @Test

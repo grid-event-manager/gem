@@ -2,7 +2,7 @@ package org.hostess.ui.components
 
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
@@ -21,6 +21,7 @@ fun HostessMenuIcon(modifier: Modifier = Modifier) {
     Icon(
         imageVector = Icons.Filled.Menu,
         contentDescription = null,
+        tint = HostessTheme.colors.secondary,
         modifier = modifier,
     )
 }
@@ -28,8 +29,9 @@ fun HostessMenuIcon(modifier: Modifier = Modifier) {
 @Composable
 fun HostessBackIcon(modifier: Modifier = Modifier) {
     Icon(
-        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+        imageVector = HostessBackArrowVector,
         contentDescription = null,
+        tint = HostessTheme.colors.secondary,
         modifier = modifier.size(HostessTheme.spacing.backIconSize),
     )
 }
@@ -41,6 +43,16 @@ fun HostessBrandLogoIcon(modifier: Modifier = Modifier) {
         contentDescription = null,
         tint = HostessTheme.colors.brandAccent,
         modifier = modifier,
+    )
+}
+
+@Composable
+fun HostessLandmarkIcon(modifier: Modifier = Modifier) {
+    Icon(
+        imageVector = Icons.Filled.LocationOn,
+        contentDescription = null,
+        tint = HostessTheme.colors.secondary,
+        modifier = modifier.size(HostessTheme.spacing.inlineIconSize),
     )
 }
 
@@ -58,7 +70,7 @@ private val HostessBrandLogoVector: ImageVector =
         path(
             fill = null,
             stroke = SolidBrush(Color.Black),
-            strokeLineWidth = 10f,
+            strokeLineWidth = 14f,
             strokeLineCap = StrokeCap.Round,
             strokeLineJoin = StrokeJoin.Round,
         ) {
@@ -67,5 +79,28 @@ private val HostessBrandLogoVector: ImageVector =
             curveTo(160f, 35f, 160f, 200f, 160f, 200f)
             curveTo(160f, 200f, 160f, 110f, 100f, 110f)
             curveTo(40f, 110f, 40f, 200f, 40f, 200f)
+        }
+    }.build()
+
+private val HostessBackArrowVector: ImageVector =
+    ImageVector.Builder(
+        name = "HostessBackArrow",
+        defaultWidth = Dp(24f),
+        defaultHeight = Dp(24f),
+        viewportWidth = 24f,
+        viewportHeight = 24f,
+    ).apply {
+        path(
+            fill = null,
+            stroke = SolidBrush(Color.Black),
+            strokeLineWidth = 2.2f,
+            strokeLineCap = StrokeCap.Round,
+            strokeLineJoin = StrokeJoin.Round,
+        ) {
+            moveTo(20f, 12f)
+            lineTo(4f, 12f)
+            moveTo(9f, 7f)
+            lineTo(4f, 12f)
+            lineTo(9f, 17f)
         }
     }.build()
