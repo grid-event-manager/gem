@@ -9,6 +9,7 @@ import org.hostess.core.domain.GroupSendStatus
 import org.hostess.core.domain.HostessDelay
 import org.hostess.core.domain.HostessInstant
 import org.hostess.core.domain.HostessSession
+import org.hostess.core.domain.InventoryDirectoryListing
 import org.hostess.core.domain.InventoryItemId
 import org.hostess.core.domain.InventoryItemQuery
 import org.hostess.core.domain.SessionId
@@ -22,7 +23,7 @@ import org.hostess.core.ports.GroupListResult
 import org.hostess.core.ports.GroupNoticeArchiveEntry
 import org.hostess.core.ports.GroupNoticeArchiveResult
 import org.hostess.core.ports.GroupPort
-import org.hostess.core.ports.InventoryItemListResult
+import org.hostess.core.ports.InventoryDirectoryListResult
 import org.hostess.core.ports.InventoryPort
 import org.hostess.core.ports.LoginRequest
 import org.hostess.core.ports.NoticePort
@@ -188,10 +189,11 @@ private class FakeProofInventoryPort : InventoryPort {
         AttachmentRef(request.itemId, AttachmentOwnerId("fake-owner"), request.kind),
     )
 
-    override fun listItems(
+    override fun listDirectory(
         session: HostessSession,
         query: InventoryItemQuery,
-    ): InventoryItemListResult = InventoryItemListResult.Success(emptyList())
+    ): InventoryDirectoryListResult =
+        InventoryDirectoryListResult.Success(InventoryDirectoryListing(emptyList(), emptyList()))
 }
 
 private class FakeProofNoticePort : NoticePort {

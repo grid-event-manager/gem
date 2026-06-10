@@ -11,6 +11,7 @@ import org.hostess.protocol.libomv.llsd.LlsdXml
 import org.hostess.protocol.libomv.llsd.asLong
 import org.hostess.protocol.libomv.llsd.asString
 import org.hostess.protocol.libomv.mapping.LibomvAttachmentSnapshot
+import org.hostess.protocol.libomv.mapping.LibomvInventoryFolderSnapshot
 import org.hostess.protocol.libomv.mapping.LibomvInventoryItemSnapshot
 import org.hostess.protocol.libomv.mapping.LoginInventoryRoots
 import org.hostess.protocol.libomv.transport.CapabilityUrl
@@ -29,37 +30,36 @@ internal class ProtocolInventoryHttpSource(
         capabilityUrl: CapabilityUrl,
         request: ExistingInventoryAttachment,
     ): InventoryRuntimeResult {
-        if (request.kind != AttachmentKind.LANDMARK) {
-            return InventoryRuntimeResult.Failed(
+        val inventoryType = inventoryType(request.kind)
+            ?: return InventoryRuntimeResult.Failed(
                 CoreFailureReason.ATTACHMENT_NOT_FOUND,
                 "inventory attachment kind unsupported",
             )
-        }
         val items = when (val listed = listSnapshots(identity, roots, capabilityUrl)) {
             is InventorySnapshotListResult.Failed ->
                 return InventoryRuntimeResult.Failed(CoreFailureReason.ATTACHMENT_NOT_FOUND, listed.message)
             is InventorySnapshotListResult.Success -> listed.items
         }
-        val item = items.firstOrNull { it.itemId == request.itemId.value && it.inventoryType == LANDMARK_INVENTORY_TYPE }
+        val item = items.firstOrNull { it.itemId == request.itemId.value && it.inventoryType == inventoryType }
             ?: return InventoryRuntimeResult.Failed(CoreFailureReason.ATTACHMENT_NOT_FOUND, "attachment unavailable")
         return InventoryRuntimeResult.Success(
             LibomvAttachmentSnapshot(
                 itemId = item.itemId,
                 ownerId = item.ownerId,
-                kind = AttachmentKind.LANDMARK,
+                kind = request.kind,
             ),
         )
     }
 
-    override fun listItems(
+    override fun listDirectory(
         identity: LibomvSessionIdentity,
         roots: LoginInventoryRoots,
         capabilityUrl: CapabilityUrl,
         query: InventoryItemQuery,
-    ): InventoryRuntimeItemListResult =
+    ): InventoryRuntimeDirectoryListResult =
         when (val listed = listSnapshots(identity, roots, capabilityUrl)) {
-            is InventorySnapshotListResult.Failed -> InventoryRuntimeItemListResult.Failed(listed.message)
-            is InventorySnapshotListResult.Success -> InventoryRuntimeItemListResult.Success(listed.items)
+            is InventorySnapshotListResult.Failed -> InventoryRuntimeDirectoryListResult.Failed(listed.message)
+            is InventorySnapshotListResult.Success -> InventoryRuntimeDirectoryListResult.Success(listed.folders, listed.items)
         }
 
     private fun listSnapshots(
@@ -71,7 +71,8 @@ internal class ProtocolInventoryHttpSource(
             ?: return InventorySnapshotListResult.Failed("inventory root unavailable")
         val pending = ArrayDeque<FolderRequest>()
         val visited = mutableSetOf<String>()
-        val snapshots = mutableListOf<LibomvInventoryItemSnapshot>()
+        val folders = mutableListOf<LibomvInventoryFolderSnapshot>()
+        val items = mutableListOf<LibomvInventoryItemSnapshot>()
         pending += FolderRequest(rootId, identity.agentId)
 
         while (pending.isNotEmpty()) {
@@ -89,13 +90,20 @@ internal class ProtocolInventoryHttpSource(
             val folderResponses = responseFolders(response)
                 ?: return InventorySnapshotListResult.Failed("inventory response invalid")
             for (folderResponse in folderResponses) {
-                snapshots += itemSnapshots(folderResponse)
-                pending += childFolders(folderResponse, fallbackOwnerId = folder.ownerId)
+                items += itemSnapshots(folderResponse)
+                val childFolders = childFolders(
+                    folderResponse = folderResponse,
+                    fallbackOwnerId = folder.ownerId,
+                    fallbackParentFolderId = folder.folderId,
+                )
+                folders += childFolders.map { it.snapshot }
+                pending += childFolders
+                    .map { it.request }
                     .filterNot { it.folderId in visited }
             }
         }
 
-        return InventorySnapshotListResult.Success(snapshots)
+        return InventorySnapshotListResult.Success(folders, items)
     }
 
     private fun fetchFolder(
@@ -162,16 +170,26 @@ internal class ProtocolInventoryHttpSource(
     private fun childFolders(
         folderResponse: Map<String, LlsdValue>,
         fallbackOwnerId: String,
-    ): List<FolderRequest> {
+        fallbackParentFolderId: String,
+    ): List<ChildFolder> {
         val folders = folderResponse[CATEGORIES] as? LlsdValue.ArrayValue ?: return emptyList()
         return folders.values.mapNotNull { value ->
             val fields = (value as? LlsdValue.MapValue)?.values ?: return@mapNotNull null
             val folderId = fields[CATEGORY_ID]?.asString()?.takeIf(String::isNotBlank)
                 ?: fields[FOLDER_ID]?.asString()?.takeIf(String::isNotBlank)
                 ?: return@mapNotNull null
-            FolderRequest(
-                folderId = folderId,
-                ownerId = ownerId(fields) ?: fallbackOwnerId,
+            val ownerId = ownerId(fields) ?: fallbackOwnerId
+            ChildFolder(
+                snapshot = LibomvInventoryFolderSnapshot(
+                    folderId = folderId,
+                    parentFolderId = fields[PARENT_ID]?.asString()?.takeIf(String::isNotBlank)
+                        ?: fallbackParentFolderId,
+                    name = fields[NAME]?.asString()?.takeIf(String::isNotBlank) ?: folderId,
+                ),
+                request = FolderRequest(
+                    folderId = folderId,
+                    ownerId = ownerId,
+                ),
             )
         }
     }
@@ -215,19 +233,35 @@ internal class ProtocolInventoryHttpSource(
         val ownerId: String,
     )
 
+    private data class ChildFolder(
+        val snapshot: LibomvInventoryFolderSnapshot,
+        val request: FolderRequest,
+    )
+
     private sealed interface InventoryHttpResult {
         data class Success(val response: ProtocolHttpResponse) : InventoryHttpResult
         data class Failed(val message: String) : InventoryHttpResult
     }
 
     private sealed interface InventorySnapshotListResult {
-        data class Success(val items: List<LibomvInventoryItemSnapshot>) : InventorySnapshotListResult
+        data class Success(
+            val folders: List<LibomvInventoryFolderSnapshot>,
+            val items: List<LibomvInventoryItemSnapshot>,
+        ) : InventorySnapshotListResult
+
         data class Failed(val message: String) : InventorySnapshotListResult
     }
+
+    private fun inventoryType(kind: AttachmentKind): Int? =
+        when (kind) {
+            AttachmentKind.LANDMARK -> LANDMARK_INVENTORY_TYPE
+            AttachmentKind.TEXTURE -> TEXTURE_INVENTORY_TYPE
+        }
 
     private companion object {
         const val LLSD_XML = "application/llsd+xml"
         const val FOLDER_CAP = 200
+        const val TEXTURE_INVENTORY_TYPE = 0
         const val LANDMARK_INVENTORY_TYPE = 3
 
         const val FOLDERS = "folders"

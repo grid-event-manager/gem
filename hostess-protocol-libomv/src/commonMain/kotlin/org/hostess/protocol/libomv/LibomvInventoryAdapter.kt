@@ -5,6 +5,7 @@ import org.hostess.core.domain.ExistingInventoryAttachment
 import org.hostess.core.domain.HostessSession
 import org.hostess.core.domain.InventoryItemQuery
 import org.hostess.core.ports.AttachmentResolutionResult
+import org.hostess.core.ports.InventoryDirectoryListResult
 import org.hostess.core.ports.InventoryItemListResult
 import org.hostess.core.ports.InventoryPort
 import org.hostess.protocol.libomv.runtime.ProtocolInventoryRuntime
@@ -20,10 +21,10 @@ class LibomvInventoryAdapter(
         inventoryRuntime?.resolveExistingAttachment(session, request)
             ?: AttachmentResolutionResult.Failed(clientSession.unavailable(CoreFailureReason.ATTACHMENT_NOT_FOUND))
 
-    override fun listItems(
+    override fun listDirectory(
         session: HostessSession,
         query: InventoryItemQuery,
-    ): InventoryItemListResult =
-        inventoryRuntime?.listItems(session, query)
-            ?: InventoryItemListResult.Failure(clientSession.unavailable(CoreFailureReason.INVENTORY_LIST_FAILED))
+    ): InventoryDirectoryListResult =
+        inventoryRuntime?.listDirectory(session, query)
+            ?: InventoryDirectoryListResult.Failure(clientSession.unavailable(CoreFailureReason.INVENTORY_LIST_FAILED))
 }

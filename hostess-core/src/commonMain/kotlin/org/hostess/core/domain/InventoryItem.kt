@@ -2,6 +2,7 @@ package org.hostess.core.domain
 
 enum class InventoryItemKind {
     LANDMARK,
+    TEXTURE,
     NOTECARD,
 }
 

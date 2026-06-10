@@ -20,6 +20,7 @@ import org.hostess.core.domain.HostessDelay
 import org.hostess.core.domain.HostessInstant
 import org.hostess.core.domain.HostessSession
 import org.hostess.core.domain.InventoryAssetId
+import org.hostess.core.domain.InventoryDirectoryListing
 import org.hostess.core.domain.InventoryFolderId
 import org.hostess.core.domain.InventoryItemDescriptor
 import org.hostess.core.domain.InventoryItemDisplayName
@@ -37,6 +38,7 @@ import org.hostess.core.ports.GroupListResult
 import org.hostess.core.ports.GroupNoticeArchiveEntry
 import org.hostess.core.ports.GroupNoticeArchiveResult
 import org.hostess.core.ports.GroupPort
+import org.hostess.core.ports.InventoryDirectoryListResult
 import org.hostess.core.ports.InventoryItemListResult
 import org.hostess.core.ports.InventoryPort
 import org.hostess.core.ports.LoginRequest
@@ -663,12 +665,16 @@ class LiveProofRunnerTest {
             return AttachmentResolutionResult.Resolved(fakeAttachment(request.kind))
         }
 
-        override fun listItems(
+        override fun listDirectory(
             session: HostessSession,
             query: InventoryItemQuery,
-        ): InventoryItemListResult {
+        ): InventoryDirectoryListResult {
             listQueries += query
-            return listResult
+            return when (val result = listResult) {
+                is InventoryItemListResult.Success ->
+                    InventoryDirectoryListResult.Success(InventoryDirectoryListing(emptyList(), result.items))
+                is InventoryItemListResult.Failure -> InventoryDirectoryListResult.Failure(result.failure)
+            }
         }
 
         private fun fakeAttachment(kind: AttachmentKind): AttachmentRef = AttachmentRef(

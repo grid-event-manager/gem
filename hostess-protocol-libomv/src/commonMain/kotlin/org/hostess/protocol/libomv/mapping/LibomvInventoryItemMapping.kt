@@ -30,6 +30,7 @@ internal object LibomvInventoryItemMapping {
             return null
         }
         val kind = when (snapshot.inventoryType) {
+            TEXTURE_INVENTORY_TYPE -> InventoryItemKind.TEXTURE
             LANDMARK_INVENTORY_TYPE -> InventoryItemKind.LANDMARK
             NOTECARD_INVENTORY_TYPE -> InventoryItemKind.NOTECARD
             else -> return null
@@ -44,6 +45,7 @@ internal object LibomvInventoryItemMapping {
         )
     }
 
+    private const val TEXTURE_INVENTORY_TYPE = 0
     private const val LANDMARK_INVENTORY_TYPE = 3
     private const val NOTECARD_INVENTORY_TYPE = 7
 }

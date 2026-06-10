@@ -8,12 +8,17 @@ import kotlin.test.assertNull
 
 class LibomvInventoryItemMappingTest {
     @Test
-    fun `maps landmark and notecard descriptors`() {
+    fun `maps texture landmark and notecard descriptors`() {
+        val texture = LibomvInventoryItemMapping.descriptor(snapshot("texture", "Venue Poster", 0))
         val landmark = LibomvInventoryItemMapping.descriptor(snapshot("landmark", "Venue Landmark", 3))
         val notecard = LibomvInventoryItemMapping.descriptor(snapshot("notecard", "Venue Notes", 7))
 
+        requireNotNull(texture)
         requireNotNull(landmark)
         requireNotNull(notecard)
+        assertEquals("texture", texture.itemId.value)
+        assertEquals("Venue Poster", texture.displayName.value)
+        assertEquals(InventoryItemKind.TEXTURE, texture.kind)
         assertEquals("landmark", landmark.itemId.value)
         assertEquals("Venue Landmark", landmark.displayName.value)
         assertEquals(InventoryItemKind.LANDMARK, landmark.kind)

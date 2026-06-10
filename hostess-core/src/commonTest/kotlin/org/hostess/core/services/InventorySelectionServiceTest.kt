@@ -85,7 +85,22 @@ class InventorySelectionServiceTest {
             ),
         )
 
-        assertEquals(InventoryItemKind.LANDMARK, result.requiredKind)
+        assertEquals(InventoryItemKind.NOTECARD, result.requiredKind)
+    }
+
+    @Test
+    fun `selects copyable texture as texture attachment`() {
+        val result = assertIs<InventoryAttachmentSelectionResult.Selected>(
+            service.selectExistingAttachment(
+                listOf(item("texture", "Venue Poster", kind = InventoryItemKind.TEXTURE, copyable = true)),
+                InventoryItemDisplayName("Venue Poster"),
+                kind = InventoryItemKind.TEXTURE,
+            ),
+        )
+
+        assertEquals("texture", result.request.itemId.value)
+        assertEquals(AttachmentKind.TEXTURE, result.request.kind)
+        assertEquals(InventoryItemKind.TEXTURE, result.descriptor.kind)
     }
 
     @Test

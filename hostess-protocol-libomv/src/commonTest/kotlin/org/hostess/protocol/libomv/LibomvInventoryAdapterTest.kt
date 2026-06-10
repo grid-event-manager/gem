@@ -10,11 +10,13 @@ import org.hostess.core.domain.InventoryItemId
 import org.hostess.core.domain.InventoryItemQuery
 import org.hostess.core.domain.SessionId
 import org.hostess.core.ports.AttachmentResolutionResult
+import org.hostess.core.ports.InventoryDirectoryListResult
 import org.hostess.core.ports.InventoryItemListResult
+import org.hostess.protocol.libomv.mapping.LibomvInventoryFolderSnapshot
 import org.hostess.protocol.libomv.mapping.LibomvInventoryItemSnapshot
 import org.hostess.protocol.libomv.mapping.LoginInventoryRoots
 import org.hostess.protocol.libomv.mapping.LibomvAttachmentSnapshot
-import org.hostess.protocol.libomv.runtime.InventoryRuntimeItemListResult
+import org.hostess.protocol.libomv.runtime.InventoryRuntimeDirectoryListResult
 import org.hostess.protocol.libomv.runtime.InventoryRuntimeResult
 import org.hostess.protocol.libomv.runtime.InventoryRuntimeSource
 import org.hostess.protocol.libomv.runtime.ProtocolInventoryRuntime
@@ -88,8 +90,9 @@ class LibomvInventoryAdapterTest {
         val adapter = adapter(
             session = session,
             source = source(
-                list = InventoryRuntimeItemListResult.Success(
-                    listOf(inventorySnapshot("landmark-item", "Venue Landmark", inventoryType = 3)),
+                listing = InventoryRuntimeDirectoryListResult.Success(
+                    folders = emptyList(),
+                    items = listOf(inventorySnapshot("landmark-item", "Venue Landmark", inventoryType = 3)),
                 ),
             ),
         )
@@ -102,11 +105,44 @@ class LibomvInventoryAdapterTest {
     }
 
     @Test
+    fun `inventory directory routes through protocol runtime`() {
+        val session = hostessSession()
+        val adapter = adapter(
+            session = session,
+            source = source(
+                listing = InventoryRuntimeDirectoryListResult.Success(
+                    folders = listOf(folderSnapshot("landmarks", ROOT_FOLDER_ID, "Landmarks")),
+                    items = listOf(inventorySnapshot("landmark-item", "Venue Landmark", inventoryType = 3)),
+                ),
+            ),
+        )
+
+        val result = assertIs<InventoryDirectoryListResult.Success>(
+            adapter.listDirectory(session, InventoryItemQuery()),
+        )
+
+        assertEquals(listOf("Landmarks"), result.listing.folders.map { it.displayName.value })
+        assertEquals(listOf("Venue Landmark"), result.listing.items.map { it.displayName.value })
+    }
+
+    @Test
     fun `inventory list fallback still fails closed without runtime`() {
         val adapter = LibomvInventoryAdapter(clientSession = LibomvClientSession.active(hostessSession()))
 
         val failure = assertIs<InventoryItemListResult.Failure>(
             adapter.listItems(hostessSession(), InventoryItemQuery()),
+        ).failure
+
+        assertEquals(CoreFailureReason.INVENTORY_LIST_FAILED, failure.reason)
+        assertEquals("protocol runtime unavailable", failure.redactedMessage)
+    }
+
+    @Test
+    fun `inventory directory fallback still fails closed without runtime`() {
+        val adapter = LibomvInventoryAdapter(clientSession = LibomvClientSession.active(hostessSession()))
+
+        val failure = assertIs<InventoryDirectoryListResult.Failure>(
+            adapter.listDirectory(hostessSession(), InventoryItemQuery()),
         ).failure
 
         assertEquals(CoreFailureReason.INVENTORY_LIST_FAILED, failure.reason)
@@ -133,7 +169,7 @@ class LibomvInventoryAdapterTest {
             CoreFailureReason.ATTACHMENT_NOT_FOUND,
             "attachment unavailable",
         ),
-        list: InventoryRuntimeItemListResult = InventoryRuntimeItemListResult.Failed("inventory unavailable"),
+        listing: InventoryRuntimeDirectoryListResult = InventoryRuntimeDirectoryListResult.Failed("inventory unavailable"),
     ): InventoryRuntimeSource = object : InventoryRuntimeSource {
         override fun resolveExistingAttachment(
             identity: LibomvSessionIdentity,
@@ -142,12 +178,12 @@ class LibomvInventoryAdapterTest {
             request: ExistingInventoryAttachment,
         ): InventoryRuntimeResult = existing
 
-        override fun listItems(
+        override fun listDirectory(
             identity: LibomvSessionIdentity,
             roots: LoginInventoryRoots,
             capabilityUrl: CapabilityUrl,
             query: InventoryItemQuery,
-        ): InventoryRuntimeItemListResult = list
+        ): InventoryRuntimeDirectoryListResult = listing
     }
 
     private fun snapshot(
@@ -167,6 +203,16 @@ class LibomvInventoryAdapterTest {
         assetId = "asset-$itemId",
         name = name,
         inventoryType = inventoryType,
+    )
+
+    private fun folderSnapshot(
+        folderId: String,
+        parentFolderId: String?,
+        name: String,
+    ): LibomvInventoryFolderSnapshot = LibomvInventoryFolderSnapshot(
+        folderId = folderId,
+        parentFolderId = parentFolderId,
+        name = name,
     )
 
     private fun activeClientSession(session: HostessSession): LibomvClientSession = LibomvClientSession.active(

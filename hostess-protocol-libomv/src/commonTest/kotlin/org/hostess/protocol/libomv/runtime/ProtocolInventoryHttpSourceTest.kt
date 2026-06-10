@@ -22,7 +22,7 @@ class ProtocolInventoryHttpSourceTest {
         val httpClient = RecordingHttpClient { emptyFolderResponse() }
         val source = ProtocolInventoryHttpSource(httpClient)
 
-        source.listItems(identity(), roots(), capabilityUrl(), InventoryItemQuery())
+        source.listDirectory(identity(), roots(), capabilityUrl(), InventoryItemQuery())
 
         val request = httpClient.requests.single()
         assertEquals("POST", request.method)
@@ -53,10 +53,12 @@ class ProtocolInventoryHttpSourceTest {
         }
         val source = ProtocolInventoryHttpSource(httpClient)
 
-        val result = assertIs<InventoryRuntimeItemListResult.Success>(
-            source.listItems(identity(), roots(), capabilityUrl(), InventoryItemQuery()),
+        val result = assertIs<InventoryRuntimeDirectoryListResult.Success>(
+            source.listDirectory(identity(), roots(), capabilityUrl(), InventoryItemQuery()),
         )
 
+        assertEquals(listOf(CHILD_FOLDER_ID), result.folders.map { it.folderId })
+        assertEquals(listOf("Folder"), result.folders.map { it.name })
         assertEquals(listOf("root-landmark", "child-notecard"), result.items.map { it.itemId })
         assertEquals(2, httpClient.requests.size)
         assertContains(assertIs<ProtocolHttpBody.TextBody>(httpClient.requests[1].body).content, CHILD_FOLDER_ID)
@@ -72,8 +74,8 @@ class ProtocolInventoryHttpSourceTest {
             },
         )
 
-        val result = assertIs<InventoryRuntimeItemListResult.Success>(
-            source.listItems(identity(), roots(), capabilityUrl(), InventoryItemQuery()),
+        val result = assertIs<InventoryRuntimeDirectoryListResult.Success>(
+            source.listDirectory(identity(), roots(), capabilityUrl(), InventoryItemQuery()),
         )
 
         assertEquals("landmark-item", result.items.single().itemId)
@@ -86,8 +88,8 @@ class ProtocolInventoryHttpSourceTest {
             RecordingHttpClient { response("<llsd><map><key>not_folders</key><array /></map></llsd>") },
         )
 
-        val result = assertIs<InventoryRuntimeItemListResult.Failed>(
-            source.listItems(identity(), roots(), capabilityUrl(), InventoryItemQuery()),
+        val result = assertIs<InventoryRuntimeDirectoryListResult.Failed>(
+            source.listDirectory(identity(), roots(), capabilityUrl(), InventoryItemQuery()),
         )
 
         assertEquals("inventory response invalid", result.message)
@@ -102,19 +104,22 @@ class ProtocolInventoryHttpSourceTest {
             },
         )
 
-        val result = assertIs<InventoryRuntimeItemListResult.Failed>(
-            source.listItems(identity(), roots(), capabilityUrl(), InventoryItemQuery()),
+        val result = assertIs<InventoryRuntimeDirectoryListResult.Failed>(
+            source.listDirectory(identity(), roots(), capabilityUrl(), InventoryItemQuery()),
         )
 
         assertEquals("inventory folder cap exceeded", result.message)
     }
 
     @Test
-    fun `resolves landmark attachment by catalogue item id and rejects texture`() {
+    fun `resolves landmark and texture attachments by catalogue item id`() {
         val source = ProtocolInventoryHttpSource(
             RecordingHttpClient {
                 folderResponse(
-                    items = listOf(item("landmark-item", "Venue Landmark", ROOT_FOLDER_ID, inventoryType = 3)),
+                    items = listOf(
+                        item("landmark-item", "Venue Landmark", ROOT_FOLDER_ID, inventoryType = 3),
+                        item("texture-item", "Venue Poster", ROOT_FOLDER_ID, inventoryType = 0),
+                    ),
                 )
             },
         )
@@ -127,7 +132,7 @@ class ProtocolInventoryHttpSourceTest {
                 ExistingInventoryAttachment(AttachmentKind.LANDMARK, InventoryItemId("landmark-item")),
             ),
         )
-        val rejected = assertIs<InventoryRuntimeResult.Failed>(
+        val texture = assertIs<InventoryRuntimeResult.Success>(
             source.resolveExistingAttachment(
                 identity(),
                 roots(),
@@ -138,7 +143,30 @@ class ProtocolInventoryHttpSourceTest {
 
         assertEquals("landmark-item", resolved.snapshot.itemId)
         assertEquals(AttachmentKind.LANDMARK, resolved.snapshot.kind)
-        assertEquals("inventory attachment kind unsupported", rejected.message)
+        assertEquals("texture-item", texture.snapshot.itemId)
+        assertEquals(AttachmentKind.TEXTURE, texture.snapshot.kind)
+    }
+
+    @Test
+    fun `texture attachment rejects non texture catalogue item`() {
+        val source = ProtocolInventoryHttpSource(
+            RecordingHttpClient {
+                folderResponse(
+                    items = listOf(item("landmark-item", "Venue Landmark", ROOT_FOLDER_ID, inventoryType = 3)),
+                )
+            },
+        )
+
+        val rejected = assertIs<InventoryRuntimeResult.Failed>(
+            source.resolveExistingAttachment(
+                identity(),
+                roots(),
+                capabilityUrl(),
+                ExistingInventoryAttachment(AttachmentKind.TEXTURE, InventoryItemId("landmark-item")),
+            ),
+        )
+
+        assertEquals("attachment unavailable", rejected.message)
     }
 
     private class RecordingHttpClient(

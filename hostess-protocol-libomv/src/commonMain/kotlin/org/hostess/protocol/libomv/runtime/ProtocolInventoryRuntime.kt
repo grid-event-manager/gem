@@ -5,9 +5,12 @@ import org.hostess.core.domain.CoreFailure
 import org.hostess.core.domain.CoreFailureReason
 import org.hostess.core.domain.ExistingInventoryAttachment
 import org.hostess.core.domain.HostessSession
+import org.hostess.core.domain.InventoryDirectoryListing
+import org.hostess.core.domain.InventoryFolderDescriptor
 import org.hostess.core.domain.InventoryItemDescriptor
 import org.hostess.core.domain.InventoryItemQuery
 import org.hostess.core.ports.AttachmentResolutionResult
+import org.hostess.core.ports.InventoryDirectoryListResult
 import org.hostess.core.ports.InventoryItemListResult
 import org.hostess.protocol.libomv.LibomvClientSession
 import org.hostess.protocol.libomv.LibomvSessionIdentity
@@ -17,6 +20,8 @@ import org.hostess.protocol.libomv.mapping.LoginInventoryRootsResult
 import org.hostess.protocol.libomv.mapping.LibomvAttachmentMapping
 import org.hostess.protocol.libomv.mapping.LibomvAttachmentMappingResult
 import org.hostess.protocol.libomv.mapping.LibomvAttachmentSnapshot
+import org.hostess.protocol.libomv.mapping.LibomvInventoryFolderMapping
+import org.hostess.protocol.libomv.mapping.LibomvInventoryFolderSnapshot
 import org.hostess.protocol.libomv.mapping.LibomvInventoryItemMapping
 import org.hostess.protocol.libomv.mapping.LibomvInventoryItemSnapshot
 import org.hostess.protocol.libomv.transport.CapabilityName
@@ -54,16 +59,28 @@ class ProtocolInventoryRuntime internal constructor(
     fun listItems(
         session: HostessSession,
         query: InventoryItemQuery,
-    ): InventoryItemListResult {
+    ): InventoryItemListResult =
+        when (val result = listDirectory(session, query)) {
+            is InventoryDirectoryListResult.Success -> InventoryItemListResult.Success(result.listing.items)
+            is InventoryDirectoryListResult.Failure -> InventoryItemListResult.Failure(result.failure)
+        }
+
+    fun listDirectory(
+        session: HostessSession,
+        query: InventoryItemQuery,
+    ): InventoryDirectoryListResult {
         val context = when (val built = inventoryContext(session, CoreFailureReason.INVENTORY_LIST_FAILED)) {
-            is InventoryContextResult.Failure -> return InventoryItemListResult.Failure(built.failure)
+            is InventoryContextResult.Failure -> return InventoryDirectoryListResult.Failure(built.failure)
             is InventoryContextResult.Success -> built.context
         }
-        return when (val result = inventorySource.listItems(context.identity, context.roots, context.capabilityUrl, query)) {
-            is InventoryRuntimeItemListResult.Failed ->
-                InventoryItemListResult.Failure(CoreFailure(CoreFailureReason.INVENTORY_LIST_FAILED, result.message))
-            is InventoryRuntimeItemListResult.Success -> InventoryItemListResult.Success(
-                mapDescriptors(result.items, query),
+        return when (val result = inventorySource.listDirectory(context.identity, context.roots, context.capabilityUrl, query)) {
+            is InventoryRuntimeDirectoryListResult.Failed ->
+                InventoryDirectoryListResult.Failure(CoreFailure(CoreFailureReason.INVENTORY_LIST_FAILED, result.message))
+            is InventoryRuntimeDirectoryListResult.Success -> InventoryDirectoryListResult.Success(
+                InventoryDirectoryListing(
+                    folders = mapFolders(result.folders),
+                    items = mapDescriptors(result.items, query),
+                ),
             )
         }
     }
@@ -100,6 +117,13 @@ class ProtocolInventoryRuntime internal constructor(
         }
         return InventoryContextResult.Success(InventoryRuntimeContext(identity, roots, capabilityUrl))
     }
+
+    private fun mapFolders(
+        folders: List<LibomvInventoryFolderSnapshot>,
+    ): List<InventoryFolderDescriptor> = folders
+        .mapNotNull(LibomvInventoryFolderMapping::descriptor)
+        .distinctBy { it.folderId }
+        .sortedWith(compareBy<InventoryFolderDescriptor> { it.displayName.value.lowercase() }.thenBy { it.folderId.value })
 
     private fun mapDescriptors(
         items: List<LibomvInventoryItemSnapshot>,
@@ -152,12 +176,12 @@ internal interface InventoryRuntimeSource {
         request: ExistingInventoryAttachment,
     ): InventoryRuntimeResult
 
-    fun listItems(
+    fun listDirectory(
         identity: LibomvSessionIdentity,
         roots: LoginInventoryRoots,
         capabilityUrl: CapabilityUrl,
         query: InventoryItemQuery,
-    ): InventoryRuntimeItemListResult
+    ): InventoryRuntimeDirectoryListResult
 
     companion object {
         fun unavailable(): InventoryRuntimeSource = object : InventoryRuntimeSource {
@@ -171,12 +195,12 @@ internal interface InventoryRuntimeSource {
                 "attachment runtime unavailable",
             )
 
-            override fun listItems(
+            override fun listDirectory(
                 identity: LibomvSessionIdentity,
                 roots: LoginInventoryRoots,
                 capabilityUrl: CapabilityUrl,
                 query: InventoryItemQuery,
-            ): InventoryRuntimeItemListResult = InventoryRuntimeItemListResult.Failed("inventory runtime unavailable")
+            ): InventoryRuntimeDirectoryListResult = InventoryRuntimeDirectoryListResult.Failed("inventory runtime unavailable")
         }
     }
 }
@@ -186,9 +210,13 @@ internal sealed interface InventoryRuntimeResult {
     data class Failed(val reason: CoreFailureReason, val message: String) : InventoryRuntimeResult
 }
 
-internal sealed interface InventoryRuntimeItemListResult {
-    data class Success(val items: List<LibomvInventoryItemSnapshot>) : InventoryRuntimeItemListResult
-    data class Failed(val message: String) : InventoryRuntimeItemListResult
+internal sealed interface InventoryRuntimeDirectoryListResult {
+    data class Success(
+        val folders: List<LibomvInventoryFolderSnapshot>,
+        val items: List<LibomvInventoryItemSnapshot>,
+    ) : InventoryRuntimeDirectoryListResult
+
+    data class Failed(val message: String) : InventoryRuntimeDirectoryListResult
 }
 
 private data class InventoryRuntimeContext(

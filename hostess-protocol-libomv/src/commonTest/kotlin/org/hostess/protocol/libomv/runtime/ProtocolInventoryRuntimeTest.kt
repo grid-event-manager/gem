@@ -11,10 +11,12 @@ import org.hostess.core.domain.InventoryItemKind
 import org.hostess.core.domain.InventoryItemQuery
 import org.hostess.core.domain.SessionId
 import org.hostess.core.ports.AttachmentResolutionResult
+import org.hostess.core.ports.InventoryDirectoryListResult
 import org.hostess.core.ports.InventoryItemListResult
 import org.hostess.protocol.libomv.LibomvClientSession
 import org.hostess.protocol.libomv.LibomvSessionIdentity
 import org.hostess.protocol.libomv.mapping.LibomvAttachmentSnapshot
+import org.hostess.protocol.libomv.mapping.LibomvInventoryFolderSnapshot
 import org.hostess.protocol.libomv.mapping.LibomvInventoryItemSnapshot
 import org.hostess.protocol.libomv.mapping.LoginInventoryRoots
 import org.hostess.protocol.libomv.transport.CapabilityName
@@ -106,9 +108,11 @@ class ProtocolInventoryRuntimeTest {
     fun `inventory list maps descriptors and filters query kinds`() {
         val session = hostessSession()
         val source = FakeInventoryRuntimeSource().apply {
-            listResult = InventoryRuntimeItemListResult.Success(
-                listOf(
+            listResult = InventoryRuntimeDirectoryListResult.Success(
+                folders = listOf(folderSnapshot("landmarks", ROOT_FOLDER_ID, "Landmarks")),
+                items = listOf(
                     inventorySnapshot("z-landmark", "Zoo Landmark", inventoryType = 3),
+                    inventorySnapshot("texture", "Event Poster", inventoryType = 0),
                     inventorySnapshot("a-landmark", "Alpha Landmark", inventoryType = 3),
                     inventorySnapshot("notecard", "Venue Notes", inventoryType = 7),
                     inventorySnapshot("object", "Object", inventoryType = 6),
@@ -125,6 +129,35 @@ class ProtocolInventoryRuntimeTest {
 
         assertEquals(listOf("Alpha Landmark", "Zoo Landmark"), result.items.map { it.displayName.value })
         assertEquals(listOf(InventoryItemQuery(kinds = setOf(InventoryItemKind.LANDMARK))), source.listRequests)
+    }
+
+    @Test
+    fun `inventory directory maps folders and texture descriptors`() {
+        val session = hostessSession()
+        val source = FakeInventoryRuntimeSource().apply {
+            listResult = InventoryRuntimeDirectoryListResult.Success(
+                folders = listOf(
+                    folderSnapshot("textures", ROOT_FOLDER_ID, "Textures"),
+                    folderSnapshot("landmarks", ROOT_FOLDER_ID, "Landmarks"),
+                ),
+                items = listOf(
+                    inventorySnapshot("z-texture", "Zoo Poster", inventoryType = 0),
+                    inventorySnapshot("a-texture", "Alpha Poster", inventoryType = 0),
+                    inventorySnapshot("landmark", "Venue Landmark", inventoryType = 3),
+                ),
+            )
+        }
+
+        val result = assertIs<InventoryDirectoryListResult.Success>(
+            runtime(session, source).listDirectory(
+                session,
+                InventoryItemQuery(kinds = setOf(InventoryItemKind.TEXTURE)),
+            ),
+        )
+
+        assertEquals(listOf("Landmarks", "Textures"), result.listing.folders.map { it.displayName.value })
+        assertEquals(listOf("Alpha Poster", "Zoo Poster"), result.listing.items.map { it.displayName.value })
+        assertEquals(listOf(InventoryItemKind.TEXTURE, InventoryItemKind.TEXTURE), result.listing.items.map { it.kind })
     }
 
     @Test
@@ -205,6 +238,16 @@ class ProtocolInventoryRuntimeTest {
         inventoryType = inventoryType,
     )
 
+    private fun folderSnapshot(
+        folderId: String,
+        parentFolderId: String?,
+        name: String,
+    ): LibomvInventoryFolderSnapshot = LibomvInventoryFolderSnapshot(
+        folderId = folderId,
+        parentFolderId = parentFolderId,
+        name = name,
+    )
+
     private fun activeClientSession(
         session: HostessSession,
         inventoryRoots: LoginInventoryRoots = LoginInventoryRoots(
@@ -245,7 +288,8 @@ class ProtocolInventoryRuntimeTest {
             CoreFailureReason.ATTACHMENT_NOT_FOUND,
             "attachment unavailable",
         )
-        var listResult: InventoryRuntimeItemListResult = InventoryRuntimeItemListResult.Failed("inventory unavailable")
+        var listResult: InventoryRuntimeDirectoryListResult =
+            InventoryRuntimeDirectoryListResult.Failed("inventory unavailable")
         val existingRequests = mutableListOf<ExistingInventoryAttachment>()
         val listRequests = mutableListOf<InventoryItemQuery>()
 
@@ -259,12 +303,12 @@ class ProtocolInventoryRuntimeTest {
             return existingResult
         }
 
-        override fun listItems(
+        override fun listDirectory(
             identity: LibomvSessionIdentity,
             roots: LoginInventoryRoots,
             capabilityUrl: CapabilityUrl,
             query: InventoryItemQuery,
-        ): InventoryRuntimeItemListResult {
+        ): InventoryRuntimeDirectoryListResult {
             listRequests += query
             return listResult
         }
