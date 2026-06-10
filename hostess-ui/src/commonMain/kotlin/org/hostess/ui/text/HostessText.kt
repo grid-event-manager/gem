@@ -8,6 +8,8 @@ sealed interface HostessTextKey {
     data object Hide : HostessTextKey
     data object SavedLoginPlaceholder : HostessTextKey
     data object Login : HostessTextKey
+    data object Menu : HostessTextKey
+    data object LogOut : HostessTextKey
     data object AddNewLogin : HostessTextKey
     data object SaveAndLogin : HostessTextKey
     data object Settings : HostessTextKey
@@ -53,6 +55,8 @@ sealed interface HostessTextKey {
             Hide,
             SavedLoginPlaceholder,
             Login,
+            Menu,
+            LogOut,
             AddNewLogin,
             SaveAndLogin,
             Settings,
@@ -103,6 +107,8 @@ object EnglishHostessTextCatalogue : HostessTextCatalogue {
         HostessTextKey.Hide -> "Hide"
         HostessTextKey.SavedLoginPlaceholder -> "\u2014 select \u2014"
         HostessTextKey.Login -> "Login"
+        HostessTextKey.Menu -> "Menu"
+        HostessTextKey.LogOut -> "Log out"
         HostessTextKey.AddNewLogin -> "Add new login..."
         HostessTextKey.SaveAndLogin -> "Save and login"
         HostessTextKey.Settings -> "Settings"

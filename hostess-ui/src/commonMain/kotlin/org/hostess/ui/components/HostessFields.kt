@@ -10,6 +10,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import org.hostess.ui.design.HostessTheme
@@ -55,6 +56,7 @@ fun HostessPasswordField(
     onRevealChanged: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    onPasswordFocus: () -> Unit = {},
 ) {
     val spacing = HostessTheme.spacing
     Column(
@@ -78,7 +80,12 @@ fun HostessPasswordField(
                 colors = hostessTextFieldColors(),
                 modifier = Modifier
                     .weight(weight = 1f)
-                    .heightIn(min = spacing.tapTarget),
+                    .heightIn(min = spacing.tapTarget)
+                    .onFocusChanged { focusState ->
+                        if (focusState.isFocused) {
+                            onPasswordFocus()
+                        }
+                    },
             )
             HostessPlainButton(
                 text = if (revealed) hideText else revealText,

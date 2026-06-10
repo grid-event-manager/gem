@@ -21,6 +21,9 @@ class UiStateInitialShapeTest {
         assertFalse(state.sessionStrip.visible)
         assertEquals("", state.sessionStrip.locationLabel)
         assertEquals(HostessTextKey.Offline, state.sessionStrip.statusKey)
+        assertFalse(state.sendFooter.visible)
+        assertNull(state.sendFooter.statusTextKey)
+        assertFalse(state.sendFooter.enabled)
         assertNull(state.session)
     }
 

@@ -7,9 +7,11 @@ import kotlin.test.assertTrue
 class HostessTextTest {
     @Test
     fun fixedKeysCoverPrototypeCopy() {
-        assertEquals(40, HostessTextKey.fixedKeys.size)
+        assertEquals(42, HostessTextKey.fixedKeys.size)
         assertTrue(HostessTextKey.AppName in HostessTextKey.fixedKeys)
         assertTrue(HostessTextKey.Username in HostessTextKey.fixedKeys)
+        assertTrue(HostessTextKey.Menu in HostessTextKey.fixedKeys)
+        assertTrue(HostessTextKey.LogOut in HostessTextKey.fixedKeys)
         assertTrue(HostessTextKey.AddGroups in HostessTextKey.fixedKeys)
         assertTrue(HostessTextKey.BlankStatus in HostessTextKey.fixedKeys)
     }
@@ -23,6 +25,8 @@ class HostessTextTest {
         assertEquals("Password", catalogue.text(HostessTextKey.Password))
         assertEquals("Show", catalogue.text(HostessTextKey.Show))
         assertEquals("Hide", catalogue.text(HostessTextKey.Hide))
+        assertEquals("Menu", catalogue.text(HostessTextKey.Menu))
+        assertEquals("Log out", catalogue.text(HostessTextKey.LogOut))
         assertEquals("\u2014 select \u2014", catalogue.text(HostessTextKey.SavedLoginPlaceholder))
         assertEquals("Add new login...", catalogue.text(HostessTextKey.AddNewLogin))
         assertEquals("Save and login", catalogue.text(HostessTextKey.SaveAndLogin))

@@ -19,6 +19,7 @@ data class LoginUiState(
     val newPasswordVisible: Boolean = false,
     val saveAndLoginEnabled: Boolean = false,
     val errorKey: HostessTextKey? = null,
+    val errorMessage: String? = null,
 ) {
     companion object {
         fun fromCredentialRuntime(runtimeState: HostessCredentialRuntimeState): LoginUiState =

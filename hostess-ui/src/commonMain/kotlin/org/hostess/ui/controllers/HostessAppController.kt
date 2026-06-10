@@ -13,11 +13,14 @@ class HostessAppController(
     fun openMenu(): HostessAppController =
         copy(state.copy(menuOpen = true))
 
+    fun closeMenu(): HostessAppController =
+        copy(state.copy(menuOpen = false))
+
     fun openSettings(): HostessAppController =
         copy(state.copy(route = UiRoute.Settings, menuOpen = false))
 
     fun logout(): HostessAppController {
-        // B-10 owns SessionService.logout wiring; B-06 clears only route-local UI state.
+        // B-10 owns logout wiring; B-06 clears only route-local UI state.
         return copy(
             state.copy(
                 route = UiRoute.Login,

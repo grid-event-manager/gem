@@ -37,14 +37,18 @@ class ControllerEntrypointShapeTest {
 
     @Test
     fun loginControllerOwnsSavedLoginAndPanelEntryPoints() {
-        val profileId = AccountProfileId("profile:v1:login")
+        val profileId = FakeHostessUiRuntime.defaultProfile().profileId
         val controller = LoginController(runtime)
+            .refreshSavedLogins()
             .selectSavedLogin(profileId)
             .updateSavedPasswordDraft("changed-password")
             .toggleSavedPasswordVisibility()
             .toggleAddLoginPanel()
+            .updateNewUsernameDraft("newavatar")
             .normalizeNewLoginNameOnPasswordFocus()
-            .loginSelected()
+        val loggedIn = controller.loginSelected()
+        val savedNew = controller
+            .updateNewPasswordDraft("new-password")
             .saveAndLogin()
 
         assertEquals(profileId, controller.state.selectedProfileId)
@@ -53,6 +57,9 @@ class ControllerEntrypointShapeTest {
         assertTrue(controller.state.passwordEnabled)
         assertTrue(controller.state.loginEnabled)
         assertTrue(controller.state.addLoginExpanded)
+        assertEquals("newavatar resident", controller.state.newUsernameDraft)
+        assertEquals(UiRoute.Compose, loggedIn.appState.route)
+        assertEquals(UiRoute.Compose, savedNew.appState.route)
     }
 
     @Test

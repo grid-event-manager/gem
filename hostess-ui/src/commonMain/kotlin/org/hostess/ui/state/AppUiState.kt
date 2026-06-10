@@ -8,6 +8,7 @@ data class AppUiState(
     val menuOpen: Boolean = false,
     val activeAccountLabel: String = "",
     val sessionStrip: SessionStripUiState = SessionStripUiState(),
+    val sendFooter: SendFooterUiState = SendFooterUiState(visible = false, statusTextKey = null),
     val operationMessageKey: HostessTextKey? = null,
     val session: HostessSession? = null,
 )

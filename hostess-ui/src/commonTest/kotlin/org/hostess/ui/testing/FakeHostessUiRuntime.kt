@@ -3,6 +3,8 @@ package org.hostess.ui.testing
 import org.hostess.core.domain.AccountLabel
 import org.hostess.core.domain.AccountProfileId
 import org.hostess.core.domain.AttachmentRef
+import org.hostess.core.domain.CoreFailure
+import org.hostess.core.domain.CoreFailureReason
 import org.hostess.core.domain.GroupMembership
 import org.hostess.core.domain.GroupSendState
 import org.hostess.core.domain.GroupSendStatus
@@ -69,7 +71,11 @@ import org.hostess.ui.runtime.HostessLoginComplianceProvider
 import org.hostess.ui.runtime.HostessUiRuntime
 
 object FakeHostessUiRuntime {
-    fun ready(profiles: List<SavedAccountProfile> = listOf(defaultProfile())): HostessUiRuntime {
+    fun ready(
+        profiles: List<SavedAccountProfile> = listOf(defaultProfile()),
+        loginSucceeds: Boolean = true,
+        avatarReady: Boolean = true,
+    ): HostessUiRuntime {
         val profileStore = InMemoryAccountProfileStore(profiles)
         val vault = InMemoryCredentialVault()
         profiles.forEach { profile ->
@@ -80,7 +86,11 @@ object FakeHostessUiRuntime {
             credentialVault = vault,
             accountProfileIdSource = SequentialAccountProfileIdSource(),
         )
-        return runtime(HostessCredentialRuntimeReady(credentialService))
+        return runtime(
+            credentialRuntimeState = HostessCredentialRuntimeReady(credentialService),
+            loginSucceeds = loginSucceeds,
+            avatarReady = avatarReady,
+        )
     }
 
     fun unavailable(): HostessUiRuntime =
@@ -100,8 +110,12 @@ object FakeHostessUiRuntime {
             startLocation = null,
         )
 
-    private fun runtime(credentialRuntimeState: HostessCredentialRuntimeState): HostessUiRuntime {
-        val sessionPort = FakeSessionPort()
+    private fun runtime(
+        credentialRuntimeState: HostessCredentialRuntimeState,
+        loginSucceeds: Boolean = true,
+        avatarReady: Boolean = true,
+    ): HostessUiRuntime {
+        val sessionPort = FakeSessionPort(loginSucceeds)
         val inventoryPort = FakeInventoryPort()
         return HostessUiRuntime(
             credentialRuntimeState = credentialRuntimeState,
@@ -110,7 +124,7 @@ object FakeHostessUiRuntime {
                 loginComplianceService = LoginComplianceService(),
                 redactionPort = RedactionPort { value -> value },
             ),
-            avatarReadinessService = AvatarReadinessService(FakeAvatarPort()),
+            avatarReadinessService = AvatarReadinessService(FakeAvatarPort(avatarReady)),
             groupDirectoryService = GroupDirectoryService(FakeGroupPort()),
             targetSelectionService = TargetSelectionService(),
             inventoryDirectoryService = InventoryDirectoryService(inventoryPort),
@@ -218,24 +232,39 @@ private class InMemoryCredentialVault : CredentialVault {
             ?: CredentialVaultResolveResult.Missing(credentialHandle)
 }
 
-private class FakeSessionPort : SessionPort {
+private class FakeSessionPort(
+    private val loginSucceeds: Boolean,
+) : SessionPort {
     override fun login(request: LoginRequest): SessionLoginResult =
-        SessionLoginResult.Success(
-            HostessSession(
-                sessionId = SessionId("session"),
-                accountLabel = request.accountLabel,
-                startedAt = HostessInstant.EPOCH,
-                isActive = true,
-            ),
-        )
+        if (loginSucceeds) {
+            SessionLoginResult.Success(
+                HostessSession(
+                    sessionId = SessionId("session"),
+                    accountLabel = request.accountLabel,
+                    startedAt = HostessInstant.EPOCH,
+                    isActive = true,
+                ),
+            )
+        } else {
+            SessionLoginResult.Failure(CoreFailure(CoreFailureReason.LOGIN_FAILED, "login failed"))
+        }
 
     override fun logout(session: HostessSession): SessionLogoutResult =
         SessionLogoutResult.LoggedOut
 }
 
-private class FakeAvatarPort : org.hostess.core.ports.AvatarPort {
+private class FakeAvatarPort(
+    private val avatarReady: Boolean,
+) : org.hostess.core.ports.AvatarPort {
     override fun ensureReady(session: HostessSession): AvatarReadinessResult =
-        AvatarReadinessResult.Success(AvatarReadinessProof.success())
+        if (avatarReady) {
+            AvatarReadinessResult.Success(AvatarReadinessProof.success())
+        } else {
+            AvatarReadinessResult.Failure(
+                proof = AvatarReadinessProof.notRun(),
+                failure = CoreFailure(CoreFailureReason.AVATAR_READINESS_FAILED, "avatar readiness failed"),
+            )
+        }
 }
 
 private class FakeGroupPort : GroupPort {
