@@ -14,6 +14,7 @@ import androidx.compose.ui.platform.testTag
 import org.hostess.ui.components.HostessSendFooter
 import org.hostess.ui.components.HostessTopBar
 import org.hostess.ui.components.SessionStrip
+import org.hostess.ui.controllers.GroupTargetController
 import org.hostess.ui.controllers.HostessAppController
 import org.hostess.ui.controllers.InventoryBrowserController
 import org.hostess.ui.controllers.LoginController
@@ -38,12 +39,19 @@ fun HostessApp(
     var loginController by remember(runtime) { mutableStateOf(LoginController(runtime).refreshSavedLogins()) }
     var settingsController by remember(runtime) { mutableStateOf(SettingsController(runtime).refreshSavedAccounts()) }
     var noticeController by remember(runtime) { mutableStateOf(NoticeComposerController(runtime)) }
+    var groupTargetController by remember(runtime) { mutableStateOf(GroupTargetController(runtime)) }
     var inventoryController by remember(runtime) { mutableStateOf(InventoryBrowserController(runtime)) }
 
     fun routeAfterLogin(controller: LoginController) {
         appController = HostessAppController(runtime, controller.appState)
         if (controller.appState.route == UiRoute.Compose) {
-            noticeController = NoticeComposerController(runtime)
+            val composeNoticeController = NoticeComposerController(
+                runtime = runtime,
+                session = controller.appState.session,
+                avatarReady = true,
+            )
+            groupTargetController = composeNoticeController.refreshGroups()
+            noticeController = composeNoticeController.updateTargetSet(groupTargetController.targetSet)
             inventoryController = InventoryBrowserController(
                 runtime = runtime,
                 session = controller.appState.session,
@@ -75,6 +83,7 @@ fun HostessApp(
                     loginController = LoginController(runtime).refreshSavedLogins()
                     settingsController = SettingsController(runtime, appState = appController.state).refreshSavedAccounts()
                     noticeController = NoticeComposerController(runtime)
+                    groupTargetController = GroupTargetController(runtime)
                     inventoryController = InventoryBrowserController(runtime)
                 },
             )
@@ -129,6 +138,7 @@ fun HostessApp(
                     ComposeScreen(
                         noticeState = noticeController.state,
                         inventoryState = inventoryController.state,
+                        groupTargetState = groupTargetController.state,
                         textCatalogue = textCatalogue,
                         onSubjectChanged = { subject ->
                             noticeController = noticeController.updateSubject(subject)
@@ -144,12 +154,37 @@ fun HostessApp(
                         },
                         onInventoryAssetSelected = { itemId ->
                             inventoryController = inventoryController.selectInventoryAsset(itemId)
+                            noticeController = noticeController.updateSelectedAttachment(
+                                inventoryController.state.selectedAttachment,
+                            )
+                        },
+                        onAllGroupsChanged = { selected ->
+                            groupTargetController = if (selected) {
+                                groupTargetController.selectAllGroupsMode()
+                            } else {
+                                groupTargetController.clearGroupSelectionMode()
+                            }
+                            noticeController = noticeController.updateTargetSet(groupTargetController.targetSet)
+                        },
+                        onManualGroupsChanged = { selected ->
+                            groupTargetController = if (selected) {
+                                groupTargetController.selectManualGroupsMode()
+                            } else {
+                                groupTargetController.clearManualGroupsMode()
+                            }
+                            noticeController = noticeController.updateTargetSet(groupTargetController.targetSet)
+                        },
+                        onManualGroupSelected = { displayName, selected ->
+                            groupTargetController = groupTargetController.setManualGroupSelected(displayName, selected)
+                            noticeController = noticeController.updateTargetSet(groupTargetController.targetSet)
                         },
                     )
                     HostessSendFooter(
-                        state = appController.state.sendFooter,
+                        state = noticeController.state.sendFooterState,
                         textCatalogue = textCatalogue,
-                        onPrimaryAction = {},
+                        onPrimaryAction = {
+                            noticeController = noticeController.sendNotices()
+                        },
                     )
                 }
                 UiRoute.Settings -> SettingsScreen(

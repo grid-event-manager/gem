@@ -31,6 +31,7 @@ fun HostessSelectableRow(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     subtitle: String? = null,
+    enabled: Boolean = true,
     leading: @Composable (RowScope.() -> Unit)? = null,
     trailing: @Composable (RowScope.() -> Unit)? = null,
 ) {
@@ -40,9 +41,9 @@ fun HostessSelectableRow(
         modifier = modifier
             .fillMaxWidth()
             .heightIn(min = spacing.sessionStripMinHeight)
-            .clickable(onClick = onClick),
+            .clickable(enabled = enabled, onClick = onClick),
         color = if (selected) colors.selectedBackground else colors.surfaceStrong,
-        contentColor = colors.ink,
+        contentColor = if (enabled) colors.ink else colors.disabledInk,
         border = BorderStroke(spacing.borderWidth, colors.line),
     ) {
         Row(
@@ -59,7 +60,7 @@ fun HostessSelectableRow(
             Column(modifier = Modifier.weight(weight = 1f)) {
                 Text(
                     text = title,
-                    color = colors.ink,
+                    color = if (enabled) colors.ink else colors.disabledInk,
                     style = HostessTheme.typeScale.body,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -67,7 +68,7 @@ fun HostessSelectableRow(
                 if (subtitle != null) {
                     Text(
                         text = subtitle,
-                        color = colors.muted,
+                        color = if (enabled) colors.muted else colors.disabledInk,
                         style = HostessTheme.typeScale.smallLabel,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,

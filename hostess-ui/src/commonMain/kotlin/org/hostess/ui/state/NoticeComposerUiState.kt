@@ -12,4 +12,8 @@ data class NoticeComposerUiState(
     val selectedTargetSummary: HostessTextKey = HostessTextKey.SelectedCount(0),
     val selectedAttachmentSummary: HostessTextKey = HostessTextKey.None,
     val sendFooterState: SendFooterUiState = SendFooterUiState(),
+    val sendAttempted: Boolean = false,
+    val sentGroupCount: Int = 0,
+    val failedGroupCount: Int = 0,
+    val dispatchRejected: Boolean = false,
 )

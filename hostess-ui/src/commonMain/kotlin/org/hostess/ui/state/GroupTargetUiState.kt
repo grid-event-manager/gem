@@ -1,12 +1,14 @@
 package org.hostess.ui.state
 
 import org.hostess.core.domain.GroupId
+import org.hostess.ui.text.HostessTextKey
 
 data class GroupTargetUiState(
     val mode: GroupTargetMode = GroupTargetMode.NONE,
     val rows: List<GroupTargetRowUiState> = emptyList(),
     val selectedCount: Int = 0,
     val pickerVisible: Boolean = false,
+    val errorKey: HostessTextKey? = null,
 )
 
 data class GroupTargetRowUiState(

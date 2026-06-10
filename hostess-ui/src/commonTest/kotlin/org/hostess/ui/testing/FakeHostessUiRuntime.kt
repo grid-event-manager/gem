@@ -76,8 +76,11 @@ object FakeHostessUiRuntime {
         profiles: List<SavedAccountProfile> = listOf(defaultProfile()),
         loginSucceeds: Boolean = true,
         avatarReady: Boolean = true,
+        groups: List<GroupMembership> = emptyList(),
+        groupListSucceeds: Boolean = true,
         inventoryListing: InventoryDirectoryListing = InventoryDirectoryListing(emptyList(), emptyList()),
         attachmentSucceeds: Boolean = true,
+        noticeRecorder: FakeNoticeRecorder = FakeNoticeRecorder(),
     ): HostessUiRuntime {
         val profileStore = InMemoryAccountProfileStore(profiles)
         val vault = InMemoryCredentialVault()
@@ -93,8 +96,11 @@ object FakeHostessUiRuntime {
             credentialRuntimeState = HostessCredentialRuntimeReady(credentialService),
             loginSucceeds = loginSucceeds,
             avatarReady = avatarReady,
+            groups = groups,
+            groupListSucceeds = groupListSucceeds,
             inventoryListing = inventoryListing,
             attachmentSucceeds = attachmentSucceeds,
+            noticeRecorder = noticeRecorder,
         )
     }
 
@@ -119,8 +125,11 @@ object FakeHostessUiRuntime {
         credentialRuntimeState: HostessCredentialRuntimeState,
         loginSucceeds: Boolean = true,
         avatarReady: Boolean = true,
+        groups: List<GroupMembership> = emptyList(),
+        groupListSucceeds: Boolean = true,
         inventoryListing: InventoryDirectoryListing = InventoryDirectoryListing(emptyList(), emptyList()),
         attachmentSucceeds: Boolean = true,
+        noticeRecorder: FakeNoticeRecorder = FakeNoticeRecorder(),
     ): HostessUiRuntime {
         val sessionPort = FakeSessionPort(loginSucceeds)
         val inventoryPort = FakeInventoryPort(inventoryListing, attachmentSucceeds)
@@ -132,13 +141,13 @@ object FakeHostessUiRuntime {
                 redactionPort = RedactionPort { value -> value },
             ),
             avatarReadinessService = AvatarReadinessService(FakeAvatarPort(avatarReady)),
-            groupDirectoryService = GroupDirectoryService(FakeGroupPort()),
+            groupDirectoryService = GroupDirectoryService(FakeGroupPort(groups, groupListSucceeds)),
             targetSelectionService = TargetSelectionService(),
             inventoryDirectoryService = InventoryDirectoryService(inventoryPort),
             inventorySelectionService = InventorySelectionService(),
             attachmentService = AttachmentService(inventoryPort),
             noticeDraftService = NoticeDraftService(),
-            noticeDispatchService = NoticeDispatchService(FakeNoticePort(), FakeClockPort()),
+            noticeDispatchService = NoticeDispatchService(FakeNoticePort(noticeRecorder), FakeClockPort()),
             loginComplianceProvider = HostessLoginComplianceProvider { profile ->
                 LoginComplianceRequest(
                     proofAccountAttested = true,
@@ -165,6 +174,24 @@ object FakeHostessUiRuntime {
             sharedSecret = SharedSecret.fromPlainText("test-password") ?: error("invalid fake password"),
             startLocation = null,
         )
+}
+
+class FakeNoticeRecorder(
+    private val scriptedStates: List<GroupSendState> = emptyList(),
+) {
+    private val sentGroups = mutableListOf<String>()
+
+    val sendCallCount: Int
+        get() = sentGroups.size
+
+    val sentGroupDisplayNames: List<String>
+        get() = sentGroups.toList()
+
+    fun record(group: GroupMembership): GroupSendStatus {
+        val state = scriptedStates.getOrElse(sentGroups.size) { GroupSendState.SENT }
+        sentGroups += group.displayName.value
+        return GroupSendStatus(group, state)
+    }
 }
 
 private class SequentialAccountProfileIdSource : AccountProfileIdSource {
@@ -274,9 +301,16 @@ private class FakeAvatarPort(
         }
 }
 
-private class FakeGroupPort : GroupPort {
+private class FakeGroupPort(
+    private val groups: List<GroupMembership>,
+    private val groupListSucceeds: Boolean,
+) : GroupPort {
     override fun currentGroups(session: HostessSession): GroupListResult =
-        GroupListResult.Success(emptyList())
+        if (groupListSucceeds) {
+            GroupListResult.Success(groups)
+        } else {
+            GroupListResult.Failure(CoreFailure(CoreFailureReason.GROUP_LIST_FAILED, "group list failed"))
+        }
 
     override fun simulatorPresence(session: HostessSession): SimulatorPresenceProofResult =
         SimulatorPresenceProofResult.Success(
@@ -336,14 +370,16 @@ private class FakeInventoryPort(
         InventoryItemListResult.Success(inventoryListing.items.filter { it.kind in query.kinds })
 }
 
-private class FakeNoticePort : NoticePort {
+private class FakeNoticePort(
+    private val recorder: FakeNoticeRecorder,
+) : NoticePort {
     override fun sendGroupNotice(
         session: HostessSession,
         group: GroupMembership,
         draft: org.hostess.core.domain.NoticeDraft,
         attachment: AttachmentRef?,
     ): GroupSendStatus =
-        GroupSendStatus(group, GroupSendState.SENT)
+        recorder.record(group)
 }
 
 private class FakeClockPort : ClockPort {

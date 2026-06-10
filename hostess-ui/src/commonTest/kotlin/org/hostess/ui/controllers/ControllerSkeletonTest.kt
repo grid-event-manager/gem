@@ -1,17 +1,15 @@
 package org.hostess.ui.controllers
 
-import org.hostess.core.domain.GroupId
 import org.hostess.core.domain.InventoryFolderId
 import org.hostess.core.domain.InventoryItemId
 import org.hostess.core.domain.InventoryItemKind
 import org.hostess.core.domain.AccountProfileId
-import org.hostess.ui.state.GroupTargetRowUiState
 import org.hostess.ui.state.GroupTargetMode
-import org.hostess.ui.state.GroupTargetUiState
 import org.hostess.ui.state.InventoryAssetRowUiState
 import org.hostess.ui.state.InventoryBrowserUiState
 import org.hostess.ui.state.InventoryShortcut
 import org.hostess.ui.state.UiRoute
+import org.hostess.ui.testing.FakeGroupFixtures
 import org.hostess.ui.testing.FakeInventoryFixtures
 import org.hostess.ui.testing.FakeHostessUiRuntime
 import kotlin.test.Test
@@ -109,19 +107,17 @@ class ControllerEntrypointShapeTest {
 
     @Test
     fun groupControllerOwnsModeAndManualRowProjection() {
-        val groupId = GroupId("group-one")
-        val base = GroupTargetUiState(
-            rows = listOf(
-                GroupTargetRowUiState(
-                    groupId = groupId,
-                    displayName = "Owks",
-                    canSendNotices = true,
-                ),
-            ),
+        val groupRuntime = FakeHostessUiRuntime.ready(
+            groups = listOf(FakeGroupFixtures.owks),
         )
+        val refreshed = NoticeComposerController(
+            runtime = groupRuntime,
+            session = FakeInventoryFixtures.session(),
+            avatarReady = true,
+        ).refreshGroups()
 
-        val all = GroupTargetController(runtime, base).selectAllGroupsMode()
-        val manual = all.selectManualGroupsMode().setManualGroupSelected(groupId, true)
+        val all = refreshed.selectAllGroupsMode()
+        val manual = all.selectManualGroupsMode().setManualGroupSelected("Owks", true)
 
         assertEquals(GroupTargetMode.ALL, all.state.mode)
         assertFalse(all.state.pickerVisible)

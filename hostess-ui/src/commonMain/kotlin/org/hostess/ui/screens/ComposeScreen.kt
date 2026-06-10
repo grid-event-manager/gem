@@ -8,9 +8,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import org.hostess.core.domain.InventoryFolderId
 import org.hostess.core.domain.InventoryItemId
+import org.hostess.ui.components.GroupTargetSelector
 import org.hostess.ui.components.InventoryBrowser
 import org.hostess.ui.components.NoticeEditor
 import org.hostess.ui.design.HostessTheme
+import org.hostess.ui.state.GroupTargetUiState
 import org.hostess.ui.state.InventoryBrowserUiState
 import org.hostess.ui.state.InventoryShortcut
 import org.hostess.ui.state.NoticeComposerUiState
@@ -22,12 +24,16 @@ import org.hostess.ui.text.HostessTextCatalogue
 fun ComposeScreen(
     noticeState: NoticeComposerUiState = NoticeComposerUiState(),
     inventoryState: InventoryBrowserUiState = InventoryBrowserUiState(),
+    groupTargetState: GroupTargetUiState = GroupTargetUiState(),
     textCatalogue: HostessTextCatalogue = EnglishHostessTextCatalogue,
     onSubjectChanged: (String) -> Unit = {},
     onBodyChanged: (String) -> Unit = {},
     onInventoryShortcutSelected: (InventoryShortcut) -> Unit = {},
     onInventoryFolderOpen: (InventoryFolderId) -> Unit = {},
     onInventoryAssetSelected: (InventoryItemId) -> Unit = {},
+    onAllGroupsChanged: (Boolean) -> Unit = {},
+    onManualGroupsChanged: (Boolean) -> Unit = {},
+    onManualGroupSelected: (String, Boolean) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -48,6 +54,13 @@ fun ComposeScreen(
             onShortcutSelected = onInventoryShortcutSelected,
             onFolderOpen = onInventoryFolderOpen,
             onAssetSelected = onInventoryAssetSelected,
+        )
+        GroupTargetSelector(
+            state = groupTargetState,
+            textCatalogue = textCatalogue,
+            onAllGroupsChanged = onAllGroupsChanged,
+            onManualGroupsChanged = onManualGroupsChanged,
+            onManualGroupSelected = onManualGroupSelected,
         )
     }
 }
