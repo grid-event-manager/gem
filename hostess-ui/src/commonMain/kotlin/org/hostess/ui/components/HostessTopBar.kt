@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -43,6 +44,9 @@ fun HostessTopBar(
             horizontalArrangement = Arrangement.spacedBy(HostessTheme.spacing.inlineGap),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            HostessBrandLogoIcon(
+                modifier = Modifier.size(HostessTheme.spacing.brandLogoSize),
+            )
             Column(modifier = Modifier.weight(weight = 1f)) {
                 Text(
                     text = textCatalogue.text(HostessTextKey.AppName),
@@ -54,7 +58,7 @@ fun HostessTopBar(
                     Text(
                         text = activeAccountLabel,
                         style = HostessTheme.typeScale.smallLabel,
-                        color = HostessTheme.colors.topBarInk,
+                        color = HostessTheme.colors.brandWordmark,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )

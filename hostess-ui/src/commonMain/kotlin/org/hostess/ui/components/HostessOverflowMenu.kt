@@ -1,11 +1,18 @@
 package org.hostess.ui.components
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.Role
 import org.hostess.ui.design.HostessTheme
 import org.hostess.ui.testtags.HostessTestTags
 import org.hostess.ui.text.HostessTextCatalogue
@@ -23,28 +30,49 @@ fun HostessOverflowMenu(
     DropdownMenu(
         expanded = expanded,
         onDismissRequest = onDismiss,
-        modifier = modifier.testTag(HostessTestTags.AppMenu),
+        modifier = modifier
+            .background(HostessTheme.colors.menuSurface)
+            .testTag(HostessTestTags.AppMenu),
     ) {
-        DropdownMenuItem(
-            text = {
-                Text(
-                    text = textCatalogue.text(HostessTextKey.Settings),
-                    style = HostessTheme.typeScale.button,
-                )
-            },
+        HostessMenuRow(
+            text = textCatalogue.text(HostessTextKey.Settings),
             onClick = onSettingsClick,
             modifier = Modifier.testTag(HostessTestTags.OpenSettings),
         )
-        DropdownMenuItem(
-            text = {
-                Text(
-                    text = textCatalogue.text(HostessTextKey.LogOut),
-                    style = HostessTheme.typeScale.button,
-                    color = HostessTheme.colors.danger,
-                )
-            },
+        HostessMenuRow(
+            text = textCatalogue.text(HostessTextKey.LogOut),
             onClick = onLogoutClick,
+            danger = true,
             modifier = Modifier.testTag(HostessTestTags.LogOut),
+        )
+    }
+}
+
+@Composable
+private fun HostessMenuRow(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    danger: Boolean = false,
+) {
+    val colors = HostessTheme.colors
+    val spacing = HostessTheme.spacing
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(min = spacing.menuItemMinHeight)
+            .background(colors.menuSurface)
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(
+                horizontal = spacing.menuItemHorizontalPadding,
+                vertical = spacing.menuItemVerticalPadding,
+            ),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = text,
+            style = HostessTheme.typeScale.menuItem,
+            color = if (danger) colors.danger else colors.ink,
         )
     }
 }

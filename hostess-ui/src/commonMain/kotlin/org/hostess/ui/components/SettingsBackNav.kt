@@ -17,21 +17,39 @@ import org.hostess.ui.testtags.HostessTestTags
 fun SettingsBackNav(
     text: String,
     onBack: () -> Unit,
+    themeChecked: Boolean,
+    themeEnabled: Boolean,
+    lightText: String,
+    darkText: String,
+    onThemeCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(
         modifier = modifier
-            .fillMaxWidth()
-            .clickable(role = Role.Button, onClick = onBack)
-            .testTag(HostessTestTags.SettingsBack),
-        horizontalArrangement = Arrangement.spacedBy(HostessTheme.spacing.fieldGap),
+            .fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        HostessBackIcon()
-        Text(
-            text = text,
-            color = HostessTheme.colors.ink,
-            style = HostessTheme.typeScale.smallLabel,
+        Row(
+            modifier = Modifier
+                .clickable(role = Role.Button, onClick = onBack)
+                .testTag(HostessTestTags.SettingsBack),
+            horizontalArrangement = Arrangement.spacedBy(HostessTheme.spacing.fieldGap),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            HostessBackIcon()
+            Text(
+                text = text,
+                color = HostessTheme.colors.ink,
+                style = HostessTheme.typeScale.smallLabel,
+            )
+        }
+        ThemeModeToggle(
+            checked = themeChecked,
+            enabled = themeEnabled,
+            lightLabel = lightText,
+            darkLabel = darkText,
+            onCheckedChange = onThemeCheckedChange,
         )
     }
 }

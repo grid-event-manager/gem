@@ -1,7 +1,9 @@
 package org.hostess.ui.components
 
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.hostess.ui.design.HostessSpacing
+import org.hostess.ui.design.HostessTypeScale
 import org.hostess.ui.testtags.HostessTestTags
 import org.hostess.ui.text.EnglishHostessTextCatalogue
 import org.hostess.ui.text.HostessTextKey
@@ -25,5 +27,17 @@ class ShellComponentStateTest {
     @Test
     fun modalActionsUseSharedEqualWidthToken() {
         assertEquals(112.dp, HostessSpacing().modalActionMinWidth)
+    }
+
+    @Test
+    fun themeBrandAndMenuUseSharedShellTokens() {
+        val spacing = HostessSpacing()
+
+        assertEquals(28.dp, spacing.brandLogoSize)
+        assertEquals(18.dp, spacing.backIconSize)
+        assertEquals(36.dp, spacing.menuItemMinHeight)
+        assertEquals(12.dp, spacing.menuItemHorizontalPadding)
+        assertEquals(6.dp, spacing.menuItemVerticalPadding)
+        assertEquals(FontWeight.Normal, HostessTypeScale().menuItem.fontWeight)
     }
 }

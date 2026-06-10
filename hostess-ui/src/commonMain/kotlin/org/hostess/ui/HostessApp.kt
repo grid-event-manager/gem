@@ -27,6 +27,7 @@ import org.hostess.ui.controllers.ThemeController
 import org.hostess.ui.design.HaccuHostessPaletteProvider
 import org.hostess.ui.design.HostessDesignTokens
 import org.hostess.ui.design.HostessTheme
+import org.hostess.ui.design.ResolvedThemeMode
 import org.hostess.ui.screens.ComposeScreen
 import org.hostess.ui.runtime.HostessUiRuntime
 import org.hostess.ui.screens.LoginScreen
@@ -151,6 +152,16 @@ fun HostessApp(
                         text = textCatalogue.text(HostessTextKey.Back),
                         onBack = {
                             appController = appController.backFromSettings()
+                        },
+                        themeChecked = themeController.state.toggleChecked,
+                        themeEnabled = true,
+                        lightText = textCatalogue.text(HostessTextKey.Light),
+                        darkText = textCatalogue.text(HostessTextKey.Dark),
+                        onThemeCheckedChange = { checked ->
+                            themeController = themeController.setManualTheme(
+                                mode = if (checked) ResolvedThemeMode.DARK else ResolvedThemeMode.LIGHT,
+                                osDark = osDark,
+                            )
                         },
                     )
                 }

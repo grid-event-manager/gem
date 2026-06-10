@@ -26,6 +26,8 @@ class SettingsScreenStateTest {
         assertEquals("OK", catalogue.text(HostessTextKey.Ok))
         assertEquals("Cancel", catalogue.text(HostessTextKey.Cancel))
         assertEquals("BACK", catalogue.text(HostessTextKey.Back))
+        assertEquals("Light", catalogue.text(HostessTextKey.Light))
+        assertEquals("Dark", catalogue.text(HostessTextKey.Dark))
     }
 
     @Test

@@ -32,6 +32,11 @@ data class HostessTypeScale(
         lineHeight = 18.sp,
         fontWeight = FontWeight.Bold,
     ),
+    val menuItem: TextStyle = TextStyle(
+        fontSize = 14.sp,
+        lineHeight = 18.sp,
+        fontWeight = FontWeight.Normal,
+    ),
     val statusPill: TextStyle = TextStyle(
         fontSize = 12.sp,
         lineHeight = 15.sp,
