@@ -1,8 +1,9 @@
+import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.compose)
     alias(libs.plugins.kotlin.compose)
-    application
 }
 
 dependencies {
@@ -14,6 +15,16 @@ dependencies {
     testImplementation(kotlin("test-junit"))
 }
 
-application {
-    mainClass.set("org.hostess.apps.desktop.HostessDesktopAppKt")
+compose.desktop {
+    application {
+        mainClass = "org.hostess.apps.desktop.HostessDesktopAppKt"
+
+        nativeDistributions {
+            targetFormats(TargetFormat.Deb)
+            packageName = "hostess"
+            packageVersion = "0.1.0"
+            description = "Second Life venue notice helper"
+            vendor = rootProject.name.replaceFirstChar { it.titlecase() }
+        }
+    }
 }
