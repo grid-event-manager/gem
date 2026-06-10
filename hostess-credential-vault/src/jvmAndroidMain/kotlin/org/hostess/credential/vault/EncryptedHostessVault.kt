@@ -128,7 +128,9 @@ class EncryptedHostessVault internal constructor(
 
     private fun uniqueCredentialHandle(existing: Set<CredentialHandle>): CredentialHandle? {
         repeat(HANDLE_COLLISION_RETRIES) {
-            val handle = CredentialHandle("$VAULT_CREDENTIAL_HANDLE_PREFIX${VaultRandomId.nextBase64UrlId(secureRandom)}")
+            val handle = CredentialHandle(
+                "${CredentialHandle.HOSTESS_VAULT_CREDENTIAL_PREFIX}${VaultRandomId.nextBase64UrlId(secureRandom)}",
+            )
             if (handle !in existing) {
                 return handle
             }

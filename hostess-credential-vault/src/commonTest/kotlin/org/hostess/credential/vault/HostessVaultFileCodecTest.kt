@@ -94,8 +94,12 @@ class HostessVaultFileCodecTest {
     fun `rejects blank credential handle suffix`() {
         val payload = HostessVaultFileCodec.encode(
             HostessVaultPlaintext(
-                profiles = listOf(profile("one", credentialHandle = VAULT_CREDENTIAL_HANDLE_PREFIX)),
-                credentials = listOf(credential("one", credentialHandle = VAULT_CREDENTIAL_HANDLE_PREFIX)),
+                profiles = listOf(
+                    profile("one", credentialHandle = CredentialHandle.HOSTESS_VAULT_CREDENTIAL_PREFIX),
+                ),
+                credentials = listOf(
+                    credential("one", credentialHandle = CredentialHandle.HOSTESS_VAULT_CREDENTIAL_PREFIX),
+                ),
             ),
         )
 

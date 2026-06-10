@@ -11,7 +11,6 @@ const val VAULT_PAYLOAD_VERSION: UShort = 1u
 const val VAULT_FORMAT_VERSION: UShort = 1u
 const val VAULT_MAX_STRING_BYTES: Int = 16 * 1024
 const val VAULT_MAX_RECORD_COUNT: Int = 10_000
-const val VAULT_CREDENTIAL_HANDLE_PREFIX: String = "hostess-vault:v1:"
 
 enum class HostessVaultCipherSuite(val code: UShort) {
     AES_256_GCM_NO_PADDING(1u),

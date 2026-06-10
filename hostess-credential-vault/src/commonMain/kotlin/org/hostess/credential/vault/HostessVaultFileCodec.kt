@@ -51,7 +51,7 @@ object HostessVaultFileCodec {
             }
         }
         plaintext.credentials.forEach { credential ->
-            if (!credential.credentialHandle.value.isVaultCredentialHandle()) {
+            if (!credential.credentialHandle.isHostessVaultCredentialHandle()) {
                 return corrupt("invalid_credential_handle")
             }
             if (!credentialHandles.add(credential.credentialHandle.value)) {
@@ -279,9 +279,6 @@ private class VaultPayloadReader(
 }
 
 private fun Byte.unsigned(): Int = toInt() and 0xFF
-
-private fun String.isVaultCredentialHandle(): Boolean =
-    startsWith(VAULT_CREDENTIAL_HANDLE_PREFIX) && removePrefix(VAULT_CREDENTIAL_HANDLE_PREFIX).isNotBlank()
 
 private sealed interface NullableStringRead {
     data class Value(val value: String?) : NullableStringRead
