@@ -3,6 +3,7 @@ package org.hostess.apps.android
 import org.hostess.core.domain.AttachmentKind
 import org.hostess.core.domain.ExistingInventoryAttachment
 import org.hostess.core.domain.GroupMembership
+import org.hostess.core.domain.GroupTargetSet
 import org.hostess.core.domain.InventoryItemId
 import org.hostess.core.domain.NoticeDraft
 import org.hostess.core.domain.NoticeDraftValidation
@@ -10,9 +11,9 @@ import org.hostess.core.domain.TargetSelectionResult
 import org.hostess.core.services.AvatarReadinessService
 import org.hostess.core.services.LoginComplianceService
 import org.hostess.core.services.NoticeDispatchService
-import org.hostess.core.services.TargetSelectionService
 import org.hostess.protocol.libomv.ProtocolLibomvModule
 import org.hostess.protocol.libomv.runtime.HostessViewerIdentityProvider
+import org.hostess.protocol.libomv.runtime.LoginSecretResolver
 
 class AndroidCompatibilityProbe {
     fun run(): AndroidCompatibilityResult {
@@ -76,9 +77,7 @@ class AndroidCompatibilityProbe {
     }
 
     private fun probeCoreCompile(): Boolean {
-        val targetSelectionService = TargetSelectionService()
-        val targetSet = targetSelectionService.emptyTargetSet(probeGroups())
-        val selected = targetSelectionService.addTargetByDisplayName(targetSet, "Probe Hosts")
+        val selected = GroupTargetSet.from(probeGroups()).addAllSendable()
         val selectedTargetSet = when (selected) {
             is TargetSelectionResult.Changed -> selected.targetSet
             else -> return false
@@ -169,7 +168,7 @@ class AndroidCompatibilityProbe {
 
     private companion object {
         fun defaultProtocolLoad(): AndroidProtocolLoadState {
-            val runtime = ProtocolLibomvModule.liveRuntime()
+            val runtime = ProtocolLibomvModule.liveRuntime(LoginSecretResolver.unavailable())
             val avatarService = AvatarReadinessService(runtime.avatarPort)
             val loadState = runtime.loadState
             return AndroidProtocolLoadState(
@@ -211,7 +210,6 @@ class AndroidCompatibilityProbe {
             "org.hostess.protocol.libomv.mapping.LibomvInventoryItemMapping",
         )
         val TRACK_H_NOTICE_CLASSES = listOf(
-            "org.hostess.core.services.InventorySelectionService",
             "org.hostess.protocol.libomv.transport.ProtocolSimulatorCircuitClient",
             "org.hostess.protocol.libomv.transport.LibomvNoticePacketCodec",
             "org.hostess.protocol.libomv.runtime.ProtocolNoticeCircuitSource",

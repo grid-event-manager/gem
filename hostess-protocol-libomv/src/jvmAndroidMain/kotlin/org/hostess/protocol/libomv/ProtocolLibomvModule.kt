@@ -11,6 +11,7 @@ import org.hostess.protocol.libomv.runtime.DefaultLibomvPlatformAdapterBundle
 import org.hostess.protocol.libomv.runtime.GroupNoticeArchiveSource
 import org.hostess.protocol.libomv.runtime.InventoryRuntimeSource
 import org.hostess.protocol.libomv.runtime.LibomvPlatformAdapterBundle
+import org.hostess.protocol.libomv.runtime.LoginSecretResolver
 import org.hostess.protocol.libomv.runtime.NoticeRuntimeSource
 import org.hostess.protocol.libomv.runtime.ProtocolAvatarAppearanceSource
 import org.hostess.protocol.libomv.runtime.ProtocolAvatarRuntime
@@ -51,6 +52,9 @@ data class LibomvProtocolLoadState(
 object ProtocolLibomvModule {
     fun liveRuntime(): LibomvProtocolRuntime =
         liveRuntime(DefaultLibomvPlatformAdapterBundle.create())
+
+    fun liveRuntime(secretResolver: LoginSecretResolver): LibomvProtocolRuntime =
+        liveRuntime(DefaultLibomvPlatformAdapterBundle.create(secretResolver))
 
     internal fun liveRuntime(bundle: LibomvPlatformAdapterBundle): LibomvProtocolRuntime {
         val clientSession = if (bundle.adapterLoad) LibomvClientSession.inactive() else LibomvClientSession.unavailable()

@@ -4,6 +4,7 @@ import java.nio.file.Path
 import org.hostess.core.services.HostessCredentialRuntimeState
 import org.hostess.credential.vault.DesktopVaultPaths
 import org.hostess.credential.vault.HostessVaultFileStore
+import org.hostess.credential.vault.HostessVaultRuntimeAccess
 import org.hostess.credential.vault.LocalUserFileVaultKeySource
 import org.hostess.credential.vault.VaultAccessOpenResult
 import org.hostess.credential.vault.VaultAccessService
@@ -14,7 +15,14 @@ object DesktopVaultComposition {
         osName: String = System.getProperty("os.name").orEmpty(),
         env: Map<String, String> = System.getenv(),
         userHome: String = System.getProperty("user.home").orEmpty(),
-    ): HostessCredentialRuntimeState {
+    ): HostessCredentialRuntimeState =
+        open(osName, env, userHome).credentialRuntimeState
+
+    fun open(
+        osName: String = System.getProperty("os.name").orEmpty(),
+        env: Map<String, String> = System.getenv(),
+        userHome: String = System.getProperty("user.home").orEmpty(),
+    ): HostessVaultRuntimeAccess {
         val vaultDirectory = Path.of(DesktopVaultPaths.defaultVaultDirectory(osName, env, userHome))
         return mapOpenResult(
             VaultAccessService(
@@ -24,8 +32,11 @@ object DesktopVaultComposition {
         )
     }
 
-    internal fun mapOpenResult(openResult: VaultAccessOpenResult): HostessCredentialRuntimeState =
-        VaultCredentialRuntimeStateMapper.from(openResult)
+    internal fun mapOpenResult(openResult: VaultAccessOpenResult): HostessVaultRuntimeAccess =
+        HostessVaultRuntimeAccess(
+            credentialRuntimeState = VaultCredentialRuntimeStateMapper.from(openResult),
+            credentialVault = (openResult as? VaultAccessOpenResult.Ready)?.credentialVault,
+        )
 
     private const val VAULT_FILE_NAME: String = "vault.bin"
 }

@@ -32,6 +32,7 @@ import org.hostess.protocol.libomv.runtime.HostessMachineIdentityProvider
 import org.hostess.protocol.libomv.runtime.HostessHostIdentity
 import org.hostess.protocol.libomv.runtime.JvmMd5DigestPort
 import org.hostess.protocol.libomv.runtime.LibomvPlatformAdapterBundle
+import org.hostess.protocol.libomv.runtime.LoginSecret
 import org.hostess.protocol.libomv.runtime.LoginSecretResolver
 import org.hostess.protocol.libomv.runtime.Md5DigestPort
 import org.hostess.protocol.libomv.runtime.HostessPlatformIdentity
@@ -151,6 +152,30 @@ class ProtocolLibomvModuleTest {
         val runtime = ProtocolLibomvModule.liveRuntime(platformBundle(secretResolver = resolver))
 
         val startLocation = runtime.loginStartLocationProbe.startLocation(CredentialHandle("HOSTESS_SL_SECRET"))
+
+        assertEquals("uri:London City&76&174&23", startLocation)
+    }
+
+    @Test
+    fun `public live runtime overload uses supplied login resolver`() {
+        val resolver = LoginSecretResolver { handle ->
+            if (handle.value == "hostess-vault:v1:venue") {
+                LoginSecret(
+                    loginUri = secureUrl("login.example", "/cgi-bin/login.cgi"),
+                    firstName = "Venue",
+                    lastName = "Host",
+                    sharedSecret = "secret12",
+                    startLocation = "uri:London City&76&174&23",
+                )
+            } else {
+                null
+            }
+        }
+        val runtime = ProtocolLibomvModule.liveRuntime(resolver)
+
+        val startLocation = runtime.loginStartLocationProbe.startLocation(
+            CredentialHandle("hostess-vault:v1:venue"),
+        )
 
         assertEquals("uri:London City&76&174&23", startLocation)
     }

@@ -3,6 +3,21 @@ package org.hostess.apps.desktop
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.Comparator
+import org.hostess.core.domain.AccountProfileId
+import org.hostess.core.domain.LoginCredentialMaterial
+import org.hostess.core.domain.SavedAccountProfile
+import org.hostess.core.ports.AccountProfileIdSource
+import org.hostess.core.ports.AccountProfileStore
+import org.hostess.core.ports.AccountProfileStoreDeleteResult
+import org.hostess.core.ports.AccountProfileStoreListResult
+import org.hostess.core.ports.AccountProfileStoreSaveResult
+import org.hostess.core.ports.AccountProfileStoreUpdateResult
+import org.hostess.core.ports.CredentialHandle
+import org.hostess.core.ports.CredentialVault
+import org.hostess.core.ports.CredentialVaultDeleteResult
+import org.hostess.core.ports.CredentialVaultResolveResult
+import org.hostess.core.ports.CredentialVaultSaveResult
+import org.hostess.core.ports.CredentialVaultUpdateResult
 import org.hostess.core.services.HostessCredentialRuntimeReady
 import org.hostess.core.services.HostessCredentialRuntimeResetReason
 import org.hostess.core.services.HostessCredentialRuntimeResetRequired
@@ -13,6 +28,8 @@ import org.hostess.credential.vault.VaultAccessOpenResult
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertNull
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 class DesktopVaultCompositionTest {
@@ -63,11 +80,11 @@ class DesktopVaultCompositionTest {
         reason: HostessCredentialRuntimeUnavailableReason,
         message: String,
     ) {
-        val state = assertIs<HostessCredentialRuntimeUnavailable>(
-            DesktopVaultComposition.mapOpenResult(openResult),
-        )
+        val access = DesktopVaultComposition.mapOpenResult(openResult)
+        val state = assertIs<HostessCredentialRuntimeUnavailable>(access.credentialRuntimeState)
         assertEquals(reason, state.reason)
         assertEquals(message, state.message)
+        assertNull(access.credentialVault)
     }
 
     private fun assertResetRequired(
@@ -75,11 +92,25 @@ class DesktopVaultCompositionTest {
         reason: HostessCredentialRuntimeResetReason,
         message: String,
     ) {
-        val state = assertIs<HostessCredentialRuntimeResetRequired>(
-            DesktopVaultComposition.mapOpenResult(openResult),
-        )
+        val access = DesktopVaultComposition.mapOpenResult(openResult)
+        val state = assertIs<HostessCredentialRuntimeResetRequired>(access.credentialRuntimeState)
         assertEquals(reason, state.reason)
         assertEquals(message, state.message)
+        assertNull(access.credentialVault)
+    }
+
+    @Test
+    fun `maps ready vault access result to runtime access carrier`() {
+        val ready = VaultAccessOpenResult.Ready(
+            credentialVault = FakeDesktopCredentialVault,
+            accountProfileStore = FakeDesktopAccountProfileStore,
+            accountProfileIdSource = AccountProfileIdSource { AccountProfileId("profile:v1:desktop") },
+        )
+
+        val access = DesktopVaultComposition.mapOpenResult(ready)
+
+        assertIs<HostessCredentialRuntimeReady>(access.credentialRuntimeState)
+        assertSame(FakeDesktopCredentialVault, access.credentialVault)
     }
 
     private fun Path.deleteRecursively() {
@@ -91,4 +122,35 @@ class DesktopVaultCompositionTest {
                 .forEach { Files.deleteIfExists(it) }
         }
     }
+}
+
+private object FakeDesktopAccountProfileStore : AccountProfileStore {
+    override fun list(): AccountProfileStoreListResult =
+        AccountProfileStoreListResult.Listed(emptyList())
+
+    override fun save(profile: SavedAccountProfile): AccountProfileStoreSaveResult =
+        AccountProfileStoreSaveResult.Saved(profile)
+
+    override fun update(profile: SavedAccountProfile): AccountProfileStoreUpdateResult =
+        AccountProfileStoreUpdateResult.Updated(profile)
+
+    override fun delete(profileId: AccountProfileId): AccountProfileStoreDeleteResult =
+        AccountProfileStoreDeleteResult.Deleted(profileId)
+}
+
+private object FakeDesktopCredentialVault : CredentialVault {
+    override fun save(material: LoginCredentialMaterial): CredentialVaultSaveResult =
+        CredentialVaultSaveResult.Saved(CredentialHandle("hostess-vault:v1:desktop"))
+
+    override fun update(
+        credentialHandle: CredentialHandle,
+        material: LoginCredentialMaterial,
+    ): CredentialVaultUpdateResult =
+        CredentialVaultUpdateResult.Updated(credentialHandle)
+
+    override fun delete(credentialHandle: CredentialHandle): CredentialVaultDeleteResult =
+        CredentialVaultDeleteResult.Deleted(credentialHandle)
+
+    override fun resolve(credentialHandle: CredentialHandle): CredentialVaultResolveResult =
+        CredentialVaultResolveResult.Missing(credentialHandle)
 }

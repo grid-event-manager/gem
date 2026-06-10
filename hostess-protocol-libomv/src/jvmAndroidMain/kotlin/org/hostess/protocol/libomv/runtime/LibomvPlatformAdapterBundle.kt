@@ -22,10 +22,12 @@ internal data class LibomvPlatformAdapterBundle(
 )
 
 internal object DefaultLibomvPlatformAdapterBundle {
-    fun create(): LibomvPlatformAdapterBundle =
+    fun create(
+        secretResolver: LoginSecretResolver = EnvironmentLoginSecretResolver(),
+    ): LibomvPlatformAdapterBundle =
         LibomvPlatformAdapterBundle(
             httpClient = OkHttpProtocolHttpClient(),
-            secretResolver = EnvironmentLoginSecretResolver(),
+            secretResolver = secretResolver,
             viewerIdentityProvider = DefaultHostessViewerIdentityProvider,
             machineIdentityProvider = DefaultHostessMachineIdentityProvider,
             clockPort = JvmProtocolClockPort,

@@ -1,5 +1,7 @@
 # Hostess Desktop App
 
-Future Linux desktop client shell for Hostess.
+Linux desktop launcher for the shared Hostess Compose UI.
 
-The desktop app should own keyboard/mouse workflows, local file pickers, persistent user preferences, and send-result presentation. It should call `hostess-core/` for protocol behaviour.
+This module owns desktop app-shell composition only: local vault access, protocol runtime wiring, core services, and the Compose desktop window.
+
+The production surface is the shared `org.hostess.ui.HostessApp`; desktop must not add a separate screen tree or duplicate login/group/inventory/notice behaviour. Track B does not claim live UI send acceptance.

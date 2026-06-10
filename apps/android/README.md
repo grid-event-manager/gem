@@ -1,7 +1,7 @@
 # Hostess Android App
 
-Compatibility probe passed.
+Android launcher for the shared Hostess Compose UI.
 
-This module is a no-UI Android compatibility probe only. It compiles against `hostess-core` and the Hostess protocol adapter boundary without adding layouts, activities, fragments, screens, or Compose entrypoints.
+This module owns Android app-shell composition only: Android vault access, protocol runtime wiring, core services, and `HostessAndroidActivity`.
 
-It is not an Android product app or support claim.
+The production surface is the shared `org.hostess.ui.HostessApp`; Android must not add a separate screen tree or duplicate login/group/inventory/notice behaviour. The compatibility probe remains a no-live class-load probe and does not prove live UI send acceptance.

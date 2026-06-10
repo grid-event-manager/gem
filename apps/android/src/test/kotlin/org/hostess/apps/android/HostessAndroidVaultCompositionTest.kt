@@ -25,13 +25,16 @@ import org.hostess.credential.vault.VaultAccessOpenResult
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertNull
+import kotlin.test.assertSame
 
 class HostessAndroidVaultCompositionTest {
     @Test
-    fun `maps ready vault access result to core credential runtime state`() {
-        val state = HostessAndroidVaultComposition.mapOpenResult(readyResult())
+    fun `maps ready vault access result to runtime access carrier`() {
+        val access = HostessAndroidVaultComposition.mapOpenResult(readyResult())
 
-        assertIs<HostessCredentialRuntimeReady>(state)
+        assertIs<HostessCredentialRuntimeReady>(access.credentialRuntimeState)
+        assertSame(FakeCredentialVault, access.credentialVault)
     }
 
     @Test
@@ -73,11 +76,11 @@ class HostessAndroidVaultCompositionTest {
         reason: HostessCredentialRuntimeUnavailableReason,
         message: String,
     ) {
-        val state = assertIs<HostessCredentialRuntimeUnavailable>(
-            HostessAndroidVaultComposition.mapOpenResult(openResult),
-        )
+        val access = HostessAndroidVaultComposition.mapOpenResult(openResult)
+        val state = assertIs<HostessCredentialRuntimeUnavailable>(access.credentialRuntimeState)
         assertEquals(reason, state.reason)
         assertEquals(message, state.message)
+        assertNull(access.credentialVault)
     }
 
     private fun assertResetRequired(
@@ -85,11 +88,11 @@ class HostessAndroidVaultCompositionTest {
         reason: HostessCredentialRuntimeResetReason,
         message: String,
     ) {
-        val state = assertIs<HostessCredentialRuntimeResetRequired>(
-            HostessAndroidVaultComposition.mapOpenResult(openResult),
-        )
+        val access = HostessAndroidVaultComposition.mapOpenResult(openResult)
+        val state = assertIs<HostessCredentialRuntimeResetRequired>(access.credentialRuntimeState)
         assertEquals(reason, state.reason)
         assertEquals(message, state.message)
+        assertNull(access.credentialVault)
     }
 
     private fun readyResult(): VaultAccessOpenResult.Ready =

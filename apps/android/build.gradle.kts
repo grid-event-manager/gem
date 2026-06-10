@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.compose)
 }
 
 android {
@@ -19,12 +20,18 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+
+    buildFeatures {
+        compose = true
+    }
 }
 
 dependencies {
     implementation(project(":hostess-core"))
+    implementation(project(":hostess-ui"))
     implementation(project(":hostess-credential-vault"))
     implementation(project(":hostess-protocol-libomv"))
+    implementation(libs.androidx.activity.compose)
     androidTestImplementation(project(":hostess-credential-vault"))
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.runner)
