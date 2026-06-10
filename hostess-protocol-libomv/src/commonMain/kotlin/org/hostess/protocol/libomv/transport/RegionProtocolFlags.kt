@@ -9,5 +9,6 @@ internal data class RegionProtocolFlags(
 }
 
 internal data class RegionHandshakeInfo(
+    val regionName: String?,
     val regionProtocolFlags: RegionProtocolFlags,
 )

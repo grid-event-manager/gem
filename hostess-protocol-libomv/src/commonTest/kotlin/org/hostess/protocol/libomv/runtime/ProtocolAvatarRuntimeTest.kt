@@ -4,6 +4,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
+import kotlin.test.assertNull
 import org.hostess.core.domain.AccountLabel
 import org.hostess.core.domain.CoreFailureReason
 import org.hostess.core.domain.HostessInstant
@@ -44,9 +45,35 @@ class ProtocolAvatarRuntimeTest {
         assertEquals(AvatarReadinessProofStatus.PASSED, result.proof.agentAppearanceServiceStatus)
         assertEquals(AvatarReadinessProofStatus.PASSED, result.proof.cofVersionStatus)
         assertEquals(AvatarReadinessProofStatus.PASSED, result.proof.serverAppearanceStatus)
+        assertEquals("London City", result.proof.regionName)
         assertEquals(listOf("presence", "cof", "cap:UpdateAvatarAppearance", "appearance"), calls)
         assertEquals(listOf(CapabilityName.UPDATE_AVATAR_APPEARANCE), capability.names)
         assertEquals(listOf(17), appearance.cofVersions)
+    }
+
+    @Test
+    fun `missing simulator region name keeps readiness success with blank region proof`() {
+        val session = hostessSession()
+        val calls = mutableListOf<String>()
+        val presence = RecordingPresenceSource(
+            calls,
+            SimulatorPresenceResult.Present(
+                pingReplies = 0,
+                cached = false,
+                regionName = null,
+                regionProtocolFlags = RegionProtocolFlags(agentAppearanceService = true),
+            ),
+        )
+        val cof = RecordingCofSource(calls, CurrentOutfitVersionResult.Available(17))
+        val capability = RecordingCapabilityProvider(calls, CapabilityUrlResult.Ready(capabilityUrl()))
+        val appearance = RecordingAppearanceSource(calls, AvatarAppearanceUpdateResult.Success)
+
+        val result = assertIs<AvatarReadinessResult.Success>(
+            runtime(session, presence, cof, capability, appearance).ensureReady(session),
+        )
+
+        assertNull(result.proof.regionName)
+        assertEquals(listOf("presence", "cof", "cap:UpdateAvatarAppearance", "appearance"), calls)
     }
 
     @Test
@@ -58,6 +85,7 @@ class ProtocolAvatarRuntimeTest {
             SimulatorPresenceResult.Present(
                 pingReplies = 0,
                 cached = false,
+                regionName = "London City",
                 regionProtocolFlags = RegionProtocolFlags(agentAppearanceService = false),
             ),
         )
@@ -83,6 +111,7 @@ class ProtocolAvatarRuntimeTest {
         assertEquals(AvatarReadinessProofStatus.BLOCKED, failure.proof.agentAppearanceServiceStatus)
         assertEquals(AvatarReadinessProofStatus.NOT_RUN, failure.proof.cofVersionStatus)
         assertEquals(AvatarReadinessProofStatus.NOT_RUN, failure.proof.serverAppearanceStatus)
+        assertEquals("London City", failure.proof.regionName)
         assertEquals(listOf("presence"), calls)
     }
 
@@ -278,6 +307,7 @@ class ProtocolAvatarRuntimeTest {
         var result: SimulatorPresenceResult = SimulatorPresenceResult.Present(
             pingReplies = 0,
             cached = false,
+            regionName = "London City",
             regionProtocolFlags = RegionProtocolFlags(agentAppearanceService = true),
         ),
     ) : AvatarSimulatorPresenceSource {

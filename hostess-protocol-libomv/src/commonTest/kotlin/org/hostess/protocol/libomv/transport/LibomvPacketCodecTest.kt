@@ -122,10 +122,35 @@ class LibomvPacketCodecTest {
     @Test
     fun `regionHandshakeInfo detects true AgentAppearanceService fixture`() {
         val info = LibomvPacketCodec.regionHandshakeInfo(
-            LibomvPacketTestBytes.regionHandshakeWithRegionProtocols(regionProtocols = 1L),
+            LibomvPacketTestBytes.regionHandshakeWithRegionProtocols(
+                regionProtocols = 1L,
+                regionName = "London City",
+            ),
         )
 
+        assertEquals("London City", info?.regionName)
         assertEquals(true, info?.regionProtocolFlags?.agentAppearanceService)
+    }
+
+    @Test
+    fun `regionHandshakeInfo treats blank or malformed SimName as nullable without losing flags`() {
+        val blank = LibomvPacketCodec.regionHandshakeInfo(
+            LibomvPacketTestBytes.regionHandshakeWithRegionProtocols(
+                regionProtocols = 1L,
+                regionName = "   ",
+            ),
+        )
+        val malformed = LibomvPacketCodec.regionHandshakeInfo(
+            LibomvPacketTestBytes.regionHandshakeWithRawRegionName(
+                regionNameBytes = byteArrayOf(0xC3.toByte(), 0x28),
+                regionProtocols = 1L,
+            ),
+        )
+
+        assertNull(blank?.regionName)
+        assertEquals(true, blank?.regionProtocolFlags?.agentAppearanceService)
+        assertNull(malformed?.regionName)
+        assertEquals(true, malformed?.regionProtocolFlags?.agentAppearanceService)
     }
 
     @Test

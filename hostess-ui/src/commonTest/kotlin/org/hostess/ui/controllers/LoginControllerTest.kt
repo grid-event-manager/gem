@@ -56,9 +56,24 @@ class LoginControllerTest {
 
         assertEquals(UiRoute.Compose, loggedIn.appState.route)
         assertEquals(profile.loginName.value, loggedIn.appState.activeAccountLabel)
+        assertEquals("London City", loggedIn.appState.sessionStrip.locationLabel)
         assertNull(loggedIn.state.selectedProfileId)
         assertEquals("", loggedIn.state.passwordDraft)
         assertEquals("changed-password", revealedPassword(runtime, profile.profileId))
+    }
+
+    @Test
+    fun successfulLoginUsesBlankLocationWhenReadinessProofHasNoRegionName() {
+        val runtime = FakeHostessUiRuntime.ready(avatarRegionName = null)
+        val profile = FakeHostessUiRuntime.defaultProfile()
+        val loggedIn = LoginController(runtime)
+            .refreshSavedLogins()
+            .selectSavedLogin(profile.profileId)
+            .beginLogin()
+            .completeLogin()
+
+        assertEquals(UiRoute.Compose, loggedIn.appState.route)
+        assertEquals("", loggedIn.appState.sessionStrip.locationLabel)
     }
 
     @Test

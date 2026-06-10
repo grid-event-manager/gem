@@ -94,6 +94,7 @@ internal class ProtocolSimulatorCircuitClient(
             return SimulatorPresenceResult.Present(
                 pingReplies = 0,
                 cached = true,
+                regionName = cachedPresence.regionName,
                 regionProtocolFlags = cachedPresence.regionProtocolFlags,
             )
         }
@@ -168,11 +169,13 @@ internal class ProtocolSimulatorCircuitClient(
             }?.let { return it }
             presentCircuit = SimulatorPresenceCache(
                 circuitKey = circuitKey,
+                regionName = handshakeInfo.regionName,
                 regionProtocolFlags = handshakeInfo.regionProtocolFlags,
             )
             SimulatorPresenceResult.Present(
                 pingReplies = movement.pingReplies,
                 cached = false,
+                regionName = handshakeInfo.regionName,
                 regionProtocolFlags = handshakeInfo.regionProtocolFlags,
             )
         } catch (ex: IllegalArgumentException) {
@@ -499,6 +502,7 @@ internal class ProtocolSimulatorCircuitClient(
 
     private data class SimulatorPresenceCache(
         val circuitKey: SimulatorCircuitKey,
+        val regionName: String?,
         val regionProtocolFlags: RegionProtocolFlags,
     )
 

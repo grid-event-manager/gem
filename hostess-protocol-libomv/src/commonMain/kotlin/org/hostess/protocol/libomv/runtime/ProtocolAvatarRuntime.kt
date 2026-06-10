@@ -71,17 +71,18 @@ class ProtocolAvatarRuntime internal constructor(
                 )
             is LoginAppearanceStateResult.Success -> result.appearanceState
         }
-        val regionProtocolFlags = when (val result = simulatorPresenceSource.ensurePresence(identity)) {
+        val presence = when (val result = simulatorPresenceSource.ensurePresence(identity)) {
             is SimulatorPresenceResult.Failed -> return presenceFailure(result.status, result.redactedMessage)
-            is SimulatorPresenceResult.Present -> result.regionProtocolFlags
+            is SimulatorPresenceResult.Present -> result
         }
-        if (!regionProtocolFlags.agentAppearanceService) {
+        if (!presence.regionProtocolFlags.agentAppearanceService) {
             return failure(
                 status = AvatarReadinessProofStatus.BLOCKED,
                 simulatorPresenceStatus = AvatarReadinessProofStatus.PASSED,
                 regionProtocolStatus = AvatarReadinessProofStatus.PASSED,
                 agentAppearanceServiceStatus = AvatarReadinessProofStatus.BLOCKED,
                 message = "agent appearance service unavailable",
+                regionName = presence.regionName,
             )
         }
         val cofVersion = when (
@@ -96,6 +97,7 @@ class ProtocolAvatarRuntime internal constructor(
                     agentAppearanceServiceStatus = AvatarReadinessProofStatus.PASSED,
                     cofVersionStatus = AvatarReadinessProofStatus.BLOCKED,
                     message = result.redactedMessage,
+                    regionName = presence.regionName,
                 )
         }
         val capabilityUrl = when (
@@ -103,16 +105,34 @@ class ProtocolAvatarRuntime internal constructor(
         ) {
             is CapabilityUrlResult.Ready -> result.url
             is CapabilityUrlResult.TransportGap ->
-                return appearanceFailure(AvatarReadinessProofStatus.TRANSPORT_GAP, "avatar appearance capability unavailable")
+                return appearanceFailure(
+                    status = AvatarReadinessProofStatus.TRANSPORT_GAP,
+                    message = "avatar appearance capability unavailable",
+                    regionName = presence.regionName,
+                )
             is CapabilityUrlResult.MappingGap ->
-                return appearanceFailure(AvatarReadinessProofStatus.PROOF_GAP, "avatar appearance capability unavailable")
+                return appearanceFailure(
+                    status = AvatarReadinessProofStatus.PROOF_GAP,
+                    message = "avatar appearance capability unavailable",
+                    regionName = presence.regionName,
+                )
         }
         return when (val result = appearanceSource.updateServerAppearance(identity, cofVersion, capabilityUrl)) {
-            AvatarAppearanceUpdateResult.Success -> AvatarReadinessResult.Success(AvatarReadinessProof.success())
+            AvatarAppearanceUpdateResult.Success -> AvatarReadinessResult.Success(
+                AvatarReadinessProof.success(regionName = presence.regionName),
+            )
             is AvatarAppearanceUpdateResult.TransportGap ->
-                appearanceFailure(AvatarReadinessProofStatus.TRANSPORT_GAP, result.redactedMessage)
+                appearanceFailure(
+                    status = AvatarReadinessProofStatus.TRANSPORT_GAP,
+                    message = result.redactedMessage,
+                    regionName = presence.regionName,
+                )
             is AvatarAppearanceUpdateResult.ProofGap ->
-                appearanceFailure(AvatarReadinessProofStatus.PROOF_GAP, result.redactedMessage)
+                appearanceFailure(
+                    status = AvatarReadinessProofStatus.PROOF_GAP,
+                    message = result.redactedMessage,
+                    regionName = presence.regionName,
+                )
         }
     }
 
@@ -131,6 +151,7 @@ class ProtocolAvatarRuntime internal constructor(
     private fun appearanceFailure(
         status: AvatarReadinessProofStatus,
         message: String,
+        regionName: String?,
     ): AvatarReadinessResult.Failure =
         failure(
             status = status,
@@ -140,6 +161,7 @@ class ProtocolAvatarRuntime internal constructor(
             cofVersionStatus = AvatarReadinessProofStatus.PASSED,
             serverAppearanceStatus = status,
             message = message,
+            regionName = regionName,
         )
 
     private fun failure(
@@ -149,6 +171,7 @@ class ProtocolAvatarRuntime internal constructor(
         agentAppearanceServiceStatus: AvatarReadinessProofStatus = AvatarReadinessProofStatus.NOT_RUN,
         cofVersionStatus: AvatarReadinessProofStatus = AvatarReadinessProofStatus.NOT_RUN,
         serverAppearanceStatus: AvatarReadinessProofStatus = AvatarReadinessProofStatus.NOT_RUN,
+        regionName: String? = null,
         message: String,
     ): AvatarReadinessResult.Failure = AvatarReadinessResult.Failure(
         proof = AvatarReadinessProof(
@@ -158,6 +181,7 @@ class ProtocolAvatarRuntime internal constructor(
             agentAppearanceServiceStatus = agentAppearanceServiceStatus,
             cofVersionStatus = cofVersionStatus,
             serverAppearanceStatus = serverAppearanceStatus,
+            regionName = regionName,
         ),
         failure = CoreFailure(
             reason = CoreFailureReason.AVATAR_READINESS_FAILED,

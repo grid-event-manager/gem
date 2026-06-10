@@ -229,7 +229,7 @@ class LoginController(
                     activeAccountLabel = profile.loginName.value,
                     sessionStrip = SessionStripUiState(
                         visible = true,
-                        locationLabel = profile.startLocation.orEmpty(),
+                        locationLabel = readiness.proof.regionName.orEmpty(),
                         statusKey = HostessTextKey.Online,
                         online = true,
                     ),

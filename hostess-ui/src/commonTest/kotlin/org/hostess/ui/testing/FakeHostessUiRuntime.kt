@@ -76,6 +76,7 @@ object FakeHostessUiRuntime {
         profiles: List<SavedAccountProfile> = listOf(defaultProfile()),
         loginSucceeds: Boolean = true,
         avatarReady: Boolean = true,
+        avatarRegionName: String? = "London City",
         groups: List<GroupMembership> = emptyList(),
         groupListSucceeds: Boolean = true,
         inventoryListing: InventoryDirectoryListing = InventoryDirectoryListing(emptyList(), emptyList()),
@@ -96,6 +97,7 @@ object FakeHostessUiRuntime {
             credentialRuntimeState = HostessCredentialRuntimeReady(credentialService),
             loginSucceeds = loginSucceeds,
             avatarReady = avatarReady,
+            avatarRegionName = avatarRegionName,
             groups = groups,
             groupListSucceeds = groupListSucceeds,
             inventoryListing = inventoryListing,
@@ -125,6 +127,7 @@ object FakeHostessUiRuntime {
         credentialRuntimeState: HostessCredentialRuntimeState,
         loginSucceeds: Boolean = true,
         avatarReady: Boolean = true,
+        avatarRegionName: String? = "London City",
         groups: List<GroupMembership> = emptyList(),
         groupListSucceeds: Boolean = true,
         inventoryListing: InventoryDirectoryListing = InventoryDirectoryListing(emptyList(), emptyList()),
@@ -140,7 +143,7 @@ object FakeHostessUiRuntime {
                 loginComplianceService = LoginComplianceService(),
                 redactionPort = RedactionPort { value -> value },
             ),
-            avatarReadinessService = AvatarReadinessService(FakeAvatarPort(avatarReady)),
+            avatarReadinessService = AvatarReadinessService(FakeAvatarPort(avatarReady, avatarRegionName)),
             groupDirectoryService = GroupDirectoryService(FakeGroupPort(groups, groupListSucceeds)),
             targetSelectionService = TargetSelectionService(),
             inventoryDirectoryService = InventoryDirectoryService(inventoryPort),
@@ -289,10 +292,11 @@ private class FakeSessionPort(
 
 private class FakeAvatarPort(
     private val avatarReady: Boolean,
+    private val regionName: String?,
 ) : org.hostess.core.ports.AvatarPort {
     override fun ensureReady(session: HostessSession): AvatarReadinessResult =
         if (avatarReady) {
-            AvatarReadinessResult.Success(AvatarReadinessProof.success())
+            AvatarReadinessResult.Success(AvatarReadinessProof.success(regionName = regionName))
         } else {
             AvatarReadinessResult.Failure(
                 proof = AvatarReadinessProof.notRun(),

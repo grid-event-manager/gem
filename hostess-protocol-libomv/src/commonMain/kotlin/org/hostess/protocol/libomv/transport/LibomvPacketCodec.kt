@@ -148,7 +148,7 @@ internal object LibomvPacketCodec {
             return null
         }
         val reader = RegionHandshakeBodyReader(packet.decoded, packet.bodyOffset)
-        return reader.regionProtocolFlags()?.let(::RegionHandshakeInfo)
+        return reader.regionHandshakeInfo()
     }
 
     fun packetAckSequences(payload: ByteArray): List<Long>? {
@@ -442,27 +442,45 @@ internal object LibomvPacketCodec {
         private val bytes: ByteArray,
         private var offset: Int,
     ) {
-        fun regionProtocolFlags(): RegionProtocolFlags? {
+        fun regionHandshakeInfo(): RegionHandshakeInfo? {
             if (isExhausted()) {
-                return RegionProtocolFlags.unknown()
+                return RegionHandshakeInfo(
+                    regionName = null,
+                    regionProtocolFlags = RegionProtocolFlags.unknown(),
+                )
             }
-            if (!skipRegionInfo() || !skipBytes(ID_BYTES) || !skipRegionInfo3()) {
+            val regionName = when (val result = readRegionName()) {
+                is RegionNameReadResult.Read -> result.value
+                RegionNameReadResult.StructuralFailure -> return null
+            }
+            if (!skipBytes(ID_BYTES) || !skipRegionInfo3()) {
                 return null
             }
-            return readRegionInfo4()
+            return RegionHandshakeInfo(
+                regionName = regionName,
+                regionProtocolFlags = readRegionInfo4(),
+            )
         }
 
-        private fun skipRegionInfo(): Boolean =
-            skipBytes(U32_BYTES) &&
-                skipBytes(U8_BYTES) &&
-                skipVariable1() &&
-                skipBytes(ID_BYTES) &&
-                skipBytes(U8_BYTES) &&
-                skipBytes(F32_BYTES) &&
-                skipBytes(F32_BYTES) &&
-                skipBytes(ID_BYTES) &&
-                skipBytes(ID_BYTES * TERRAIN_ID_FIELD_COUNT) &&
-                skipBytes(F32_BYTES * TERRAIN_FLOAT_FIELD_COUNT)
+        private fun readRegionName(): RegionNameReadResult {
+            if (!skipBytes(U32_BYTES) || !skipBytes(U8_BYTES)) {
+                return RegionNameReadResult.StructuralFailure
+            }
+            val regionName = readVariable1String()
+            if (
+                regionName is RegionNameReadResult.StructuralFailure ||
+                !skipBytes(ID_BYTES) ||
+                !skipBytes(U8_BYTES) ||
+                !skipBytes(F32_BYTES) ||
+                !skipBytes(F32_BYTES) ||
+                !skipBytes(ID_BYTES) ||
+                !skipBytes(ID_BYTES * TERRAIN_ID_FIELD_COUNT) ||
+                !skipBytes(F32_BYTES * TERRAIN_FLOAT_FIELD_COUNT)
+            ) {
+                return RegionNameReadResult.StructuralFailure
+            }
+            return regionName
+        }
 
         private fun skipRegionInfo3(): Boolean =
             skipBytes(S32_BYTES) &&
@@ -488,6 +506,19 @@ internal object LibomvPacketCodec {
             return skipBytes(size)
         }
 
+        private fun readVariable1String(): RegionNameReadResult {
+            val size = readU8() ?: return RegionNameReadResult.StructuralFailure
+            val value = readBytes(size) ?: return RegionNameReadResult.StructuralFailure
+            val regionName = try {
+                value.decodeToString(throwOnInvalidSequence = true)
+                    .trimEnd { it == '\u0000' || it.isWhitespace() }
+                    .ifBlank { null }
+            } catch (ex: Exception) {
+                null
+            }
+            return RegionNameReadResult.Read(regionName)
+        }
+
         private fun readU8(): Int? =
             readBytes(U8_BYTES)?.single()?.toInt()?.and(BYTE_MASK)
 
@@ -510,6 +541,11 @@ internal object LibomvPacketCodec {
         }
 
         private fun isExhausted(): Boolean = offset == bytes.size
+
+        private sealed interface RegionNameReadResult {
+            data class Read(val value: String?) : RegionNameReadResult
+            data object StructuralFailure : RegionNameReadResult
+        }
     }
 
     private const val USE_CIRCUIT_CODE = 3

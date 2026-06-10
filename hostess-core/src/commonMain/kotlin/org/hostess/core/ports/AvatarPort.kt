@@ -22,6 +22,7 @@ data class AvatarReadinessProof(
     val agentAppearanceServiceStatus: AvatarReadinessProofStatus,
     val cofVersionStatus: AvatarReadinessProofStatus,
     val serverAppearanceStatus: AvatarReadinessProofStatus,
+    val regionName: String? = null,
 ) {
     companion object {
         fun notRun(
@@ -35,13 +36,14 @@ data class AvatarReadinessProof(
             serverAppearanceStatus = AvatarReadinessProofStatus.NOT_RUN,
         )
 
-        fun success(): AvatarReadinessProof = AvatarReadinessProof(
+        fun success(regionName: String? = null): AvatarReadinessProof = AvatarReadinessProof(
             avatarReadinessStatus = AvatarReadinessProofStatus.PASSED,
             simulatorPresenceStatus = AvatarReadinessProofStatus.PASSED,
             regionProtocolStatus = AvatarReadinessProofStatus.PASSED,
             agentAppearanceServiceStatus = AvatarReadinessProofStatus.PASSED,
             cofVersionStatus = AvatarReadinessProofStatus.PASSED,
             serverAppearanceStatus = AvatarReadinessProofStatus.PASSED,
+            regionName = regionName,
         )
     }
 }

@@ -48,16 +48,38 @@ internal object LibomvPacketTestBytes {
     fun regionHandshakeWithRegionProtocols(
         regionProtocols: Long,
         regionInfoFlags: Long = 0,
+        regionName: String = "Test Region",
     ): ByteArray =
         LibomvZerocodeCodec.encode(
             lowHeader(sequence = REGION_HANDSHAKE_SEQUENCE, packetId = REGION_HANDSHAKE_PACKET_ID, flags = 0xC0) +
-                regionHandshakeBody(regionInfoFlags = regionInfoFlags, regionProtocols = regionProtocols),
+                regionHandshakeBody(
+                    regionInfoFlags = regionInfoFlags,
+                    regionProtocols = regionProtocols,
+                    regionNameBytes = regionName.encodeToByteArray(),
+                ),
+        )
+
+    fun regionHandshakeWithRawRegionName(
+        regionNameBytes: ByteArray,
+        regionProtocols: Long = 1L,
+    ): ByteArray =
+        LibomvZerocodeCodec.encode(
+            lowHeader(sequence = REGION_HANDSHAKE_SEQUENCE, packetId = REGION_HANDSHAKE_PACKET_ID, flags = 0xC0) +
+                regionHandshakeBody(
+                    regionInfoFlags = 0,
+                    regionProtocols = regionProtocols,
+                    regionNameBytes = regionNameBytes,
+                ),
         )
 
     fun regionHandshakeWithoutRegionInfo4(): ByteArray =
         LibomvZerocodeCodec.encode(
             lowHeader(sequence = REGION_HANDSHAKE_SEQUENCE, packetId = REGION_HANDSHAKE_PACKET_ID, flags = 0xC0) +
-                regionHandshakeBody(regionInfoFlags = 0, regionProtocols = null),
+                regionHandshakeBody(
+                    regionInfoFlags = 0,
+                    regionProtocols = null,
+                    regionNameBytes = "Test Region".encodeToByteArray(),
+                ),
         )
 
     fun malformedRegionHandshake(): ByteArray =
@@ -69,10 +91,11 @@ internal object LibomvPacketTestBytes {
     private fun regionHandshakeBody(
         regionInfoFlags: Long,
         regionProtocols: Long?,
+        regionNameBytes: ByteArray,
     ): ByteArray =
         u32(regionInfoFlags) +
             byteArrayOf(0) +
-            variable1("Test Region") +
+            variable1(regionNameBytes) +
             uuid(ZERO_ID) +
             byteArrayOf(0) +
             f32(20.0f) +
@@ -97,8 +120,10 @@ internal object LibomvPacketTestBytes {
     private fun terrainFloats(): ByteArray =
         List(8) { f32(0.0f) }.fold(ByteArray(0), ByteArray::plus)
 
-    private fun variable1(value: String): ByteArray {
-        val bytes = value.encodeToByteArray()
+    private fun variable1(value: String): ByteArray =
+        variable1(value.encodeToByteArray())
+
+    private fun variable1(bytes: ByteArray): ByteArray {
         require(bytes.size <= 255)
         return byteArrayOf(bytes.size.toByte()) + bytes
     }
