@@ -11,6 +11,7 @@ import org.hostess.core.domain.GroupSendStatus
 import org.hostess.core.domain.HostessInstant
 import org.hostess.core.domain.HostessSession
 import org.hostess.core.domain.InventoryDirectoryListing
+import org.hostess.core.domain.InventoryItemQuery
 import org.hostess.core.domain.LoginComplianceRequest
 import org.hostess.core.domain.LoginCredentialMaterial
 import org.hostess.core.domain.OperatorLabel
@@ -75,6 +76,8 @@ object FakeHostessUiRuntime {
         profiles: List<SavedAccountProfile> = listOf(defaultProfile()),
         loginSucceeds: Boolean = true,
         avatarReady: Boolean = true,
+        inventoryListing: InventoryDirectoryListing = InventoryDirectoryListing(emptyList(), emptyList()),
+        attachmentSucceeds: Boolean = true,
     ): HostessUiRuntime {
         val profileStore = InMemoryAccountProfileStore(profiles)
         val vault = InMemoryCredentialVault()
@@ -90,6 +93,8 @@ object FakeHostessUiRuntime {
             credentialRuntimeState = HostessCredentialRuntimeReady(credentialService),
             loginSucceeds = loginSucceeds,
             avatarReady = avatarReady,
+            inventoryListing = inventoryListing,
+            attachmentSucceeds = attachmentSucceeds,
         )
     }
 
@@ -114,9 +119,11 @@ object FakeHostessUiRuntime {
         credentialRuntimeState: HostessCredentialRuntimeState,
         loginSucceeds: Boolean = true,
         avatarReady: Boolean = true,
+        inventoryListing: InventoryDirectoryListing = InventoryDirectoryListing(emptyList(), emptyList()),
+        attachmentSucceeds: Boolean = true,
     ): HostessUiRuntime {
         val sessionPort = FakeSessionPort(loginSucceeds)
-        val inventoryPort = FakeInventoryPort()
+        val inventoryPort = FakeInventoryPort(inventoryListing, attachmentSucceeds)
         return HostessUiRuntime(
             credentialRuntimeState = credentialRuntimeState,
             sessionService = SessionService(
@@ -289,30 +296,44 @@ private class FakeGroupPort : GroupPort {
         GroupNoticeArchiveResult.Success(group, emptyList())
 }
 
-private class FakeInventoryPort : InventoryPort {
+private class FakeInventoryPort(
+    private val inventoryListing: InventoryDirectoryListing,
+    private val attachmentSucceeds: Boolean,
+) : InventoryPort {
     override fun resolveExistingAttachment(
         session: HostessSession,
         request: org.hostess.core.domain.ExistingInventoryAttachment,
     ): AttachmentResolutionResult =
-        AttachmentResolutionResult.Resolved(
-            AttachmentRef(
-                attachmentId = request.itemId,
-                ownerId = org.hostess.core.domain.AttachmentOwnerId("owner"),
-                kind = request.kind,
-            ),
-        )
+        if (attachmentSucceeds) {
+            AttachmentResolutionResult.Resolved(
+                AttachmentRef(
+                    attachmentId = request.itemId,
+                    ownerId = org.hostess.core.domain.AttachmentOwnerId("owner"),
+                    kind = request.kind,
+                ),
+            )
+        } else {
+            AttachmentResolutionResult.Failed(
+                CoreFailure(CoreFailureReason.ATTACHMENT_NOT_FOUND, "attachment resolution failed"),
+            )
+        }
 
     override fun listDirectory(
         session: HostessSession,
-        query: org.hostess.core.domain.InventoryItemQuery,
+        query: InventoryItemQuery,
     ): InventoryDirectoryListResult =
-        InventoryDirectoryListResult.Success(InventoryDirectoryListing(emptyList(), emptyList()))
+        InventoryDirectoryListResult.Success(
+            InventoryDirectoryListing(
+                folders = inventoryListing.folders,
+                items = inventoryListing.items.filter { it.kind in query.kinds },
+            ),
+        )
 
     override fun listItems(
         session: HostessSession,
-        query: org.hostess.core.domain.InventoryItemQuery,
+        query: InventoryItemQuery,
     ): InventoryItemListResult =
-        InventoryItemListResult.Success(emptyList())
+        InventoryItemListResult.Success(inventoryListing.items.filter { it.kind in query.kinds })
 }
 
 private class FakeNoticePort : NoticePort {

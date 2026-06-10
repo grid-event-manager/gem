@@ -1,5 +1,7 @@
 package org.hostess.ui.state
 
+import org.hostess.core.domain.AttachmentRef
+import org.hostess.core.domain.ExistingInventoryAttachment
 import org.hostess.core.domain.InventoryFolderId
 import org.hostess.core.domain.InventoryItemId
 import org.hostess.core.domain.InventoryItemKind
@@ -12,7 +14,7 @@ data class InventoryBrowserUiState(
     val visibleFolderRows: List<InventoryFolderRowUiState> = emptyList(),
     val visibleAssetRows: List<InventoryAssetRowUiState> = emptyList(),
     val selectedAttachment: SelectedAttachmentUiState? = null,
-    val attachmentSummary: HostessTextKey = HostessTextKey.SelectedCount(0),
+    val attachmentSummary: HostessTextKey = HostessTextKey.None,
     val errorKey: HostessTextKey? = null,
 )
 
@@ -38,4 +40,6 @@ data class SelectedAttachmentUiState(
     val itemId: InventoryItemId,
     val displayName: String,
     val kind: InventoryItemKind,
+    val request: ExistingInventoryAttachment,
+    val attachmentRef: AttachmentRef,
 )

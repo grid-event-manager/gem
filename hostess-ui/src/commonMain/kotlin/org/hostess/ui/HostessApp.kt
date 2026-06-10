@@ -15,7 +15,9 @@ import org.hostess.ui.components.HostessSendFooter
 import org.hostess.ui.components.HostessTopBar
 import org.hostess.ui.components.SessionStrip
 import org.hostess.ui.controllers.HostessAppController
+import org.hostess.ui.controllers.InventoryBrowserController
 import org.hostess.ui.controllers.LoginController
+import org.hostess.ui.controllers.NoticeComposerController
 import org.hostess.ui.controllers.SettingsController
 import org.hostess.ui.design.HostessTheme
 import org.hostess.ui.screens.ComposeScreen
@@ -35,6 +37,19 @@ fun HostessApp(
     var appController by remember(runtime) { mutableStateOf(HostessAppController(runtime)) }
     var loginController by remember(runtime) { mutableStateOf(LoginController(runtime).refreshSavedLogins()) }
     var settingsController by remember(runtime) { mutableStateOf(SettingsController(runtime).refreshSavedAccounts()) }
+    var noticeController by remember(runtime) { mutableStateOf(NoticeComposerController(runtime)) }
+    var inventoryController by remember(runtime) { mutableStateOf(InventoryBrowserController(runtime)) }
+
+    fun routeAfterLogin(controller: LoginController) {
+        appController = HostessAppController(runtime, controller.appState)
+        if (controller.appState.route == UiRoute.Compose) {
+            noticeController = NoticeComposerController(runtime)
+            inventoryController = InventoryBrowserController(
+                runtime = runtime,
+                session = controller.appState.session,
+            ).refreshInventory()
+        }
+    }
 
     HostessTheme.Provide {
         Column(
@@ -59,6 +74,8 @@ fun HostessApp(
                     appController = appController.logout()
                     loginController = LoginController(runtime).refreshSavedLogins()
                     settingsController = SettingsController(runtime, appState = appController.state).refreshSavedAccounts()
+                    noticeController = NoticeComposerController(runtime)
+                    inventoryController = InventoryBrowserController(runtime)
                 },
             )
             when (appController.state.route) {
@@ -96,11 +113,11 @@ fun HostessApp(
                         },
                         onLogin = {
                             loginController = loginController.loginSelected()
-                            appController = HostessAppController(runtime, loginController.appState)
+                            routeAfterLogin(loginController)
                         },
                         onSaveAndLogin = {
                             loginController = loginController.saveAndLogin()
-                            appController = HostessAppController(runtime, loginController.appState)
+                            routeAfterLogin(loginController)
                         },
                     )
                 }
@@ -109,7 +126,26 @@ fun HostessApp(
                         state = appController.state.sessionStrip,
                         textCatalogue = textCatalogue,
                     )
-                    ComposeScreen()
+                    ComposeScreen(
+                        noticeState = noticeController.state,
+                        inventoryState = inventoryController.state,
+                        textCatalogue = textCatalogue,
+                        onSubjectChanged = { subject ->
+                            noticeController = noticeController.updateSubject(subject)
+                        },
+                        onBodyChanged = { body ->
+                            noticeController = noticeController.updateBody(body)
+                        },
+                        onInventoryShortcutSelected = { shortcut ->
+                            inventoryController = inventoryController.openInventoryShortcut(shortcut)
+                        },
+                        onInventoryFolderOpen = { folderId ->
+                            inventoryController = inventoryController.openInventoryFolder(folderId)
+                        },
+                        onInventoryAssetSelected = { itemId ->
+                            inventoryController = inventoryController.selectInventoryAsset(itemId)
+                        },
+                    )
                     HostessSendFooter(
                         state = appController.state.sendFooter,
                         textCatalogue = textCatalogue,

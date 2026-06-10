@@ -12,6 +12,7 @@ import org.hostess.ui.state.InventoryAssetRowUiState
 import org.hostess.ui.state.InventoryBrowserUiState
 import org.hostess.ui.state.InventoryShortcut
 import org.hostess.ui.state.UiRoute
+import org.hostess.ui.testing.FakeInventoryFixtures
 import org.hostess.ui.testing.FakeHostessUiRuntime
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -132,25 +133,19 @@ class ControllerEntrypointShapeTest {
 
     @Test
     fun inventoryControllerOwnsShortcutFolderAndAssetProjection() {
-        val itemId = InventoryItemId("welcome-area")
-        val folderId = InventoryFolderId("landmarks")
-        val base = InventoryBrowserUiState(
-            visibleAssetRows = listOf(
-                InventoryAssetRowUiState(
-                    itemId = itemId,
-                    displayName = "Welcome Area",
-                    kind = InventoryItemKind.LANDMARK,
-                ),
-            ),
+        val fixture = FakeInventoryFixtures
+        val inventoryRuntime = FakeHostessUiRuntime.ready(
+            inventoryListing = fixture.listing(),
         )
+        val refreshed = InventoryBrowserController(inventoryRuntime, fixture.session()).refreshInventory()
 
-        val controller = InventoryBrowserController(runtime, base)
+        val shortcut = refreshed
             .openInventoryShortcut(InventoryShortcut.TEXTURES)
-            .openInventoryFolder(folderId)
-            .selectInventoryAsset(itemId)
+            .selectInventoryAsset(fixture.textureItemId)
+        val folder = refreshed.openInventoryFolder(fixture.venuesFolderId)
 
-        assertTrue(controller.state.shortcuts.texturesSelected)
-        assertEquals(folderId, controller.state.currentFolderId)
-        assertTrue(controller.state.visibleAssetRows.single().selected)
+        assertTrue(shortcut.state.shortcuts.texturesSelected)
+        assertTrue(shortcut.state.visibleAssetRows.single().selected)
+        assertEquals(fixture.venuesFolderId, folder.state.currentFolderId)
     }
 }

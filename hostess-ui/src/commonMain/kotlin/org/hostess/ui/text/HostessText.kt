@@ -32,6 +32,7 @@ sealed interface HostessTextKey {
     data object Selected : HostessTextKey
     data object Select : HostessTextKey
     data object Open : HostessTextKey
+    data object None : HostessTextKey
     data object Landmark : HostessTextKey
     data object Texture : HostessTextKey
     data object Groups : HostessTextKey
@@ -78,6 +79,7 @@ sealed interface HostessTextKey {
             Selected,
             Select,
             Open,
+            None,
             Landmark,
             Texture,
             Groups,
@@ -128,9 +130,10 @@ object EnglishHostessTextCatalogue : HostessTextCatalogue {
         HostessTextKey.Folder -> "Folder"
         HostessTextKey.Landmarks -> "Landmarks"
         HostessTextKey.Textures -> "Textures"
-        HostessTextKey.Selected -> "selected"
+        HostessTextKey.Selected -> "Selected"
         HostessTextKey.Select -> "Select"
         HostessTextKey.Open -> "Open"
+        HostessTextKey.None -> "None"
         HostessTextKey.Landmark -> "Landmark"
         HostessTextKey.Texture -> "Texture"
         HostessTextKey.Groups -> "Groups"
