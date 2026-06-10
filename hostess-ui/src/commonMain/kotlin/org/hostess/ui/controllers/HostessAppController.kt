@@ -1,0 +1,38 @@
+package org.hostess.ui.controllers
+
+import org.hostess.ui.runtime.HostessUiRuntime
+import org.hostess.ui.state.AppUiState
+import org.hostess.ui.state.SessionStripUiState
+import org.hostess.ui.state.UiRoute
+import org.hostess.ui.text.HostessTextKey
+
+class HostessAppController(
+    val runtime: HostessUiRuntime,
+    val state: AppUiState = AppUiState(),
+) {
+    fun openMenu(): HostessAppController =
+        copy(state.copy(menuOpen = true))
+
+    fun openSettings(): HostessAppController =
+        copy(state.copy(route = UiRoute.Settings, menuOpen = false))
+
+    fun logout(): HostessAppController {
+        // B-10 owns SessionService.logout wiring; B-06 clears only route-local UI state.
+        return copy(
+            state.copy(
+                route = UiRoute.Login,
+                menuOpen = false,
+                activeAccountLabel = "",
+                sessionStrip = SessionStripUiState(statusKey = HostessTextKey.Offline),
+                operationMessageKey = HostessTextKey.BlankStatus,
+                session = null,
+            ),
+        )
+    }
+
+    fun backFromSettings(): HostessAppController =
+        copy(state.copy(route = UiRoute.Compose, menuOpen = false))
+
+    private fun copy(state: AppUiState): HostessAppController =
+        HostessAppController(runtime, state)
+}
