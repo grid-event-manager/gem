@@ -53,15 +53,13 @@ class CredentialService(
         profileId: AccountProfileId,
         password: String,
     ): CredentialServiceUpdatePasswordResult {
-        val profile = when (val listed = accountProfileStore.list()) {
-            is AccountProfileStoreListResult.Listed ->
-                listed.profiles.firstOrNull { it.profileId == profileId }
-                    ?: return CredentialServiceUpdatePasswordResult.MissingProfile(profileId)
-            is AccountProfileStoreListResult.CorruptVault -> {
-                return CredentialServiceUpdatePasswordResult.ProfileStoreFailure(listed.message)
+        val profile = when (val lookup = profileFor(profileId)) {
+            is CredentialServiceProfileLookup.Found -> lookup.profile
+            is CredentialServiceProfileLookup.Missing -> {
+                return CredentialServiceUpdatePasswordResult.MissingProfile(lookup.profileId)
             }
-            is AccountProfileStoreListResult.StorageFailed -> {
-                return CredentialServiceUpdatePasswordResult.ProfileStoreFailure(listed.message)
+            is CredentialServiceProfileLookup.ProfileStoreFailure -> {
+                return CredentialServiceUpdatePasswordResult.ProfileStoreFailure(lookup.message)
             }
         }
         val newSecret = SharedSecret.fromPlainText(password)
@@ -92,6 +90,40 @@ class CredentialService(
             is CredentialVaultUpdateResult.CryptoFailed -> CredentialServiceUpdatePasswordResult.VaultFailure(updated.message)
             is CredentialVaultUpdateResult.CorruptVault -> CredentialServiceUpdatePasswordResult.VaultFailure(updated.message)
             is CredentialVaultUpdateResult.StorageFailed -> CredentialServiceUpdatePasswordResult.VaultFailure(updated.message)
+        }
+    }
+
+    fun revealPassword(profileId: AccountProfileId): CredentialServiceRevealPasswordResult {
+        val profile = when (val lookup = profileFor(profileId)) {
+            is CredentialServiceProfileLookup.Found -> lookup.profile
+            is CredentialServiceProfileLookup.Missing -> {
+                return CredentialServiceRevealPasswordResult.MissingProfile(lookup.profileId)
+            }
+            is CredentialServiceProfileLookup.ProfileStoreFailure -> {
+                return CredentialServiceRevealPasswordResult.ProfileStoreFailure(lookup.message)
+            }
+        }
+
+        return when (val resolved = credentialVault.resolve(profile.credentialHandle)) {
+            is CredentialVaultResolveResult.Resolved -> CredentialServiceRevealPasswordResult.Revealed(
+                profile = profile,
+                password = resolved.material.sharedSecret.revealForLogin(),
+            )
+            is CredentialVaultResolveResult.Missing -> CredentialServiceRevealPasswordResult.VaultFailure(
+                resolved.message,
+            )
+            is CredentialVaultResolveResult.KeySourceFailed -> CredentialServiceRevealPasswordResult.VaultFailure(
+                resolved.message,
+            )
+            is CredentialVaultResolveResult.CryptoFailed -> CredentialServiceRevealPasswordResult.VaultFailure(
+                resolved.message,
+            )
+            is CredentialVaultResolveResult.CorruptVault -> CredentialServiceRevealPasswordResult.VaultFailure(
+                resolved.message,
+            )
+            is CredentialVaultResolveResult.StorageFailed -> CredentialServiceRevealPasswordResult.VaultFailure(
+                resolved.message,
+            )
         }
     }
 
@@ -172,4 +204,24 @@ class CredentialService(
                 CredentialServiceDeleteResult.ProfileStoreFailure(profileDelete.message)
             }
         }
+
+    private fun profileFor(profileId: AccountProfileId): CredentialServiceProfileLookup =
+        when (val listed = accountProfileStore.list()) {
+            is AccountProfileStoreListResult.Listed ->
+                listed.profiles.firstOrNull { it.profileId == profileId }
+                    ?.let(CredentialServiceProfileLookup::Found)
+                    ?: CredentialServiceProfileLookup.Missing(profileId)
+            is AccountProfileStoreListResult.CorruptVault -> {
+                CredentialServiceProfileLookup.ProfileStoreFailure(listed.message)
+            }
+            is AccountProfileStoreListResult.StorageFailed -> {
+                CredentialServiceProfileLookup.ProfileStoreFailure(listed.message)
+            }
+        }
+}
+
+private sealed interface CredentialServiceProfileLookup {
+    data class Found(val profile: SavedAccountProfile) : CredentialServiceProfileLookup
+    data class Missing(val profileId: AccountProfileId) : CredentialServiceProfileLookup
+    data class ProfileStoreFailure(val message: String? = null) : CredentialServiceProfileLookup
 }

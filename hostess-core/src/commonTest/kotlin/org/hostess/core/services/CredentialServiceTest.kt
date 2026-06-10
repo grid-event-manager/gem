@@ -22,6 +22,7 @@ import org.hostess.core.ports.CredentialVaultSaveResult
 import org.hostess.core.ports.CredentialVaultUpdateResult
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
@@ -123,6 +124,63 @@ class CredentialServiceTest {
         )
         assertEquals(CredentialServiceUpdatePasswordResult.InvalidSecret, service.updatePassword(profile.profileId, " "))
         assertTrue(vault.updatedMaterials.isEmpty())
+    }
+
+    @Test
+    fun `reveal password returns selected profile and redacts result string`() {
+        val profile = profile("one")
+        val store = FakeAccountProfileStore(listResult = AccountProfileStoreListResult.Listed(listOf(profile)))
+        val vault = FakeCredentialVault(resolveResult = CredentialVaultResolveResult.Resolved(material("saved-password")))
+        val service = service(store, vault)
+
+        val result = assertIs<CredentialServiceRevealPasswordResult.Revealed>(
+            service.revealPassword(profile.profileId),
+        )
+
+        assertEquals(profile, result.profile)
+        assertEquals("saved-password", result.password)
+        assertEquals(1, vault.resolveCalls)
+        assertFalse(result.toString().contains("saved-password"))
+        assertTrue(result.toString().contains("password=[redacted]"))
+    }
+
+    @Test
+    fun `reveal password reports missing profile and store failure before vault resolve`() {
+        val profile = profile("one")
+        val missingStore = FakeAccountProfileStore(
+            listResult = AccountProfileStoreListResult.Listed(listOf(profile)),
+        )
+        val failedStore = FakeAccountProfileStore(
+            listResult = AccountProfileStoreListResult.StorageFailed("[redacted-store]"),
+        )
+        val vault = FakeCredentialVault()
+
+        assertIs<CredentialServiceRevealPasswordResult.MissingProfile>(
+            service(missingStore, vault).revealPassword(AccountProfileId("profile:v1:missing")),
+        )
+        val failure = assertIs<CredentialServiceRevealPasswordResult.ProfileStoreFailure>(
+            service(failedStore, vault).revealPassword(profile.profileId),
+        )
+
+        assertEquals("[redacted-store]", failure.message)
+        assertEquals(0, vault.resolveCalls)
+    }
+
+    @Test
+    fun `reveal password maps vault resolve failures without exposing secrets`() {
+        val profile = profile("one")
+        val store = FakeAccountProfileStore(listResult = AccountProfileStoreListResult.Listed(listOf(profile)))
+        val vault = FakeCredentialVault(
+            resolveResult = CredentialVaultResolveResult.CryptoFailed("[redacted-vault]"),
+        )
+        val service = service(store, vault)
+
+        val failure = assertIs<CredentialServiceRevealPasswordResult.VaultFailure>(
+            service.revealPassword(profile.profileId),
+        )
+
+        assertEquals("[redacted-vault]", failure.message)
+        assertEquals(1, vault.resolveCalls)
     }
 
     @Test

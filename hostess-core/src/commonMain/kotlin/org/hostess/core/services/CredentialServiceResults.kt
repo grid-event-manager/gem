@@ -20,6 +20,20 @@ sealed interface CredentialServiceUpdatePasswordResult {
     data class ProfileStoreFailure(val message: String? = null) : CredentialServiceUpdatePasswordResult
 }
 
+sealed interface CredentialServiceRevealPasswordResult {
+    class Revealed(
+        val profile: SavedAccountProfile,
+        val password: String,
+    ) : CredentialServiceRevealPasswordResult {
+        override fun toString(): String =
+            "CredentialServiceRevealPasswordResult.Revealed(profile=$profile, password=[redacted])"
+    }
+
+    data class MissingProfile(val profileId: AccountProfileId) : CredentialServiceRevealPasswordResult
+    data class VaultFailure(val message: String? = null) : CredentialServiceRevealPasswordResult
+    data class ProfileStoreFailure(val message: String? = null) : CredentialServiceRevealPasswordResult
+}
+
 sealed interface CredentialServiceDeleteResult {
     data class Deleted(val profileIds: Set<AccountProfileId>) : CredentialServiceDeleteResult
     data class MissingProfiles(val profileIds: Set<AccountProfileId>) : CredentialServiceDeleteResult
