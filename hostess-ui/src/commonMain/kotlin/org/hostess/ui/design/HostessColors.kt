@@ -43,5 +43,6 @@ data class HostessColors(
     val toggleTrackSelected: Color = primary,
     val toggleKnob: Color = surfaceStrong,
     val toggleBorder: Color = lineStrong,
+    val navigationInk: Color = secondary,
     val interactiveHoverInk: Color = primary,
 )

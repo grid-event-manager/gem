@@ -34,7 +34,7 @@ object HaccuHostessPaletteProvider : HostessPaletteProvider {
             disabledInk = Color(0xFF777777),
             selectedInk = Color(0xFF4A7A8A),
             topBarInk = Color(0xFFFFFFFF),
-            topBarMenuInk = Color(0xFFE0E0E0),
+            topBarMenuInk = Color(0xFF8B0101),
             brandMarkInk = Color(0xFFFFFFFF),
             statusBackground = Color(0xFFFAFAF8),
             focusRing = Color(0x294A7A8A),
@@ -43,13 +43,14 @@ object HaccuHostessPaletteProvider : HostessPaletteProvider {
             menuActive = Color(0xFFE0E0E0),
             fieldSurface = Color(0xFFFFFFFF),
             fieldBorder = Color(0xFFE0E0E0),
-            brandWordmark = Color(0xFF888888),
-            brandAccent = Color(0xFF8B0101),
+            brandWordmark = Color(0xFF8B0101),
+            brandAccent = Color(0xFF4A7A8A),
             toggleTrack = Color(0xFFE0E0E0),
             toggleTrackSelected = Color(0xFF4A7A8A),
             toggleKnob = Color(0xFFFFFFFF),
             toggleBorder = Color(0xFFE0E0E0),
-            interactiveHoverInk = Color(0xFF4A7A8A),
+            navigationInk = Color(0xFF8AB4C4),
+            interactiveHoverInk = Color(0xFF8B0101),
         )
 
     private fun darkColors(): HostessColors =
@@ -86,12 +87,13 @@ object HaccuHostessPaletteProvider : HostessPaletteProvider {
             menuActive = Color(0xFF222E3A),
             fieldSurface = Color(0xFF2A3441),
             fieldBorder = Color(0xFF3A4D5E),
-            brandWordmark = Color(0xFF8AB4C4),
+            brandWordmark = Color(0xFFFFFFFF),
             brandAccent = Color(0xFF4A7A8A),
             toggleTrack = Color(0xFF2E3F4E),
             toggleTrackSelected = Color(0xFF4A7A8A),
             toggleKnob = Color(0xFFFFFFFF),
             toggleBorder = Color(0xFF3A4D5E),
+            navigationInk = Color(0xFF8AB4C4),
             interactiveHoverInk = Color(0xFFC0C8D0),
         )
 }

@@ -36,7 +36,7 @@ fun SettingsBackNav(
     val backColor = if (backHovered) {
         HostessTheme.colors.interactiveHoverInk
     } else {
-        HostessTheme.colors.secondary
+        HostessTheme.colors.navigationInk
     }
     Column(
         modifier = modifier

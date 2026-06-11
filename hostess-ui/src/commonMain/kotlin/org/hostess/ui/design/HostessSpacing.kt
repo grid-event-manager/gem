@@ -16,7 +16,7 @@ data class HostessSpacing(
     val desktopWindowWidth: Dp = 440.dp,
     val desktopWindowHeight: Dp = 780.dp,
     val topBarMinHeight: Dp = 72.dp,
-    val brandLogoSize: Dp = 28.dp,
+    val brandLogoSize: Dp = 40.dp,
     val sessionStripMinHeight: Dp = 62.dp,
     val panelPadding: Dp = 16.dp,
     val fieldGap: Dp = 8.dp,

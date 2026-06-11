@@ -194,7 +194,7 @@ class ProtocolSimulatorCircuitClientTest {
     @Test
     fun `reuses established presence for later notice on same circuit`() {
         val exchange = RecordingPacketExchange(
-            inboundPayloads = mutableListOf(regionHandshake(), agentMovementComplete(), simulatorPacketAck(6)),
+            inboundPayloads = mutableListOf(regionHandshake(), agentMovementComplete(), null, simulatorPacketAck(6)),
         )
         val client = ProtocolSimulatorCircuitClient(
             packetExchange = exchange,
@@ -216,7 +216,7 @@ class ProtocolSimulatorCircuitClientTest {
     @Test
     fun `keeps avatar traffic alive while waiting for delayed notice ack`() {
         val exchange = RecordingPacketExchange(
-            inboundPayloads = mutableListOf(regionHandshake(), agentMovementComplete(), null, simulatorPacketAck(5)),
+            inboundPayloads = mutableListOf(regionHandshake(), agentMovementComplete(), null, null, simulatorPacketAck(5)),
         )
         val client = ProtocolSimulatorCircuitClient(
             packetExchange = exchange,
@@ -232,12 +232,13 @@ class ProtocolSimulatorCircuitClientTest {
     }
 
     @Test
-    fun `drains simulator traffic burst while waiting for notice ack`() {
+    fun `drains stale simulator traffic before sending notice`() {
         val simulatorTraffic = List(24) { layerData(sequence = 300 + it) }
         val exchange = RecordingPacketExchange(
             inboundPayloads = (
                 listOf(regionHandshake(), agentMovementComplete()) +
                     simulatorTraffic +
+                    null +
                     simulatorPacketAck(5)
                 ).toMutableList(),
         )
@@ -253,11 +254,34 @@ class ProtocolSimulatorCircuitClientTest {
     }
 
     @Test
+    fun `clears a large idle-session backlog before waiting for notice ack`() {
+        val simulatorTraffic = List(500) { layerData(sequence = 700 + it) }
+        val exchange = RecordingPacketExchange(
+            inboundPayloads = (
+                listOf(regionHandshake(), agentMovementComplete()) +
+                    simulatorTraffic +
+                    null +
+                    simulatorPacketAck(5)
+                ).toMutableList(),
+        )
+        val client = ProtocolSimulatorCircuitClient(
+            packetExchange = exchange,
+            sequence = SimulatorPacketSequence(0),
+        )
+
+        val result = assertIs<SimulatorCircuitSendResult.Sent>(client.sendNotice(circuit(), noticePacket()))
+
+        assertTrue(result.redactedDetail.orEmpty().contains("preSendDrainedPackets=500"))
+        assertEquals(1, exchange.sentPayloads().count { packetId(it) == 254 })
+    }
+
+    @Test
     fun `records post-send simulator instant messages in sent detail`() {
         val exchange = RecordingPacketExchange(
             inboundPayloads = mutableListOf(
                 regionHandshake(),
                 agentMovementComplete(),
+                null,
                 simulatorPacketAck(5),
                 improvedInstantMessage(message = "Notice accepted"),
             ),
@@ -271,6 +295,7 @@ class ProtocolSimulatorCircuitClientTest {
 
         val detail = result.redactedDetail.orEmpty()
         assertTrue(detail.contains("transportAck=passed"))
+        assertTrue(detail.contains("preSendDrainedPackets=0"))
         assertTrue(detail.contains("packet_ack:1"))
         assertTrue(detail.contains("improved_instant_message:1"))
         assertTrue(detail.contains("dialog=32"))
@@ -283,6 +308,7 @@ class ProtocolSimulatorCircuitClientTest {
             inboundPayloads = mutableListOf(
                 regionHandshake(),
                 agentMovementComplete(),
+                null,
                 simulatorPacketAck(5),
                 alertMessage("No permission for group $GROUP_ID"),
             ),

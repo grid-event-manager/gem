@@ -33,7 +33,7 @@ class ShellComponentStateTest {
     fun themeBrandAndMenuUseSharedShellTokens() {
         val spacing = HostessSpacing()
 
-        assertEquals(28.dp, spacing.brandLogoSize)
+        assertEquals(40.dp, spacing.brandLogoSize)
         assertEquals(18.dp, spacing.backIconSize)
         assertEquals(30.dp, spacing.menuItemMinHeight)
         assertEquals(12.dp, spacing.menuItemHorizontalPadding)

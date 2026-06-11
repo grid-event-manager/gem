@@ -19,7 +19,7 @@ class ProtocolNoticeCircuitSourceTest {
     @Test
     fun `sends encoded notice packet through simulator circuit client`() {
         val exchange = RecordingPacketExchange(
-            inboundPayloads = mutableListOf(regionHandshake(), agentMovementComplete(), simulatorPacketAck(15)),
+            inboundPayloads = mutableListOf(regionHandshake(), agentMovementComplete(), null, simulatorPacketAck(15)),
         )
         val source = ProtocolNoticeCircuitSource(
             ProtocolSimulatorCircuitClient(
@@ -116,7 +116,7 @@ class ProtocolNoticeCircuitSourceTest {
         )
 
     private class RecordingPacketExchange(
-        private val inboundPayloads: MutableList<ByteArray> = mutableListOf(),
+        private val inboundPayloads: MutableList<ByteArray?> = mutableListOf(),
         private val failure: Exception? = null,
     ) : SimulatorPacketExchange {
         var endpoint: SimulatorEndpoint? = null
@@ -132,7 +132,7 @@ class ProtocolNoticeCircuitSourceTest {
             if (inboundPayloads.isEmpty()) {
                 null
             } else {
-                SimulatorInboundPacket(endpoint, inboundPayloads.removeAt(0))
+                inboundPayloads.removeAt(0)?.let { SimulatorInboundPacket(endpoint, it) }
             }
     }
 

@@ -183,7 +183,7 @@ class ProtocolLibomvModuleTest {
     @Test
     fun `live runtime notice adapter reaches protocol runtime source`() {
         val packetExchange = RecordingSimulatorPacketExchange(
-            inboundPayloads = mutableListOf(regionHandshake(), agentMovementComplete(), simulatorPacketAck(5)),
+            inboundPayloads = mutableListOf(regionHandshake(), agentMovementComplete(), null, simulatorPacketAck(5)),
         )
         val runtime = ProtocolLibomvModule.liveRuntime(
             platformBundle(
@@ -560,7 +560,7 @@ class ProtocolLibomvModuleTest {
     }
 
     private class RecordingSimulatorPacketExchange(
-        private val inboundPayloads: MutableList<ByteArray> = mutableListOf(),
+        private val inboundPayloads: MutableList<ByteArray?> = mutableListOf(),
     ) : SimulatorPacketExchange {
         var payloads: List<ByteArray> = emptyList()
 
@@ -572,7 +572,7 @@ class ProtocolLibomvModuleTest {
             if (inboundPayloads.isEmpty()) {
                 null
             } else {
-                SimulatorInboundPacket(endpoint, inboundPayloads.removeAt(0))
+                inboundPayloads.removeAt(0)?.let { SimulatorInboundPacket(endpoint, it) }
             }
     }
 

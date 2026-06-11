@@ -302,6 +302,14 @@ internal class ProtocolSimulatorCircuitClient(
                     return SimulatorCircuitSendResult.Failed(NOTICE_PAYLOAD_INVALID)
                 }
                 val observations = SimulatorNoticeSendObservationCollector()
+                val preSendDrain = try {
+                    drainPreNoticeTraffic(endpoint, observations)
+                } catch (ex: Exception) {
+                    return SimulatorCircuitSendResult.Failed(NOTICE_PRE_SEND_DRAIN_FAILED)
+                }
+                if (preSendDrain is OutgoingAckResult.Failed) {
+                    return SimulatorCircuitSendResult.Failed(preSendDrain.redactedMessage)
+                }
                 repeat(RELIABLE_SEND_ATTEMPTS) { attempt ->
                     try {
                         packetExchange.send(endpoint, listOf(reliable.bytesForAttempt(attempt)))
@@ -337,6 +345,29 @@ internal class ProtocolSimulatorCircuitClient(
                 SimulatorCircuitSendResult.Failed(NOTICE_ACK_TIMEOUT)
             }
         }
+    }
+
+    private fun drainPreNoticeTraffic(
+        endpoint: SimulatorEndpoint,
+        observations: SimulatorNoticeSendObservationCollector,
+    ): OutgoingAckResult {
+        repeat(NOTICE_PRE_SEND_DRAIN_PACKET_LIMIT) {
+            val inbound = packetExchange.receive(endpoint, NOTICE_PRE_SEND_DRAIN_TIMEOUT_MILLIS)
+                ?: return OutgoingAckResult.Acked
+            observations.recordPreSendDrain()
+            if (!ackReliablePacket(endpoint, inbound.payload)) {
+                return OutgoingAckResult.Failed(NOTICE_PRE_SEND_DRAIN_ACK_REPLY_FAILED)
+            }
+            when (LibomvPacketCodec.packetType(inbound.payload)) {
+                SimulatorPacketType.START_PING_CHECK -> {
+                    if (!answerSimulatorPing(endpoint, inbound.payload)) {
+                        return OutgoingAckResult.Failed(NOTICE_PRE_SEND_DRAIN_PING_REPLY_FAILED)
+                    }
+                }
+                else -> Unit
+            }
+        }
+        return OutgoingAckResult.Failed(NOTICE_PRE_SEND_DRAIN_SATURATED)
     }
 
     private fun waitForOutgoingAck(
@@ -536,9 +567,14 @@ internal class ProtocolSimulatorCircuitClient(
     }
 
     private class SimulatorNoticeSendObservationCollector {
+        private var preSendDrainedPackets = 0
         private val packets = mutableListOf<SimulatorPacketObservation>()
         private val instantMessages = mutableListOf<SimulatorInstantMessageObservation>()
         private val alertMessages = mutableListOf<SimulatorAlertMessageObservation>()
+
+        fun recordPreSendDrain() {
+            preSendDrainedPackets += 1
+        }
 
         fun record(payload: ByteArray) {
             val type = LibomvPacketCodec.packetType(payload)
@@ -558,6 +594,7 @@ internal class ProtocolSimulatorCircuitClient(
 
         fun redactedSummary(): String = buildList {
             add("transportAck=passed")
+            add("preSendDrainedPackets=$preSendDrainedPackets")
             add("observedPackets=${packets.size}")
             add("packetTypes=${packetTypeSummary()}")
             add("instantMessages=${instantMessages.size}")
@@ -632,6 +669,10 @@ internal class ProtocolSimulatorCircuitClient(
         const val REDACTED_SEND_FAILURE: String = "protocol simulator send failed"
         const val NOTICE_PAYLOAD_INVALID: String = "notice send packet invalid"
         const val NOTICE_PACKET_SEND_FAILED: String = "notice send packet transport failed"
+        const val NOTICE_PRE_SEND_DRAIN_FAILED: String = "notice pre-send drain failed"
+        const val NOTICE_PRE_SEND_DRAIN_ACK_REPLY_FAILED: String = "notice pre-send packet reply failed"
+        const val NOTICE_PRE_SEND_DRAIN_PING_REPLY_FAILED: String = "notice pre-send ping reply failed"
+        const val NOTICE_PRE_SEND_DRAIN_SATURATED: String = "notice pre-send drain saturated"
         const val NOTICE_KEEP_ALIVE_SEND_FAILED: String = "notice send keepalive failed"
         const val NOTICE_ACK_REPLY_SEND_FAILED: String = "notice send packet ack reply failed"
         const val NOTICE_ACK_RECEIVE_FAILED: String = "notice send ack receive failed"
@@ -649,6 +690,8 @@ internal class ProtocolSimulatorCircuitClient(
         const val MOVEMENT_RECEIVE_ATTEMPTS: Int = 12
         const val ARCHIVE_RECEIVE_TIMEOUT_MILLIS: Int = 250
         const val ARCHIVE_RECEIVE_ATTEMPTS: Int = 12
+        const val NOTICE_PRE_SEND_DRAIN_TIMEOUT_MILLIS: Int = 1
+        const val NOTICE_PRE_SEND_DRAIN_PACKET_LIMIT: Int = 512
         const val NOTICE_ACK_RECEIVE_TIMEOUT_MILLIS: Int = 250
         const val NOTICE_ACK_RECEIVE_PACKET_LIMIT: Int = 128
         const val NOTICE_ACK_RECEIVE_TIMEOUT_LIMIT: Int = 8
