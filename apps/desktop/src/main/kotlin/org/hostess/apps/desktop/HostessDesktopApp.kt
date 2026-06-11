@@ -8,6 +8,7 @@ import org.hostess.ui.text.EnglishHostessTextCatalogue
 import org.hostess.ui.text.HostessTextKey
 
 fun main() {
+    HostessDesktopSingleInstanceGuard.terminateOtherInstances()
     val runtime = HostessDesktopCompositionRoot.create()
     application {
         Window(

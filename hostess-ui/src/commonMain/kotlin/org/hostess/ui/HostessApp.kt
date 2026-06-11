@@ -10,6 +10,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
@@ -59,6 +60,14 @@ fun HostessApp(
         themeController = themeController.refresh(osDark)
     }
 
+    fun refreshLoginFromCredentialStore() {
+        loginController = loginController.refreshSavedLogins()
+    }
+
+    fun refreshSettingsFromCredentialStore() {
+        settingsController = SettingsController(runtime, appState = appController.state).refreshSavedAccounts()
+    }
+
     fun runLoginWorkflow() {
         val started = loginController
             .normalizeLoginNameOnPasswordFocus()
@@ -72,7 +81,7 @@ fun HostessApp(
             var current = started
             if (current.state.entryMode is LoginEntryMode.New) {
                 yield()
-                current = current.showOperation(HostessTextKey.LoggingIn)
+                current = current.showOperation(HostessTextKey.SendingLoginDetails)
                 loginController = current
             }
             current = withContext(Dispatchers.Default) {
@@ -81,11 +90,19 @@ fun HostessApp(
             loginController = current
 
             if (current.state.operation.inFlight && current.appState.session != null) {
-                current = current.showOperation(HostessTextKey.PreparingAvatar)
+                current = current.showOperation(HostessTextKey.RezzingWorld)
                 loginController = current
+                var avatarProgressJob: Job? = coroutineScope.launch {
+                    delay(AvatarProgressDetailMillis)
+                    if (loginController.state.operation.messageKey == HostessTextKey.RezzingWorld) {
+                        loginController = loginController.showOperation(HostessTextKey.LoadingAvatar)
+                    }
+                }
                 current = withContext(Dispatchers.Default) {
                     current.completeAvatarReadiness()
                 }
+                avatarProgressJob?.cancel()
+                avatarProgressJob = null
                 loginController = current
             }
 
@@ -134,7 +151,7 @@ fun HostessApp(
                     onSettingsClick = {
                         val opened = appController.openSettings()
                         appController = opened
-                        settingsController = SettingsController(runtime, appState = opened.state).refreshSavedAccounts()
+                        refreshSettingsFromCredentialStore()
                     },
                     onLogoutClick = {
                         val loggingOut = appController.beginLogout()
@@ -163,6 +180,8 @@ fun HostessApp(
                         text = textCatalogue.text(HostessTextKey.Back),
                         onBack = {
                             appController = appController.backFromSettings()
+                            refreshLoginFromCredentialStore()
+                            refreshSettingsFromCredentialStore()
                         },
                         themeChecked = themeController.state.toggleChecked,
                         themeEnabled = true,
@@ -180,10 +199,12 @@ fun HostessApp(
                 null
             },
             sessionStrip = {
-                SessionStrip(
-                    state = appController.state.sessionStrip,
-                    textCatalogue = textCatalogue,
-                )
+                if (route != UiRoute.Settings) {
+                    SessionStrip(
+                        state = appController.state.sessionStrip,
+                        textCatalogue = textCatalogue,
+                    )
+                }
             },
             footer = if (route == UiRoute.Compose) {
                 {
@@ -191,9 +212,16 @@ fun HostessApp(
                         state = noticeController.state.sendFooterState,
                         textCatalogue = textCatalogue,
                         onPrimaryAction = {
-                            noticeController = noticeController.sendNotices()
-                            if (!noticeController.state.sendFooterState.enabled &&
-                                noticeController.state.sendFooterState.showMissingRequirements
+                            val started = noticeController.beginSend()
+                            noticeController = started
+                            if (started.state.sendFooterState.sending) {
+                                coroutineScope.launch {
+                                    noticeController = withContext(Dispatchers.Default) {
+                                        started.sendNotices()
+                                    }
+                                }
+                            } else if (!started.state.sendFooterState.enabled &&
+                                started.state.sendFooterState.showMissingRequirements
                             ) {
                                 val generation = ++sendFeedbackGeneration
                                 coroutineScope.launch {
@@ -259,6 +287,10 @@ fun HostessApp(
                                     inventoryController.state.selectedAttachment,
                                 )
                             },
+                            onAttachmentCleared = {
+                                inventoryController = inventoryController.clearSelectedAttachment()
+                                noticeController = noticeController.updateSelectedAttachment(null)
+                            },
                             onAllGroupsChanged = { selected ->
                                 groupTargetController = if (selected) {
                                     groupTargetController.selectAllGroupsMode()
@@ -284,6 +316,9 @@ fun HostessApp(
                     UiRoute.Settings -> SettingsScreen(
                         state = settingsController.state,
                         textCatalogue = textCatalogue,
+                        onEditAccountToggle = {
+                            settingsController = settingsController.toggleEditAccountPanel()
+                        },
                         onSavedAccountSelected = { profileId ->
                             settingsController = settingsController.selectSavedAccount(profileId)
                         },
@@ -292,6 +327,10 @@ fun HostessApp(
                         },
                         onSavedPasswordChanged = { password ->
                             settingsController = settingsController.updateSavedPasswordDraft(password)
+                        },
+                        onSaveEditedPassword = {
+                            settingsController = settingsController.saveEditedPassword()
+                            refreshLoginFromCredentialStore()
                         },
                         onAddAccountToggle = {
                             settingsController = settingsController.toggleAddAccountPanel()
@@ -310,9 +349,7 @@ fun HostessApp(
                         },
                         onSaveNewAccount = {
                             settingsController = settingsController.saveNewAccount()
-                        },
-                        onDeleteAccountToggle = {
-                            settingsController = settingsController.toggleDeleteAccountPanel()
+                            refreshLoginFromCredentialStore()
                         },
                         onDeleteAccountSelected = { profileId, selected ->
                             settingsController = settingsController.setDeleteAccountSelected(profileId, selected)
@@ -323,6 +360,8 @@ fun HostessApp(
                         onConfirmDelete = {
                             settingsController = settingsController.confirmDeleteAccounts()
                             appController = HostessAppController(runtime, settingsController.appState)
+                            refreshLoginFromCredentialStore()
+                            refreshSettingsFromCredentialStore()
                         },
                         onCancelDelete = {
                             settingsController = settingsController.cancelDeleteAccounts()
@@ -342,3 +381,4 @@ fun HostessApp(
 
 private const val LogoutSpinnerMinimumMillis: Long = 650L
 private const val SendValidationFeedbackMillis: Long = 3_000L
+private const val AvatarProgressDetailMillis: Long = 5_000L

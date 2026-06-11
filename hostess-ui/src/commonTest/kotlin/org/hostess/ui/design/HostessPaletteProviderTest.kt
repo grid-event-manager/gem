@@ -19,6 +19,9 @@ class HostessPaletteProviderTest {
         assertEquals(Color(0xFF8B0101), colors.brandAccent)
         assertEquals(Color(0xFF5A778C), colors.brandMark)
         assertEquals(Color(0xFFE0E0E0), colors.line)
+        assertEquals(Color(0xFFC8C8C8), colors.topBar)
+        assertEquals(Color(0xFFFFFFFF), colors.topBarInk)
+        assertEquals(Color(0xFFE0E0E0), colors.topBarMenuInk)
         assertEquals(Color(0xFF4A7A8A), colors.primary)
         assertEquals(Color(0xFFB5544D), colors.danger)
         assertEquals(Color(0xFFA84A43), colors.dangerFill)
@@ -46,6 +49,7 @@ class HostessPaletteProviderTest {
         assertEquals(Color(0xFF3A4D5E), colors.fieldBorder)
         assertEquals(Color(0xFF2A3441), colors.menuSurface)
         assertEquals(Color(0xFF2E3F4E), colors.toggleTrack)
+        assertEquals(Color(0xFF8AB4C4), colors.topBarMenuInk)
     }
 
     @Test

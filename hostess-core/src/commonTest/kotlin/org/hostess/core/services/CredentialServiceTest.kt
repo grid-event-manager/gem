@@ -34,11 +34,11 @@ class CredentialServiceTest {
         val service = service(store, vault)
 
         val result = assertIs<CredentialServiceAddResult.Saved>(
-            service.addLogin("JackRaybold", "venue-password", startLocation = "uri:London City&76&174&23"),
+            service.addLogin("VenueHost", "venue-password", startLocation = "uri:London City&76&174&23"),
         )
 
-        assertEquals("jackraybold resident", result.profile.loginName.value)
-        assertEquals("jackraybold resident", result.profile.label)
+        assertEquals("venuehost resident", result.profile.loginName.value)
+        assertEquals("venuehost resident", result.profile.label)
         assertEquals(CredentialHandle("credential:v1:1"), result.profile.credentialHandle)
         assertEquals(1, vault.savedMaterials.size)
         assertEquals("venue-password", vault.savedMaterials.single().sharedSecret.revealForLogin())
@@ -52,7 +52,7 @@ class CredentialServiceTest {
         val service = service(store, vault)
 
         val invalidName = assertIs<CredentialServiceAddResult.InvalidLoginName>(service.addLogin(" ", "password"))
-        val invalidSecret = service.addLogin("jackraybold", " ")
+        val invalidSecret = service.addLogin("venuehost", " ")
 
         assertEquals(SecondLifeLoginNameInvalidReason.BLANK, invalidName.reason)
         assertEquals(CredentialServiceAddResult.InvalidSecret, invalidSecret)
@@ -69,7 +69,7 @@ class CredentialServiceTest {
         val service = service(store, vault)
 
         assertIs<CredentialServiceAddResult.ProfileStoreFailure>(
-            service.addLogin("jackraybold", "venue-password"),
+            service.addLogin("venuehost", "venue-password"),
         )
 
         assertEquals(listOf(CredentialHandle("credential:v1:1")), vault.deletedHandles)
@@ -241,8 +241,8 @@ class CredentialServiceTest {
 
     private fun profile(id: String): SavedAccountProfile = SavedAccountProfile(
         profileId = AccountProfileId("profile:v1:$id"),
-        loginName = loginName("jackraybold"),
-        label = "jackraybold resident",
+        loginName = loginName("venuehost"),
+        label = "venuehost resident",
         credentialHandle = CredentialHandle("credential:v1:$id"),
         startLocation = null,
     )
@@ -253,7 +253,7 @@ class CredentialServiceTest {
         startLocation: String? = null,
     ): LoginCredentialMaterial = LoginCredentialMaterial(
         loginUri = loginUri,
-        loginName = loginName("jackraybold"),
+        loginName = loginName("venuehost"),
         sharedSecret = requireNotNull(SharedSecret.fromPlainText(password)),
         startLocation = startLocation,
     )
@@ -328,7 +328,7 @@ private class FakeCredentialVault(
         private fun material(password: String): LoginCredentialMaterial = LoginCredentialMaterial(
             loginUri = SecondLifeLoginUri.SECOND_LIFE_DEFAULT,
             loginName = assertIs<SecondLifeLoginNameResult.Valid>(
-                SecondLifeLoginName.fromUserInput("jackraybold"),
+                SecondLifeLoginName.fromUserInput("venuehost"),
             ).loginName,
             sharedSecret = requireNotNull(SharedSecret.fromPlainText(password)),
             startLocation = null,

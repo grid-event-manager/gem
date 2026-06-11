@@ -1,6 +1,7 @@
 package org.hostess.ui.controllers
 
 import org.hostess.core.domain.AccountProfileId
+import org.hostess.core.domain.SavedAccountProfile
 import org.hostess.core.domain.SecondLifeLoginName
 import org.hostess.core.domain.SecondLifeLoginNameResult
 import org.hostess.core.ports.AccountProfileStoreListResult
@@ -23,13 +24,31 @@ class SettingsController(
         val credentialService = runtime.credentialServiceOrNull()
             ?: return credentialRuntimeUnavailable()
         return when (val listed = credentialService.listProfiles()) {
-            is AccountProfileStoreListResult.Listed -> copy(
-                state.copy(
-                    savedLoginOptions = listed.profiles.map(SavedLoginOptionUiState::from),
-                    errorKey = null,
-                    errorMessage = null,
-                ),
-            )
+            is AccountProfileStoreListResult.Listed -> {
+                val refreshed = copy(
+                    state.copy(
+                        savedLoginOptions = listed.profiles.map(SavedLoginOptionUiState::from),
+                        selectedProfileId = state.selectedProfileId?.takeIf { selected ->
+                            listed.profiles.any { it.profileId == selected }
+                        },
+                        addAccountExpanded = if (listed.profiles.isEmpty()) true else state.addAccountExpanded,
+                        editAccountExpanded = if (listed.profiles.isEmpty()) false else state.editAccountExpanded,
+                        deleteExpanded = if (listed.profiles.isEmpty()) false else state.deleteExpanded,
+                        selectedDeleteProfileIds = if (listed.profiles.isEmpty()) {
+                            emptySet()
+                        } else {
+                            state.selectedDeleteProfileIds
+                        },
+                        errorKey = null,
+                        errorMessage = null,
+                    ),
+                )
+                if (listed.profiles.isEmpty()) {
+                    refreshed
+                } else {
+                    refreshed.selectPreferredSavedAccount(listed.profiles)
+                }
+            }
             is AccountProfileStoreListResult.CorruptVault -> credentialRuntimeUnavailable(listed.message)
             is AccountProfileStoreListResult.StorageFailed -> credentialRuntimeUnavailable(listed.message)
         }
@@ -59,24 +78,40 @@ class SettingsController(
     }
 
     fun updateSavedPasswordDraft(passwordDraft: String): SettingsController {
+        if (state.selectedProfileId == null) {
+            return copy(state.copy(passwordDraft = passwordDraft))
+        }
+        return copy(
+            state.copy(
+                passwordDraft = passwordDraft,
+                errorKey = null,
+                errorMessage = null,
+            ),
+        )
+    }
+
+    fun saveEditedPassword(): SettingsController {
         val profileId = state.selectedProfileId
-            ?: return copy(state.copy(passwordDraft = passwordDraft))
+            ?: return copy(state)
         val credentialService = runtime.credentialServiceOrNull()
             ?: return credentialRuntimeUnavailable()
-        return when (val updated = credentialService.updatePassword(profileId, passwordDraft)) {
+        return when (val updated = credentialService.updatePassword(profileId, state.passwordDraft)) {
             CredentialServiceUpdatePasswordResult.Updated -> copy(
                 state.copy(
-                    passwordDraft = passwordDraft,
+                    editAccountExpanded = false,
                     errorKey = null,
                     errorMessage = null,
                 ),
             )
-            CredentialServiceUpdatePasswordResult.InvalidSecret -> updateFailure(passwordDraft)
-            is CredentialServiceUpdatePasswordResult.MissingProfile -> updateFailure(passwordDraft)
-            is CredentialServiceUpdatePasswordResult.ProfileStoreFailure -> updateFailure(passwordDraft, updated.message)
-            is CredentialServiceUpdatePasswordResult.VaultFailure -> updateFailure(passwordDraft, updated.message)
+            CredentialServiceUpdatePasswordResult.InvalidSecret -> updateFailure(state.passwordDraft)
+            is CredentialServiceUpdatePasswordResult.MissingProfile -> updateFailure(state.passwordDraft)
+            is CredentialServiceUpdatePasswordResult.ProfileStoreFailure -> updateFailure(state.passwordDraft, updated.message)
+            is CredentialServiceUpdatePasswordResult.VaultFailure -> updateFailure(state.passwordDraft, updated.message)
         }
     }
+
+    fun toggleEditAccountPanel(): SettingsController =
+        copy(state.copy(editAccountExpanded = !state.editAccountExpanded))
 
     fun toggleAddAccountPanel(): SettingsController =
         copy(state.copy(addAccountExpanded = !state.addAccountExpanded))
@@ -124,11 +159,18 @@ class SettingsController(
             is SavedAccountAddResult.Saved -> copy(
                 state.copy(
                     savedLoginOptions = refreshedOptions() ?: (state.savedLoginOptions + SavedLoginOptionUiState.from(added.profile)),
+                    selectedProfileId = added.profile.profileId,
+                    passwordDraft = state.addPasswordDraft,
+                    passwordVisible = false,
+                    passwordEnabled = true,
+                    editAccountExpanded = false,
                     addAccountExpanded = false,
                     addUsernameDraft = "",
                     addPasswordDraft = "",
                     newPasswordVisible = false,
                     saveNewAccountEnabled = false,
+                    deleteExpanded = false,
+                    selectedDeleteProfileIds = emptySet(),
                     errorKey = null,
                     errorMessage = null,
                 ),
@@ -145,16 +187,12 @@ class SettingsController(
         }
     }
 
-    fun toggleDeleteAccountPanel(): SettingsController =
-        copy(state.copy(deleteExpanded = !state.deleteExpanded))
-
     fun openDeleteAccounts(): SettingsController =
-        copy(
-            state.copy(
-                deleteExpanded = true,
-                confirmDeleteOpen = state.selectedDeleteProfileIds.isNotEmpty(),
-            ),
-        )
+        when {
+            !state.deleteExpanded -> copy(state.copy(deleteExpanded = true, confirmDeleteOpen = false))
+            state.deleteEnabled -> copy(state.copy(confirmDeleteOpen = true))
+            else -> copy(state.copy(deleteExpanded = false, confirmDeleteOpen = false))
+        }
 
     fun setDeleteAccountSelected(
         profileId: AccountProfileId,
@@ -226,13 +264,19 @@ class SettingsController(
         deletedLoginNames: Set<String>,
     ): SettingsController {
         val activeDeleted = appState.activeAccountLabel in deletedLoginNames
+        val remainingOptions = refreshedOptions()
+            ?: state.savedLoginOptions.filterNot { it.profileId in deletedProfileIds }
+        val selectedProfileId = state.selectedProfileId?.takeUnless { it in deletedProfileIds }
         return copy(
             state.copy(
-                savedLoginOptions = refreshedOptions() ?: state.savedLoginOptions.filterNot { it.profileId in deletedProfileIds },
-                selectedProfileId = state.selectedProfileId?.takeUnless { it in deletedProfileIds },
+                savedLoginOptions = remainingOptions,
+                selectedProfileId = selectedProfileId,
                 passwordDraft = if (state.selectedProfileId in deletedProfileIds) "" else state.passwordDraft,
                 passwordVisible = if (state.selectedProfileId in deletedProfileIds) false else state.passwordVisible,
                 passwordEnabled = if (state.selectedProfileId in deletedProfileIds) false else state.passwordEnabled,
+                editAccountExpanded = false,
+                addAccountExpanded = if (remainingOptions.isEmpty()) true else state.addAccountExpanded,
+                deleteExpanded = false,
                 selectedDeleteProfileIds = emptySet(),
                 confirmDeleteOpen = false,
                 errorKey = null,
@@ -247,6 +291,17 @@ class SettingsController(
             is AccountProfileStoreListResult.Listed -> listed.profiles.map(SavedLoginOptionUiState::from)
             else -> null
         }
+
+    private fun selectPreferredSavedAccount(profiles: List<SavedAccountProfile>): SettingsController {
+        if (state.selectedProfileId != null && profiles.any { it.profileId == state.selectedProfileId }) {
+            return revealSavedPassword(state.selectedProfileId)
+        }
+        val preferredProfileId = runtime.lastLoginProfilePreferenceService.loadPreference().profileId
+        val preferredProfile = profiles.firstOrNull { it.profileId == preferredProfileId }
+            ?: profiles.firstOrNull()
+            ?: return this
+        return revealSavedPassword(preferredProfile.profileId)
+    }
 
     private fun updateFailure(
         passwordDraft: String,
@@ -291,6 +346,9 @@ class SettingsController(
                 passwordDraft = "",
                 passwordVisible = false,
                 passwordEnabled = false,
+                editAccountExpanded = false,
+                deleteExpanded = false,
+                selectedDeleteProfileIds = emptySet(),
                 saveNewAccountEnabled = false,
                 confirmDeleteOpen = false,
                 errorKey = HostessTextKey.BlankStatus,

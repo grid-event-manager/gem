@@ -29,4 +29,13 @@ object DesktopPreferenceComposition {
         )
         return LastLoginProfilePreferenceService(FileLastLoginProfilePreferenceStore(preferenceFile))
     }
+
+    fun inventorySnapshotCacheDirectory(
+        osName: String = System.getProperty("os.name").orEmpty(),
+        env: Map<String, String> = System.getenv(),
+        userHome: String = System.getProperty("user.home").orEmpty(),
+    ): Path =
+        Path.of(DesktopHostessPreferencePaths.defaultPreferenceFile(osName, env, userHome))
+            .parent
+            .resolve("inventory-snapshots")
 }

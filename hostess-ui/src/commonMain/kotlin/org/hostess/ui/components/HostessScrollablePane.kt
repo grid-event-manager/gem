@@ -93,7 +93,7 @@ fun HostessScrollableColumn(
             modifier = Modifier
                 .fillMaxWidth()
                 .verticalScroll(scrollState)
-                .padding(end = HostessPlatformUi.scrollbarContentInset),
+                .padding(end = HostessTheme.spacing.none),
             verticalArrangement = verticalArrangement,
             content = content,
         )

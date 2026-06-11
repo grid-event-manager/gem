@@ -13,6 +13,7 @@ import org.hostess.protocol.libomv.llsd.asString
 import org.hostess.protocol.libomv.mapping.LibomvAttachmentSnapshot
 import org.hostess.protocol.libomv.mapping.LibomvInventoryFolderSnapshot
 import org.hostess.protocol.libomv.mapping.LibomvInventoryItemSnapshot
+import org.hostess.protocol.libomv.mapping.LibomvInventoryPermissionMapping
 import org.hostess.protocol.libomv.mapping.LoginInventoryRoots
 import org.hostess.protocol.libomv.transport.CapabilityUrl
 import org.hostess.protocol.libomv.transport.ProtocolHttpBody
@@ -23,7 +24,10 @@ import org.hostess.protocol.libomv.transport.ProtocolHttpResponse
 
 internal class ProtocolInventoryHttpSource(
     private val httpClient: ProtocolHttpClient,
+    private val snapshotCacheStore: InventorySnapshotCacheStore = InventorySnapshotCacheStore.unavailable(),
 ) : InventoryRuntimeSource {
+    private val snapshotCache = InventorySnapshotCache()
+
     override fun resolveExistingAttachment(
         identity: LibomvSessionIdentity,
         roots: LoginInventoryRoots,
@@ -69,6 +73,17 @@ internal class ProtocolInventoryHttpSource(
     ): InventorySnapshotListResult {
         val rootId = roots.inventoryRootId?.takeIf(String::isNotBlank)
             ?: return InventorySnapshotListResult.Failed("inventory root unavailable")
+        val cacheKey = InventorySnapshotCacheKey(
+            agentId = identity.agentId,
+            rootId = rootId,
+        )
+        snapshotCache.get(cacheKey)?.let { snapshot ->
+            return InventorySnapshotListResult.Success(snapshot.folders, snapshot.items)
+        }
+        snapshotCacheStore.load(cacheKey)?.let { snapshot ->
+            snapshotCache.put(cacheKey, snapshot)
+            return InventorySnapshotListResult.Success(snapshot.folders, snapshot.items)
+        }
         val pending = ArrayDeque<FolderRequest>()
         val visited = mutableSetOf<String>()
         val folders = linkedMapOf<String, LibomvInventoryFolderSnapshot>()
@@ -109,7 +124,10 @@ internal class ProtocolInventoryHttpSource(
             }
         }
 
-        return InventorySnapshotListResult.Success(folders.values.toList(), items)
+        val snapshot = InventorySnapshot(folders.values.toList(), items.toList())
+        snapshotCache.put(cacheKey, snapshot)
+        snapshotCacheStore.save(cacheKey, snapshot)
+        return InventorySnapshotListResult.Success(snapshot.folders, snapshot.items)
     }
 
     private fun MutableMap<String, LibomvInventoryFolderSnapshot>.addFolder(
@@ -177,6 +195,7 @@ internal class ProtocolInventoryHttpSource(
                 name = fields[NAME]?.asString()?.takeIf(String::isNotBlank) ?: return@mapNotNull null,
                 inventoryType = fields[INV_TYPE]?.asInt() ?: return@mapNotNull null,
                 permissions = fields[PERMISSIONS],
+                copyable = LibomvInventoryPermissionMapping.copyable(fields[PERMISSIONS]),
             )
         }
     }
@@ -281,6 +300,17 @@ internal class ProtocolInventoryHttpSource(
         ) : InventorySnapshotListResult
 
         data class Failed(val message: String) : InventorySnapshotListResult
+    }
+
+    private class InventorySnapshotCache {
+        private val snapshots = mutableMapOf<InventorySnapshotCacheKey, InventorySnapshot>()
+
+        fun get(key: InventorySnapshotCacheKey): InventorySnapshot? =
+            snapshots[key]
+
+        fun put(key: InventorySnapshotCacheKey, snapshot: InventorySnapshot) {
+            snapshots[key] = snapshot
+        }
     }
 
     private fun inventoryType(kind: AttachmentKind): Int? =

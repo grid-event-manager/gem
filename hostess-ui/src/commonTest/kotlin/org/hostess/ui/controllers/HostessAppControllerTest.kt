@@ -60,7 +60,7 @@ class HostessAppControllerTest {
         AppUiState(
             route = UiRoute.Settings,
             menuOpen = true,
-            activeAccountLabel = "jackraybold resident",
+            activeAccountLabel = "venuehost resident",
             sessionStrip = SessionStripUiState(
                 visible = true,
                 locationLabel = "London City",

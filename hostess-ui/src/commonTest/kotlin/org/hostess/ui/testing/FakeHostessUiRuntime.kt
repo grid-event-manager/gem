@@ -128,8 +128,8 @@ object FakeHostessUiRuntime {
     fun defaultProfile(): SavedAccountProfile =
         SavedAccountProfile(
             profileId = AccountProfileId("profile:v1:jack"),
-            loginName = loginName("jackraybold resident"),
-            label = "jackraybold resident",
+            loginName = loginName("venuehost resident"),
+            label = "venuehost resident",
             credentialHandle = CredentialHandle("hostess-vault:v1:jack"),
             startLocation = null,
         )

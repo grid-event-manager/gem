@@ -51,7 +51,7 @@ class InventoryBrowserControllerTest {
     @Test
     fun selectingLandmarkOrTextureUsesCoreSelectionAndAttachmentResolution() {
         val fixture = FakeInventoryFixtures
-        val refreshed = controllerForFixture().refreshInventory()
+        val refreshed = controllerForFixture(attachmentSucceeds = false).refreshInventory()
         val landmark = refreshed.selectInventoryAsset(fixture.welcomeItemId)
         val texture = refreshed
             .openInventoryShortcut(InventoryShortcut.TEXTURES)
@@ -59,11 +59,28 @@ class InventoryBrowserControllerTest {
 
         assertEquals(InventoryItemKind.LANDMARK, landmark.state.selectedAttachment?.kind)
         assertEquals(fixture.welcomeItemId, landmark.state.selectedAttachment?.attachmentRef?.attachmentId)
+        assertEquals("owner:item:welcome", landmark.state.selectedAttachment?.attachmentRef?.ownerId?.value)
         assertEquals(HostessTextKey.SelectedCount(1), landmark.state.attachmentSummary)
         assertTrue(landmark.state.visibleAssetRows.first { it.itemId == fixture.welcomeItemId }.selected)
         assertEquals(InventoryItemKind.TEXTURE, texture.state.selectedAttachment?.kind)
         assertEquals(fixture.textureItemId, texture.state.selectedAttachment?.attachmentRef?.attachmentId)
+        assertEquals("owner:item:texture", texture.state.selectedAttachment?.attachmentRef?.ownerId?.value)
         assertEquals(HostessTextKey.SelectedCount(1), texture.state.attachmentSummary)
+    }
+
+    @Test
+    fun clearingSelectedAttachmentResetsRowsAndSummary() {
+        val fixture = FakeInventoryFixtures
+        val selected = controllerForFixture()
+            .refreshInventory()
+            .selectInventoryAsset(fixture.welcomeItemId)
+
+        val cleared = selected.clearSelectedAttachment()
+
+        assertNull(cleared.state.selectedAttachment)
+        assertEquals(HostessTextKey.None, cleared.state.attachmentSummary)
+        assertTrue(cleared.state.visibleAssetRows.none { it.selected })
+        assertNull(cleared.state.errorKey)
     }
 
     @Test
@@ -96,11 +113,11 @@ class InventoryBrowserControllerTest {
     fun noCopyOrAttachmentFailureClearsSelectionAndReportsError() {
         val fixture = FakeInventoryFixtures
         val noCopy = controllerForFixture().refreshInventory().selectInventoryAsset(fixture.noCopyItemId)
-        val failingRuntime = FakeHostessUiRuntime.ready(
-            inventoryListing = fixture.listing(),
+        val missingOwnerRuntime = FakeHostessUiRuntime.ready(
+            inventoryListing = fixture.listingWithoutAttachmentOwners(),
             attachmentSucceeds = false,
         )
-        val attachmentFailure = InventoryBrowserController(failingRuntime, fixture.session())
+        val attachmentFailure = InventoryBrowserController(missingOwnerRuntime, fixture.session())
             .refreshInventory()
             .selectInventoryAsset(fixture.welcomeItemId)
 
@@ -133,9 +150,12 @@ class InventoryBrowserControllerTest {
         assertEquals(HostessTextKey.InventoryUnavailable, failed.state.errorKey)
     }
 
-    private fun controllerForFixture(): InventoryBrowserController {
+    private fun controllerForFixture(attachmentSucceeds: Boolean = true): InventoryBrowserController {
         val fixture = FakeInventoryFixtures
-        val runtime = FakeHostessUiRuntime.ready(inventoryListing = fixture.listing())
+        val runtime = FakeHostessUiRuntime.ready(
+            inventoryListing = fixture.listing(),
+            attachmentSucceeds = attachmentSucceeds,
+        )
         return InventoryBrowserController(runtime, fixture.session())
     }
 }

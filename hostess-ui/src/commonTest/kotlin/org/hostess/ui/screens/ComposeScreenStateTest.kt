@@ -19,7 +19,7 @@ class ComposeScreenStateTest {
         assertEquals("Landmarks", catalogue.text(HostessTextKey.Landmarks))
         assertEquals("Textures", catalogue.text(HostessTextKey.Textures))
         assertEquals("None", catalogue.text(HostessTextKey.None))
-        assertEquals("Loading inventory", catalogue.text(HostessTextKey.LoadingInventory))
+        assertEquals("Loading inventory folders", catalogue.text(HostessTextKey.LoadingInventory))
         assertEquals("No inventory", catalogue.text(HostessTextKey.InventoryEmpty))
         assertEquals("Inventory unavailable", catalogue.text(HostessTextKey.InventoryUnavailable))
         assertEquals("Loading groups", catalogue.text(HostessTextKey.LoadingGroups))
@@ -38,6 +38,7 @@ class ComposeScreenStateTest {
         assertEquals(HostessTextKey.None, inventory.attachmentSummary)
         assertEquals(true, inventory.loading)
         assertEquals(false, notice.sendFooterState.enabled)
+        assertEquals("No attachments added", EnglishHostessTextCatalogue.text(HostessTextKey.NoAttachmentsAdded))
     }
 
     @Test
@@ -50,5 +51,6 @@ class ComposeScreenStateTest {
         assertEquals("data-inventory-path", HostessTestTags.InventoryPath)
         assertEquals("data-inventory-list", HostessTestTags.InventoryList)
         assertEquals("data-attachment-summary", HostessTestTags.AttachmentSummary)
+        assertEquals("data-clear-attachment", HostessTestTags.ClearAttachment)
     }
 }

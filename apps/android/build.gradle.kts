@@ -11,8 +11,8 @@ android {
         applicationId = "org.hostess.apps.android"
         minSdk = 26
         targetSdk = 36
-        versionCode = 2
-        versionName = "0.1.1"
+        versionCode = 7
+        versionName = "0.1.6"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         manifestPlaceholders["appLabel"] = "Ella Hostess"
     }

@@ -315,7 +315,7 @@ class ProtocolSimulatorCircuitClientTest {
             client.sendNotice(circuit(), noticePacket()),
         )
 
-        assertEquals("protocol simulator send failed", result.redactedMessage)
+        assertEquals("notice send ack timeout after 3 attempts", result.redactedMessage)
         val noticePayloads = exchange.sentPayloads().filter { packetId(it) == 254 }
         assertEquals(3, noticePayloads.size)
         assertLowPacket(noticePayloads[0], sequence = 5, packetId = 254, flags = 0xC0)

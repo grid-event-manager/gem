@@ -1,6 +1,7 @@
 package org.hostess.protocol.libomv.mapping
 
 import org.hostess.core.domain.InventoryAssetId
+import org.hostess.core.domain.AttachmentOwnerId
 import org.hostess.core.domain.InventoryFolderId
 import org.hostess.core.domain.InventoryItemDescriptor
 import org.hostess.core.domain.InventoryItemDisplayName
@@ -16,6 +17,7 @@ internal data class LibomvInventoryItemSnapshot(
     val name: String,
     val inventoryType: Int,
     val permissions: LlsdValue? = null,
+    val copyable: Boolean? = null,
 )
 
 internal object LibomvInventoryItemMapping {
@@ -41,7 +43,8 @@ internal object LibomvInventoryItemMapping {
             assetId = InventoryAssetId(snapshot.assetId),
             displayName = InventoryItemDisplayName(snapshot.name),
             kind = kind,
-            copyable = LibomvInventoryPermissionMapping.copyable(snapshot.permissions),
+            copyable = snapshot.copyable ?: LibomvInventoryPermissionMapping.copyable(snapshot.permissions),
+            ownerId = AttachmentOwnerId(snapshot.ownerId),
         )
     }
 

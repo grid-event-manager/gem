@@ -1,6 +1,7 @@
 package org.hostess.core.services
 
 import org.hostess.core.domain.AttachmentKind
+import org.hostess.core.domain.AttachmentOwnerId
 import org.hostess.core.domain.InventoryAssetId
 import org.hostess.core.domain.InventoryAttachmentSelectionResult
 import org.hostess.core.domain.InventoryFolderId
@@ -26,6 +27,8 @@ class InventorySelectionServiceTest {
 
         assertEquals("landmark", result.request.itemId.value)
         assertEquals(AttachmentKind.LANDMARK, result.request.kind)
+        assertEquals("landmark", result.attachmentRef?.attachmentId?.value)
+        assertEquals("owner-landmark", result.attachmentRef?.ownerId?.value)
         assertEquals("Venue Landmark", result.descriptor.displayName.value)
     }
 
@@ -161,6 +164,7 @@ class InventorySelectionServiceTest {
         displayName: String,
         kind: InventoryItemKind = InventoryItemKind.LANDMARK,
         copyable: Boolean?,
+        ownerId: AttachmentOwnerId? = AttachmentOwnerId("owner-$id"),
     ): InventoryItemDescriptor = InventoryItemDescriptor(
         itemId = InventoryItemId(id),
         parentFolderId = InventoryFolderId("folder-$id"),
@@ -168,5 +172,6 @@ class InventorySelectionServiceTest {
         displayName = InventoryItemDisplayName(displayName),
         kind = kind,
         copyable = copyable,
+        ownerId = ownerId,
     )
 }

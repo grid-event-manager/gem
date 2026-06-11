@@ -1,6 +1,7 @@
 package org.hostess.core.services
 
 import org.hostess.core.domain.AttachmentKind
+import org.hostess.core.domain.AttachmentRef
 import org.hostess.core.domain.ExistingInventoryAttachment
 import org.hostess.core.domain.InventoryAttachmentSelectionResult
 import org.hostess.core.domain.InventoryItemDescriptor
@@ -41,6 +42,13 @@ class InventorySelectionService {
         return InventoryAttachmentSelectionResult.Selected(
             request = ExistingInventoryAttachment(attachmentKind(requiredKind), descriptor.itemId),
             descriptor = descriptor,
+            attachmentRef = descriptor.ownerId?.let { ownerId ->
+                AttachmentRef(
+                    attachmentId = descriptor.itemId,
+                    ownerId = ownerId,
+                    kind = attachmentKind(requiredKind),
+                )
+            },
         )
     }
 

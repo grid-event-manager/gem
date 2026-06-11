@@ -21,6 +21,7 @@ import org.hostess.ui.text.HostessTextKey
 @Composable
 fun HostessOverflowMenu(
     expanded: Boolean,
+    logoutEnabled: Boolean,
     textCatalogue: HostessTextCatalogue,
     onDismiss: () -> Unit,
     onSettingsClick: () -> Unit,
@@ -43,6 +44,7 @@ fun HostessOverflowMenu(
         HostessMenuRow(
             text = textCatalogue.text(HostessTextKey.LogOut),
             onClick = onLogoutClick,
+            enabled = logoutEnabled,
             modifier = Modifier.testTag(HostessTestTags.LogOut),
         )
     }
@@ -53,6 +55,7 @@ private fun HostessMenuRow(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
 ) {
     val colors = HostessTheme.colors
     val spacing = HostessTheme.spacing
@@ -61,7 +64,7 @@ private fun HostessMenuRow(
             .fillMaxWidth()
             .heightIn(min = spacing.menuItemMinHeight)
             .background(colors.menuSurface)
-            .clickable(role = Role.Button, onClick = onClick)
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
             .padding(
                 horizontal = spacing.menuItemHorizontalPadding,
                 vertical = spacing.menuItemVerticalPadding,
@@ -71,7 +74,7 @@ private fun HostessMenuRow(
         Text(
             text = text,
             style = HostessTheme.typeScale.menuItem,
-            color = colors.secondary,
+            color = if (enabled) colors.secondary else colors.disabledInk,
         )
     }
 }

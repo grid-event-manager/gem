@@ -23,7 +23,7 @@ class CredentialVaultLoginSecretResolverTest {
         val vault = FakeCredentialVault(
             result = CredentialVaultResolveResult.Resolved(
                 material(
-                    loginName = "jackraybold",
+                    loginName = "venuehost",
                     sharedSecret = "venue-password",
                     startLocation = "uri:London City&76&174&23",
                 ),
@@ -34,7 +34,7 @@ class CredentialVaultLoginSecretResolverTest {
 
         requireNotNull(secret)
         assertEquals(SecondLifeLoginUri.SECOND_LIFE_DEFAULT.value, secret.loginUri)
-        assertEquals("jackraybold", secret.firstName)
+        assertEquals("venuehost", secret.firstName)
         assertEquals("resident", secret.lastName)
         assertEquals("venue-password", secret.sharedSecret)
         assertEquals("uri:London City&76&174&23", secret.startLocation)
@@ -92,7 +92,7 @@ class CredentialVaultLoginSecretResolverTest {
         val VAULT_HANDLE = CredentialHandle("hostess-vault:v1:test")
 
         fun material(
-            loginName: String = "jackraybold resident",
+            loginName: String = "venuehost resident",
             sharedSecret: String = "venue-password",
             startLocation: String? = "last",
         ): LoginCredentialMaterial = LoginCredentialMaterial(

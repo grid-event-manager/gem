@@ -1,5 +1,6 @@
 package org.hostess.protocol.libomv
 
+import java.nio.file.Path
 import org.hostess.core.ports.AvatarPort
 import org.hostess.core.ports.GroupPort
 import org.hostess.core.ports.InventoryPort
@@ -8,7 +9,9 @@ import org.hostess.core.ports.SessionPort
 import org.hostess.protocol.libomv.runtime.CurrentOutfitVersionSource
 import org.hostess.protocol.libomv.runtime.CurrentGroupsSource
 import org.hostess.protocol.libomv.runtime.DefaultLibomvPlatformAdapterBundle
+import org.hostess.protocol.libomv.runtime.FileInventorySnapshotCacheStore
 import org.hostess.protocol.libomv.runtime.GroupNoticeArchiveSource
+import org.hostess.protocol.libomv.runtime.InventorySnapshotCacheStore
 import org.hostess.protocol.libomv.runtime.InventoryRuntimeSource
 import org.hostess.protocol.libomv.runtime.LibomvPlatformAdapterBundle
 import org.hostess.protocol.libomv.runtime.LoginSecretResolver
@@ -56,7 +59,23 @@ object ProtocolLibomvModule {
     fun liveRuntime(secretResolver: LoginSecretResolver): LibomvProtocolRuntime =
         liveRuntime(DefaultLibomvPlatformAdapterBundle.create(secretResolver))
 
+    fun liveRuntime(
+        secretResolver: LoginSecretResolver,
+        inventorySnapshotCacheDirectory: Path,
+    ): LibomvProtocolRuntime =
+        liveRuntime(
+            bundle = DefaultLibomvPlatformAdapterBundle.create(secretResolver),
+            inventorySnapshotCacheStore = FileInventorySnapshotCacheStore(inventorySnapshotCacheDirectory),
+        )
+
     internal fun liveRuntime(bundle: LibomvPlatformAdapterBundle): LibomvProtocolRuntime {
+        return liveRuntime(bundle, InventorySnapshotCacheStore.unavailable())
+    }
+
+    internal fun liveRuntime(
+        bundle: LibomvPlatformAdapterBundle,
+        inventorySnapshotCacheStore: InventorySnapshotCacheStore,
+    ): LibomvProtocolRuntime {
         val clientSession = if (bundle.adapterLoad) LibomvClientSession.inactive() else LibomvClientSession.unavailable()
         val runtimeReady = bundle.adapterLoad && bundle.runtimeLoad
         val capabilityProvider = if (bundle.transportLoad) {
@@ -101,7 +120,10 @@ object ProtocolLibomvModule {
                 clientSession = clientSession,
                 capabilityUrlProvider = capabilityProvider,
                 inventorySource = if (capabilityProvider != null) {
-                    ProtocolInventoryHttpSource(bundle.httpClient)
+                    ProtocolInventoryHttpSource(
+                        httpClient = bundle.httpClient,
+                        snapshotCacheStore = inventorySnapshotCacheStore,
+                    )
                 } else {
                     InventoryRuntimeSource.unavailable()
                 },

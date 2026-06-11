@@ -27,13 +27,14 @@ object HaccuHostessPaletteProvider : HostessPaletteProvider {
             successBackground = Color(0xFFFAFAF8),
             successInk = Color(0xFF4A7A8A),
             selectedBackground = Color(0xFFFAFAF8),
-            topBar = Color(0xFFFFFFFF),
+            topBar = Color(0xFFC8C8C8),
             brandMark = Color(0xFF5A778C),
             shellBorder = Color(0xFFE0E0E0),
             disabledBackground = Color(0xFFE0E0E0),
             disabledInk = Color(0xFF777777),
             selectedInk = Color(0xFF4A7A8A),
-            topBarInk = Color(0xFF000000),
+            topBarInk = Color(0xFFFFFFFF),
+            topBarMenuInk = Color(0xFFE0E0E0),
             brandMarkInk = Color(0xFFFFFFFF),
             statusBackground = Color(0xFFFAFAF8),
             focusRing = Color(0x294A7A8A),
@@ -48,6 +49,7 @@ object HaccuHostessPaletteProvider : HostessPaletteProvider {
             toggleTrackSelected = Color(0xFF4A7A8A),
             toggleKnob = Color(0xFFFFFFFF),
             toggleBorder = Color(0xFFE0E0E0),
+            interactiveHoverInk = Color(0xFF4A7A8A),
         )
 
     private fun darkColors(): HostessColors =
@@ -75,6 +77,7 @@ object HaccuHostessPaletteProvider : HostessPaletteProvider {
             disabledInk = Color(0xFFA0B0BC),
             selectedInk = Color(0xFF8AB4C4),
             topBarInk = Color(0xFF8AB4C4),
+            topBarMenuInk = Color(0xFF8AB4C4),
             brandMarkInk = Color(0xFF8AB4C4),
             statusBackground = Color(0xFF1A2530),
             focusRing = Color(0x294A7A8A),
@@ -89,5 +92,6 @@ object HaccuHostessPaletteProvider : HostessPaletteProvider {
             toggleTrackSelected = Color(0xFF4A7A8A),
             toggleKnob = Color(0xFFFFFFFF),
             toggleBorder = Color(0xFF3A4D5E),
+            interactiveHoverInk = Color(0xFFC0C8D0),
         )
 }

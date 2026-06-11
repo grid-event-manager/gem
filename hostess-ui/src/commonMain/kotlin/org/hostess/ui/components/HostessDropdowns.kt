@@ -63,7 +63,7 @@ fun <T> HostessDropdownField(
                 .fillMaxWidth()
                 .height(spacing.controlHeight)
                 .clickable(enabled = enabled, role = Role.Button) { expanded = true }
-                .pointerHoverIcon(PointerIcon.Hand),
+                .pointerHoverIcon(PointerIcon.Hand, overrideDescendants = true),
             shape = HostessTheme.shapes.control,
             color = colors.fieldSurface,
             contentColor = if (enabled) colors.ink else colors.disabledInk,
@@ -90,7 +90,6 @@ fun <T> HostessDropdownField(
         }
         HostessDropdownMenu(
             expanded = expanded,
-            placeholderLabel = placeholderLabel,
             options = options,
             onDismiss = { expanded = false },
             onSelected = {
@@ -144,6 +143,7 @@ fun <T> HostessDropdownTextField(
                 },
                 modifier = fieldModifier
                     .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable, enabled)
+                    .pointerHoverIcon(PointerIcon.Hand, overrideDescendants = true)
                     .fillMaxWidth()
                     .height(HostessTheme.spacing.controlHeight),
             )
@@ -154,7 +154,6 @@ fun <T> HostessDropdownTextField(
                 modifier = Modifier.background(HostessTheme.colors.menuSurface),
             ) {
                 HostessDropdownMenuItems(
-                    placeholderLabel = placeholderLabel,
                     options = options,
                     onSelected = {
                         expanded = false
@@ -169,7 +168,6 @@ fun <T> HostessDropdownTextField(
 @Composable
 private fun <T> HostessDropdownMenu(
     expanded: Boolean,
-    placeholderLabel: String,
     options: List<HostessDropdownOption<T>>,
     onDismiss: () -> Unit,
     onSelected: (T?) -> Unit,
@@ -181,7 +179,6 @@ private fun <T> HostessDropdownMenu(
         modifier = Modifier.background(HostessTheme.colors.menuSurface),
     ) {
         HostessDropdownMenuItems(
-            placeholderLabel = placeholderLabel,
             options = options,
             onSelected = onSelected,
         )
@@ -190,11 +187,9 @@ private fun <T> HostessDropdownMenu(
 
 @Composable
 private fun <T> HostessDropdownMenuItems(
-    placeholderLabel: String,
     options: List<HostessDropdownOption<T>>,
     onSelected: (T?) -> Unit,
 ) {
-    HostessDropdownMenuItem(label = placeholderLabel, onClick = { onSelected(null) })
     options.forEach { option ->
         HostessDropdownMenuItem(label = option.label, onClick = { onSelected(option.value) })
     }

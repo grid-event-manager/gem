@@ -13,6 +13,7 @@ data class InventoryItemDescriptor(
     val displayName: InventoryItemDisplayName,
     val kind: InventoryItemKind,
     val copyable: Boolean? = null,
+    val ownerId: AttachmentOwnerId? = null,
 )
 
 data class InventoryItemQuery(

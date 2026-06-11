@@ -71,7 +71,7 @@ class VaultAccessServiceTest {
     private fun material(password: String): LoginCredentialMaterial =
         LoginCredentialMaterial(
             loginUri = SecondLifeLoginUri.SECOND_LIFE_DEFAULT,
-            loginName = assertIs<SecondLifeLoginNameResult.Valid>(SecondLifeLoginName.fromUserInput("jackraybold")).loginName,
+            loginName = assertIs<SecondLifeLoginNameResult.Valid>(SecondLifeLoginName.fromUserInput("venuehost")).loginName,
             sharedSecret = requireNotNull(SharedSecret.fromPlainText(password)),
             startLocation = "uri:London City&76&174&23",
         )

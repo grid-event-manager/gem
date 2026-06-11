@@ -16,18 +16,24 @@ import org.hostess.ui.text.HostessTextKey
 fun DeleteAccountPanel(
     state: SettingsUiState,
     textCatalogue: HostessTextCatalogue,
-    onToggle: () -> Unit,
+    onAction: () -> Unit,
     onAccountSelected: (AccountProfileId, Boolean) -> Unit,
-    onDelete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     HostessPanel(
         modifier = modifier.testTag(HostessTestTags.DeleteAccountPanel),
     ) {
         HostessSecondaryButton(
-            text = textCatalogue.text(HostessTextKey.DeleteAccount),
-            onClick = onToggle,
-            modifier = Modifier.fillMaxWidth(),
+            text = if (state.deleteExpanded && state.deleteEnabled) {
+                textCatalogue.text(HostessTextKey.Delete)
+            } else {
+                textCatalogue.text(HostessTextKey.DeleteAccount)
+            },
+            onClick = onAction,
+            danger = state.deleteExpanded && state.deleteEnabled,
+            modifier = Modifier
+                .fillMaxWidth()
+                .testTag(HostessTestTags.DeleteAccount),
         )
         if (state.deleteExpanded) {
             HostessScrollablePane(
@@ -44,15 +50,6 @@ fun DeleteAccountPanel(
                     )
                 }
             }
-            HostessSecondaryButton(
-                text = textCatalogue.text(HostessTextKey.Delete),
-                onClick = onDelete,
-                enabled = state.deleteEnabled,
-                danger = true,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag(HostessTestTags.DeleteAccount),
-            )
         }
     }
 }

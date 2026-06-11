@@ -21,10 +21,10 @@ class LoginScreenStateTest {
         assertEquals("Hide", catalogue.text(HostessTextKey.Hide))
         assertEquals("Login", catalogue.text(HostessTextKey.Login))
         assertEquals("Saving login", catalogue.text(HostessTextKey.SavingLogin))
-        assertEquals("Logging in", catalogue.text(HostessTextKey.LoggingIn))
+        assertEquals("Sending login details", catalogue.text(HostessTextKey.SendingLoginDetails))
         assertEquals("Preparing avatar", catalogue.text(HostessTextKey.PreparingAvatar))
         assertEquals("Loading groups", catalogue.text(HostessTextKey.LoadingGroups))
-        assertEquals("Loading inventory", catalogue.text(HostessTextKey.LoadingInventory))
+        assertEquals("Loading inventory folders", catalogue.text(HostessTextKey.LoadingInventory))
         assertEquals("Login failed", catalogue.text(HostessTextKey.LoginFailed))
         assertEquals("Removing failed login", catalogue.text(HostessTextKey.RemovingFailedLogin))
     }

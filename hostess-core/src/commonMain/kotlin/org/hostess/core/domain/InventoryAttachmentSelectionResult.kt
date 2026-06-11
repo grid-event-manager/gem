@@ -4,6 +4,7 @@ sealed interface InventoryAttachmentSelectionResult {
     data class Selected(
         val request: ExistingInventoryAttachment,
         val descriptor: InventoryItemDescriptor,
+        val attachmentRef: AttachmentRef?,
     ) : InventoryAttachmentSelectionResult
 
     data class NoSuchItem(

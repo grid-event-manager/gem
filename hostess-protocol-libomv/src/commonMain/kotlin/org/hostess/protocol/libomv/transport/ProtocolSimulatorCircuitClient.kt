@@ -299,27 +299,42 @@ internal class ProtocolSimulatorCircuitClient(
                 val reliable = try {
                     payload()
                 } catch (ex: IllegalArgumentException) {
-                    return SimulatorCircuitSendResult.Failed(REDACTED_SEND_FAILURE)
+                    return SimulatorCircuitSendResult.Failed(NOTICE_PAYLOAD_INVALID)
                 }
                 val observations = SimulatorNoticeSendObservationCollector()
                 repeat(RELIABLE_SEND_ATTEMPTS) { attempt ->
                     try {
                         packetExchange.send(endpoint, listOf(reliable.bytesForAttempt(attempt)))
                     } catch (ex: Exception) {
-                        return SimulatorCircuitSendResult.Failed(REDACTED_SEND_FAILURE)
+                        return SimulatorCircuitSendResult.Failed(NOTICE_PACKET_SEND_FAILED)
                     }
-                    when (waitForOutgoingAck(circuit, endpoint, reliable.sequenceNumber, observations)) {
-                        OutgoingAckResult.ACKED -> {
-                            if (drainNoticeSendObservations(endpoint, observations) == OutgoingAckResult.FAILED) {
-                                return SimulatorCircuitSendResult.Failed(REDACTED_SEND_FAILURE)
+                    val ack = try {
+                        waitForOutgoingAck(circuit, endpoint, reliable.sequenceNumber, observations)
+                    } catch (ex: Exception) {
+                        return SimulatorCircuitSendResult.Failed(NOTICE_ACK_RECEIVE_FAILED)
+                    }
+                    when (ack) {
+                        OutgoingAckResult.Acked -> {
+                            val drained = try {
+                                drainNoticeSendObservations(endpoint, observations)
+                            } catch (ex: Exception) {
+                                return SimulatorCircuitSendResult.Failed(NOTICE_POST_ACK_RECEIVE_FAILED)
+                            }
+                            when (drained) {
+                                OutgoingAckResult.Acked -> Unit
+                                is OutgoingAckResult.Failed ->
+                                    return SimulatorCircuitSendResult.Failed(drained.redactedMessage)
+                                OutgoingAckResult.Timeout ->
+                                    return SimulatorCircuitSendResult.Failed(NOTICE_POST_ACK_DRAIN_TIMEOUT)
                             }
                             return SimulatorCircuitSendResult.Sent(observations.redactedSummary())
                         }
-                        OutgoingAckResult.FAILED -> return SimulatorCircuitSendResult.Failed(REDACTED_SEND_FAILURE)
-                        OutgoingAckResult.TIMEOUT -> Unit
+                        is OutgoingAckResult.Failed ->
+                            return SimulatorCircuitSendResult.Failed(ack.redactedMessage)
+                        OutgoingAckResult.Timeout -> Unit
                     }
                 }
-                SimulatorCircuitSendResult.Failed(REDACTED_SEND_FAILURE)
+                SimulatorCircuitSendResult.Failed(NOTICE_ACK_TIMEOUT)
             }
         }
     }
@@ -341,30 +356,30 @@ internal class ProtocolSimulatorCircuitClient(
             if (inbound == null) {
                 receiveTimeouts += 1
                 if (!keepAliveSent && !sendAvatarKeepAlive(endpoint, circuit)) {
-                    return OutgoingAckResult.FAILED
+                    return OutgoingAckResult.Failed(NOTICE_KEEP_ALIVE_SEND_FAILED)
                 }
                 keepAliveSent = true
                 continue
             }
             observedPackets += 1
             if (!ackReliablePacket(endpoint, inbound.payload)) {
-                return OutgoingAckResult.FAILED
+                return OutgoingAckResult.Failed(NOTICE_ACK_REPLY_SEND_FAILED)
             }
             observations.record(inbound.payload)
             val acked = LibomvPacketCodec.packetAckSequences(inbound.payload)
             if (acked?.contains(sequenceNumber) == true) {
-                return OutgoingAckResult.ACKED
+                return OutgoingAckResult.Acked
             }
             when (LibomvPacketCodec.packetType(inbound.payload)) {
                 SimulatorPacketType.START_PING_CHECK -> {
                     if (!answerSimulatorPing(endpoint, inbound.payload)) {
-                        return OutgoingAckResult.FAILED
+                        return OutgoingAckResult.Failed(NOTICE_PING_REPLY_SEND_FAILED)
                     }
                 }
                 else -> Unit
             }
         }
-        return OutgoingAckResult.TIMEOUT
+        return OutgoingAckResult.Timeout
     }
 
     private fun drainNoticeSendObservations(
@@ -385,19 +400,19 @@ internal class ProtocolSimulatorCircuitClient(
             observedPackets += 1
             receiveTimeouts = 0
             if (!ackReliablePacket(endpoint, inbound.payload)) {
-                return OutgoingAckResult.FAILED
+                return OutgoingAckResult.Failed(NOTICE_POST_ACK_REPLY_SEND_FAILED)
             }
             observations.record(inbound.payload)
             when (LibomvPacketCodec.packetType(inbound.payload)) {
                 SimulatorPacketType.START_PING_CHECK -> {
                     if (!answerSimulatorPing(endpoint, inbound.payload)) {
-                        return OutgoingAckResult.FAILED
+                        return OutgoingAckResult.Failed(NOTICE_POST_ACK_PING_REPLY_SEND_FAILED)
                     }
                 }
                 else -> Unit
             }
         }
-        return OutgoingAckResult.ACKED
+        return OutgoingAckResult.Acked
     }
 
     private fun sendAvatarKeepAlive(endpoint: SimulatorEndpoint, circuit: SimulatorCircuit): Boolean =
@@ -514,10 +529,10 @@ internal class ProtocolSimulatorCircuitClient(
             if (attempt == 0) bytes else LibomvPacketCodec.asResent(bytes)
     }
 
-    private enum class OutgoingAckResult {
-        ACKED,
-        TIMEOUT,
-        FAILED,
+    private sealed interface OutgoingAckResult {
+        data object Acked : OutgoingAckResult
+        data object Timeout : OutgoingAckResult
+        data class Failed(val redactedMessage: String) : OutgoingAckResult
     }
 
     private class SimulatorNoticeSendObservationCollector {
@@ -615,6 +630,17 @@ internal class ProtocolSimulatorCircuitClient(
 
     private companion object {
         const val REDACTED_SEND_FAILURE: String = "protocol simulator send failed"
+        const val NOTICE_PAYLOAD_INVALID: String = "notice send packet invalid"
+        const val NOTICE_PACKET_SEND_FAILED: String = "notice send packet transport failed"
+        const val NOTICE_KEEP_ALIVE_SEND_FAILED: String = "notice send keepalive failed"
+        const val NOTICE_ACK_REPLY_SEND_FAILED: String = "notice send packet ack reply failed"
+        const val NOTICE_ACK_RECEIVE_FAILED: String = "notice send ack receive failed"
+        const val NOTICE_PING_REPLY_SEND_FAILED: String = "notice send ping reply failed"
+        const val NOTICE_POST_ACK_RECEIVE_FAILED: String = "notice post-ack receive failed"
+        const val NOTICE_POST_ACK_REPLY_SEND_FAILED: String = "notice post-ack packet reply failed"
+        const val NOTICE_POST_ACK_PING_REPLY_SEND_FAILED: String = "notice post-ack ping reply failed"
+        const val NOTICE_POST_ACK_DRAIN_TIMEOUT: String = "notice post-ack drain timeout"
+        const val NOTICE_ACK_TIMEOUT: String = "notice send ack timeout after 3 attempts"
         const val MAX_PORT: Int = 65535
         const val UNSIGNED_32_MAX: Long = 0xFFFF_FFFFL
         const val HANDSHAKE_RECEIVE_TIMEOUT_MILLIS: Int = 2_000

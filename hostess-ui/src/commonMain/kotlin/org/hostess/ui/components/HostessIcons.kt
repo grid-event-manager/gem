@@ -2,6 +2,7 @@ package org.hostess.ui.components
 
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Icon
@@ -17,21 +18,27 @@ import androidx.compose.ui.unit.Dp
 import org.hostess.ui.design.HostessTheme
 
 @Composable
-fun HostessMenuIcon(modifier: Modifier = Modifier) {
+fun HostessMenuIcon(
+    modifier: Modifier = Modifier,
+    tint: Color = HostessTheme.colors.secondary,
+) {
     Icon(
         imageVector = Icons.Filled.Menu,
         contentDescription = null,
-        tint = HostessTheme.colors.secondary,
+        tint = tint,
         modifier = modifier,
     )
 }
 
 @Composable
-fun HostessBackIcon(modifier: Modifier = Modifier) {
+fun HostessBackIcon(
+    modifier: Modifier = Modifier,
+    tint: Color = HostessTheme.colors.secondary,
+) {
     Icon(
         imageVector = HostessBackArrowVector,
         contentDescription = null,
-        tint = HostessTheme.colors.secondary,
+        tint = tint,
         modifier = modifier.size(HostessTheme.spacing.backIconSize),
     )
 }
@@ -47,11 +54,40 @@ fun HostessBrandLogoIcon(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun HostessLandmarkIcon(modifier: Modifier = Modifier) {
+fun HostessLandmarkIcon(
+    modifier: Modifier = Modifier,
+    tint: Color = HostessTheme.colors.secondary,
+) {
     Icon(
         imageVector = Icons.Filled.LocationOn,
         contentDescription = null,
-        tint = HostessTheme.colors.secondary,
+        tint = tint,
+        modifier = modifier.size(HostessTheme.spacing.inlineIconSize),
+    )
+}
+
+@Composable
+fun HostessTextureIcon(
+    modifier: Modifier = Modifier,
+    tint: Color = HostessTheme.colors.secondary,
+) {
+    Icon(
+        imageVector = HostessTextureVector,
+        contentDescription = null,
+        tint = tint,
+        modifier = modifier.size(HostessTheme.spacing.inlineIconSize),
+    )
+}
+
+@Composable
+fun HostessClearIcon(
+    modifier: Modifier = Modifier,
+    tint: Color = HostessTheme.colors.secondary,
+) {
+    Icon(
+        imageVector = Icons.Filled.Close,
+        contentDescription = null,
+        tint = tint,
         modifier = modifier.size(HostessTheme.spacing.inlineIconSize),
     )
 }
@@ -97,10 +133,40 @@ private val HostessBackArrowVector: ImageVector =
             strokeLineCap = StrokeCap.Round,
             strokeLineJoin = StrokeJoin.Round,
         ) {
-            moveTo(20f, 12f)
+            moveTo(21f, 12f)
             lineTo(4f, 12f)
-            moveTo(9f, 7f)
+            moveTo(8f, 8f)
             lineTo(4f, 12f)
-            lineTo(9f, 17f)
+            lineTo(8f, 16f)
+        }
+    }.build()
+
+private val HostessTextureVector: ImageVector =
+    ImageVector.Builder(
+        name = "HostessTexture",
+        defaultWidth = Dp(24f),
+        defaultHeight = Dp(24f),
+        viewportWidth = 24f,
+        viewportHeight = 24f,
+    ).apply {
+        path(
+            fill = null,
+            stroke = SolidBrush(Color.Black),
+            strokeLineWidth = 2f,
+            strokeLineCap = StrokeCap.Round,
+            strokeLineJoin = StrokeJoin.Round,
+        ) {
+            moveTo(5f, 5f)
+            lineTo(19f, 5f)
+            lineTo(19f, 19f)
+            lineTo(5f, 19f)
+            close()
+            moveTo(8f, 16f)
+            lineTo(11f, 12f)
+            lineTo(14f, 15f)
+            lineTo(16f, 12f)
+            lineTo(19f, 16f)
+            moveTo(9f, 9f)
+            lineTo(9.1f, 9f)
         }
     }.build()

@@ -2,6 +2,7 @@ package org.hostess.apps.android
 
 import android.content.Context
 import java.io.File
+import java.nio.file.Path
 import org.hostess.core.domain.HostessDelay
 import org.hostess.core.domain.HostessInstant
 import org.hostess.core.domain.LoginComplianceRequest
@@ -38,6 +39,7 @@ object HostessAndroidCompositionRoot {
             vaultAccess = HostessAndroidVaultComposition.open(appFilesDir),
             themePreferenceService = HostessAndroidPreferenceComposition.open(appFilesDir),
             lastLoginProfilePreferenceService = HostessAndroidPreferenceComposition.openLastLoginProfile(appFilesDir),
+            inventorySnapshotCacheDirectory = HostessAndroidPreferenceComposition.inventorySnapshotCacheDirectory(appFilesDir),
         )
 
     private object HostessRuntimeComposition {
@@ -45,8 +47,12 @@ object HostessAndroidCompositionRoot {
             vaultAccess: HostessVaultRuntimeAccess,
             themePreferenceService: ThemePreferenceService,
             lastLoginProfilePreferenceService: LastLoginProfilePreferenceService,
+            inventorySnapshotCacheDirectory: Path,
         ): HostessUiRuntime {
-            val protocolRuntime = ProtocolLibomvModule.liveRuntime(vaultAccess.loginSecretResolver())
+            val protocolRuntime = ProtocolLibomvModule.liveRuntime(
+                secretResolver = vaultAccess.loginSecretResolver(),
+                inventorySnapshotCacheDirectory = inventorySnapshotCacheDirectory,
+            )
             return HostessUiRuntime(
                 credentialRuntimeState = vaultAccess.credentialRuntimeState,
                 sessionService = SessionService(

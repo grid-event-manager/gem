@@ -13,39 +13,49 @@ import org.hostess.ui.text.HostessTextCatalogue
 import org.hostess.ui.text.HostessTextKey
 
 @Composable
-fun SettingsSavedAccountPanel(
+fun SettingsEditAccountPanel(
     state: SettingsUiState,
     textCatalogue: HostessTextCatalogue,
+    onToggle: () -> Unit,
     onSavedAccountSelected: (AccountProfileId?) -> Unit,
     onPasswordVisibilityToggle: () -> Unit,
     onPasswordChanged: (String) -> Unit,
+    onSave: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     HostessPanel(modifier = modifier) {
-        Text(
-            text = textCatalogue.text(HostessTextKey.Settings),
-            style = HostessTheme.typeScale.sectionTitle,
-            color = HostessTheme.colors.secondary,
+        HostessSecondaryButton(
+            text = textCatalogue.text(HostessTextKey.EditAccount),
+            onClick = onToggle,
+            modifier = Modifier.fillMaxWidth(),
         )
-        SettingsErrorText(state)
-        SavedLoginDropdown(
-            selectedProfileId = state.selectedProfileId,
-            options = state.savedLoginOptions,
-            enabled = state.savedLoginOptions.isNotEmpty(),
-            textCatalogue = textCatalogue,
-            onSelected = onSavedAccountSelected,
-        )
-        HostessPasswordField(
-            label = textCatalogue.text(HostessTextKey.Password),
-            value = state.passwordDraft,
-            onValueChange = onPasswordChanged,
-            revealText = textCatalogue.text(HostessTextKey.Show),
-            hideText = textCatalogue.text(HostessTextKey.Hide),
-            revealed = state.passwordVisible,
-            onRevealChanged = { onPasswordVisibilityToggle() },
-            enabled = state.passwordEnabled,
-            modifier = Modifier.testTag(HostessTestTags.AccountPassword),
-        )
+        if (state.editAccountExpanded) {
+            SettingsErrorText(state)
+            SavedLoginDropdown(
+                selectedProfileId = state.selectedProfileId,
+                options = state.savedLoginOptions,
+                enabled = state.savedLoginOptions.isNotEmpty(),
+                textCatalogue = textCatalogue,
+                onSelected = onSavedAccountSelected,
+            )
+            HostessPasswordField(
+                label = textCatalogue.text(HostessTextKey.Password),
+                value = state.passwordDraft,
+                onValueChange = onPasswordChanged,
+                revealText = textCatalogue.text(HostessTextKey.Show),
+                hideText = textCatalogue.text(HostessTextKey.Hide),
+                revealed = state.passwordVisible,
+                onRevealChanged = { onPasswordVisibilityToggle() },
+                enabled = state.passwordEnabled,
+                modifier = Modifier.testTag(HostessTestTags.AccountPassword),
+            )
+            HostessSecondaryButton(
+                text = textCatalogue.text(HostessTextKey.SavePassword),
+                onClick = onSave,
+                enabled = state.saveEditedPasswordEnabled,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
     }
 }
 
@@ -60,16 +70,25 @@ fun SettingsAddAccountPanel(
     onPasswordVisibilityToggle: () -> Unit,
     onSave: () -> Unit,
     modifier: Modifier = Modifier,
+    expandable: Boolean = true,
 ) {
     HostessPanel(modifier = modifier) {
-        HostessSecondaryButton(
-            text = textCatalogue.text(HostessTextKey.AddNewAccount),
-            onClick = onToggle,
-            modifier = Modifier
-                .fillMaxWidth()
-                .testTag(HostessTestTags.AddAccount),
-        )
+        if (expandable) {
+            HostessSecondaryButton(
+                text = textCatalogue.text(HostessTextKey.AddNewAccount),
+                onClick = onToggle,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag(HostessTestTags.AddAccount),
+            )
+        } else {
+            HostessStaticButtonSurface(
+                text = textCatalogue.text(HostessTextKey.AddNewAccount),
+                modifier = Modifier.testTag(HostessTestTags.AddAccount),
+            )
+        }
         if (state.addAccountExpanded) {
+            SettingsErrorText(state)
             HostessTextField(
                 label = textCatalogue.text(HostessTextKey.Username),
                 value = state.addUsernameDraft,

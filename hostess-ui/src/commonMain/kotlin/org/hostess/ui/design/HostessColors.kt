@@ -28,6 +28,7 @@ data class HostessColors(
     val disabledInk: Color = Color(0xFF6F7886),
     val selectedInk: Color = Color(0xFF07534E),
     val topBarInk: Color = Color(0xFFF8FAFC),
+    val topBarMenuInk: Color = secondary,
     val brandMarkInk: Color = Color(0xFF172033),
     val statusBackground: Color = Color(0xFFF4F7FB),
     val focusRing: Color = Color(0x291F766E),
@@ -42,4 +43,5 @@ data class HostessColors(
     val toggleTrackSelected: Color = primary,
     val toggleKnob: Color = surfaceStrong,
     val toggleBorder: Color = lineStrong,
+    val interactiveHoverInk: Color = primary,
 )

@@ -17,7 +17,7 @@ class CredentialVaultResultTest {
         val handle = CredentialHandle("credential:v1:one")
         val material = LoginCredentialMaterial(
             loginUri = SecondLifeLoginUri.SECOND_LIFE_DEFAULT,
-            loginName = loginName("jackraybold"),
+            loginName = loginName("venuehost"),
             sharedSecret = assertNotNull(SharedSecret.fromPlainText("venue-password")),
             startLocation = null,
         )
@@ -47,8 +47,8 @@ class CredentialVaultResultTest {
         val profileId = org.hostess.core.domain.AccountProfileId("profile:v1:one")
         val profile = org.hostess.core.domain.SavedAccountProfile(
             profileId = profileId,
-            loginName = loginName("jackraybold"),
-            label = "jackraybold resident",
+            loginName = loginName("venuehost"),
+            label = "venuehost resident",
             credentialHandle = CredentialHandle("credential:v1:one"),
             startLocation = null,
         )

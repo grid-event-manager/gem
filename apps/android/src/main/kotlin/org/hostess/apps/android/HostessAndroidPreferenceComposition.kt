@@ -1,6 +1,7 @@
 package org.hostess.apps.android
 
 import java.io.File
+import java.nio.file.Path
 import org.hostess.core.preferences.LastLoginProfilePreferenceService
 import org.hostess.core.theme.ThemePreferenceService
 import org.hostess.preferences.AndroidHostessPreferencePaths
@@ -21,4 +22,7 @@ object HostessAndroidPreferenceComposition {
         )
         return LastLoginProfilePreferenceService(FileLastLoginProfilePreferenceStore(preferenceFile.toPath()))
     }
+
+    fun inventorySnapshotCacheDirectory(appFilesDir: File): Path =
+        File(appFilesDir, "Hostess/inventory-snapshots").toPath()
 }

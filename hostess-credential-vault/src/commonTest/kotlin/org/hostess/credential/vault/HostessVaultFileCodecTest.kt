@@ -120,7 +120,7 @@ class HostessVaultFileCodecTest {
     fun `rejects invalid profile id and noncanonical login name`() {
         val payload = HostessVaultFileCodec.encode(validPlaintext())
         val invalidProfile = payload.replaceAscii("profile:v1:one", "badfile:v1:one")
-        val invalidLoginName = payload.replaceAscii("jackraybold resident", "JackRaybold Resident")
+        val invalidLoginName = payload.replaceAscii("venuehost resident", "VenueHost Resident")
 
         assertIs<HostessVaultCodecResult.Corrupt>(HostessVaultFileCodec.decode(invalidProfile))
         assertIs<HostessVaultCodecResult.Corrupt>(HostessVaultFileCodec.decode(invalidLoginName))
@@ -130,7 +130,7 @@ class HostessVaultFileCodecTest {
     fun `rejects invalid utf8 string body`() {
         val payload = HostessVaultFileCodec.encode(validPlaintext())
         val mutated = payload.copyOf()
-        val loginNameStart = mutated.indexOf("jackraybold resident".encodeToByteArray())
+        val loginNameStart = mutated.indexOf("venuehost resident".encodeToByteArray())
         mutated[loginNameStart] = 0xC3.toByte()
         mutated[loginNameStart + 1] = 0x28.toByte()
 
@@ -167,8 +167,8 @@ class HostessVaultFileCodecTest {
         credentialHandle: String = "hostess-vault:v1:$suffix",
     ): HostessVaultProfileRecord = HostessVaultProfileRecord(
         profileId = AccountProfileId("profile:v1:$suffix"),
-        loginName = loginName("jackraybold"),
-        label = "jackraybold resident",
+        loginName = loginName("venuehost"),
+        label = "venuehost resident",
         credentialHandle = CredentialHandle(credentialHandle),
         startLocation = "uri:London City&76&174&23",
     )
@@ -179,7 +179,7 @@ class HostessVaultFileCodecTest {
     ): HostessVaultCredentialRecord = HostessVaultCredentialRecord(
         credentialHandle = CredentialHandle(credentialHandle),
         loginUri = SecondLifeLoginUri.SECOND_LIFE_DEFAULT,
-        loginName = loginName("jackraybold"),
+        loginName = loginName("venuehost"),
         sharedSecret = assertNotNull(SharedSecret.fromPlainText("venue-password-$suffix")),
         startLocation = "uri:London City&76&174&23",
     )

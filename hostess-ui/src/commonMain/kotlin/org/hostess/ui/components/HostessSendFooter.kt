@@ -6,6 +6,9 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -33,12 +36,32 @@ fun HostessSendFooter(
     ) {
         state.statusTextKey?.let { statusTextKey ->
             if (textCatalogue.text(statusTextKey).isNotBlank()) {
-                Text(
-                    text = textCatalogue.text(statusTextKey),
-                    style = HostessTheme.typeScale.smallLabel,
-                    color = HostessTheme.colors.secondary,
-                    modifier = Modifier.testTag(HostessTestTags.StatusText),
-                )
+                if (state.sending) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(HostessTheme.spacing.fieldGap),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag(HostessTestTags.StatusText),
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(HostessTheme.spacing.statusPillMinHeight),
+                            strokeWidth = HostessTheme.spacing.borderWidth,
+                            color = HostessTheme.colors.primary,
+                        )
+                        Text(
+                            text = textCatalogue.text(statusTextKey),
+                            style = HostessTheme.typeScale.smallLabel,
+                            color = HostessTheme.colors.secondary,
+                        )
+                    }
+                } else {
+                    Text(
+                        text = textCatalogue.text(statusTextKey),
+                        style = HostessTheme.typeScale.smallLabel,
+                        color = HostessTheme.colors.secondary,
+                        modifier = Modifier.testTag(HostessTestTags.StatusText),
+                    )
+                }
             }
         }
         AnimatedVisibility(
@@ -48,6 +71,14 @@ fun HostessSendFooter(
         ) {
             Text(
                 text = state.missingRequirementKeys.joinToString(separator = " | ") { textCatalogue.text(it) },
+                style = HostessTheme.typeScale.smallLabel,
+                color = HostessTheme.colors.danger,
+                modifier = Modifier.testTag(HostessTestTags.StatusText),
+            )
+        }
+        state.detailText?.takeIf(String::isNotBlank)?.let { detailText ->
+            Text(
+                text = detailText,
                 style = HostessTheme.typeScale.smallLabel,
                 color = HostessTheme.colors.danger,
                 modifier = Modifier.testTag(HostessTestTags.StatusText),

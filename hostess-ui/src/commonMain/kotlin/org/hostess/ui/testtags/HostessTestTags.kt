@@ -23,6 +23,7 @@ object HostessTestTags {
     const val InventoryPath: String = "data-inventory-path"
     const val InventoryList: String = "data-inventory-list"
     const val AttachmentSummary: String = "data-attachment-summary"
+    const val ClearAttachment: String = "data-clear-attachment"
     const val AllGroups: String = "data-all-groups"
     const val ManualGroups: String = "data-manual-groups"
     const val GroupPicker: String = "data-group-picker"

@@ -7,6 +7,7 @@ data class SendFooterUiState(
     val statusTextKey: HostessTextKey? = HostessTextKey.BlankStatus,
     val missingRequirementKeys: List<HostessTextKey> = DefaultMissingRequirementKeys,
     val showMissingRequirements: Boolean = false,
+    val detailText: String? = null,
     val primaryLabelKey: HostessTextKey = HostessTextKey.SendNotices,
     val enabled: Boolean = false,
     val sending: Boolean = false,

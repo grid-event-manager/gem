@@ -39,7 +39,7 @@ class LoginCredentialMaterialTest {
     fun `credential material is not a data class and redacts secret in string form`() {
         val material = LoginCredentialMaterial(
             loginUri = SecondLifeLoginUri.SECOND_LIFE_DEFAULT,
-            loginName = loginName("jackraybold"),
+            loginName = loginName("venuehost"),
             sharedSecret = assertNotNull(SharedSecret.fromPlainText("venue-password")),
             startLocation = "uri:London City&76&174&23",
         )

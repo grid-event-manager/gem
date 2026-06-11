@@ -30,12 +30,18 @@ class LoginController(
         val credentialService = runtime.credentialServiceOrNull()
             ?: return credentialRuntimeUnavailable()
         return when (val listed = credentialService.listProfiles()) {
-            is AccountProfileStoreListResult.Listed -> copy(
-                state.copy(
-                    savedLoginOptions = listed.profiles.map(SavedLoginOptionUiState::from),
-                    operation = state.operation.clearError(),
-                ),
-            ).selectPreferredSavedLogin(listed.profiles)
+            is AccountProfileStoreListResult.Listed -> {
+                if (listed.profiles.isEmpty()) {
+                    clearSavedLoginState()
+                } else {
+                    copy(
+                        state.copy(
+                            savedLoginOptions = listed.profiles.map(SavedLoginOptionUiState::from),
+                            operation = state.operation.clearError(),
+                        ),
+                    ).selectPreferredSavedLogin(listed.profiles)
+                }
+            }
             is AccountProfileStoreListResult.CorruptVault -> credentialRuntimeUnavailable(listed.message)
             is AccountProfileStoreListResult.StorageFailed -> credentialRuntimeUnavailable(listed.message)
         }
@@ -115,7 +121,7 @@ class LoginController(
         val initialMessage = if (state.entryMode is LoginEntryMode.New) {
             HostessTextKey.SavingLogin
         } else {
-            HostessTextKey.LoggingIn
+            HostessTextKey.SendingLoginDetails
         }
         return copy(state.copy(operation = LoginOperationUiState.inFlight(initialMessage)))
     }
@@ -293,6 +299,21 @@ class LoginController(
                     errorKey = HostessTextKey.LoginFailed,
                     errorMessage = message,
                 ),
+            ),
+        )
+
+    private fun clearSavedLoginState(): LoginController =
+        copy(
+            state.copy(
+                savedLoginOptions = emptyList(),
+                usernameDraft = "",
+                selectedProfileId = null,
+                entryMode = LoginEntryMode.New,
+                passwordDraft = "",
+                passwordVisible = false,
+                passwordEnabled = false,
+                loginEnabled = false,
+                operation = state.operation.clearError(),
             ),
         )
 

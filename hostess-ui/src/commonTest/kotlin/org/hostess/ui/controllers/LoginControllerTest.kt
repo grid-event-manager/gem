@@ -1,6 +1,8 @@
 package org.hostess.ui.controllers
 
 import org.hostess.core.services.CredentialServiceRevealPasswordResult
+import org.hostess.core.services.SavedAccountAddResult
+import org.hostess.core.services.SavedAccountDeleteResult
 import org.hostess.ui.state.LoginEntryMode
 import org.hostess.ui.state.UiRoute
 import org.hostess.ui.testing.FakeLastLoginProfilePreferenceStore
@@ -91,6 +93,8 @@ class LoginControllerTest {
         assertEquals(UiRoute.Login, failed.appState.route)
         assertEquals(profile.profileId, failed.state.selectedProfileId)
         assertEquals("changed-password", failed.state.passwordDraft)
+        assertTrue(failed.state.passwordEnabled)
+        assertTrue(failed.state.loginEnabled)
         assertEquals(HostessTextKey.LoginFailed, failed.state.operation.errorKey)
         assertEquals("test-password", revealedPassword(runtime, profile.profileId))
     }
@@ -182,6 +186,50 @@ class LoginControllerTest {
         assertNull(typed.state.selectedProfileId)
         assertEquals(LoginEntryMode.New, typed.state.entryMode)
         assertEquals("anotherhost", typed.state.usernameDraft)
+    }
+
+    @Test
+    fun refreshSavedLoginsClearsStaleDeletedProfileAndPassword() {
+        val runtime = FakeHostessUiRuntime.ready()
+        val profile = FakeHostessUiRuntime.defaultProfile()
+        val stale = LoginController(runtime)
+            .refreshSavedLogins()
+            .selectSavedLogin(profile.profileId)
+        val deleted = runtime.savedAccountManagementServiceOrNull()
+            ?.deleteAccounts(setOf(profile.profileId))
+
+        val refreshed = stale.refreshSavedLogins()
+
+        assertEquals(SavedAccountDeleteResult.Deleted(setOf(profile.profileId)), deleted)
+        assertEquals(emptyList(), refreshed.state.savedLoginOptions)
+        assertEquals("", refreshed.state.usernameDraft)
+        assertEquals("", refreshed.state.passwordDraft)
+        assertNull(refreshed.state.selectedProfileId)
+        assertEquals(LoginEntryMode.New, refreshed.state.entryMode)
+        assertFalse(refreshed.state.passwordEnabled)
+        assertFalse(refreshed.state.loginEnabled)
+    }
+
+    @Test
+    fun refreshSavedLoginsRehydratesReaddedProfilePasswordAfterDelete() {
+        val runtime = FakeHostessUiRuntime.ready()
+        val profile = FakeHostessUiRuntime.defaultProfile()
+        val stale = LoginController(runtime)
+            .refreshSavedLogins()
+            .selectSavedLogin(profile.profileId)
+        val accountService = runtime.savedAccountManagementServiceOrNull() ?: error("missing account service")
+
+        accountService.deleteAccounts(setOf(profile.profileId))
+        val added = accountService.addAccount("venuehost", "replacement-password")
+        require(added is SavedAccountAddResult.Saved)
+
+        val refreshed = stale.refreshSavedLogins()
+
+        assertEquals(added.profile.profileId, refreshed.state.selectedProfileId)
+        assertEquals("venuehost resident", refreshed.state.usernameDraft)
+        assertEquals("replacement-password", refreshed.state.passwordDraft)
+        assertTrue(refreshed.state.passwordEnabled)
+        assertTrue(refreshed.state.loginEnabled)
     }
 
     private fun revealedPassword(

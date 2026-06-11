@@ -27,15 +27,15 @@ fun InventoryShortcutBar(
         horizontalArrangement = Arrangement.spacedBy(HostessTheme.spacing.fieldGap),
     ) {
         HostessSegmentButton(
-            text = textCatalogue.text(HostessTextKey.Inventory),
-            selected = state.rootSelected,
-            onClick = { onShortcutSelected(InventoryShortcut.ROOT) },
-            modifier = Modifier.weight(weight = 1f),
-        )
-        HostessSegmentButton(
             text = textCatalogue.text(HostessTextKey.Landmarks),
             selected = state.landmarksSelected,
             onClick = { onShortcutSelected(InventoryShortcut.LANDMARKS) },
+            modifier = Modifier.weight(weight = 1f),
+        )
+        HostessSegmentButton(
+            text = textCatalogue.text(HostessTextKey.Inventory),
+            selected = state.rootSelected,
+            onClick = { onShortcutSelected(InventoryShortcut.ROOT) },
             modifier = Modifier.weight(weight = 1f),
         )
         HostessSegmentButton(

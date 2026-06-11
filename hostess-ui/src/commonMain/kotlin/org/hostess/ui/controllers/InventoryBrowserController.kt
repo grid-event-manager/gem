@@ -1,6 +1,7 @@
 package org.hostess.ui.controllers
 
 import org.hostess.core.domain.HostessSession
+import org.hostess.core.domain.AttachmentRef
 import org.hostess.core.domain.InventoryAttachmentSelectionResult
 import org.hostess.core.domain.InventoryDirectoryListing
 import org.hostess.core.domain.InventoryFolderId
@@ -87,21 +88,11 @@ class InventoryBrowserController(
             )
         ) {
             is InventoryAttachmentSelectionResult.Selected -> {
+                selected.attachmentRef?.let { attachment ->
+                    return resolvedSelection(selected, attachment)
+                }
                 when (val resolved = runtime.attachmentService.resolveAttachment(activeSession, selected.request)) {
-                    is AttachmentResolutionResult.Resolved -> copy(
-                        state.copy(
-                            visibleAssetRows = selectAssetRow(itemId),
-                            selectedAttachment = SelectedAttachmentUiState(
-                                itemId = selected.descriptor.itemId,
-                                displayName = selected.descriptor.displayName.value,
-                                kind = selected.descriptor.kind,
-                                request = selected.request,
-                                attachmentRef = resolved.attachment,
-                            ),
-                            attachmentSummary = HostessTextKey.SelectedCount(1),
-                            errorKey = null,
-                        ),
-                    )
+                    is AttachmentResolutionResult.Resolved -> resolvedSelection(selected, resolved.attachment)
                     is AttachmentResolutionResult.Failed -> selectionFailure()
                 }
             }
@@ -113,6 +104,16 @@ class InventoryBrowserController(
             -> selectionFailure()
         }
     }
+
+    fun clearSelectedAttachment(): InventoryBrowserController =
+        copy(
+            state.copy(
+                visibleAssetRows = state.visibleAssetRows.map { row -> row.copy(selected = false) },
+                selectedAttachment = null,
+                attachmentSummary = HostessTextKey.None,
+                errorKey = null,
+            ),
+        )
 
     private fun projectListing(
         listing: InventoryDirectoryListing,
@@ -215,6 +216,25 @@ class InventoryBrowserController(
 
     private fun selectAssetRow(itemId: InventoryItemId): List<InventoryAssetRowUiState> =
         state.visibleAssetRows.map { row -> row.copy(selected = row.itemId == itemId) }
+
+    private fun resolvedSelection(
+        selected: InventoryAttachmentSelectionResult.Selected,
+        attachment: AttachmentRef,
+    ): InventoryBrowserController =
+        copy(
+            state.copy(
+                visibleAssetRows = selectAssetRow(selected.descriptor.itemId),
+                selectedAttachment = SelectedAttachmentUiState(
+                    itemId = selected.descriptor.itemId,
+                    displayName = selected.descriptor.displayName.value,
+                    kind = selected.descriptor.kind,
+                    request = selected.request,
+                    attachmentRef = attachment,
+                ),
+                attachmentSummary = HostessTextKey.SelectedCount(1),
+                errorKey = null,
+            ),
+        )
 
     private fun selectionFailure(): InventoryBrowserController =
         copy(

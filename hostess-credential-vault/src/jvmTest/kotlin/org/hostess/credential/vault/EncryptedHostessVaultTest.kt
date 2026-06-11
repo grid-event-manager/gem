@@ -43,12 +43,12 @@ class EncryptedHostessVaultTest {
         )
 
         val added = assertIs<CredentialServiceAddResult.Saved>(
-            service.addLogin("JackRaybold", "venue-password", startLocation = "uri:London City&76&174&23"),
+            service.addLogin("VenueHost", "venue-password", startLocation = "uri:London City&76&174&23"),
         )
         val listed = assertIs<AccountProfileStoreListResult.Listed>(service.listProfiles())
         assertEquals(listOf(added.profile), listed.profiles)
         assertVaultFileDoesNotContain(vaultPath, "venue-password")
-        assertVaultFileDoesNotContain(vaultPath, "jackraybold resident")
+        assertVaultFileDoesNotContain(vaultPath, "venuehost resident")
 
         assertEquals(
             CredentialServiceUpdatePasswordResult.Updated,
@@ -89,12 +89,12 @@ class EncryptedHostessVaultTest {
     fun `profile store saves updates lists and deletes profiles inside the vault`() = withTempDirectory { dir ->
         val ready = openReady(dir.resolve("vault.bin"))
         val saved = assertIs<CredentialVaultSaveResult.Saved>(ready.credentialVault.save(material("venue-password")))
-        val profile = profile(saved.credentialHandle, label = "jackraybold resident")
+        val profile = profile(saved.credentialHandle, label = "venuehost resident")
 
         assertEquals(AccountProfileStoreSaveResult.Saved(profile), ready.accountProfileStore.save(profile))
         assertEquals(listOf(profile), assertIs<AccountProfileStoreListResult.Listed>(ready.accountProfileStore.list()).profiles)
 
-        val updated = profile.copy(label = "jackraybold resident updated")
+        val updated = profile.copy(label = "venuehost resident updated")
         assertEquals(AccountProfileStoreUpdateResult.Updated(updated), ready.accountProfileStore.update(updated))
         assertEquals(listOf(updated), assertIs<AccountProfileStoreListResult.Listed>(ready.accountProfileStore.list()).profiles)
 
@@ -146,7 +146,7 @@ class EncryptedHostessVaultTest {
     private fun material(password: String): LoginCredentialMaterial =
         LoginCredentialMaterial(
             loginUri = SecondLifeLoginUri.SECOND_LIFE_DEFAULT,
-            loginName = loginName("jackraybold"),
+            loginName = loginName("venuehost"),
             sharedSecret = assertNotNull(SharedSecret.fromPlainText(password)),
             startLocation = "uri:London City&76&174&23",
         )
@@ -157,7 +157,7 @@ class EncryptedHostessVaultTest {
     ): SavedAccountProfile =
         SavedAccountProfile(
             profileId = AccountProfileId("profile:v1:one"),
-            loginName = loginName("jackraybold"),
+            loginName = loginName("venuehost"),
             label = label,
             credentialHandle = credentialHandle,
             startLocation = "uri:London City&76&174&23",

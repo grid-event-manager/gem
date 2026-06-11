@@ -29,20 +29,23 @@ fun SessionStrip(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = HostessTheme.spacing.sessionStripMinHeight)
+            .heightIn(min = HostessTheme.spacing.statusPillMinHeight)
             .testTag(HostessTestTags.SessionStrip),
         color = HostessTheme.colors.surfaceStrong,
         contentColor = HostessTheme.colors.ink,
         shape = HostessTheme.shapes.panel,
     ) {
         Row(
-            modifier = Modifier.padding(HostessTheme.spacing.panelPadding),
+            modifier = Modifier.padding(
+                horizontal = HostessTheme.spacing.panelPadding,
+                vertical = HostessTheme.spacing.fieldGap,
+            ),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
                 text = state.locationLabel,
-                style = HostessTheme.typeScale.body,
+                style = HostessTheme.typeScale.smallLabel,
                 modifier = Modifier.testTag(HostessTestTags.SessionLocation),
             )
             Surface(

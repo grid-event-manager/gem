@@ -8,21 +8,21 @@ class SecondLifeLoginNameTest {
     @Test
     fun `normalizes one-part names to resident legacy name`() {
         val result = assertIs<SecondLifeLoginNameResult.Valid>(
-            SecondLifeLoginName.fromUserInput("  JackRaybold  "),
+            SecondLifeLoginName.fromUserInput("  VenueHost  "),
         )
 
-        assertEquals("jackraybold resident", result.loginName.value)
-        assertEquals("jackraybold", result.loginName.firstName)
+        assertEquals("venuehost resident", result.loginName.value)
+        assertEquals("venuehost", result.loginName.firstName)
         assertEquals("resident", result.loginName.lastName)
     }
 
     @Test
     fun `normalizes dotted and whitespace names`() {
         val result = assertIs<SecondLifeLoginNameResult.Valid>(
-            SecondLifeLoginName.fromUserInput("JackRaybold.Resident"),
+            SecondLifeLoginName.fromUserInput("VenueHost.Resident"),
         )
 
-        assertEquals("jackraybold resident", result.loginName.value)
+        assertEquals("venuehost resident", result.loginName.value)
     }
 
     @Test

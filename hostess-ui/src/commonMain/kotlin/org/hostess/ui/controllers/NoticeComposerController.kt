@@ -1,6 +1,7 @@
 package org.hostess.ui.controllers
 
 import org.hostess.core.domain.GroupSendState
+import org.hostess.core.domain.GroupSendStatus
 import org.hostess.core.domain.GroupTargetSet
 import org.hostess.core.domain.HostessSession
 import org.hostess.core.domain.NoticeDispatchResult
@@ -66,6 +67,26 @@ class NoticeComposerController(
                 sendFooterState = state.sendFooterState.copy(showMissingRequirements = false),
             ),
         )
+
+    fun beginSend(): NoticeComposerController {
+        if (!state.sendFooterState.enabled || session == null) {
+            return copy(
+                state.copy(
+                    sendFooterState = state.sendFooterState.copy(showMissingRequirements = true),
+                ),
+            )
+        }
+        return copy(
+            state.copy(
+                sendFooterState = state.sendFooterState.copy(
+                    statusTextKey = HostessTextKey.SendingNotices,
+                    sending = true,
+                    showMissingRequirements = false,
+                    detailText = null,
+                ),
+            ),
+        )
+    }
 
     fun sendNotices(): NoticeComposerController {
         if (!state.sendFooterState.enabled || session == null) {
@@ -202,7 +223,12 @@ class NoticeComposerController(
             failedGroupCount = failedCount,
             dispatchRejected = false,
             sendFooterState = state.sendFooterState.copy(
-                statusTextKey = HostessTextKey.Ready,
+                statusTextKey = if (failedCount == 0) {
+                    HostessTextKey.NoticesSent
+                } else {
+                    HostessTextKey.SomeNoticesFailed
+                },
+                detailText = failureDetail(result.result.statuses),
                 enabled = true,
                 sending = false,
                 showMissingRequirements = false,
@@ -221,9 +247,27 @@ class NoticeComposerController(
             sendFooterState = SendFooterUiState(
                 visible = true,
                 statusTextKey = HostessTextKey.BlankStatus,
+                detailText = null,
                 enabled = false,
                 sending = false,
                 showMissingRequirements = true,
             ),
         )
+
+    private fun failureDetail(statuses: List<GroupSendStatus>): String? {
+        val failed = statuses.filter { it.state != GroupSendState.SENT }
+        if (failed.isEmpty()) {
+            return null
+        }
+        return failed
+            .take(MAX_FAILURE_DETAILS)
+            .joinToString(separator = " | ") { status ->
+                val detail = status.detail?.takeIf(String::isNotBlank) ?: status.state.name.lowercase()
+                "${status.group.displayName.value}: $detail"
+            }
+    }
+
+    private companion object {
+        const val MAX_FAILURE_DETAILS: Int = 3
+    }
 }

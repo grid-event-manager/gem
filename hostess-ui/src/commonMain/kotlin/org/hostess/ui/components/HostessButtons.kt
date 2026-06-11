@@ -1,19 +1,25 @@
 package org.hostess.ui.components
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.semantics.Role
 import org.hostess.ui.design.HostessTheme
 
 @Composable
@@ -104,6 +110,30 @@ fun HostessPlainButton(
 }
 
 @Composable
+fun HostessStaticButtonSurface(
+    text: String,
+    modifier: Modifier = Modifier,
+) {
+    val colors = HostessTheme.colors
+    val spacing = HostessTheme.spacing
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(spacing.controlHeight),
+        shape = HostessTheme.shapes.control,
+        color = colors.fieldSurface,
+        contentColor = colors.secondary,
+        border = BorderStroke(spacing.borderWidth, colors.lineStrong),
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+        ) {
+            HostessButtonText(text)
+        }
+    }
+}
+
+@Composable
 fun HostessIconButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -134,6 +164,32 @@ fun HostessIconButton(
             disabledContainerColor = colors.disabledBackground,
             disabledContentColor = colors.disabledInk,
         ),
+    ) {
+        content()
+    }
+}
+
+@Composable
+fun HostessInlineIconButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    contentDescription: String? = null,
+    content: @Composable () -> Unit,
+) {
+    val spacing = HostessTheme.spacing
+    Box(
+        modifier = modifier
+            .size(spacing.statusPillMinHeight)
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+            .then(
+                if (contentDescription == null) {
+                    Modifier
+                } else {
+                    Modifier.semantics { this.contentDescription = contentDescription }
+                },
+            ),
+        contentAlignment = Alignment.Center,
     ) {
         content()
     }

@@ -31,6 +31,7 @@ fun ComposeScreen(
     onInventoryShortcutSelected: (InventoryShortcut) -> Unit = {},
     onInventoryFolderOpen: (InventoryFolderId) -> Unit = {},
     onInventoryAssetSelected: (InventoryItemId) -> Unit = {},
+    onAttachmentCleared: () -> Unit = {},
     onAllGroupsChanged: (Boolean) -> Unit = {},
     onManualGroupsChanged: (Boolean) -> Unit = {},
     onManualGroupSelected: (String, Boolean) -> Unit = { _, _ -> },
@@ -54,6 +55,7 @@ fun ComposeScreen(
             onShortcutSelected = onInventoryShortcutSelected,
             onFolderOpen = onInventoryFolderOpen,
             onAssetSelected = onInventoryAssetSelected,
+            onAttachmentCleared = onAttachmentCleared,
         )
         GroupTargetSelector(
             state = groupTargetState,

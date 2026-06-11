@@ -23,8 +23,8 @@ class SavedAccountProfileTest {
     fun `saved profile stores credential handle but no password`() {
         val profile = SavedAccountProfile(
             profileId = AccountProfileId("profile:v1:one"),
-            loginName = loginName("jackraybold"),
-            label = "jackraybold resident",
+            loginName = loginName("venuehost"),
+            label = "venuehost resident",
             credentialHandle = CredentialHandle("credential:v1:one"),
             startLocation = null,
         )
@@ -40,7 +40,7 @@ class SavedAccountProfileTest {
         assertFailsWith<IllegalArgumentException> {
             SavedAccountProfile(
                 profileId = AccountProfileId("profile:v1:one"),
-                loginName = loginName("jackraybold"),
+                loginName = loginName("venuehost"),
                 label = " ",
                 credentialHandle = CredentialHandle("credential:v1:one"),
                 startLocation = null,

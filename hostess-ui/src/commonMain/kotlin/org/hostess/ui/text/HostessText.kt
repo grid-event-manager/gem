@@ -13,6 +13,8 @@ sealed interface HostessTextKey {
     data object AddNewLogin : HostessTextKey
     data object SaveAndLogin : HostessTextKey
     data object Settings : HostessTextKey
+    data object EditAccount : HostessTextKey
+    data object SavePassword : HostessTextKey
     data object AddNewAccount : HostessTextKey
     data object SaveNewAccount : HostessTextKey
     data object DeleteAccount : HostessTextKey
@@ -38,8 +40,11 @@ sealed interface HostessTextKey {
     data object MissingBody : HostessTextKey
     data object MissingGroups : HostessTextKey
     data object SavingLogin : HostessTextKey
+    data object SendingLoginDetails : HostessTextKey
     data object LoggingIn : HostessTextKey
     data object LoggingOut : HostessTextKey
+    data object RezzingWorld : HostessTextKey
+    data object LoadingAvatar : HostessTextKey
     data object PreparingAvatar : HostessTextKey
     data object LoadingGroups : HostessTextKey
     data object LoadingInventory : HostessTextKey
@@ -56,6 +61,11 @@ sealed interface HostessTextKey {
     data object Dark : HostessTextKey
     data object ThemePreferenceUnavailable : HostessTextKey
     data object ThemePreferenceSaveFailed : HostessTextKey
+    data object NoAttachmentsAdded : HostessTextKey
+    data object ClearAttachment : HostessTextKey
+    data object SendingNotices : HostessTextKey
+    data object NoticesSent : HostessTextKey
+    data object SomeNoticesFailed : HostessTextKey
     data class SelectedCount(val count: Int) : HostessTextKey
 
     companion object {
@@ -72,6 +82,8 @@ sealed interface HostessTextKey {
             AddNewLogin,
             SaveAndLogin,
             Settings,
+            EditAccount,
+            SavePassword,
             AddNewAccount,
             SaveNewAccount,
             DeleteAccount,
@@ -96,8 +108,11 @@ sealed interface HostessTextKey {
             MissingBody,
             MissingGroups,
             SavingLogin,
+            SendingLoginDetails,
             LoggingIn,
             LoggingOut,
+            RezzingWorld,
+            LoadingAvatar,
             PreparingAvatar,
             LoadingGroups,
             LoadingInventory,
@@ -114,6 +129,11 @@ sealed interface HostessTextKey {
             Dark,
             ThemePreferenceUnavailable,
             ThemePreferenceSaveFailed,
+            NoAttachmentsAdded,
+            ClearAttachment,
+            SendingNotices,
+            NoticesSent,
+            SomeNoticesFailed,
         )
     }
 }
@@ -136,6 +156,8 @@ object EnglishHostessTextCatalogue : HostessTextCatalogue {
         HostessTextKey.AddNewLogin -> "Add new login..."
         HostessTextKey.SaveAndLogin -> "Save and login"
         HostessTextKey.Settings -> "Settings"
+        HostessTextKey.EditAccount -> "Edit account"
+        HostessTextKey.SavePassword -> "Save password"
         HostessTextKey.AddNewAccount -> "Add new account"
         HostessTextKey.SaveNewAccount -> "Save new account"
         HostessTextKey.DeleteAccount -> "Delete account"
@@ -161,11 +183,14 @@ object EnglishHostessTextCatalogue : HostessTextCatalogue {
         HostessTextKey.MissingBody -> "Body required"
         HostessTextKey.MissingGroups -> "Select groups"
         HostessTextKey.SavingLogin -> "Saving login"
+        HostessTextKey.SendingLoginDetails -> "Sending login details"
         HostessTextKey.LoggingIn -> "Logging in"
         HostessTextKey.LoggingOut -> "Logging out"
+        HostessTextKey.RezzingWorld -> "Rezzing world"
+        HostessTextKey.LoadingAvatar -> "Loading avatar"
         HostessTextKey.PreparingAvatar -> "Preparing avatar"
         HostessTextKey.LoadingGroups -> "Loading groups"
-        HostessTextKey.LoadingInventory -> "Loading inventory"
+        HostessTextKey.LoadingInventory -> "Loading inventory folders"
         HostessTextKey.InventoryEmpty -> "No inventory"
         HostessTextKey.InventoryUnavailable -> "Inventory unavailable"
         HostessTextKey.GroupsEmpty -> "No groups"
@@ -179,6 +204,11 @@ object EnglishHostessTextCatalogue : HostessTextCatalogue {
         HostessTextKey.Dark -> "Dark"
         HostessTextKey.ThemePreferenceUnavailable -> "Theme preference unavailable"
         HostessTextKey.ThemePreferenceSaveFailed -> "Theme preference could not be saved"
+        HostessTextKey.NoAttachmentsAdded -> "No attachments added"
+        HostessTextKey.ClearAttachment -> "Clear attachment"
+        HostessTextKey.SendingNotices -> "Sending notices"
+        HostessTextKey.NoticesSent -> "Notices sent"
+        HostessTextKey.SomeNoticesFailed -> "Some notices failed"
         is HostessTextKey.SelectedCount -> "${key.count} selected"
     }
 }

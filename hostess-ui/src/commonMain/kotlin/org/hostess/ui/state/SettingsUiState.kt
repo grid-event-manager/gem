@@ -11,6 +11,7 @@ data class SettingsUiState(
     val passwordDraft: String = "",
     val passwordVisible: Boolean = false,
     val passwordEnabled: Boolean = false,
+    val editAccountExpanded: Boolean = false,
     val addAccountExpanded: Boolean = false,
     val addUsernameDraft: String = "",
     val addPasswordDraft: String = "",
@@ -24,6 +25,9 @@ data class SettingsUiState(
 ) {
     val deleteEnabled: Boolean
         get() = selectedDeleteProfileIds.isNotEmpty()
+
+    val saveEditedPasswordEnabled: Boolean
+        get() = passwordEnabled && passwordDraft.isNotBlank()
 
     companion object {
         fun fromCredentialRuntime(runtimeState: HostessCredentialRuntimeState): SettingsUiState =

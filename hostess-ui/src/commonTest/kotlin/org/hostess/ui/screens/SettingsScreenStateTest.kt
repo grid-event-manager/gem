@@ -19,6 +19,8 @@ class SettingsScreenStateTest {
         assertEquals("Password", catalogue.text(HostessTextKey.Password))
         assertEquals("Show", catalogue.text(HostessTextKey.Show))
         assertEquals("Hide", catalogue.text(HostessTextKey.Hide))
+        assertEquals("Edit account", catalogue.text(HostessTextKey.EditAccount))
+        assertEquals("Save password", catalogue.text(HostessTextKey.SavePassword))
         assertEquals("Add new account", catalogue.text(HostessTextKey.AddNewAccount))
         assertEquals("Save new account", catalogue.text(HostessTextKey.SaveNewAccount))
         assertEquals("Delete account", catalogue.text(HostessTextKey.DeleteAccount))
@@ -36,6 +38,7 @@ class SettingsScreenStateTest {
 
         assertFalse(state.passwordEnabled)
         assertFalse(state.passwordVisible)
+        assertFalse(state.editAccountExpanded)
         assertFalse(state.addAccountExpanded)
         assertFalse(state.saveNewAccountEnabled)
         assertFalse(state.deleteExpanded)

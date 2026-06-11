@@ -113,6 +113,7 @@ class SendFooterControllerTest {
         assertEquals(2, recorder.sendCallCount)
         assertEquals(1, afterSend.state.sentGroupCount)
         assertEquals(1, afterSend.state.failedGroupCount)
+        assertEquals("m!nx: failed", afterSend.state.sendFooterState.detailText)
     }
 
     private fun readyFixture(

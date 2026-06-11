@@ -51,7 +51,7 @@ fun HostessTopBar(
                 Text(
                     text = textCatalogue.text(HostessTextKey.AppName),
                     style = HostessTheme.typeScale.brandTitle,
-                    color = HostessTheme.colors.secondary,
+                    color = HostessTheme.colors.topBarInk,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -71,10 +71,11 @@ fun HostessTopBar(
                     contentDescription = textCatalogue.text(HostessTextKey.Menu),
                     modifier = Modifier.testTag(HostessTestTags.MenuButton),
                 ) {
-                    HostessMenuIcon()
+                    HostessMenuIcon(tint = HostessTheme.colors.topBarMenuInk)
                 }
                 HostessOverflowMenu(
                     expanded = menuOpen,
+                    logoutEnabled = activeAccountLabel.isNotBlank(),
                     textCatalogue = textCatalogue,
                     onDismiss = onMenuDismiss,
                     onSettingsClick = onSettingsClick,

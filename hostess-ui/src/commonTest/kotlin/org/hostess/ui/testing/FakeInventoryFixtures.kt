@@ -1,6 +1,7 @@
 package org.hostess.ui.testing
 
 import org.hostess.core.domain.AccountLabel
+import org.hostess.core.domain.AttachmentOwnerId
 import org.hostess.core.domain.HostessInstant
 import org.hostess.core.domain.HostessSession
 import org.hostess.core.domain.InventoryAssetId
@@ -27,7 +28,7 @@ object FakeInventoryFixtures {
     fun session(): HostessSession =
         HostessSession(
             sessionId = SessionId("session:ui"),
-            accountLabel = AccountLabel("jackraybold resident"),
+            accountLabel = AccountLabel("venuehost resident"),
             startedAt = HostessInstant.EPOCH,
             isActive = true,
         )
@@ -45,6 +46,18 @@ object FakeInventoryFixtures {
                 item(venueItemId, venuesFolderId, "Venue Stage", InventoryItemKind.LANDMARK),
                 item(textureItemId, texturesFolderId, "Stage Poster", InventoryItemKind.TEXTURE),
                 item(noCopyItemId, landmarksFolderId, "No Copy Landmark", InventoryItemKind.LANDMARK, copyable = false),
+            ),
+        )
+
+    fun listingWithoutAttachmentOwners(): InventoryDirectoryListing =
+        InventoryDirectoryListing(
+            folders = listOf(
+                folder(rootFolderId, null, "Inventory"),
+                folder(landmarksFolderId, rootFolderId, "Landmarks"),
+                folder(texturesFolderId, rootFolderId, "Textures"),
+            ),
+            items = listOf(
+                item(welcomeItemId, landmarksFolderId, "Welcome Area", InventoryItemKind.LANDMARK, ownerId = null),
             ),
         )
 
@@ -79,6 +92,7 @@ object FakeInventoryFixtures {
         displayName: String,
         kind: InventoryItemKind,
         copyable: Boolean? = true,
+        ownerId: AttachmentOwnerId? = AttachmentOwnerId("owner:${id.value}"),
     ): InventoryItemDescriptor =
         InventoryItemDescriptor(
             itemId = id,
@@ -87,5 +101,6 @@ object FakeInventoryFixtures {
             displayName = InventoryItemDisplayName(displayName),
             kind = kind,
             copyable = copyable,
+            ownerId = ownerId,
         )
 }

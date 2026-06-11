@@ -6,6 +6,7 @@ import org.hostess.core.domain.LoginComplianceRequest
 import org.hostess.core.domain.OperatorLabel
 import org.hostess.core.domain.SavedAccountProfile
 import org.hostess.core.domain.ScriptedAgentEvidenceSource
+import java.nio.file.Path
 import org.hostess.core.ports.ClockPort
 import org.hostess.core.preferences.LastLoginProfilePreferenceService
 import org.hostess.core.services.AttachmentService
@@ -33,6 +34,7 @@ object HostessDesktopCompositionRoot {
             vaultAccess = DesktopVaultComposition.open(),
             themePreferenceService = DesktopPreferenceComposition.open(),
             lastLoginProfilePreferenceService = DesktopPreferenceComposition.openLastLoginProfile(),
+            inventorySnapshotCacheDirectory = DesktopPreferenceComposition.inventorySnapshotCacheDirectory(),
         )
 
     internal fun create(
@@ -44,6 +46,7 @@ object HostessDesktopCompositionRoot {
             vaultAccess = DesktopVaultComposition.open(osName, env, userHome),
             themePreferenceService = DesktopPreferenceComposition.open(osName, env, userHome),
             lastLoginProfilePreferenceService = DesktopPreferenceComposition.openLastLoginProfile(osName, env, userHome),
+            inventorySnapshotCacheDirectory = DesktopPreferenceComposition.inventorySnapshotCacheDirectory(osName, env, userHome),
         )
 
     private object HostessRuntimeComposition {
@@ -51,8 +54,12 @@ object HostessDesktopCompositionRoot {
             vaultAccess: HostessVaultRuntimeAccess,
             themePreferenceService: ThemePreferenceService,
             lastLoginProfilePreferenceService: LastLoginProfilePreferenceService,
+            inventorySnapshotCacheDirectory: Path,
         ): HostessUiRuntime {
-            val protocolRuntime = ProtocolLibomvModule.liveRuntime(vaultAccess.loginSecretResolver())
+            val protocolRuntime = ProtocolLibomvModule.liveRuntime(
+                secretResolver = vaultAccess.loginSecretResolver(),
+                inventorySnapshotCacheDirectory = inventorySnapshotCacheDirectory,
+            )
             return HostessUiRuntime(
                 credentialRuntimeState = vaultAccess.credentialRuntimeState,
                 sessionService = SessionService(

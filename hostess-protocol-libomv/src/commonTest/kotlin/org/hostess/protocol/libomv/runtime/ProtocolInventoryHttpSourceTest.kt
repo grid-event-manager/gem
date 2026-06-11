@@ -5,6 +5,8 @@ import org.hostess.core.domain.ExistingInventoryAttachment
 import org.hostess.core.domain.InventoryItemId
 import org.hostess.core.domain.InventoryItemQuery
 import org.hostess.protocol.libomv.LibomvSessionIdentity
+import org.hostess.protocol.libomv.mapping.LibomvInventoryFolderSnapshot
+import org.hostess.protocol.libomv.mapping.LibomvInventoryItemSnapshot
 import org.hostess.protocol.libomv.mapping.LoginInventoryRoots
 import org.hostess.protocol.libomv.transport.CapabilityUrl
 import org.hostess.protocol.libomv.transport.ProtocolHttpBody
@@ -164,6 +166,94 @@ class ProtocolInventoryHttpSourceTest {
     }
 
     @Test
+    fun `reuses fetched inventory snapshot for attachment resolution`() {
+        val httpClient = RecordingHttpClient {
+            folderResponse(
+                items = listOf(item("landmark-item", "Venue Landmark", ROOT_FOLDER_ID, inventoryType = 3)),
+            )
+        }
+        val source = ProtocolInventoryHttpSource(httpClient)
+
+        assertIs<InventoryRuntimeDirectoryListResult.Success>(
+            source.listDirectory(identity(), roots(), capabilityUrl(), InventoryItemQuery()),
+        )
+        val resolved = assertIs<InventoryRuntimeResult.Success>(
+            source.resolveExistingAttachment(
+                identity(),
+                roots(),
+                capabilityUrl(),
+                ExistingInventoryAttachment(AttachmentKind.LANDMARK, InventoryItemId("landmark-item")),
+            ),
+        )
+
+        assertEquals("landmark-item", resolved.snapshot.itemId)
+        assertEquals(1, httpClient.requests.size)
+    }
+
+    @Test
+    fun `loads persisted inventory snapshot before fetching live inventory`() {
+        val cacheStore = RecordingInventorySnapshotCacheStore(
+            loadedSnapshot = InventorySnapshot(
+                folders = listOf(LibomvInventoryFolderSnapshot(ROOT_FOLDER_ID, null, "Inventory")),
+                items = listOf(
+                    LibomvInventoryItemSnapshot(
+                        itemId = "cached-landmark",
+                        ownerId = AGENT_ID,
+                        parentFolderId = ROOT_FOLDER_ID,
+                        assetId = "cached-asset",
+                        name = "Cached Landmark",
+                        inventoryType = 3,
+                        copyable = true,
+                    ),
+                ),
+            ),
+        )
+        val httpClient = RecordingHttpClient { emptyFolderResponse() }
+        val source = ProtocolInventoryHttpSource(httpClient, cacheStore)
+
+        val listed = assertIs<InventoryRuntimeDirectoryListResult.Success>(
+            source.listDirectory(identity(), roots(), capabilityUrl(), InventoryItemQuery()),
+        )
+        val resolved = assertIs<InventoryRuntimeResult.Success>(
+            source.resolveExistingAttachment(
+                identity(),
+                roots(),
+                capabilityUrl(),
+                ExistingInventoryAttachment(AttachmentKind.LANDMARK, InventoryItemId("cached-landmark")),
+            ),
+        )
+
+        assertEquals("cached-landmark", listed.items.single().itemId)
+        assertEquals("cached-landmark", resolved.snapshot.itemId)
+        assertEquals(0, httpClient.requests.size)
+        assertEquals(listOf(InventorySnapshotCacheKey(AGENT_ID, ROOT_FOLDER_ID)), cacheStore.loadKeys)
+    }
+
+    @Test
+    fun `saves fetched inventory snapshot for later sessions`() {
+        val cacheStore = RecordingInventorySnapshotCacheStore()
+        val source = ProtocolInventoryHttpSource(
+            httpClient = RecordingHttpClient {
+                folderResponse(
+                    items = listOf(
+                        openSimItemWithoutItemOwner("landmark-item", "Venue Landmark", ROOT_FOLDER_ID),
+                    ),
+                )
+            },
+            snapshotCacheStore = cacheStore,
+        )
+
+        assertIs<InventoryRuntimeDirectoryListResult.Success>(
+            source.listDirectory(identity(), roots(), capabilityUrl(), InventoryItemQuery()),
+        )
+
+        val saved = cacheStore.savedSnapshots.single()
+        assertEquals(InventorySnapshotCacheKey(AGENT_ID, ROOT_FOLDER_ID), saved.first)
+        assertEquals("landmark-item", saved.second.items.single().itemId)
+        assertEquals(true, saved.second.items.single().copyable)
+    }
+
+    @Test
     fun `texture attachment rejects non texture catalogue item`() {
         val source = ProtocolInventoryHttpSource(
             RecordingHttpClient {
@@ -193,6 +283,25 @@ class ProtocolInventoryHttpSourceTest {
         override fun execute(request: ProtocolHttpRequest): ProtocolHttpResponse {
             requests += request
             return responseForRequest(requests.size)
+        }
+    }
+
+    private class RecordingInventorySnapshotCacheStore(
+        private val loadedSnapshot: InventorySnapshot? = null,
+    ) : InventorySnapshotCacheStore {
+        val loadKeys = mutableListOf<InventorySnapshotCacheKey>()
+        val savedSnapshots = mutableListOf<Pair<InventorySnapshotCacheKey, InventorySnapshot>>()
+
+        override fun load(key: InventorySnapshotCacheKey): InventorySnapshot? {
+            loadKeys += key
+            return loadedSnapshot
+        }
+
+        override fun save(
+            key: InventorySnapshotCacheKey,
+            snapshot: InventorySnapshot,
+        ) {
+            savedSnapshots += key to snapshot
         }
     }
 

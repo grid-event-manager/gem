@@ -184,15 +184,15 @@ class SavedLoginAuthenticationServiceTest {
 
     private fun profile(id: String): SavedAccountProfile = SavedAccountProfile(
         profileId = AccountProfileId("profile:v1:$id"),
-        loginName = loginName("jackraybold"),
-        label = "jackraybold resident",
+        loginName = loginName("venuehost"),
+        label = "venuehost resident",
         credentialHandle = CredentialHandle("credential:v1:$id"),
         startLocation = null,
     )
 
     private fun material(password: String): LoginCredentialMaterial = LoginCredentialMaterial(
         loginUri = SecondLifeLoginUri.SECOND_LIFE_DEFAULT,
-        loginName = loginName("jackraybold"),
+        loginName = loginName("venuehost"),
         sharedSecret = requireNotNull(SharedSecret.fromPlainText(password)),
         startLocation = null,
     )
