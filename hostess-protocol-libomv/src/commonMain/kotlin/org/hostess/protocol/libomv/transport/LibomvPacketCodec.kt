@@ -64,10 +64,10 @@ internal object LibomvPacketCodec {
         writeByte(pingId)
     }
 
-    fun agentUpdate(circuit: SimulatorCircuit, sequence: Int): ByteArray = highPacket(
+    fun agentUpdate(circuit: SimulatorCircuit, sequence: Int, reliable: Boolean = true): ByteArray = highPacket(
         packetId = AGENT_UPDATE,
         sequence = sequence,
-        flags = RELIABLE_ZEROCODED_FLAGS,
+        flags = if (reliable) RELIABLE_ZEROCODED_FLAGS else ZEROCODED_FLAGS,
         bodyLength = AGENT_UPDATE_BODY_BYTES,
         zerocode = true,
     ) {
@@ -85,15 +85,23 @@ internal object LibomvPacketCodec {
         writeByte(AGENT_FLAGS_NONE)
     }
 
+    fun logoutRequest(circuit: SimulatorCircuit, sequence: Int): ByteArray = lowPacket(
+        packetId = LOGOUT_REQUEST,
+        sequence = sequence,
+        flags = RELIABLE_FLAGS,
+        bodyLength = ID_BYTES + ID_BYTES,
+    ) {
+        writeUuid(circuit.agentId)
+        writeUuid(circuit.sessionId)
+    }
+
+    fun closeCircuit(sequence: Int): ByteArray = fixedPacket(
+        packetId = CLOSE_CIRCUIT_FIXED_ID,
+        sequence = sequence,
+    )
+
     fun packetAck(sequenceNumber: Long): ByteArray {
-        val writer = LibomvBytePacketWriter(FIXED_HEADER_BYTES + FIXED_PACKET_ID_BYTES + U8_BYTES + U32_BYTES)
-        writer.writeByte(0)
-        writer.writeHeaderInt(0)
-        writer.writeByte(0)
-        writer.writeByte(LOW_FREQUENCY_MARKER)
-        writer.writeByte(LOW_FREQUENCY_MARKER)
-        writer.writeByte(LOW_FREQUENCY_MARKER)
-        writer.writeByte(PACKET_ACK_FIXED_ID)
+        val writer = fixedPacketWriter(sequence = 0, packetId = PACKET_ACK_FIXED_ID, bodyLength = U8_BYTES + U32_BYTES)
         writer.writeByte(1)
         writer.writeBodyU32(sequenceNumber)
         return writer.toByteArray()
@@ -126,6 +134,7 @@ internal object LibomvPacketCodec {
                 packet.isType(PacketFrequency.LOW, IMPROVED_INSTANT_MESSAGE) -> SimulatorPacketType.IMPROVED_INSTANT_MESSAGE
                 packet.isType(PacketFrequency.LOW, ALERT_MESSAGE) -> SimulatorPacketType.ALERT_MESSAGE
                 packet.isType(PacketFrequency.LOW, PACKET_ACK_DECODED_ID) -> SimulatorPacketType.PACKET_ACK
+                packet.isType(PacketFrequency.LOW, LOGOUT_REPLY) -> SimulatorPacketType.LOGOUT_REPLY
                 else -> SimulatorPacketType.UNKNOWN
             }
         }
@@ -244,6 +253,17 @@ internal object LibomvPacketCodec {
         return SimulatorNoticeArchiveReply(groupId = groupId, entries = entries)
     }
 
+    fun logoutReplyMatches(payload: ByteArray, circuit: SimulatorCircuit): Boolean {
+        val packet = decodedPacket(payload) ?: return false
+        if (!packet.isType(PacketFrequency.LOW, LOGOUT_REPLY)) {
+            return false
+        }
+        val reader = packet.bodyReader() ?: return false
+        val agentId = reader.readUuid() ?: return false
+        val sessionId = reader.readUuid() ?: return false
+        return agentId == circuit.agentId && sessionId == circuit.sessionId
+    }
+
     fun improvedInstantMessageObservation(payload: ByteArray): SimulatorInstantMessageObservation? {
         val packet = decodedPacket(payload) ?: return null
         if (!packet.isType(PacketFrequency.LOW, IMPROVED_INSTANT_MESSAGE)) {
@@ -323,6 +343,21 @@ internal object LibomvPacketCodec {
         writer.body()
         val packet = writer.toByteArray()
         return if (zerocode) LibomvZerocodeCodec.encode(packet) else packet
+    }
+
+    private fun fixedPacket(sequence: Int, packetId: Int): ByteArray =
+        fixedPacketWriter(sequence = sequence, packetId = packetId, bodyLength = 0).toByteArray()
+
+    private fun fixedPacketWriter(sequence: Int, packetId: Int, bodyLength: Int): LibomvBytePacketWriter {
+        val writer = LibomvBytePacketWriter(FIXED_HEADER_BYTES + FIXED_PACKET_ID_BYTES + bodyLength)
+        writer.writeByte(0)
+        writer.writeHeaderInt(sequence)
+        writer.writeByte(0)
+        writer.writeByte(LOW_FREQUENCY_MARKER)
+        writer.writeByte(LOW_FREQUENCY_MARKER)
+        writer.writeByte(LOW_FREQUENCY_MARKER)
+        writer.writeByte(packetId)
+        return writer
     }
 
     private fun highPacket(
@@ -556,6 +591,8 @@ internal object LibomvPacketCodec {
     private const val REGION_HANDSHAKE_REPLY = 149
     private const val COMPLETE_AGENT_MOVEMENT = 249
     private const val AGENT_MOVEMENT_COMPLETE = 250
+    private const val LOGOUT_REQUEST = 252
+    private const val LOGOUT_REPLY = 253
     private const val IMPROVED_INSTANT_MESSAGE = 254
     private const val AGENT_DATA_UPDATE_REQUEST = 386
     private const val GROUP_NOTICES_LIST_REQUEST = 58
@@ -563,7 +600,9 @@ internal object LibomvPacketCodec {
     private const val GROUP_NOTICE_REQUESTED = 60
     private const val ALERT_MESSAGE = 134
     private const val PACKET_ACK_FIXED_ID = 0xFB
+    private const val CLOSE_CIRCUIT_FIXED_ID = 0xFD
     private const val PACKET_ACK_DECODED_ID = 0xFF00 + PACKET_ACK_FIXED_ID
+    private const val CLOSE_CIRCUIT_DECODED_ID = 0xFF00 + CLOSE_CIRCUIT_FIXED_ID
     private const val LOW_HEADER_BYTES = 10
     private const val HIGH_HEADER_BYTES = 7
     private const val FIXED_HEADER_BYTES = 6
@@ -594,6 +633,7 @@ internal object LibomvPacketCodec {
     private const val TERRAIN_FLOAT_FIELD_COUNT = 8
     private const val APPENDED_ACKS_FLAG = 0x10
     private const val RESENT_FLAG = 0x20
+    private const val ZEROCODED_FLAGS = 0x80
     private const val RELIABLE_FLAGS = 0x40
     private const val RELIABLE_ZEROCODED_FLAGS = 0xC0
     private const val SELF_APPEARANCE_SUPPORT_FLAG = 4L
@@ -631,9 +671,12 @@ internal object LibomvPacketCodec {
         196 to "parcel_overlay",
         COMPLETE_AGENT_MOVEMENT to "complete_agent_movement",
         AGENT_MOVEMENT_COMPLETE to "agent_movement_complete",
+        LOGOUT_REQUEST to "logout_request",
+        LOGOUT_REPLY to "logout_reply",
         IMPROVED_INSTANT_MESSAGE to "improved_instant_message",
         322 to "online_notification",
         AGENT_DATA_UPDATE_REQUEST to "agent_data_update_request",
         PACKET_ACK_DECODED_ID to "packet_ack",
+        CLOSE_CIRCUIT_DECODED_ID to "close_circuit",
     )
 }

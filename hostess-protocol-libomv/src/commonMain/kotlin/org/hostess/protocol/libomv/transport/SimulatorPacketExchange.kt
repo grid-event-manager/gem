@@ -28,6 +28,7 @@ internal enum class SimulatorPacketType {
     IMPROVED_INSTANT_MESSAGE,
     ALERT_MESSAGE,
     PACKET_ACK,
+    LOGOUT_REPLY,
     UNKNOWN,
 }
 
@@ -79,6 +80,8 @@ internal sealed interface SimulatorPresenceResult {
         val cached: Boolean,
         val regionName: String? = null,
         val regionProtocolFlags: RegionProtocolFlags = RegionProtocolFlags.unknown(),
+        val heartbeatActive: Boolean = false,
+        val sessionHealth: SimulatorSessionHealth = SimulatorSessionHealth(SimulatorSessionHealthStatus.PRESENT),
     ) : SimulatorPresenceResult
 
     data class Failed(
