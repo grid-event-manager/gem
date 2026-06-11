@@ -7,7 +7,7 @@ import kotlin.test.assertTrue
 class HostessTextTest {
     @Test
     fun fixedKeysCoverPrototypeCopy() {
-        assertEquals(64, HostessTextKey.fixedKeys.size)
+        assertEquals(65, HostessTextKey.fixedKeys.size)
         assertTrue(HostessTextKey.AppName in HostessTextKey.fixedKeys)
         assertTrue(HostessTextKey.Username in HostessTextKey.fixedKeys)
         assertTrue(HostessTextKey.Menu in HostessTextKey.fixedKeys)
@@ -35,6 +35,7 @@ class HostessTextTest {
         assertTrue(HostessTextKey.SendingNotices in HostessTextKey.fixedKeys)
         assertTrue(HostessTextKey.NoticesSent in HostessTextKey.fixedKeys)
         assertTrue(HostessTextKey.SomeNoticesFailed in HostessTextKey.fixedKeys)
+        assertTrue(HostessTextKey.SomeNoticesUnconfirmed in HostessTextKey.fixedKeys)
     }
 
     @Test
@@ -83,6 +84,7 @@ class HostessTextTest {
         assertEquals("Sending notices", catalogue.text(HostessTextKey.SendingNotices))
         assertEquals("Notices sent", catalogue.text(HostessTextKey.NoticesSent))
         assertEquals("Some notices failed", catalogue.text(HostessTextKey.SomeNoticesFailed))
+        assertEquals("Some notices unconfirmed", catalogue.text(HostessTextKey.SomeNoticesUnconfirmed))
     }
 
     @Test

@@ -66,6 +66,7 @@ sealed interface HostessTextKey {
     data object SendingNotices : HostessTextKey
     data object NoticesSent : HostessTextKey
     data object SomeNoticesFailed : HostessTextKey
+    data object SomeNoticesUnconfirmed : HostessTextKey
     data class SelectedCount(val count: Int) : HostessTextKey
 
     companion object {
@@ -134,6 +135,7 @@ sealed interface HostessTextKey {
             SendingNotices,
             NoticesSent,
             SomeNoticesFailed,
+            SomeNoticesUnconfirmed,
         )
     }
 }
@@ -209,6 +211,7 @@ object EnglishHostessTextCatalogue : HostessTextCatalogue {
         HostessTextKey.SendingNotices -> "Sending notices"
         HostessTextKey.NoticesSent -> "Notices sent"
         HostessTextKey.SomeNoticesFailed -> "Some notices failed"
+        HostessTextKey.SomeNoticesUnconfirmed -> "Some notices unconfirmed"
         is HostessTextKey.SelectedCount -> "${key.count} selected"
     }
 }

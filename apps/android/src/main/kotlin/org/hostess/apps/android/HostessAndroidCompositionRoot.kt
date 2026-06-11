@@ -18,6 +18,7 @@ import org.hostess.core.services.GroupDirectoryService
 import org.hostess.core.services.InventoryDirectoryService
 import org.hostess.core.services.InventorySelectionService
 import org.hostess.core.services.LoginComplianceService
+import org.hostess.core.services.NoticeConfirmationService
 import org.hostess.core.services.NoticeDispatchService
 import org.hostess.core.services.NoticeDraftService
 import org.hostess.core.services.SessionService
@@ -53,6 +54,7 @@ object HostessAndroidCompositionRoot {
                 secretResolver = vaultAccess.loginSecretResolver(),
                 inventorySnapshotCacheDirectory = inventorySnapshotCacheDirectory,
             )
+            val groupDirectoryService = GroupDirectoryService(protocolRuntime.groupPort)
             return HostessUiRuntime(
                 credentialRuntimeState = vaultAccess.credentialRuntimeState,
                 sessionService = SessionService(
@@ -61,7 +63,7 @@ object HostessAndroidCompositionRoot {
                     redactionPort = DefaultRedactionPort,
                 ),
                 avatarReadinessService = AvatarReadinessService(protocolRuntime.avatarPort),
-                groupDirectoryService = GroupDirectoryService(protocolRuntime.groupPort),
+                groupDirectoryService = groupDirectoryService,
                 targetSelectionService = TargetSelectionService(),
                 inventoryDirectoryService = InventoryDirectoryService(protocolRuntime.inventoryPort),
                 inventorySelectionService = InventorySelectionService(),
@@ -71,6 +73,7 @@ object HostessAndroidCompositionRoot {
                     noticePort = protocolRuntime.noticePort,
                     clockPort = AndroidAppClockPort,
                 ),
+                noticeConfirmationService = NoticeConfirmationService(groupDirectoryService),
                 loginComplianceProvider = HostessUiLoginComplianceProvider,
                 themePreferenceService = themePreferenceService,
                 lastLoginProfilePreferenceService = lastLoginProfilePreferenceService,

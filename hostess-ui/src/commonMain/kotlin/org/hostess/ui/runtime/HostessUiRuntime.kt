@@ -9,6 +9,7 @@ import org.hostess.core.services.HostessCredentialRuntimeState
 import org.hostess.core.services.InventoryDirectoryService
 import org.hostess.core.services.InventorySelectionService
 import org.hostess.core.services.LoginProfileAuthenticationService
+import org.hostess.core.services.NoticeConfirmationService
 import org.hostess.core.services.NoticeDispatchService
 import org.hostess.core.services.NoticeDraftService
 import org.hostess.core.services.SavedLoginAuthenticationService
@@ -29,6 +30,7 @@ data class HostessUiRuntime(
     val attachmentService: AttachmentService,
     val noticeDraftService: NoticeDraftService,
     val noticeDispatchService: NoticeDispatchService,
+    val noticeConfirmationService: NoticeConfirmationService,
     val loginComplianceProvider: HostessLoginComplianceProvider,
     val themePreferenceService: ThemePreferenceService,
     val lastLoginProfilePreferenceService: LastLoginProfilePreferenceService,

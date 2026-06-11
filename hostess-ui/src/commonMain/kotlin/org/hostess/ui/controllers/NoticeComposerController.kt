@@ -1,5 +1,7 @@
 package org.hostess.ui.controllers
 
+import org.hostess.core.domain.GroupNoticeConfirmationState
+import org.hostess.core.domain.GroupNoticeConfirmationStatus
 import org.hostess.core.domain.GroupSendState
 import org.hostess.core.domain.GroupSendStatus
 import org.hostess.core.domain.GroupTargetSet
@@ -7,6 +9,7 @@ import org.hostess.core.domain.HostessSession
 import org.hostess.core.domain.NoticeDispatchResult
 import org.hostess.core.domain.NoticeDraftInvalidReason
 import org.hostess.core.domain.NoticeDraftValidation
+import org.hostess.core.domain.NoticeConfirmationResult
 import org.hostess.core.domain.PacingPolicy
 import org.hostess.core.ports.GroupListResult
 import org.hostess.ui.runtime.HostessUiRuntime
@@ -114,7 +117,10 @@ class NoticeComposerController(
                 attachment = selectedAttachment?.attachmentRef,
             )
         ) {
-            is NoticeDispatchResult.Sent -> copy(projectDispatchSent(result))
+            is NoticeDispatchResult.Sent -> {
+                val confirmation = runtime.noticeConfirmationService.confirmArchive(session, result.result)
+                copy(projectDispatchSent(result, confirmation))
+            }
             is NoticeDispatchResult.Rejected -> copy(projectDispatchRejected(result.validation))
         }
     }
@@ -214,21 +220,21 @@ class NoticeComposerController(
         return keys.toList()
     }
 
-    private fun projectDispatchSent(result: NoticeDispatchResult.Sent): NoticeComposerUiState {
+    private fun projectDispatchSent(
+        result: NoticeDispatchResult.Sent,
+        confirmation: NoticeConfirmationResult,
+    ): NoticeComposerUiState {
         val sentCount = result.result.statuses.count { it.state == GroupSendState.SENT }
         val failedCount = result.result.statuses.count { it.state != GroupSendState.SENT }
+        val hasTransportFailure = failedCount > 0
         return state.copy(
             sendAttempted = true,
             sentGroupCount = sentCount,
             failedGroupCount = failedCount,
             dispatchRejected = false,
             sendFooterState = state.sendFooterState.copy(
-                statusTextKey = if (failedCount == 0) {
-                    HostessTextKey.NoticesSent
-                } else {
-                    HostessTextKey.SomeNoticesFailed
-                },
-                detailText = failureDetail(result.result.statuses),
+                statusTextKey = sendStatusTextKey(hasTransportFailure, confirmation),
+                detailText = failureDetail(result.result.statuses, confirmation.statuses),
                 enabled = true,
                 sending = false,
                 showMissingRequirements = false,
@@ -254,17 +260,40 @@ class NoticeComposerController(
             ),
         )
 
-    private fun failureDetail(statuses: List<GroupSendStatus>): String? {
+    private fun sendStatusTextKey(
+        hasTransportFailure: Boolean,
+        confirmation: NoticeConfirmationResult,
+    ): HostessTextKey =
+        when {
+            hasTransportFailure -> HostessTextKey.SomeNoticesFailed
+            confirmation.allConfirmed -> HostessTextKey.NoticesSent
+            else -> HostessTextKey.SomeNoticesUnconfirmed
+        }
+
+    private fun failureDetail(
+        statuses: List<GroupSendStatus>,
+        confirmationStatuses: List<GroupNoticeConfirmationStatus>,
+    ): String? {
         val failed = statuses.filter { it.state != GroupSendState.SENT }
-        if (failed.isEmpty()) {
+        val confirmationGaps = confirmationStatuses.filter {
+            it.state == GroupNoticeConfirmationState.UNCONFIRMED ||
+                it.state == GroupNoticeConfirmationState.FAILED
+        }
+        if (failed.isEmpty() && confirmationGaps.isEmpty()) {
             return null
         }
-        return failed
-            .take(MAX_FAILURE_DETAILS)
-            .joinToString(separator = " | ") { status ->
+        val details = mutableListOf<String>()
+        failed.take(MAX_FAILURE_DETAILS).mapTo(details) { status ->
+            val detail = status.detail?.takeIf(String::isNotBlank) ?: status.state.name.lowercase()
+            "${status.group.displayName.value}: $detail"
+        }
+        if (details.size < MAX_FAILURE_DETAILS) {
+            confirmationGaps.take(MAX_FAILURE_DETAILS - details.size).mapTo(details) { status ->
                 val detail = status.detail?.takeIf(String::isNotBlank) ?: status.state.name.lowercase()
                 "${status.group.displayName.value}: $detail"
             }
+        }
+        return details.joinToString(separator = " | ")
     }
 
     private companion object {

@@ -6,6 +6,7 @@ import org.hostess.core.domain.AttachmentRef
 import org.hostess.core.domain.CoreFailure
 import org.hostess.core.domain.CoreFailureReason
 import org.hostess.core.domain.GroupMembership
+import org.hostess.core.domain.GroupId
 import org.hostess.core.domain.GroupSendState
 import org.hostess.core.domain.GroupSendStatus
 import org.hostess.core.domain.HostessInstant
@@ -55,6 +56,7 @@ import org.hostess.core.ports.CredentialVaultResolveResult
 import org.hostess.core.ports.CredentialVaultSaveResult
 import org.hostess.core.ports.CredentialVaultUpdateResult
 import org.hostess.core.ports.GroupListResult
+import org.hostess.core.ports.GroupNoticeArchiveEntry
 import org.hostess.core.ports.GroupNoticeArchiveResult
 import org.hostess.core.ports.GroupPort
 import org.hostess.core.ports.InventoryDirectoryListResult
@@ -88,6 +90,8 @@ object FakeHostessUiRuntime {
         inventoryListSucceeds: Boolean = true,
         attachmentSucceeds: Boolean = true,
         noticeRecorder: FakeNoticeRecorder = FakeNoticeRecorder(),
+        noticeArchiveEntriesByGroupId: Map<GroupId, List<GroupNoticeArchiveEntry>>? = null,
+        noticeArchiveFailuresByGroupId: Map<GroupId, CoreFailure> = emptyMap(),
         themePreferenceStore: FakeThemePreferenceStore = FakeThemePreferenceStore(),
         lastLoginProfilePreferenceStore: FakeLastLoginProfilePreferenceStore = FakeLastLoginProfilePreferenceStore(),
     ): HostessUiRuntime {
@@ -112,6 +116,8 @@ object FakeHostessUiRuntime {
             inventoryListSucceeds = inventoryListSucceeds,
             attachmentSucceeds = attachmentSucceeds,
             noticeRecorder = noticeRecorder,
+            noticeArchiveEntriesByGroupId = noticeArchiveEntriesByGroupId,
+            noticeArchiveFailuresByGroupId = noticeArchiveFailuresByGroupId,
             themePreferenceStore = themePreferenceStore,
             lastLoginProfilePreferenceStore = lastLoginProfilePreferenceStore,
         )
@@ -145,11 +151,22 @@ object FakeHostessUiRuntime {
         inventoryListSucceeds: Boolean = true,
         attachmentSucceeds: Boolean = true,
         noticeRecorder: FakeNoticeRecorder = FakeNoticeRecorder(),
+        noticeArchiveEntriesByGroupId: Map<GroupId, List<GroupNoticeArchiveEntry>>? = null,
+        noticeArchiveFailuresByGroupId: Map<GroupId, CoreFailure> = emptyMap(),
         themePreferenceStore: FakeThemePreferenceStore = FakeThemePreferenceStore(),
         lastLoginProfilePreferenceStore: FakeLastLoginProfilePreferenceStore = FakeLastLoginProfilePreferenceStore(),
     ): HostessUiRuntime {
         val sessionPort = FakeSessionPort(loginSucceeds)
         val inventoryPort = FakeInventoryPort(inventoryListing, inventoryListSucceeds, attachmentSucceeds)
+        val groupDirectoryService = GroupDirectoryService(
+            FakeGroupPort(
+                groups = groups,
+                groupListSucceeds = groupListSucceeds,
+                noticeArchiveEntriesByGroupId = noticeArchiveEntriesByGroupId,
+                noticeArchiveFailuresByGroupId = noticeArchiveFailuresByGroupId,
+                noticeArchiveSubject = { noticeRecorder.lastSubject },
+            ),
+        )
         return HostessUiRuntime(
             credentialRuntimeState = credentialRuntimeState,
             sessionService = SessionService(
@@ -158,13 +175,14 @@ object FakeHostessUiRuntime {
                 redactionPort = RedactionPort { value -> value },
             ),
             avatarReadinessService = AvatarReadinessService(FakeAvatarPort(avatarReady, avatarRegionName)),
-            groupDirectoryService = GroupDirectoryService(FakeGroupPort(groups, groupListSucceeds)),
+            groupDirectoryService = groupDirectoryService,
             targetSelectionService = TargetSelectionService(),
             inventoryDirectoryService = InventoryDirectoryService(inventoryPort),
             inventorySelectionService = InventorySelectionService(),
             attachmentService = AttachmentService(inventoryPort),
             noticeDraftService = NoticeDraftService(),
             noticeDispatchService = NoticeDispatchService(FakeNoticePort(noticeRecorder), FakeClockPort()),
+            noticeConfirmationService = org.hostess.core.services.NoticeConfirmationService(groupDirectoryService),
             loginComplianceProvider = HostessLoginComplianceProvider { profile ->
                 LoginComplianceRequest(
                     proofAccountAttested = true,
@@ -199,6 +217,7 @@ class FakeNoticeRecorder(
     private val scriptedStates: List<GroupSendState> = emptyList(),
 ) {
     private val sentGroups = mutableListOf<String>()
+    private var recordedSubject: String? = null
 
     val sendCallCount: Int
         get() = sentGroups.size
@@ -206,8 +225,15 @@ class FakeNoticeRecorder(
     val sentGroupDisplayNames: List<String>
         get() = sentGroups.toList()
 
-    fun record(group: GroupMembership): GroupSendStatus {
+    val lastSubject: String?
+        get() = recordedSubject
+
+    fun record(
+        group: GroupMembership,
+        draft: org.hostess.core.domain.NoticeDraft,
+    ): GroupSendStatus {
         val state = scriptedStates.getOrElse(sentGroups.size) { GroupSendState.SENT }
+        recordedSubject = draft.subject
         sentGroups += group.displayName.value
         return GroupSendStatus(group, state)
     }
@@ -341,6 +367,9 @@ private class FakeAvatarPort(
 private class FakeGroupPort(
     private val groups: List<GroupMembership>,
     private val groupListSucceeds: Boolean,
+    private val noticeArchiveEntriesByGroupId: Map<GroupId, List<GroupNoticeArchiveEntry>>?,
+    private val noticeArchiveFailuresByGroupId: Map<GroupId, CoreFailure>,
+    private val noticeArchiveSubject: () -> String?,
 ) : GroupPort {
     override fun currentGroups(session: HostessSession): GroupListResult =
         if (groupListSucceeds) {
@@ -364,7 +393,29 @@ private class FakeGroupPort(
         session: HostessSession,
         group: GroupMembership,
     ): GroupNoticeArchiveResult =
-        GroupNoticeArchiveResult.Success(group, emptyList())
+        noticeArchiveFailuresByGroupId[group.groupId]?.let { failure ->
+            GroupNoticeArchiveResult.Failure(group, failure)
+        } ?: GroupNoticeArchiveResult.Success(group, archiveEntries(group))
+
+    private fun archiveEntries(group: GroupMembership): List<GroupNoticeArchiveEntry> =
+        if (noticeArchiveEntriesByGroupId != null) {
+            noticeArchiveEntriesByGroupId[group.groupId].orEmpty()
+        } else {
+            noticeArchiveSubject()
+                ?.takeIf(String::isNotBlank)
+                ?.let { subject ->
+                    listOf(
+                        GroupNoticeArchiveEntry(
+                            subject = subject,
+                            fromName = "venuehost resident",
+                            timestamp = 1_717_000_000L,
+                            hasAttachment = true,
+                            assetType = 3,
+                        ),
+                    )
+                }
+                ?: emptyList()
+        }
 }
 
 private class FakeInventoryPort(
@@ -429,7 +480,7 @@ private class FakeNoticePort(
         draft: org.hostess.core.domain.NoticeDraft,
         attachment: AttachmentRef?,
     ): GroupSendStatus =
-        recorder.record(group)
+        recorder.record(group, draft)
 }
 
 private class FakeClockPort : ClockPort {
