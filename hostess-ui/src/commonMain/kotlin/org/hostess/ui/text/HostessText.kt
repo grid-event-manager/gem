@@ -2,6 +2,8 @@ package org.hostess.ui.text
 
 sealed interface HostessTextKey {
     data object AppName : HostessTextKey
+    data object BrandInitials : HostessTextKey
+    data object BrandSubtitle : HostessTextKey
     data object Username : HostessTextKey
     data object Password : HostessTextKey
     data object Show : HostessTextKey
@@ -75,6 +77,8 @@ sealed interface HostessTextKey {
     companion object {
         val fixedKeys: Set<HostessTextKey> = setOf(
             AppName,
+            BrandInitials,
+            BrandSubtitle,
             Username,
             Password,
             Show,
@@ -152,7 +156,9 @@ interface HostessTextCatalogue {
 
 object EnglishHostessTextCatalogue : HostessTextCatalogue {
     override fun text(key: HostessTextKey): String = when (key) {
-        HostessTextKey.AppName -> "Ella Hostess"
+        HostessTextKey.AppName -> "Grid Event Manager"
+        HostessTextKey.BrandInitials -> "GEM"
+        HostessTextKey.BrandSubtitle -> "GRID EVENT MANAGER"
         HostessTextKey.Username -> "User Name"
         HostessTextKey.Password -> "Password"
         HostessTextKey.Show -> "Show"

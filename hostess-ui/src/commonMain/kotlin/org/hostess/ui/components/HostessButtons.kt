@@ -40,8 +40,8 @@ fun HostessPrimaryButton(
         border = BorderStroke(spacing.borderWidth, colors.lineStrong),
         contentPadding = PaddingValues(horizontal = spacing.panelPadding),
         colors = ButtonDefaults.buttonColors(
-            containerColor = if (visuallyEnabled) colors.primary else colors.disabledBackground,
-            contentColor = if (visuallyEnabled) colors.primaryInk else colors.disabledInk,
+            containerColor = if (visuallyEnabled) colors.fieldSurface else colors.disabledBackground,
+            contentColor = if (visuallyEnabled) colors.buttonLabelInk else colors.disabledInk,
             disabledContainerColor = colors.disabledBackground,
             disabledContentColor = colors.disabledInk,
         ),
@@ -71,7 +71,7 @@ fun HostessSecondaryButton(
         contentPadding = PaddingValues(horizontal = spacing.panelPadding),
         colors = ButtonDefaults.outlinedButtonColors(
             containerColor = colors.fieldSurface,
-            contentColor = if (danger) colors.danger else colors.secondary,
+            contentColor = if (danger) colors.danger else colors.buttonLabelInk,
             disabledContainerColor = colors.disabledBackground,
             disabledContentColor = colors.disabledInk,
         ),
@@ -100,7 +100,7 @@ fun HostessPlainButton(
         contentPadding = PaddingValues(horizontal = spacing.inlineGap),
         colors = ButtonDefaults.outlinedButtonColors(
             containerColor = colors.fieldSurface,
-            contentColor = colors.secondary,
+            contentColor = colors.buttonLabelInk,
             disabledContainerColor = colors.disabledBackground,
             disabledContentColor = colors.disabledInk,
         ),
@@ -122,7 +122,7 @@ fun HostessStaticButtonSurface(
             .height(spacing.controlHeight),
         shape = HostessTheme.shapes.control,
         color = colors.fieldSurface,
-        contentColor = colors.secondary,
+        contentColor = colors.buttonLabelInk,
         border = BorderStroke(spacing.borderWidth, colors.lineStrong),
     ) {
         Box(
@@ -160,7 +160,43 @@ fun HostessIconButton(
         contentPadding = PaddingValues(spacing.none),
         colors = ButtonDefaults.outlinedButtonColors(
             containerColor = colors.fieldSurface,
-            contentColor = colors.secondary,
+            contentColor = colors.buttonLabelInk,
+            disabledContainerColor = colors.disabledBackground,
+            disabledContentColor = colors.disabledInk,
+        ),
+    ) {
+        content()
+    }
+}
+
+@Composable
+fun HostessTopBarIconButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    contentDescription: String? = null,
+    content: @Composable () -> Unit,
+) {
+    val colors = HostessTheme.colors
+    val spacing = HostessTheme.spacing
+    OutlinedButton(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = modifier
+            .size(spacing.tapTarget)
+            .then(
+                if (contentDescription == null) {
+                    Modifier
+                } else {
+                    Modifier.semantics { this.contentDescription = contentDescription }
+                },
+            ),
+        shape = HostessTheme.shapes.control,
+        border = BorderStroke(spacing.borderWidth, colors.topBarButtonBorder),
+        contentPadding = PaddingValues(spacing.none),
+        colors = ButtonDefaults.outlinedButtonColors(
+            containerColor = colors.topBarButtonSurface,
+            contentColor = colors.topBarMenuInk,
             disabledContainerColor = colors.disabledBackground,
             disabledContentColor = colors.disabledInk,
         ),

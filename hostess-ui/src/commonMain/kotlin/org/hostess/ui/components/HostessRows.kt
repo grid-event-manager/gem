@@ -173,7 +173,7 @@ fun HostessSegmentButton(
         contentPadding = PaddingValues(horizontal = spacing.fieldGap),
         colors = ButtonDefaults.outlinedButtonColors(
             containerColor = if (selected) colors.selectedBackground else colors.surfaceStrong,
-            contentColor = if (selected) colors.selectedInk else colors.ink,
+            contentColor = if (selected) colors.selectedInk else colors.buttonLabelInk,
             disabledContainerColor = colors.disabledBackground,
             disabledContentColor = colors.disabledInk,
         ),

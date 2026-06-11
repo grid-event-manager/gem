@@ -23,9 +23,9 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Deb)
             packageName = "hostess"
-            packageVersion = "0.1.9"
+            packageVersion = "0.1.10"
             description = "Second Life venue notice helper"
-            vendor = "Ella Hostess"
+            vendor = "Grid Event Manager"
         }
     }
 }

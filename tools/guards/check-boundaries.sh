@@ -64,13 +64,13 @@ TRACK_C_UI_CUSTOM_ICON_PATTERN='Canvas|drawLine|MenuBarCount|BackIconMidpoint|fo
 HS002_TRACK_D_UI_PREFERENCE_ADAPTER_PATTERN='org\.hostess\.preferences|:hostess-preferences'
 HS002_TRACK_D_VAULT_THEME_STORAGE_PATTERN='ThemePreference|themePreference|ui\.properties|preferences'
 HS002_TRACK_D_HACCU_COLOUR_PATTERN='#[0-9A-Fa-f]{6}|Color\(0x'
-HS002_TRACK_D_VISIBLE_LABEL_PATTERN='"(Ella Hostess|Light|Dark|Theme|Theme preference unavailable|Theme preference could not be saved)"'
+HS002_TRACK_D_VISIBLE_LABEL_PATTERN='"(Grid Event Manager|GEM|GRID EVENT MANAGER|Light|Dark|Theme|Theme preference unavailable|Theme preference could not be saved)"'
 HS002_TRACK_D_PROTOTYPE_RUNTIME_PATTERN='WebView|android\.webkit|index-multi|<html|styles\.css|loadDataWithBaseURL'
 HS002_TRACK_D_LOGO_OWNER_PATTERN='fun[[:space:]]+HostessBrandLogoIcon'
 HS002_TRACK_D_TOGGLE_OWNER_PATTERN='fun[[:space:]]+ThemeModeToggle'
 HS002_TRACK_D_PALETTE_OWNER_PATTERN='object[[:space:]]+HaccuHostessPaletteProvider'
-HS002_TRACK_D_ANDROID_LABEL_PATTERN='manifestPlaceholders\["appLabel"\][[:space:]]*=[[:space:]]*"Ella Hostess"'
-HS002_TRACK_D_DESKTOP_VENDOR_PATTERN='vendor[[:space:]]*=[[:space:]]*"Ella Hostess"'
+HS002_TRACK_D_ANDROID_LABEL_PATTERN='manifestPlaceholders\["appLabel"\][[:space:]]*=[[:space:]]*"Grid Event Manager"'
+HS002_TRACK_D_DESKTOP_VENDOR_PATTERN='vendor[[:space:]]*=[[:space:]]*"Grid Event Manager"'
 HS002_TRACK_D_ROOT_PROJECT_LABEL_PATTERN='rootProject\.name\.replaceFirstChar'
 TRACK_D_GENERIC_OWNER_PATTERN='(^|/)(LoginCompliance|NoticeCompliance|.*(Manager|Helper|Utils|Common))\.kt$'
 TRACK_D_SESSION_LOGIN_OVERLOAD_PATTERN='fun[[:space:]]+login\([[:space:]]*request:[[:space:]]*LoginRequest[[:space:]]*\)'
@@ -99,7 +99,7 @@ TRACK_G_EVENT_QUEUE_SEED_PATTERN='fun[[:space:]]+seed[[:space:]]*\(|seedBody|see
 TRACK_G_CLI_DIRECT_PROTOCOL_PATTERN='(^|[^[:alnum:]_])(ProtocolInventoryRuntime|ProtocolCurrentGroupsSource|ProtocolCapabilitySeedClient|EventQueueGetClient)([^[:alnum:]_]|$)'
 TRACK_G_CLI_RAW_CAPABILITY_PATTERN='seedCapability|capabilityUrl|EventQueueGet|FetchInventory2|FetchInventoryDescendents2'
 TRACK_F_COMMON_FORBIDDEN_PATTERN='java\.|javax\.|okhttp|android\.|System\.|MessageDigest|NetworkInterface|Datagram|ByteBuffer|UUID|Class\.forName|::class\.java'
-TRACK_F_PARALLEL_PATH_PATTERN='hostess-core-kmp|hostess-protocol-android|AndroidProtocolLibomvModule|JvmProtocolLibomvModule|GroupReader|CurrentGroupsClient|LoginRuntimeAndroid|Manager|Utils|Helpers|Common'
+TRACK_F_PARALLEL_PATH_PATTERN='hostess-core-kmp|hostess-protocol-android|AndroidProtocolLibomvModule|JvmProtocolLibomvModule|GroupReader|CurrentGroupsClient|LoginRuntimeAndroid|(^|/)[^/]*(Manager|Utils|Helpers|Common)\.kt$|(^|[^[:alnum:]_])((data[[:space:]]+)?class|object|interface|fun)[[:space:]]+[A-Za-z0-9_]*(Manager|Utils|Helpers|Common)([^[:alnum:]_]|$)'
 TRACK_F_PLATFORM_API_PATTERN='okhttp3\.|OkHttpClient|System(::|\.)getenv|NetworkInterface|java\.net\.Datagram|Datagram(Packet|Socket)|javax\.xml|org\.xml\.sax|DocumentBuilderFactory|java\.util\.UUID|MessageDigest|java\.nio\.ByteBuffer'
 TRACK_F_OWNER_DECLARATION_PREFIX='^[[:space:]]*(internal[[:space:]]+|private[[:space:]]+|public[[:space:]]+)?(open[[:space:]]+|sealed[[:space:]]+)?(data[[:space:]]+class|class|object|interface|fun[[:space:]]+interface|value[[:space:]]+class)[[:space:]]+'
 
@@ -1927,7 +1927,7 @@ check_pattern_matches \
 check_pattern_matches \
     "self-test HS002 Track D visible label pattern" \
     "$HS002_TRACK_D_VISIBLE_LABEL_PATTERN" \
-    '"Ella Hostess"'
+    '"Grid Event Manager"'
 
 check_pattern_matches \
     "self-test HS002 Track D prototype runtime pattern" \
@@ -1952,12 +1952,12 @@ check_pattern_matches \
 check_pattern_matches \
     "self-test HS002 Track D Android label pattern" \
     "$HS002_TRACK_D_ANDROID_LABEL_PATTERN" \
-    'manifestPlaceholders["appLabel"] = "Ella Hostess"'
+    'manifestPlaceholders["appLabel"] = "Grid Event Manager"'
 
 check_pattern_matches \
     "self-test HS002 Track D desktop vendor pattern" \
     "$HS002_TRACK_D_DESKTOP_VENDOR_PATTERN" \
-    'vendor = "Ella Hostess"'
+    'vendor = "Grid Event Manager"'
 
 check_pattern_matches \
     "self-test HS002 Track D root project label pattern" \

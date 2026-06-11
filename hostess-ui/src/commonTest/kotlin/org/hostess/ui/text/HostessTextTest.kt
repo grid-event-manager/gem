@@ -7,8 +7,10 @@ import kotlin.test.assertTrue
 class HostessTextTest {
     @Test
     fun fixedKeysCoverPrototypeCopy() {
-        assertEquals(68, HostessTextKey.fixedKeys.size)
+        assertEquals(70, HostessTextKey.fixedKeys.size)
         assertTrue(HostessTextKey.AppName in HostessTextKey.fixedKeys)
+        assertTrue(HostessTextKey.BrandInitials in HostessTextKey.fixedKeys)
+        assertTrue(HostessTextKey.BrandSubtitle in HostessTextKey.fixedKeys)
         assertTrue(HostessTextKey.Username in HostessTextKey.fixedKeys)
         assertTrue(HostessTextKey.SecondLifeTimePrefix in HostessTextKey.fixedKeys)
         assertTrue(HostessTextKey.MeridiemAm in HostessTextKey.fixedKeys)
@@ -45,7 +47,9 @@ class HostessTextTest {
     fun englishCatalogueProvidesPrototypeCopy() {
         val catalogue = EnglishHostessTextCatalogue
 
-        assertEquals("Ella Hostess", catalogue.text(HostessTextKey.AppName))
+        assertEquals("Grid Event Manager", catalogue.text(HostessTextKey.AppName))
+        assertEquals("GEM", catalogue.text(HostessTextKey.BrandInitials))
+        assertEquals("GRID EVENT MANAGER", catalogue.text(HostessTextKey.BrandSubtitle))
         assertEquals("User Name", catalogue.text(HostessTextKey.Username))
         assertEquals("Password", catalogue.text(HostessTextKey.Password))
         assertEquals("Show", catalogue.text(HostessTextKey.Show))

@@ -53,21 +53,19 @@ fun HostessTopBar(
             )
             Column(modifier = Modifier.weight(weight = 1f)) {
                 Text(
-                    text = textCatalogue.text(HostessTextKey.AppName),
+                    text = textCatalogue.text(HostessTextKey.BrandInitials),
                     style = HostessTheme.typeScale.brandTitle,
                     color = HostessTheme.colors.topBarInk,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                if (activeAccountLabel.isNotBlank()) {
-                    Text(
-                        text = activeAccountLabel,
-                        style = HostessTheme.typeScale.smallLabel,
-                        color = HostessTheme.colors.brandWordmark,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
+                Text(
+                    text = textCatalogue.text(HostessTextKey.BrandSubtitle),
+                    style = HostessTheme.typeScale.smallLabel,
+                    color = HostessTheme.colors.brandWordmark,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
             }
             Text(
                 text = secondLifeTimeDisplay.label(textCatalogue),
@@ -75,13 +73,13 @@ fun HostessTopBar(
                     .widthIn(min = HostessTheme.spacing.secondLifeTimeMinWidth)
                     .testTag(HostessTestTags.SecondLifeTime),
                 style = HostessTheme.typeScale.smallLabel,
-                color = HostessTheme.colors.topBarMenuInk,
+                color = HostessTheme.colors.topBarClockInk,
                 textAlign = TextAlign.End,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
             Box {
-                HostessIconButton(
+                HostessTopBarIconButton(
                     onClick = onMenuClick,
                     contentDescription = textCatalogue.text(HostessTextKey.Menu),
                     modifier = Modifier.testTag(HostessTestTags.MenuButton),
