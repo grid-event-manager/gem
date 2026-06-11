@@ -17,11 +17,16 @@ import org.hostess.protocol.libomv.mapping.LoginAppearanceState
 import org.hostess.protocol.libomv.mapping.LoginAppearanceStateResult
 import org.hostess.protocol.libomv.mapping.LoginInventoryRootsResult
 import org.hostess.protocol.libomv.mapping.LoginKeys
+import org.hostess.protocol.libomv.transport.ClosedWithoutReply
+import org.hostess.protocol.libomv.transport.Failed
+import org.hostess.protocol.libomv.transport.ProtocolSimulatorCircuitClient
 import org.hostess.protocol.libomv.transport.ProtocolHttpBody
 import org.hostess.protocol.libomv.transport.ProtocolHttpClient
 import org.hostess.protocol.libomv.transport.ProtocolHttpException
 import org.hostess.protocol.libomv.transport.ProtocolHttpRequest
 import org.hostess.protocol.libomv.transport.ProtocolHttpResponse
+import org.hostess.protocol.libomv.transport.RecordingSimulatorSessionGateway
+import org.hostess.protocol.libomv.transport.toSimulatorCircuit
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -321,29 +326,107 @@ class ProtocolLoginRuntimeTest {
     }
 
     @Test
-    fun `logout clears matching session`() {
-        val session = hostessSession("live-session")
-        val clientSession = LibomvClientSession.active(session)
-        val runtime = protocolLoginRuntime(clientSession, RecordingHttpClient(), viewerIdentityProvider())
+    fun `logout calls simulator before clearing matching session`() {
+        val session = logoutSession()
+        val clientSession = activeClientSession(session)
+        val gateway = RecordingSimulatorSessionGateway()
+        val runtime = protocolLoginRuntime(
+            clientSession,
+            RecordingHttpClient(),
+            viewerIdentityProvider(),
+            circuitClient = ProtocolSimulatorCircuitClient(gateway),
+        )
 
         val result = runtime.logout(session)
 
         assertEquals(SessionLogoutResult.LoggedOut, result)
         assertEquals("protocol session inactive", clientSession.requireSession(session)?.redactedMessage)
+        assertEquals(session.toIdentityCircuit(), gateway.logoutCircuits.single())
+    }
+
+    @Test
+    fun `logout clears matching session after bounded close without reply`() {
+        val session = logoutSession()
+        val clientSession = activeClientSession(session)
+        val gateway = RecordingSimulatorSessionGateway(logoutResult = ClosedWithoutReply)
+        val runtime = protocolLoginRuntime(
+            clientSession,
+            RecordingHttpClient(),
+            viewerIdentityProvider(),
+            circuitClient = ProtocolSimulatorCircuitClient(gateway),
+        )
+
+        val result = runtime.logout(session)
+
+        assertEquals(SessionLogoutResult.LoggedOut, result)
+        assertEquals("protocol session inactive", clientSession.requireSession(session)?.redactedMessage)
+        assertEquals(session.toIdentityCircuit(), gateway.logoutCircuits.single())
+    }
+
+    @Test
+    fun `logout failure does not clear matching session`() {
+        val session = logoutSession()
+        val clientSession = activeClientSession(session)
+        val gateway = RecordingSimulatorSessionGateway(
+            logoutResult = Failed("logout transport failed"),
+        )
+        val runtime = protocolLoginRuntime(
+            clientSession,
+            RecordingHttpClient(),
+            viewerIdentityProvider(),
+            circuitClient = ProtocolSimulatorCircuitClient(gateway),
+        )
+
+        val result = assertIs<SessionLogoutResult.Failure>(runtime.logout(session))
+
+        assertEquals(CoreFailureReason.LOGOUT_FAILED, result.failure.reason)
+        assertEquals("logout transport failed", result.failure.redactedMessage)
+        assertNull(clientSession.requireSession(session))
+        assertEquals(session.toIdentityCircuit(), gateway.logoutCircuits.single())
     }
 
     @Test
     fun `logout rejects mismatched session without leaking IDs`() {
-        val clientSession = LibomvClientSession.active(hostessSession("live-session"))
-        val runtime = protocolLoginRuntime(clientSession, RecordingHttpClient(), viewerIdentityProvider())
+        val activeSession = logoutSession()
+        val mismatchedSession = hostessSession("other-session")
+        val clientSession = activeClientSession(activeSession)
+        val gateway = RecordingSimulatorSessionGateway()
+        val runtime = protocolLoginRuntime(
+            clientSession,
+            RecordingHttpClient(),
+            viewerIdentityProvider(),
+            circuitClient = ProtocolSimulatorCircuitClient(gateway),
+        )
 
-        val result = runtime.logout(hostessSession("other-session"))
+        val result = runtime.logout(mismatchedSession)
 
         val failure = assertIs<SessionLogoutResult.Failure>(result).failure
         assertEquals(CoreFailureReason.LOGOUT_FAILED, failure.reason)
         assertEquals("hostess session mismatch", failure.redactedMessage)
-        assertFalse(failure.redactedMessage.orEmpty().contains("live-session"))
+        assertFalse(failure.redactedMessage.orEmpty().contains(activeSession.sessionId.value))
         assertFalse(failure.redactedMessage.orEmpty().contains("other-session"))
+        assertNull(clientSession.requireSession(activeSession))
+        assertTrue(gateway.logoutCircuits.isEmpty())
+    }
+
+    @Test
+    fun `invalid simulator circuit blocks logout without clearing local session`() {
+        val session = logoutSession()
+        val clientSession = activeClientSession(session, agentId = "agent-id")
+        val gateway = RecordingSimulatorSessionGateway()
+        val runtime = protocolLoginRuntime(
+            clientSession,
+            RecordingHttpClient(),
+            viewerIdentityProvider(),
+            circuitClient = ProtocolSimulatorCircuitClient(gateway),
+        )
+
+        val result = assertIs<SessionLogoutResult.Failure>(runtime.logout(session))
+
+        assertEquals(CoreFailureReason.LOGOUT_FAILED, result.failure.reason)
+        assertEquals("protocol simulator send failed", result.failure.redactedMessage)
+        assertNull(clientSession.requireSession(session))
+        assertTrue(gateway.logoutCircuits.isEmpty())
     }
 
     private fun loginRequest(handle: String): LoginRequest = LoginRequest(
@@ -390,6 +473,26 @@ class ProtocolLoginRuntimeTest {
         isActive = true,
     )
 
+    private fun logoutSession(): HostessSession = hostessSession(SESSION_ID)
+
+    private fun activeClientSession(
+        session: HostessSession,
+        agentId: String = AGENT_ID,
+    ): LibomvClientSession = LibomvClientSession.active(
+        session = session,
+        agentId = agentId,
+        seedCapability = secureUrl("caps.example", "/private"),
+        simulatorIp = "203.0.113.8",
+        simulatorPort = 13000,
+        regionHandle = (1024L shl 32) or 2048L,
+        circuitCode = 123456789L,
+    )
+
+    private fun HostessSession.toIdentityCircuit() =
+        assertIs<LibomvSessionIdentityResult.Success>(
+            activeClientSession(this).requireIdentity(this),
+        ).identity.toSimulatorCircuit()
+
     private fun protocolLoginRuntime(
         clientSession: LibomvClientSession,
         httpClient: ProtocolHttpClient,
@@ -398,10 +501,14 @@ class ProtocolLoginRuntimeTest {
         clockPort: ClockPort = FixedClockPort(HostessInstant.EPOCH),
         machineIdentityProvider: HostessMachineIdentityProvider = machineIdentityProvider(),
         digestPort: Md5DigestPort = JvmMd5DigestPort,
+        circuitClient: ProtocolSimulatorCircuitClient = ProtocolSimulatorCircuitClient(
+            RecordingSimulatorSessionGateway(),
+        ),
     ): ProtocolLoginRuntime =
         ProtocolLoginRuntime(
             clientSession = clientSession,
             httpClient = httpClient,
+            circuitClient = circuitClient,
             viewerIdentityProvider = viewerIdentityProvider,
             secretResolver = secretResolver,
             clockPort = clockPort,
@@ -581,6 +688,8 @@ class ProtocolLoginRuntimeTest {
 
     private companion object {
         val SECOND_LIFE_HASH_PATTERN = Regex("\\$1\\$[0-9a-f]{32}")
+        const val AGENT_ID = "11111111-1111-1111-1111-111111111111"
+        const val SESSION_ID = "22222222-2222-2222-2222-222222222222"
 
         fun loginUrl(): String = secureUrl("login.example", "/agent")
 

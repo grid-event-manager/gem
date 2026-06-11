@@ -10,18 +10,25 @@ import org.hostess.core.ports.SessionLoginResult
 import org.hostess.core.ports.SessionLogoutResult
 import org.hostess.core.services.SafeDiagnosticRedaction
 import org.hostess.protocol.libomv.LibomvClientSession
+import org.hostess.protocol.libomv.LibomvSessionIdentityResult
 import org.hostess.protocol.libomv.mapping.LibomvLoginFailureKind
 import org.hostess.protocol.libomv.mapping.LibomvLoginMapping
 import org.hostess.protocol.libomv.mapping.LibomvLoginMappingResult
 import org.hostess.protocol.libomv.mapping.LoginKeys
+import org.hostess.protocol.libomv.transport.ClosedWithoutReply
+import org.hostess.protocol.libomv.transport.Failed
+import org.hostess.protocol.libomv.transport.LoggedOut
+import org.hostess.protocol.libomv.transport.ProtocolSimulatorCircuitClient
 import org.hostess.protocol.libomv.transport.ProtocolHttpBody
 import org.hostess.protocol.libomv.transport.ProtocolHttpClient
 import org.hostess.protocol.libomv.transport.ProtocolHttpException
 import org.hostess.protocol.libomv.transport.ProtocolHttpRequest
+import org.hostess.protocol.libomv.transport.toSimulatorCircuit
 
 class ProtocolLoginRuntime private constructor(
     private val clientSession: LibomvClientSession,
     private val httpClient: ProtocolHttpClient,
+    private val circuitClient: ProtocolSimulatorCircuitClient,
     private val viewerIdentityProvider: HostessViewerIdentityProvider,
     private val secretResolver: LoginSecretResolver,
     private val clockPort: ClockPort,
@@ -32,6 +39,7 @@ class ProtocolLoginRuntime private constructor(
     internal constructor(
         clientSession: LibomvClientSession,
         httpClient: ProtocolHttpClient,
+        circuitClient: ProtocolSimulatorCircuitClient,
         viewerIdentityProvider: HostessViewerIdentityProvider,
         secretResolver: LoginSecretResolver,
         clockPort: ClockPort,
@@ -40,6 +48,7 @@ class ProtocolLoginRuntime private constructor(
     ) : this(
         clientSession = clientSession,
         httpClient = httpClient,
+        circuitClient = circuitClient,
         viewerIdentityProvider = viewerIdentityProvider,
         secretResolver = secretResolver,
         clockPort = clockPort,
@@ -104,12 +113,22 @@ class ProtocolLoginRuntime private constructor(
     }
 
     fun logout(session: HostessSession): SessionLogoutResult {
-        val bindingFailure = clientSession.requireSession(session)
-        if (bindingFailure != null) {
-            return SessionLogoutResult.Failure(bindingFailure.copy(reason = CoreFailureReason.LOGOUT_FAILED))
+        val identity = when (val result = clientSession.requireIdentity(session)) {
+            is LibomvSessionIdentityResult.Failure ->
+                return SessionLogoutResult.Failure(result.failure.copy(reason = CoreFailureReason.LOGOUT_FAILED))
+            is LibomvSessionIdentityResult.Success -> result.identity
         }
-        clientSession.clear()
-        return SessionLogoutResult.LoggedOut
+        return when (val result = circuitClient.logout(identity.toSimulatorCircuit())) {
+            LoggedOut,
+            ClosedWithoutReply,
+            -> {
+                clientSession.clear()
+                SessionLogoutResult.LoggedOut
+            }
+            is Failed -> SessionLogoutResult.Failure(
+                CoreFailure(CoreFailureReason.LOGOUT_FAILED, result.redactedMessage),
+            )
+        }
     }
 
     private fun loginHttpRequest(loginPackage: LoginPackage): ProtocolHttpRequest = ProtocolHttpRequest(

@@ -135,6 +135,7 @@ object ProtocolLibomvModule {
             ProtocolLoginRuntime(
                 clientSession = clientSession,
                 httpClient = bundle.httpClient,
+                circuitClient = bundle.circuitSender,
                 viewerIdentityProvider = bundle.viewerIdentityProvider,
                 secretResolver = bundle.secretResolver,
                 clockPort = bundle.clockPort,

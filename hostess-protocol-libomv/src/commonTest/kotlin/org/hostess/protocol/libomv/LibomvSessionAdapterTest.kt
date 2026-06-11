@@ -23,6 +23,8 @@ import org.hostess.protocol.libomv.runtime.ProtocolLoginRuntime
 import org.hostess.protocol.libomv.transport.ProtocolHttpClient
 import org.hostess.protocol.libomv.transport.ProtocolHttpRequest
 import org.hostess.protocol.libomv.transport.ProtocolHttpResponse
+import org.hostess.protocol.libomv.transport.ProtocolSimulatorCircuitClient
+import org.hostess.protocol.libomv.transport.RecordingSimulatorSessionGateway
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -50,7 +52,7 @@ class LibomvSessionAdapterTest {
     @Test
     fun `logout routes through protocol runtime and clears matching session`() {
         val session = hostessSession()
-        val clientSession = LibomvClientSession.active(session)
+        val clientSession = activeClientSession(session)
         val adapter = LibomvSessionAdapter(
             clientSession = clientSession,
             loginRuntime = protocolLoginRuntime(
@@ -72,11 +74,22 @@ class LibomvSessionAdapterTest {
     )
 
     private fun hostessSession(): HostessSession = HostessSession(
-        sessionId = SessionId("live-session"),
+        sessionId = SessionId(SESSION_ID),
         accountLabel = AccountLabel("venue-proof"),
         startedAt = HostessInstant.EPOCH,
         isActive = true,
     )
+
+    private fun activeClientSession(session: HostessSession): LibomvClientSession =
+        LibomvClientSession.active(
+            session = session,
+            agentId = AGENT_ID,
+            seedCapability = "seed-capability",
+            simulatorIp = "203.0.113.8",
+            simulatorPort = 13000,
+            regionHandle = 123456789L,
+            circuitCode = 987654321L,
+        )
 
     private fun protocolLoginRuntime(
         clientSession: LibomvClientSession,
@@ -86,6 +99,7 @@ class LibomvSessionAdapterTest {
         ProtocolLoginRuntime(
             clientSession = clientSession,
             httpClient = httpClient,
+            circuitClient = ProtocolSimulatorCircuitClient(RecordingSimulatorSessionGateway()),
             viewerIdentityProvider = viewerIdentityProvider,
             secretResolver = LoginSecretResolver.unavailable(),
             clockPort = NoopClockPort,
@@ -119,5 +133,10 @@ class LibomvSessionAdapterTest {
         override fun now(): HostessInstant = HostessInstant.EPOCH
 
         override fun pause(duration: HostessDelay) = Unit
+    }
+
+    private companion object {
+        const val AGENT_ID = "11111111-1111-1111-1111-111111111111"
+        const val SESSION_ID = "22222222-2222-2222-2222-222222222222"
     }
 }
