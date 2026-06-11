@@ -1,34 +1,31 @@
 package org.hostess.protocol.libomv.transport
 
-import org.hostess.protocol.libomv.LibomvSessionIdentity
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import org.hostess.protocol.libomv.LibomvSessionIdentity
 
 class AgentDataUpdateRequestTransportTest {
     @Test
     fun `passes internal identity to protocol circuit client`() {
-        val exchange = RecordingPacketExchange(
-            inboundPayloads = mutableListOf(regionHandshake(), agentMovementComplete()),
-        )
+        val gateway = RecordingSimulatorSessionGateway()
         val transport = AgentDataUpdateRequestTransport(
-            ProtocolSimulatorCircuitClient(exchange, SimulatorPacketSequence(0)),
+            ProtocolSimulatorCircuitClient(gateway),
         )
 
         val result = transport.send(identity())
 
         assertEquals(AgentDataUpdateRequestResult.Sent, result)
-        assertEquals(SIM_HOST, exchange.endpoint?.host)
-        assertEquals(SIM_PORT, exchange.endpoint?.port)
-        assertEquals(6, exchange.payloads.size)
+        assertEquals(identity().toSimulatorCircuit(), gateway.currentGroupsCircuits.single())
     }
 
     @Test
     fun `maps protocol circuit failure to redacted request failure`() {
+        val gateway = RecordingSimulatorSessionGateway(
+            currentGroupsResult = SimulatorCircuitSendResult.Failed("protocol simulator send failed"),
+        )
         val transport = AgentDataUpdateRequestTransport(
-            ProtocolSimulatorCircuitClient(
-                RecordingPacketExchange(failure = Exception("cannot reach $SIM_HOST with $AGENT_ID")),
-            ),
+            ProtocolSimulatorCircuitClient(gateway),
         )
 
         val result = assertIs<AgentDataUpdateRequestResult.Failed>(transport.send(identity()))
@@ -45,35 +42,6 @@ class AgentDataUpdateRequestTransportTest {
         regionHandle = REGION_HANDLE,
         circuitCode = CIRCUIT_CODE,
     )
-
-    private fun regionHandshake(): ByteArray =
-        LibomvZerocodeCodec.encode(
-            LibomvPacketTestBytes.lowHeader(sequence = 101, packetId = 148, flags = 0xC0),
-        )
-
-    private fun agentMovementComplete(): ByteArray =
-        LibomvPacketTestBytes.lowHeader(sequence = 102, packetId = 250, flags = 0)
-
-    private class RecordingPacketExchange(
-        private val inboundPayloads: MutableList<ByteArray> = mutableListOf(),
-        private val failure: Exception? = null,
-    ) : SimulatorPacketExchange {
-        var endpoint: SimulatorEndpoint? = null
-        var payloads: List<ByteArray> = emptyList()
-
-        override fun send(endpoint: SimulatorEndpoint, payloads: List<ByteArray>) {
-            failure?.let { throw it }
-            this.endpoint = endpoint
-            this.payloads = this.payloads + payloads
-        }
-
-        override fun receive(endpoint: SimulatorEndpoint, timeoutMillis: Int): SimulatorInboundPacket? =
-            if (inboundPayloads.isEmpty()) {
-                null
-            } else {
-                SimulatorInboundPacket(endpoint, inboundPayloads.removeAt(0))
-            }
-    }
 
     private companion object {
         const val AGENT_ID = "11111111-1111-1111-1111-111111111111"

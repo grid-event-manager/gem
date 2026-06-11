@@ -6,6 +6,8 @@ import org.hostess.core.ports.ClockPort
 import org.hostess.protocol.libomv.transport.OkHttpProtocolHttpClient
 import org.hostess.protocol.libomv.transport.ProtocolSimulatorCircuitClient
 import org.hostess.protocol.libomv.transport.ProtocolHttpClient
+import org.hostess.protocol.libomv.transport.SimulatorPacketExchangeFactory
+import org.hostess.protocol.libomv.transport.ThreadedSimulatorSessionGateway
 import org.hostess.protocol.libomv.transport.UdpSimulatorDatagramSender
 
 internal data class LibomvPlatformAdapterBundle(
@@ -32,7 +34,11 @@ internal object DefaultLibomvPlatformAdapterBundle {
             machineIdentityProvider = DefaultHostessMachineIdentityProvider,
             clockPort = JvmProtocolClockPort,
             md5DigestPort = JvmMd5DigestPort,
-            circuitSender = ProtocolSimulatorCircuitClient(UdpSimulatorDatagramSender()),
+            circuitSender = ProtocolSimulatorCircuitClient(
+                ThreadedSimulatorSessionGateway(
+                    SimulatorPacketExchangeFactory { UdpSimulatorDatagramSender() },
+                ),
+            ),
             adapterLoad = true,
             runtimeLoad = true,
             transportLoad = true,

@@ -1148,6 +1148,7 @@ track_j_simulator_exchange_impl_targets=()
 while IFS= read -r path; do
     case "$path" in
         "hostess-protocol-libomv/src/commonMain/kotlin/org/hostess/protocol/libomv/transport/SimulatorPacketExchange.kt") ;;
+        "hostess-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/transport/SimulatorPacketExchangeFactory.kt") ;;
         "hostess-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/transport/UdpSimulatorDatagramSender.kt") ;;
         *) track_j_simulator_exchange_impl_targets+=("$path") ;;
     esac

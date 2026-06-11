@@ -43,9 +43,10 @@ import org.hostess.protocol.libomv.transport.ProtocolHttpClient
 import org.hostess.protocol.libomv.transport.ProtocolHttpRequest
 import org.hostess.protocol.libomv.transport.ProtocolHttpResponse
 import org.hostess.protocol.libomv.transport.ProtocolSimulatorCircuitClient
-import org.hostess.protocol.libomv.transport.SimulatorEndpoint
-import org.hostess.protocol.libomv.transport.SimulatorInboundPacket
-import org.hostess.protocol.libomv.transport.SimulatorPacketExchange
+import org.hostess.protocol.libomv.transport.RegionProtocolFlags
+import org.hostess.protocol.libomv.transport.RecordingSimulatorSessionGateway
+import org.hostess.protocol.libomv.transport.SimulatorCircuitSendResult
+import org.hostess.protocol.libomv.transport.SimulatorPresenceResult
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
@@ -182,12 +183,12 @@ class ProtocolLibomvModuleTest {
 
     @Test
     fun `live runtime notice adapter reaches protocol runtime source`() {
-        val packetExchange = RecordingSimulatorPacketExchange(
-            inboundPayloads = mutableListOf(regionHandshake(), agentMovementComplete(), null, simulatorPacketAck(5)),
+        val gateway = RecordingSimulatorSessionGateway(
+            noticeResult = SimulatorCircuitSendResult.Sent("transportAck=passed"),
         )
         val runtime = ProtocolLibomvModule.liveRuntime(
             platformBundle(
-                circuitSender = ProtocolSimulatorCircuitClient(packetExchange),
+                circuitSender = ProtocolSimulatorCircuitClient(gateway),
             ),
         )
         val session = fakeActiveUuidSession()
@@ -204,7 +205,8 @@ class ProtocolLibomvModuleTest {
         val status = runtime.noticePort.sendGroupNotice(session, group(), draft(), null)
 
         assertEquals(GroupSendState.SENT, status.state)
-        assertEquals(6, packetExchange.payloads.size)
+        assertEquals(1, gateway.noticePackets.size)
+        assertEquals("33333333-3333-3333-3333-333333333333", gateway.noticePackets.single().targetGroupId)
     }
 
     @Test
@@ -275,13 +277,17 @@ class ProtocolLibomvModuleTest {
                 avatarAppearanceSuccessBody().encodeToByteArray(),
             ),
         )
-        val packetExchange = RecordingSimulatorPacketExchange(
-            inboundPayloads = mutableListOf(regionHandshake(), agentMovementComplete()),
+        val gateway = RecordingSimulatorSessionGateway(
+            presenceResult = SimulatorPresenceResult.Present(
+                pingReplies = 0,
+                cached = false,
+                regionProtocolFlags = RegionProtocolFlags(agentAppearanceService = true),
+            ),
         )
         val runtime = ProtocolLibomvModule.liveRuntime(
             platformBundle(
                 httpClient = httpClient,
-                circuitSender = ProtocolSimulatorCircuitClient(packetExchange),
+                circuitSender = ProtocolSimulatorCircuitClient(gateway),
             ),
         )
         val session = fakeActiveUuidSession()
@@ -529,7 +535,9 @@ class ProtocolLibomvModuleTest {
         machineIdentityProvider: HostessMachineIdentityProvider = machineIdentityProvider(),
         clockPort: ClockPort = FixedClockPort,
         md5DigestPort: Md5DigestPort = JvmMd5DigestPort,
-        circuitSender: ProtocolSimulatorCircuitClient = ProtocolSimulatorCircuitClient(NoopSimulatorPacketExchange),
+        circuitSender: ProtocolSimulatorCircuitClient = ProtocolSimulatorCircuitClient(
+            RecordingSimulatorSessionGateway(),
+        ),
         adapterLoad: Boolean = true,
         runtimeLoad: Boolean = true,
         transportLoad: Boolean = true,
@@ -553,61 +561,7 @@ class ProtocolLibomvModuleTest {
         override fun pause(duration: HostessDelay) = Unit
     }
 
-    private object NoopSimulatorPacketExchange : SimulatorPacketExchange {
-        override fun send(endpoint: SimulatorEndpoint, payloads: List<ByteArray>) = Unit
-
-        override fun receive(endpoint: SimulatorEndpoint, timeoutMillis: Int): SimulatorInboundPacket? = null
-    }
-
-    private class RecordingSimulatorPacketExchange(
-        private val inboundPayloads: MutableList<ByteArray?> = mutableListOf(),
-    ) : SimulatorPacketExchange {
-        var payloads: List<ByteArray> = emptyList()
-
-        override fun send(endpoint: SimulatorEndpoint, payloads: List<ByteArray>) {
-            this.payloads = this.payloads + payloads
-        }
-
-        override fun receive(endpoint: SimulatorEndpoint, timeoutMillis: Int): SimulatorInboundPacket? =
-            if (inboundPayloads.isEmpty()) {
-                null
-            } else {
-                inboundPayloads.removeAt(0)?.let { SimulatorInboundPacket(endpoint, it) }
-            }
-    }
-
     private companion object {
         fun secureUrl(host: String, path: String): String = "https" + "://$host$path"
-
-        fun regionHandshake(): ByteArray =
-            org.hostess.protocol.libomv.transport.LibomvPacketTestBytes.regionHandshakeWithRegionProtocols(
-                regionProtocols = 1L,
-            )
-
-        fun agentMovementComplete(): ByteArray =
-            org.hostess.protocol.libomv.transport.LibomvPacketTestBytes.lowHeader(
-                sequence = 102,
-                packetId = 250,
-                flags = 0,
-            )
-
-        fun simulatorPacketAck(ackedSequence: Long): ByteArray =
-            byteArrayOf(
-                0,
-                0,
-                0,
-                0,
-                103,
-                0,
-                0xFF.toByte(),
-                0xFF.toByte(),
-                0xFF.toByte(),
-                0xFB.toByte(),
-                1,
-                (ackedSequence and 0xFF).toByte(),
-                ((ackedSequence ushr 8) and 0xFF).toByte(),
-                ((ackedSequence ushr 16) and 0xFF).toByte(),
-                ((ackedSequence ushr 24) and 0xFF).toByte(),
-            )
     }
 }
