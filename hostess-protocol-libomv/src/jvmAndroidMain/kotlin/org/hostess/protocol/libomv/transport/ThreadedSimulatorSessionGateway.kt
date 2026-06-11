@@ -415,8 +415,19 @@ internal class ThreadedSimulatorSessionGateway(
             sequenceNumber: Long,
             observations: GatewayNoticeObservationCollector?,
         ): Boolean {
-            repeat(NOTICE_ACK_RECEIVE_ATTEMPTS) {
+            var observedPackets = 0
+            var receiveTimeouts = 0
+            while (
+                observedPackets < NOTICE_ACK_RECEIVE_PACKET_LIMIT &&
+                receiveTimeouts < NOTICE_ACK_RECEIVE_TIMEOUT_LIMIT
+            ) {
                 val result = serviceInbound(NOTICE_ACK_RECEIVE_TIMEOUT_MILLIS, observations)
+                if (result.payload == null) {
+                    receiveTimeouts += 1
+                    sendHeartbeatIfDue()
+                    continue
+                }
+                observedPackets += 1
                 if (sequenceNumber in result.outgoingAcks) {
                     return true
                 }
@@ -622,7 +633,8 @@ internal class ThreadedSimulatorSessionGateway(
         const val MOVEMENT_RECEIVE_TIMEOUT_MILLIS = 250
         const val MOVEMENT_RECEIVE_ATTEMPTS = 12
         const val NOTICE_ACK_RECEIVE_TIMEOUT_MILLIS = 250
-        const val NOTICE_ACK_RECEIVE_ATTEMPTS = 8
+        const val NOTICE_ACK_RECEIVE_PACKET_LIMIT = 128
+        const val NOTICE_ACK_RECEIVE_TIMEOUT_LIMIT = 8
         const val NOTICE_POST_ACK_RECEIVE_TIMEOUT_MILLIS = 250
         const val NOTICE_POST_ACK_RECEIVE_ATTEMPTS = 4
         const val ARCHIVE_RECEIVE_TIMEOUT_MILLIS = 250

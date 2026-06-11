@@ -53,6 +53,27 @@ class ThreadedSimulatorSessionGatewayTest {
     }
 
     @Test
+    fun `keeps reading busy simulator traffic until delayed notice ack arrives`() {
+        val exchange = ScriptedPacketExchange(
+            inboundPayloads = mutableListOf(
+                regionHandshake(),
+                agentMovementComplete(),
+                *Array(12) { index -> layerData(sequence = 200 + index) },
+                LibomvPacketCodec.packetAck(5),
+            ),
+        )
+        val gateway = ThreadedSimulatorSessionGateway(SimulatorPacketExchangeFactory { exchange })
+
+        val result = assertIs<SimulatorCircuitSendResult.Sent>(
+            gateway.sendNotice(circuit(), noticePacket()),
+        )
+        gateway.close()
+
+        assertTrue(result.redactedDetail.orEmpty().contains("transportAck=passed"))
+        assertEquals(1, exchange.sentNames().count { it == "improved_instant_message" })
+    }
+
+    @Test
     fun `caches out-of-order archive replies for later group requests`() {
         val exchange = ScriptedPacketExchange(
             inboundPayloads = mutableListOf(
@@ -179,6 +200,9 @@ class ThreadedSimulatorSessionGatewayTest {
         LibomvPacketTestBytes.highHeader(sequence = 103, packetId = 1, flags = 0) +
             byteArrayOf(pingId.toByte()) +
             u32(0L)
+
+    private fun layerData(sequence: Int): ByteArray =
+        LibomvPacketTestBytes.highHeader(sequence = sequence, packetId = 11, flags = 0) + byteArrayOf(0)
 
     private fun logoutReply(): ByteArray =
         LibomvPacketTestBytes.lowHeader(sequence = 104, packetId = 253, flags = 0) +
