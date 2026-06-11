@@ -46,6 +46,8 @@ import org.hostess.ui.time.SecondLifeTimeService
 fun HostessApp(
     runtime: HostessUiRuntime,
     textCatalogue: HostessTextCatalogue = EnglishHostessTextCatalogue,
+    exitRequestSerial: Int = 0,
+    onExitReady: () -> Unit = {},
 ) {
     var appController by remember(runtime) { mutableStateOf(HostessAppController(runtime)) }
     var loginController by remember(runtime) { mutableStateOf(LoginController(runtime).refreshSavedLogins()) }
@@ -54,6 +56,8 @@ fun HostessApp(
     var groupTargetController by remember(runtime) { mutableStateOf(GroupTargetController(runtime)) }
     var inventoryController by remember(runtime) { mutableStateOf(InventoryBrowserController(runtime)) }
     var sendFeedbackGeneration by remember(runtime) { mutableStateOf(0) }
+    var logoutInFlight by remember(runtime) { mutableStateOf(false) }
+    var exitAfterCurrentLogout by remember(runtime) { mutableStateOf(false) }
     val secondLifeTimeService = remember(runtime) { SecondLifeTimeService(runtime.clockPort) }
     var secondLifeTimeDisplay by remember(runtime) {
         mutableStateOf(secondLifeTimeService.currentSnapshot().display)
@@ -78,6 +82,48 @@ fun HostessApp(
 
     fun refreshSettingsFromCredentialStore() {
         settingsController = SettingsController(runtime, appState = appController.state).refreshSavedAccounts()
+    }
+
+    fun resetControllersAfterLogout(loggedOut: HostessAppController) {
+        appController = loggedOut
+        loginController = loginController.refreshSavedLogins()
+        settingsController = SettingsController(
+            runtime,
+            appState = loggedOut.state,
+        ).refreshSavedAccounts()
+        noticeController = NoticeComposerController(runtime)
+        groupTargetController = GroupTargetController(runtime)
+        inventoryController = InventoryBrowserController(runtime)
+    }
+
+    fun runLogoutWorkflow(exitAfterLogout: Boolean = false) {
+        if (appController.state.session == null) {
+            if (exitAfterLogout) {
+                onExitReady()
+            }
+            return
+        }
+        if (logoutInFlight) {
+            exitAfterCurrentLogout = exitAfterCurrentLogout || exitAfterLogout
+            return
+        }
+
+        exitAfterCurrentLogout = exitAfterCurrentLogout || exitAfterLogout
+        logoutInFlight = true
+        val loggingOut = appController.beginLogout()
+        appController = loggingOut
+        coroutineScope.launch {
+            delay(LogoutSpinnerMinimumMillis)
+            val loggedOut = withContext(Dispatchers.Default) {
+                HostessAppController(runtime, loggingOut.state).logout()
+            }
+            resetControllersAfterLogout(loggedOut)
+            logoutInFlight = false
+            if (exitAfterCurrentLogout) {
+                exitAfterCurrentLogout = false
+                onExitReady()
+            }
+        }
     }
 
     fun runLoginWorkflow() {
@@ -146,6 +192,12 @@ fun HostessApp(
         }
     }
 
+    LaunchedEffect(exitRequestSerial) {
+        if (exitRequestSerial > 0) {
+            runLogoutWorkflow(exitAfterLogout = true)
+        }
+    }
+
     HostessTheme.Provide(
         tokens = HostessDesignTokens(
             colors = HaccuHostessPaletteProvider.colors(themeController.state.resolvedMode),
@@ -167,23 +219,7 @@ fun HostessApp(
                         refreshSettingsFromCredentialStore()
                     },
                     onLogoutClick = {
-                        val loggingOut = appController.beginLogout()
-                        appController = loggingOut
-                        coroutineScope.launch {
-                            delay(LogoutSpinnerMinimumMillis)
-                            val loggedOut = withContext(Dispatchers.Default) {
-                                HostessAppController(runtime, loggingOut.state).logout()
-                            }
-                            appController = loggedOut
-                            loginController = loginController.refreshSavedLogins()
-                            settingsController = SettingsController(
-                                runtime,
-                                appState = loggedOut.state,
-                            ).refreshSavedAccounts()
-                            noticeController = NoticeComposerController(runtime)
-                            groupTargetController = GroupTargetController(runtime)
-                            inventoryController = InventoryBrowserController(runtime)
-                        }
+                        runLogoutWorkflow()
                     },
                 )
             },

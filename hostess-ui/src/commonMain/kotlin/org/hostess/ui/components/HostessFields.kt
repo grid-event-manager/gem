@@ -118,7 +118,7 @@ fun HostessPasswordField(
 fun HostessFieldLabel(label: String) {
     Text(
         text = label,
-        color = HostessTheme.colors.muted,
+        color = HostessTheme.colors.secondary,
         style = HostessTheme.typeScale.smallLabel,
     )
 }
@@ -135,8 +135,8 @@ fun hostessTextFieldColors() = OutlinedTextFieldDefaults.colors(
     focusedContainerColor = HostessTheme.colors.fieldSurface,
     unfocusedContainerColor = HostessTheme.colors.fieldSurface,
     disabledContainerColor = HostessTheme.colors.fieldSurface,
-    focusedBorderColor = HostessTheme.colors.primary,
-    unfocusedBorderColor = HostessTheme.colors.lineStrong,
+    focusedBorderColor = HostessTheme.colors.fieldBorder,
+    unfocusedBorderColor = HostessTheme.colors.fieldBorder,
     disabledBorderColor = HostessTheme.colors.line,
     cursorColor = HostessTheme.colors.primary,
 )

@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -41,6 +42,10 @@ fun HostessOverflowMenu(
             onClick = onSettingsClick,
             modifier = Modifier.testTag(HostessTestTags.OpenSettings),
         )
+        HorizontalDivider(
+            color = HostessTheme.colors.line,
+            thickness = HostessTheme.spacing.borderWidth,
+        )
         HostessMenuRow(
             text = textCatalogue.text(HostessTextKey.LogOut),
             onClick = onLogoutClick,
@@ -74,7 +79,7 @@ private fun HostessMenuRow(
         Text(
             text = text,
             style = HostessTheme.typeScale.menuItem,
-            color = if (enabled) colors.secondary else colors.disabledInk,
+            color = if (enabled) colors.secondary else colors.menuDisabledInk,
         )
     }
 }

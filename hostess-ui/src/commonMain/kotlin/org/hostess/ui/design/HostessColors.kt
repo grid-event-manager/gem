@@ -35,6 +35,7 @@ data class HostessColors(
     val menuSurface: Color = surfaceStrong,
     val menuHover: Color = statusBackground,
     val menuActive: Color = selectedBackground,
+    val menuDisabledInk: Color = disabledInk,
     val fieldSurface: Color = surfaceStrong,
     val fieldBorder: Color = lineStrong,
     val brandWordmark: Color = muted,

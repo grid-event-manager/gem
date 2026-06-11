@@ -3,6 +3,7 @@ package org.hostess.core.services
 import org.hostess.core.domain.GroupNoticeConfirmationState
 import org.hostess.core.domain.GroupNoticeConfirmationStatus
 import org.hostess.core.domain.GroupSendState
+import org.hostess.core.domain.GroupSendStatus
 import org.hostess.core.domain.HostessSession
 import org.hostess.core.domain.NoticeConfirmationResult
 import org.hostess.core.domain.NoticeSendResult
@@ -26,30 +27,69 @@ class NoticeConfirmationService(
                 )
             }
 
-            when (val archive = groupDirectoryService.noticeArchive(session, status.group)) {
-                is GroupNoticeArchiveResult.Success -> {
-                    val matched = archive.entries.any { entry ->
-                        entry.subject == expectedSubject && (!requireAttachment || entry.hasAttachment)
-                    }
-                    if (matched) {
-                        GroupNoticeConfirmationStatus(status.group, GroupNoticeConfirmationState.CONFIRMED)
-                    } else {
-                        GroupNoticeConfirmationStatus(
-                            group = status.group,
-                            state = GroupNoticeConfirmationState.UNCONFIRMED,
-                            detail = PROOF_GAP_DETAIL,
-                        )
-                    }
-                }
-                is GroupNoticeArchiveResult.Failure -> GroupNoticeConfirmationStatus(
-                    group = status.group,
-                    state = GroupNoticeConfirmationState.FAILED,
-                    detail = archiveFailureDetail(archive),
-                )
-            }
+            confirmSentGroup(
+                session = session,
+                status = status,
+                expectedSubject = expectedSubject,
+                requireAttachment = requireAttachment,
+            )
         }
         return NoticeConfirmationResult(statuses)
     }
+
+    private fun confirmSentGroup(
+        session: HostessSession,
+        status: GroupSendStatus,
+        expectedSubject: String,
+        requireAttachment: Boolean,
+    ): GroupNoticeConfirmationStatus {
+        var latestStatus: GroupNoticeConfirmationStatus? = null
+        repeat(ARCHIVE_CONFIRMATION_ROUNDS) { attemptIndex ->
+            val confirmation = readArchiveConfirmation(
+                session = session,
+                status = status,
+                expectedSubject = expectedSubject,
+                requireAttachment = requireAttachment,
+            )
+            if (confirmation.state == GroupNoticeConfirmationState.CONFIRMED) {
+                return confirmation
+            }
+            latestStatus = confirmation.withAttempts(attemptIndex + 1)
+        }
+        return latestStatus ?: GroupNoticeConfirmationStatus(
+            group = status.group,
+            state = GroupNoticeConfirmationState.UNCONFIRMED,
+            detail = PROOF_GAP_DETAIL,
+        )
+    }
+
+    private fun readArchiveConfirmation(
+        session: HostessSession,
+        status: GroupSendStatus,
+        expectedSubject: String,
+        requireAttachment: Boolean,
+    ): GroupNoticeConfirmationStatus =
+        when (val archive = groupDirectoryService.noticeArchive(session, status.group)) {
+            is GroupNoticeArchiveResult.Success -> {
+                val matched = archive.entries.any { entry ->
+                    entry.subject == expectedSubject && (!requireAttachment || entry.hasAttachment)
+                }
+                if (matched) {
+                    GroupNoticeConfirmationStatus(status.group, GroupNoticeConfirmationState.CONFIRMED)
+                } else {
+                    GroupNoticeConfirmationStatus(
+                        group = status.group,
+                        state = GroupNoticeConfirmationState.UNCONFIRMED,
+                        detail = PROOF_GAP_DETAIL,
+                    )
+                }
+            }
+            is GroupNoticeArchiveResult.Failure -> GroupNoticeConfirmationStatus(
+                group = status.group,
+                state = GroupNoticeConfirmationState.FAILED,
+                detail = archiveFailureDetail(archive),
+            )
+        }
 
     private fun transportDetail(
         detail: String?,
@@ -66,7 +106,15 @@ class NoticeConfirmationService(
         ?.let(SafeDiagnosticRedaction::excerpt)
         ?: ARCHIVE_PROOF_GAP_DETAIL
 
+    private fun GroupNoticeConfirmationStatus.withAttempts(attempts: Int): GroupNoticeConfirmationStatus =
+        if (attempts <= 1 || detail.isNullOrBlank()) {
+            this
+        } else {
+            copy(detail = "$detail; attempts=$attempts")
+        }
+
     private companion object {
+        const val ARCHIVE_CONFIRMATION_ROUNDS = 4
         const val PROOF_GAP_DETAIL = "notice archive proof_gap subject_or_attachment_not_found"
         const val ARCHIVE_PROOF_GAP_DETAIL = "notice archive proof_gap"
     }

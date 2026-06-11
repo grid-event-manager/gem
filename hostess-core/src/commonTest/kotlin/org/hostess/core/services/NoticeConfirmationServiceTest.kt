@@ -79,7 +79,7 @@ class NoticeConfirmationServiceTest {
 
         assertFalse(result.allConfirmed)
         assertEquals(GroupNoticeConfirmationState.UNCONFIRMED, result.statuses.single().state)
-        assertEquals("notice archive proof_gap subject_or_attachment_not_found", result.statuses.single().detail)
+        assertEquals("notice archive proof_gap subject_or_attachment_not_found; attempts=4", result.statuses.single().detail)
     }
 
     @Test
@@ -105,7 +105,7 @@ class NoticeConfirmationServiceTest {
 
         assertFalse(result.allConfirmed)
         assertEquals(GroupNoticeConfirmationState.UNCONFIRMED, result.statuses.single().state)
-        assertEquals("notice archive proof_gap subject_or_attachment_not_found", result.statuses.single().detail)
+        assertEquals("notice archive proof_gap subject_or_attachment_not_found; attempts=4", result.statuses.single().detail)
     }
 
     @Test
@@ -154,7 +154,42 @@ class NoticeConfirmationServiceTest {
 
         assertFalse(result.allConfirmed)
         assertEquals(GroupNoticeConfirmationState.FAILED, result.statuses.single().state)
-        assertEquals("archive failed session_id=[redacted]", result.statuses.single().detail)
+        assertEquals("archive failed session_id=[redacted]; attempts=4", result.statuses.single().detail)
+    }
+
+    @Test
+    fun `retries archive failures before reporting unconfirmed notice`() {
+        val group = group("minx", "m!nx")
+        val port = ScriptedGroupPort(
+            archiveSequences = mapOf(
+                group.groupId to listOf(
+                    GroupNoticeArchiveResult.Failure(
+                        group = group,
+                        failure = CoreFailure(
+                            reason = CoreFailureReason.GROUP_LIST_FAILED,
+                            redactedMessage = "notice archive proof_gap reply_timeout",
+                        ),
+                    ),
+                    GroupNoticeArchiveResult.Success(
+                        group = group,
+                        entries = listOf(archiveEntry(subject = "Tonight", hasAttachment = false)),
+                    ),
+                ),
+            ),
+        )
+
+        val result = service(port).confirmArchive(
+            session = defaultSession(),
+            sendResult = sendResult(
+                subject = "Tonight",
+                groups = listOf(group),
+                statuses = listOf(GroupSendStatus(group, GroupSendState.SENT)),
+            ),
+        )
+
+        assertTrue(result.allConfirmed)
+        assertEquals(listOf(GroupNoticeConfirmationState.CONFIRMED), result.statuses.map { it.state })
+        assertEquals(listOf(group, group), port.archiveRequests)
     }
 
     @Test
@@ -211,7 +246,11 @@ class NoticeConfirmationServiceTest {
 
     private class ScriptedGroupPort(
         private val archiveResults: Map<GroupId, GroupNoticeArchiveResult> = emptyMap(),
+        archiveSequences: Map<GroupId, List<GroupNoticeArchiveResult>> = emptyMap(),
     ) : GroupPort {
+        private val archiveSequences = archiveSequences
+            .mapValues { (_, results) -> results.toMutableList() }
+            .toMutableMap()
         val archiveRequests = mutableListOf<GroupMembership>()
 
         override fun currentGroups(session: org.hostess.core.domain.HostessSession): GroupListResult =
@@ -227,6 +266,9 @@ class NoticeConfirmationServiceTest {
             group: GroupMembership,
         ): GroupNoticeArchiveResult {
             archiveRequests += group
+            archiveSequences[group.groupId]
+                ?.takeIf { it.isNotEmpty() }
+                ?.let { return it.removeAt(0) }
             return archiveResults[group.groupId] ?: GroupNoticeArchiveResult.Success(group, emptyList())
         }
     }

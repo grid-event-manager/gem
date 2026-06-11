@@ -92,8 +92,8 @@ class NoticeComposerControllerTest {
 
         assertEquals(HostessTextKey.SomeNoticesUnconfirmed, sent.state.sendFooterState.statusTextKey)
         assertEquals(
-            "Owks: notice archive proof_gap subject_or_attachment_not_found | " +
-                "m!nx: notice archive proof_gap subject_or_attachment_not_found",
+            "Owks: notice archive proof_gap subject_or_attachment_not_found; attempts=4 | " +
+                "m!nx: notice archive proof_gap subject_or_attachment_not_found; attempts=4",
             sent.state.sendFooterState.detailText,
         )
     }
@@ -125,7 +125,7 @@ class NoticeComposerControllerTest {
             .sendNotices()
 
         assertEquals(HostessTextKey.SomeNoticesUnconfirmed, sent.state.sendFooterState.statusTextKey)
-        assertEquals("Owks: archive failed", sent.state.sendFooterState.detailText)
+        assertEquals("Owks: archive failed; attempts=4", sent.state.sendFooterState.detailText)
     }
 
     @Test
@@ -152,7 +152,7 @@ class NoticeComposerControllerTest {
 
         assertEquals(HostessTextKey.SomeNoticesFailed, sent.state.sendFooterState.statusTextKey)
         assertEquals(
-            "m!nx: failed | Owks: notice archive proof_gap subject_or_attachment_not_found",
+            "m!nx: failed | Owks: notice archive proof_gap subject_or_attachment_not_found; attempts=4",
             sent.state.sendFooterState.detailText,
         )
     }
