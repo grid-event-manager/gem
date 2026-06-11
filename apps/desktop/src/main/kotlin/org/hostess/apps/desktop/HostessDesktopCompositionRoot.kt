@@ -64,6 +64,7 @@ object HostessDesktopCompositionRoot {
             val groupDirectoryService = GroupDirectoryService(protocolRuntime.groupPort)
             return HostessUiRuntime(
                 credentialRuntimeState = vaultAccess.credentialRuntimeState,
+                clockPort = DesktopAppClockPort,
                 sessionService = SessionService(
                     sessionPort = protocolRuntime.sessionPort,
                     loginComplianceService = LoginComplianceService(),

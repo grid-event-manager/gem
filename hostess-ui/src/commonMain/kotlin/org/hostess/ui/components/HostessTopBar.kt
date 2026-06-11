@@ -8,21 +8,25 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import org.hostess.ui.design.HostessTheme
 import org.hostess.ui.testtags.HostessTestTags
 import org.hostess.ui.text.HostessTextCatalogue
 import org.hostess.ui.text.HostessTextKey
+import org.hostess.ui.time.SecondLifeTimeDisplay
 
 @Composable
 fun HostessTopBar(
     activeAccountLabel: String,
+    secondLifeTimeDisplay: SecondLifeTimeDisplay,
     menuOpen: Boolean,
     textCatalogue: HostessTextCatalogue,
     onMenuClick: () -> Unit,
@@ -65,6 +69,17 @@ fun HostessTopBar(
                     )
                 }
             }
+            Text(
+                text = secondLifeTimeDisplay.label(textCatalogue),
+                modifier = Modifier
+                    .widthIn(min = HostessTheme.spacing.secondLifeTimeMinWidth)
+                    .testTag(HostessTestTags.SecondLifeTime),
+                style = HostessTheme.typeScale.smallLabel,
+                color = HostessTheme.colors.topBarMenuInk,
+                textAlign = TextAlign.End,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
             Box {
                 HostessIconButton(
                     onClick = onMenuClick,

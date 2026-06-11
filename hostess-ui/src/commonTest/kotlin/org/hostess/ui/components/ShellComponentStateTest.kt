@@ -16,6 +16,7 @@ class ShellComponentStateTest {
         val catalogue = EnglishHostessTextCatalogue
 
         assertEquals("data-menu-button", HostessTestTags.MenuButton)
+        assertEquals("data-second-life-time", HostessTestTags.SecondLifeTime)
         assertEquals("data-app-menu", HostessTestTags.AppMenu)
         assertEquals("data-settings-back", HostessTestTags.SettingsBack)
         assertEquals("data-session-status", HostessTestTags.SessionStatus)
@@ -34,6 +35,7 @@ class ShellComponentStateTest {
         val spacing = HostessSpacing()
 
         assertEquals(40.dp, spacing.brandLogoSize)
+        assertEquals(72.dp, spacing.secondLifeTimeMinWidth)
         assertEquals(18.dp, spacing.backIconSize)
         assertEquals(30.dp, spacing.menuItemMinHeight)
         assertEquals(12.dp, spacing.menuItemHorizontalPadding)

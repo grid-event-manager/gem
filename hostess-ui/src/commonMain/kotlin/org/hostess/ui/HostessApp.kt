@@ -40,6 +40,7 @@ import org.hostess.ui.state.UiRoute
 import org.hostess.ui.text.EnglishHostessTextCatalogue
 import org.hostess.ui.text.HostessTextCatalogue
 import org.hostess.ui.text.HostessTextKey
+import org.hostess.ui.time.SecondLifeTimeService
 
 @Composable
 fun HostessApp(
@@ -53,11 +54,22 @@ fun HostessApp(
     var groupTargetController by remember(runtime) { mutableStateOf(GroupTargetController(runtime)) }
     var inventoryController by remember(runtime) { mutableStateOf(InventoryBrowserController(runtime)) }
     var sendFeedbackGeneration by remember(runtime) { mutableStateOf(0) }
+    val secondLifeTimeService = remember(runtime) { SecondLifeTimeService(runtime.clockPort) }
+    var secondLifeTimeDisplay by remember(runtime) {
+        mutableStateOf(secondLifeTimeService.currentSnapshot().display)
+    }
     val coroutineScope = rememberCoroutineScope()
     val osDark = isSystemInDarkTheme()
     var themeController by remember(runtime) { mutableStateOf(ThemeController.initial(runtime, osDark)) }
     LaunchedEffect(runtime, osDark) {
         themeController = themeController.refresh(osDark)
+    }
+    LaunchedEffect(runtime) {
+        while (true) {
+            val snapshot = secondLifeTimeService.currentSnapshot()
+            secondLifeTimeDisplay = snapshot.display
+            delay(millisUntilNextMinute(snapshot.epochMilliseconds))
+        }
     }
 
     fun refreshLoginFromCredentialStore() {
@@ -144,6 +156,7 @@ fun HostessApp(
             topBar = {
                 HostessTopBar(
                     activeAccountLabel = appController.state.activeAccountLabel,
+                    secondLifeTimeDisplay = secondLifeTimeDisplay,
                     menuOpen = appController.state.menuOpen,
                     textCatalogue = textCatalogue,
                     onMenuClick = { appController = appController.openMenu() },
@@ -382,3 +395,9 @@ fun HostessApp(
 private const val LogoutSpinnerMinimumMillis: Long = 650L
 private const val SendValidationFeedbackMillis: Long = 3_000L
 private const val AvatarProgressDetailMillis: Long = 5_000L
+private const val ClockMinuteMillis: Long = 60_000L
+
+private fun millisUntilNextMinute(epochMilliseconds: Long): Long {
+    val elapsedInMinute = ((epochMilliseconds % ClockMinuteMillis) + ClockMinuteMillis) % ClockMinuteMillis
+    return if (elapsedInMinute == 0L) ClockMinuteMillis else ClockMinuteMillis - elapsedInMinute
+}

@@ -169,6 +169,7 @@ object FakeHostessUiRuntime {
         )
         return HostessUiRuntime(
             credentialRuntimeState = credentialRuntimeState,
+            clockPort = FakeClockPort(),
             sessionService = SessionService(
                 sessionPort = sessionPort,
                 loginComplianceService = LoginComplianceService(),

@@ -7,9 +7,12 @@ import kotlin.test.assertTrue
 class HostessTextTest {
     @Test
     fun fixedKeysCoverPrototypeCopy() {
-        assertEquals(65, HostessTextKey.fixedKeys.size)
+        assertEquals(68, HostessTextKey.fixedKeys.size)
         assertTrue(HostessTextKey.AppName in HostessTextKey.fixedKeys)
         assertTrue(HostessTextKey.Username in HostessTextKey.fixedKeys)
+        assertTrue(HostessTextKey.SecondLifeTimePrefix in HostessTextKey.fixedKeys)
+        assertTrue(HostessTextKey.MeridiemAm in HostessTextKey.fixedKeys)
+        assertTrue(HostessTextKey.MeridiemPm in HostessTextKey.fixedKeys)
         assertTrue(HostessTextKey.Menu in HostessTextKey.fixedKeys)
         assertTrue(HostessTextKey.LogOut in HostessTextKey.fixedKeys)
         assertTrue(HostessTextKey.AddGroups in HostessTextKey.fixedKeys)
@@ -47,6 +50,9 @@ class HostessTextTest {
         assertEquals("Password", catalogue.text(HostessTextKey.Password))
         assertEquals("Show", catalogue.text(HostessTextKey.Show))
         assertEquals("Hide", catalogue.text(HostessTextKey.Hide))
+        assertEquals("SLT", catalogue.text(HostessTextKey.SecondLifeTimePrefix))
+        assertEquals("AM", catalogue.text(HostessTextKey.MeridiemAm))
+        assertEquals("PM", catalogue.text(HostessTextKey.MeridiemPm))
         assertEquals("Menu", catalogue.text(HostessTextKey.Menu))
         assertEquals("Log out", catalogue.text(HostessTextKey.LogOut))
         assertEquals("\u2014 select \u2014", catalogue.text(HostessTextKey.SavedLoginPlaceholder))

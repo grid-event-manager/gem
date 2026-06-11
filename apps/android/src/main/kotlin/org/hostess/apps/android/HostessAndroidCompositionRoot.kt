@@ -57,6 +57,7 @@ object HostessAndroidCompositionRoot {
             val groupDirectoryService = GroupDirectoryService(protocolRuntime.groupPort)
             return HostessUiRuntime(
                 credentialRuntimeState = vaultAccess.credentialRuntimeState,
+                clockPort = AndroidAppClockPort,
                 sessionService = SessionService(
                     sessionPort = protocolRuntime.sessionPort,
                     loginComplianceService = LoginComplianceService(),

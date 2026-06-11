@@ -8,6 +8,9 @@ sealed interface HostessTextKey {
     data object Hide : HostessTextKey
     data object SavedLoginPlaceholder : HostessTextKey
     data object Login : HostessTextKey
+    data object SecondLifeTimePrefix : HostessTextKey
+    data object MeridiemAm : HostessTextKey
+    data object MeridiemPm : HostessTextKey
     data object Menu : HostessTextKey
     data object LogOut : HostessTextKey
     data object AddNewLogin : HostessTextKey
@@ -78,6 +81,9 @@ sealed interface HostessTextKey {
             Hide,
             SavedLoginPlaceholder,
             Login,
+            SecondLifeTimePrefix,
+            MeridiemAm,
+            MeridiemPm,
             Menu,
             LogOut,
             AddNewLogin,
@@ -153,6 +159,9 @@ object EnglishHostessTextCatalogue : HostessTextCatalogue {
         HostessTextKey.Hide -> "Hide"
         HostessTextKey.SavedLoginPlaceholder -> "\u2014 select \u2014"
         HostessTextKey.Login -> "Login"
+        HostessTextKey.SecondLifeTimePrefix -> "SLT"
+        HostessTextKey.MeridiemAm -> "AM"
+        HostessTextKey.MeridiemPm -> "PM"
         HostessTextKey.Menu -> "Menu"
         HostessTextKey.LogOut -> "Log out"
         HostessTextKey.AddNewLogin -> "Add new login..."

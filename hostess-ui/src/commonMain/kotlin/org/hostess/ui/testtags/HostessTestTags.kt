@@ -3,6 +3,7 @@ package org.hostess.ui.testtags
 object HostessTestTags {
     const val HostessApp: String = "data-hostess-app"
     const val MenuButton: String = "data-menu-button"
+    const val SecondLifeTime: String = "data-second-life-time"
     const val AppMenu: String = "data-app-menu"
     const val OpenSettings: String = "data-open-settings"
     const val LogOut: String = "data-log-out"

@@ -23,7 +23,7 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Deb)
             packageName = "hostess"
-            packageVersion = "0.1.7"
+            packageVersion = "0.1.8"
             description = "Second Life venue notice helper"
             vendor = "Ella Hostess"
         }

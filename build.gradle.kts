@@ -16,7 +16,7 @@ val checkHostessBoundaries by tasks.registering(Exec::class) {
 
 subprojects {
     group = "org.hostess"
-version = "0.1.7-SNAPSHOT"
+version = "0.1.8-SNAPSHOT"
 
     plugins.withId("org.jetbrains.kotlin.jvm") {
         extensions.configure<org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension> {

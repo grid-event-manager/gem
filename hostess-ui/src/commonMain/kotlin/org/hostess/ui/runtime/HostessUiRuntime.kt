@@ -16,11 +16,13 @@ import org.hostess.core.services.SavedLoginAuthenticationService
 import org.hostess.core.services.SavedAccountManagementService
 import org.hostess.core.services.SessionService
 import org.hostess.core.services.TargetSelectionService
+import org.hostess.core.ports.ClockPort
 import org.hostess.core.preferences.LastLoginProfilePreferenceService
 import org.hostess.core.theme.ThemePreferenceService
 
 data class HostessUiRuntime(
     val credentialRuntimeState: HostessCredentialRuntimeState,
+    val clockPort: ClockPort,
     val sessionService: SessionService,
     val avatarReadinessService: AvatarReadinessService,
     val groupDirectoryService: GroupDirectoryService,
