@@ -57,7 +57,7 @@ internal class LiveNoticeSendProofRunner(
             return finish(ProofReportStatus.BLOCKED, detail)
         }
         statusFields["operatorReceiptStatus"] = if (inputs.requiresOperatorObservation()) {
-            "pending"
+            inputs.operatorReceiptStatusReportValue()
         } else {
             "not_applicable"
         }
@@ -68,6 +68,9 @@ internal class LiveNoticeSendProofRunner(
         val session = login() ?: return finish(ProofReportStatus.BLOCKED, "login blocked")
         if (!avatarReadiness(session)) {
             return finishAfterLogout(session, "avatar readiness unavailable")
+        }
+        if (!simulatorSession(session)) {
+            return finishAfterLogout(session, "simulator session unavailable")
         }
         val groups = currentGroups(session) ?: return finishAfterLogout(session, "current groups unavailable")
         val targetSet = selectTargets(groups) ?: return finishAfterLogout(session, "target selection failed")
@@ -80,6 +83,7 @@ internal class LiveNoticeSendProofRunner(
         if (!noticeArchive(session, targetSet)) {
             return finishAfterLogout(session, "notice archive proof failed")
         }
+        statusFields["operatorReceiptStatus"] = inputs.operatorReceiptStatusReportValue()
         runCleanup()
         return finishAfterLogout(session)
     }
@@ -169,6 +173,24 @@ internal class LiveNoticeSendProofRunner(
         "cofVersionStatus" to proof.cofVersionStatus.reportValue,
         "serverAppearanceStatus" to proof.serverAppearanceStatus.reportValue,
     )
+
+    private fun simulatorSession(session: HostessSession): Boolean {
+        val outcome = LiveProofSimulatorPresenceVerifier(runtime.groupDirectoryService).verify(session)
+        statusFields += outcome.statusFields
+        steps += if (outcome.passed) {
+            LiveProofStep.passed("simulator-session", outcome.step.detail)
+        } else {
+            LiveProofStep(
+                "simulator-session",
+                outcome.step.state,
+                outcome.failureReason ?: "simulator session proof_gap",
+            )
+        }
+        if (!outcome.passed) {
+            markNotRunUntilLogout(outcome.failureReason ?: "simulator session proof_gap", "current-groups")
+        }
+        return outcome.passed
+    }
 
     private fun currentGroups(session: HostessSession): List<GroupMembership>? =
         when (val result = runtime.groupDirectoryService.currentGroups(session)) {
@@ -362,11 +384,13 @@ internal class LiveNoticeSendProofRunner(
         when (val result = runtime.sessionService.logout(session)) {
             SessionLogoutResult.LoggedOut -> {
                 statusFields["logoutStatus"] = "passed"
+                statusFields["simulatorLogoutStatus"] = "passed"
                 steps += LiveProofStep.passed("logout")
             }
             is SessionLogoutResult.Failure -> {
                 terminalFailure = true
                 statusFields["logoutStatus"] = "failed"
+                statusFields["simulatorLogoutStatus"] = "failed"
                 steps += LiveProofStep.failed(
                     "logout",
                     result.failure.redactedMessage ?: result.failure.reason.name.lowercase(),

@@ -21,7 +21,7 @@ internal class LiveProofSimulatorPresenceVerifier(
                     } else {
                         LiveProofStep(
                             "simulator-presence",
-                            result.proof.simulatorPresenceStatus.reportValue,
+                            result.proof.stepStatus(),
                             result.proof.redactedMessage ?: "simulator presence proof_gap",
                         )
                     },
@@ -39,7 +39,7 @@ internal class LiveProofSimulatorPresenceVerifier(
                 LiveProofSimulatorPresenceOutcome(
                     passed = false,
                     statusFields = statusFields(result.proof),
-                    step = LiveProofStep("simulator-presence", result.proof.simulatorPresenceStatus.reportValue, detail),
+                    step = LiveProofStep("simulator-presence", result.proof.stepStatus(), detail),
                     failureReason = detail,
                 )
             }
@@ -47,22 +47,37 @@ internal class LiveProofSimulatorPresenceVerifier(
 
     private fun statusFields(proof: SimulatorPresenceProof): Map<String, String> = mapOf(
         "simulatorPresenceStatus" to proof.simulatorPresenceStatus.reportValue,
+        "simulatorSessionStatus" to proof.simulatorPresenceStatus.reportValue,
+        "simulatorHeartbeatStatus" to proof.heartbeatStatus.reportValue,
         "regionHandshakeStatus" to proof.regionHandshakeStatus.reportValue,
         "regionHandshakeReplyStatus" to proof.regionHandshakeReplyStatus.reportValue,
         "agentMovementStatus" to proof.agentMovementStatus.reportValue,
         "agentUpdateStatus" to proof.agentUpdateStatus.reportValue,
     )
 
-    private fun detail(proof: SimulatorPresenceProof): String = "pingReplies=${proof.pingReplies}"
+    private fun detail(proof: SimulatorPresenceProof): String =
+        "pingReplies=${proof.pingReplies}; heartbeat=${proof.heartbeatStatus.reportValue}"
 
     private fun SimulatorPresenceProof.allPassed(): Boolean =
         listOf(
             simulatorPresenceStatus,
+            heartbeatStatus,
             regionHandshakeStatus,
             regionHandshakeReplyStatus,
             agentMovementStatus,
             agentUpdateStatus,
         ).all { it == SimulatorPresenceProofStatus.PASSED }
+
+    private fun SimulatorPresenceProof.stepStatus(): String =
+        listOf(
+            simulatorPresenceStatus,
+            heartbeatStatus,
+            regionHandshakeStatus,
+            regionHandshakeReplyStatus,
+            agentMovementStatus,
+            agentUpdateStatus,
+        ).firstOrNull { it != SimulatorPresenceProofStatus.PASSED }?.reportValue
+            ?: SimulatorPresenceProofStatus.PASSED.reportValue
 }
 
 internal data class LiveProofSimulatorPresenceOutcome(

@@ -291,6 +291,7 @@ class ProtocolGroupRuntimeTest {
             regionHandshakeReplyStatus = SimulatorPresenceProofStatus.PASSED,
             agentMovementStatus = SimulatorPresenceProofStatus.PASSED,
             agentUpdateStatus = SimulatorPresenceProofStatus.PASSED,
+            heartbeatStatus = SimulatorPresenceProofStatus.PASSED,
         )
 
         fun groupMembership(): GroupMembership =

@@ -32,6 +32,7 @@ data class SimulatorPresenceProof(
     val regionHandshakeReplyStatus: SimulatorPresenceProofStatus,
     val agentMovementStatus: SimulatorPresenceProofStatus,
     val agentUpdateStatus: SimulatorPresenceProofStatus,
+    val heartbeatStatus: SimulatorPresenceProofStatus = SimulatorPresenceProofStatus.NOT_RUN,
     val pingReplies: Int = 0,
     val redactedMessage: String? = null,
 )

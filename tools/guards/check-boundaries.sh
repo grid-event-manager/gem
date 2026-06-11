@@ -47,8 +47,13 @@ TRACK_J_CLASSIC_BAKING_PATTERN='AgentSetAppearance|UploadBakedTexture|CreateBake
 TRACK_J_FORBIDDEN_AVATAR_OWNER_PATTERN='(^|[^[:alnum:]_])(AvatarManager|AppearanceHelper|ViewerUtils)([^[:alnum:]_]|$)'
 TRACK_J_DIRECT_AVATAR_SEED_PATTERN='seedCapability'
 TRACK_J_CLI_DIRECT_AVATAR_PATTERN='(^|[^[:alnum:]_])(LibomvAvatarAdapter|ProtocolAvatarRuntime|ProtocolAvatarAppearanceSource)([^[:alnum:]_]|$)'
-TRACK_J_STALE_FULL_PROOF_SIMULATOR_GATE_PATTERN='simulatorPresence\(session\)|LiveProofSimulatorPresenceVerifier'
+TRACK_J_STALE_FULL_PROOF_SIMULATOR_GATE_PATTERN='simulatorPresence\(session\)'
 TRACK_J_EXTRA_SIMULATOR_EXCHANGE_IMPL_PATTERN='\)[[:space:]]*:[[:space:]]*SimulatorPacketExchange|^[[:space:]]*(class|object)[^=]*:[[:space:]]*SimulatorPacketExchange'
+HS002_TRACK_E_FORBIDDEN_FACADE_RECEIVE_PATTERN='(^|[^[:alnum:]_])(packetExchange|currentExchange|exchange|simulatorPacketExchange)\.receive\('
+HS002_TRACK_E_DEAD_CIRCUIT_CLIENT_PATTERN='presentCircuit|pendingNoticeArchiveReplies|drainPreNoticeTraffic|waitForOutgoingAck|waitForPacket'
+HS002_TRACK_E_DUPLICATE_SIM_GATEWAY_PATTERN='(^|[^[:alnum:]_])(NoticeSender2|ArchiveReader2|SimulatorSessionManager|SessionHelper|UdpHelper|GroupNoticeProofHelper)([^[:alnum:]_]|$)'
+HS002_TRACK_E_FORBIDDEN_FAKE_LIVE_PATTERN='fake.*simulator.*passed|simulator.*fake.*passed|fake.*live.*passed|CommandMode\.FAKE[^;]*ProofReportStatus\.PASSED|ProofReportStatus\.PASSED[^;]*CommandMode\.FAKE|local proof bypass'
+HS002_TRACK_E_RAW_TRACK_IDENTIFIER_PATTERN='TRACK_E|TrackE|track_e|E-[0-9][0-9]-T'
 TRACK_C_ENV_PATTERN='System(::|\.)getenv'
 TRACK_C_FILE_ROUTE_PATTERN='credential-file'
 TRACK_C_UNSUPPORTED_SECRET_PATTERN='keychain|Keychain|KeyStore|plaintext|plain-text|plain text'
@@ -394,6 +399,115 @@ check_notice_dispatch_call_blocks() {
         printf '%s' "$output"
         failures=1
     fi
+}
+
+check_hs002_track_e_session_boundaries() {
+    local session_production_targets=()
+    while IFS= read -r path; do
+        case "$path" in
+            *"/ThreadedSimulatorSessionGateway.kt") ;;
+            *) session_production_targets+=("$path") ;;
+        esac
+    done < <(find \
+        "hostess-core/src/commonMain" \
+        "hostess-core/src/jvmMain" \
+        "hostess-core/src/androidMain" \
+        "hostess-core/src/jvmAndroidMain" \
+        "hostess-core/src/main" \
+        "hostess-protocol-libomv/src/commonMain" \
+        "hostess-protocol-libomv/src/jvmMain" \
+        "hostess-protocol-libomv/src/androidMain" \
+        "hostess-protocol-libomv/src/jvmAndroidMain" \
+        "hostess-protocol-libomv/src/main" \
+        "hostess-ui/src/commonMain" \
+        "hostess-ui/src/jvmMain" \
+        "hostess-ui/src/androidMain" \
+        "tools/cli/src/main" \
+        "apps/desktop/src/main" \
+        "apps/android/src/main" \
+        -type f -name '*.kt' 2>/dev/null || true)
+
+    check_no_hits \
+        "HS002-E direct SimulatorPacketExchange receive outside session gateway" \
+        "$HS002_TRACK_E_FORBIDDEN_FACADE_RECEIVE_PATTERN" \
+        "${session_production_targets[@]}"
+
+    local circuit_client_targets=()
+    add_existing circuit_client_targets \
+        "hostess-protocol-libomv/src/commonMain/kotlin/org/hostess/protocol/libomv/transport/ProtocolSimulatorCircuitClient.kt"
+
+    check_no_hits \
+        "HS002-E old circuit-client local receive state absent" \
+        "$HS002_TRACK_E_DEAD_CIRCUIT_CLIENT_PATTERN" \
+        "${circuit_client_targets[@]}"
+
+    local session_gateway_targets=()
+    add_existing session_gateway_targets \
+        "hostess-protocol-libomv/src/commonMain" \
+        "hostess-protocol-libomv/src/jvmMain" \
+        "hostess-protocol-libomv/src/androidMain" \
+        "hostess-protocol-libomv/src/jvmAndroidMain" \
+        "hostess-protocol-libomv/src/main"
+
+    check_exact_owner_count \
+        "HS002-E single ThreadedSimulatorSessionGateway owner" \
+        "ThreadedSimulatorSessionGateway" \
+        1 \
+        "${session_gateway_targets[@]}"
+
+    check_no_hits \
+        "HS002-E no duplicate simulator session owner names" \
+        "$HS002_TRACK_E_DUPLICATE_SIM_GATEWAY_PATTERN" \
+        "${session_gateway_targets[@]}"
+
+    check_no_hits \
+        "HS002-E production fake live simulator success routes absent" \
+        "$HS002_TRACK_E_FORBIDDEN_FAKE_LIVE_PATTERN" \
+        "${session_production_targets[@]}"
+
+    local app_core_ui_cli_targets=()
+    add_existing app_core_ui_cli_targets \
+        "hostess-core/src/commonMain" \
+        "hostess-core/src/jvmMain" \
+        "hostess-core/src/androidMain" \
+        "hostess-core/src/jvmAndroidMain" \
+        "hostess-core/src/main" \
+        "hostess-ui/src/commonMain" \
+        "hostess-ui/src/jvmMain" \
+        "hostess-ui/src/androidMain" \
+        "tools/cli/src/main" \
+        "apps/desktop/src/main" \
+        "apps/android/src/main"
+
+    check_no_hits \
+        "HS002-E SimulatorSessionGateway stays inside protocol adapter" \
+        'SimulatorSessionGateway' \
+        "${app_core_ui_cli_targets[@]}"
+
+    local raw_identifier_targets=()
+    add_existing raw_identifier_targets \
+        "hostess-core/src/commonMain" \
+        "hostess-core/src/jvmMain" \
+        "hostess-core/src/androidMain" \
+        "hostess-core/src/jvmAndroidMain" \
+        "hostess-core/src/main" \
+        "hostess-protocol-libomv/src/commonMain" \
+        "hostess-protocol-libomv/src/jvmMain" \
+        "hostess-protocol-libomv/src/androidMain" \
+        "hostess-protocol-libomv/src/jvmAndroidMain" \
+        "hostess-protocol-libomv/src/main" \
+        "hostess-ui/src/commonMain" \
+        "hostess-ui/src/jvmMain" \
+        "hostess-ui/src/androidMain" \
+        "tools/cli/src/main" \
+        "apps/desktop/src/main" \
+        "apps/android/src/main" \
+        "README.md"
+
+    check_no_hits \
+        "HS002-E raw track-only persisted identifiers absent" \
+        "$HS002_TRACK_E_RAW_TRACK_IDENTIFIER_PATTERN" \
+        "${raw_identifier_targets[@]}"
 }
 
 core_targets=()
@@ -1623,6 +1737,8 @@ check_no_hits \
     "$TRACK_J_EXTRA_SIMULATOR_EXCHANGE_IMPL_PATTERN" \
     "${track_j_simulator_exchange_impl_targets[@]}"
 
+check_hs002_track_e_session_boundaries
+
 check_exact_owner_count "Track G single InventoryPort owner" "InventoryPort" 1 "${track_g_main_targets[@]}"
 check_exact_owner_count "Track G single InventoryDirectoryService owner" "InventoryDirectoryService" 1 "${track_g_main_targets[@]}"
 check_exact_owner_count "Track G single ProtocolCapabilitySeedClient owner" "ProtocolCapabilitySeedClient" 1 "${track_g_main_targets[@]}"
@@ -2096,12 +2212,37 @@ check_pattern_matches \
 check_pattern_matches \
     "self-test Track J stale full-proof simulator gate pattern" \
     "$TRACK_J_STALE_FULL_PROOF_SIMULATOR_GATE_PATTERN" \
-    'LiveProofSimulatorPresenceVerifier(groupDirectoryService).verify(session)'
+    'if (simulatorPresence(session).passed) sendNotice()'
 
 check_pattern_matches \
     "self-test Track J extra simulator exchange implementation pattern" \
     "$TRACK_J_EXTRA_SIMULATOR_EXCHANGE_IMPL_PATTERN" \
     ') : SimulatorPacketExchange {'
+
+check_pattern_matches \
+    "self-test HS002-E direct receive pattern" \
+    "$HS002_TRACK_E_FORBIDDEN_FACADE_RECEIVE_PATTERN" \
+    'currentExchange.receive(endpoint, timeoutMillis)'
+
+check_pattern_matches \
+    "self-test HS002-E dead circuit client pattern" \
+    "$HS002_TRACK_E_DEAD_CIRCUIT_CLIENT_PATTERN" \
+    'private val pendingNoticeArchiveReplies = mutableListOf<Packet>()'
+
+check_pattern_matches \
+    "self-test HS002-E duplicate session owner pattern" \
+    "$HS002_TRACK_E_DUPLICATE_SIM_GATEWAY_PATTERN" \
+    'class SimulatorSessionManager'
+
+check_pattern_matches \
+    "self-test HS002-E fake live route pattern" \
+    "$HS002_TRACK_E_FORBIDDEN_FAKE_LIVE_PATTERN" \
+    'CommandMode.FAKE returns ProofReportStatus.PASSED'
+
+check_pattern_matches \
+    "self-test HS002-E raw track identifier pattern" \
+    "$HS002_TRACK_E_RAW_TRACK_IDENTIFIER_PATTERN" \
+    'E-05-T1'
 
 if [[ "$failures" -ne 0 ]]; then
     exit 1

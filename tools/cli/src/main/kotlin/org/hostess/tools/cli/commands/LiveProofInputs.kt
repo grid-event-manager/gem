@@ -3,6 +3,7 @@ package org.hostess.tools.cli.commands
 import org.hostess.core.domain.LoginComplianceRequest
 import org.hostess.core.domain.OperatorLabel
 import org.hostess.core.domain.ScriptedAgentEvidenceSource
+import org.hostess.core.services.SafeDiagnosticRedaction
 import org.hostess.tools.cli.CommandArguments
 import org.hostess.tools.cli.CommandMode
 
@@ -22,7 +23,10 @@ internal data class LiveProofInputs(
     val body: String?,
     val authorisedLiveSend: Boolean,
     val operatorObservationReady: Boolean,
+    val operatorReceiptStatus: OperatorReceiptStatus? = null,
+    val operatorReceiptDetail: String? = null,
     val existingAttachmentName: String?,
+    private val operatorReceiptStatusInvalid: Boolean = false,
     private val staleNoticeTotalsOptions: List<String> = emptyList(),
 ) {
     fun missingRequiredFields(): List<String> = buildList {
@@ -43,6 +47,7 @@ internal data class LiveProofInputs(
         if (proofAccountLabel.isNullOrBlank()) add("proof-account-label")
         if (proofScope == LiveProofScope.FULL) {
             staleNoticeTotalsOptions.forEach { add("unsupported stale option: $it") }
+            if (operatorReceiptStatusInvalid) add("operator-receipt-status")
             if (!authorisedLiveSend) add("authorised-live-send")
             if (targetDisplayNames.isEmpty()) add("target display name")
             if (subject.isNullOrBlank()) add("subject")
@@ -71,6 +76,8 @@ internal data class LiveProofInputs(
         put("bodyLength", body.orEmpty().length.toString())
         put("authorisedLiveSend", authorisedLiveSend.toString())
         put("operatorObservationReady", operatorObservationReady.toString())
+        put("operatorReceiptStatus", operatorReceiptStatusReportValue())
+        redactedOperatorReceiptDetail()?.let { put("operatorReceiptDetail", it) }
         if (proofScope == LiveProofScope.FULL) {
             put("existingAttachmentDisplayName", existingAttachmentName.orEmpty())
         }
@@ -81,6 +88,9 @@ internal data class LiveProofInputs(
             if (!credentialFile.isNullOrBlank() || credentialHandle.isNullOrBlank()) {
                 fields["credentialStatus"] = "blocked"
             }
+            if (operatorReceiptStatusInvalid) {
+                fields["operatorReceiptStatus"] = "blocked"
+            }
             if (requiresOperatorObservation() && !operatorObservationReady) {
                 fields["operatorReceiptStatus"] = "blocked"
             }
@@ -89,6 +99,20 @@ internal data class LiveProofInputs(
 
     fun requiresOperatorObservation(): Boolean =
         proofScope == LiveProofScope.FULL && grid.isSecondLifeGrid()
+
+    fun operatorReceiptStatusReportValue(): String =
+        when {
+            operatorReceiptStatusInvalid -> "blocked"
+            !requiresOperatorObservation() -> "not_applicable"
+            operatorReceiptStatus != null -> operatorReceiptStatus.reportValue
+            operatorObservationReady -> "pending"
+            else -> "blocked"
+        }
+
+    private fun redactedOperatorReceiptDetail(): String? =
+        operatorReceiptDetail
+            ?.takeIf(String::isNotBlank)
+            ?.let(SafeDiagnosticRedaction::excerpt)
 
     fun loginComplianceRequest(): LoginComplianceRequest = LoginComplianceRequest(
         proofAccountAttested = proofAccountAttested,
@@ -117,6 +141,8 @@ internal data class LiveProofInputs(
     companion object {
         fun from(arguments: CommandArguments): LiveProofInputs {
             val compliance = LoginComplianceArguments(arguments, CommandMode.LIVE)
+            val operatorReceiptStatusInput = arguments.option("operator-receipt-status")
+            val operatorReceiptStatus = OperatorReceiptStatus.parse(operatorReceiptStatusInput)
             return LiveProofInputs(
                 proofScope = LiveProofScope.parse(arguments.option("proof-scope")),
                 grid = arguments.option("grid"),
@@ -133,7 +159,10 @@ internal data class LiveProofInputs(
                 body = arguments.option("body"),
                 authorisedLiveSend = arguments.has("authorised-live-send"),
                 operatorObservationReady = arguments.has("operator-observation-ready"),
+                operatorReceiptStatus = operatorReceiptStatus,
+                operatorReceiptDetail = arguments.option("operator-receipt-detail"),
                 existingAttachmentName = arguments.option("existing-attachment-name"),
+                operatorReceiptStatusInvalid = operatorReceiptStatusInput != null && operatorReceiptStatus == null,
                 staleNoticeTotalsOptions = staleNoticeTotalsOptions(arguments),
             )
         }
@@ -180,7 +209,20 @@ internal data class LiveProofInputs(
             "main grid",
             -> true
             else -> false
-        }
+    }
+}
+
+internal enum class OperatorReceiptStatus(val reportValue: String) {
+    ALL_RECEIVED("all_received"),
+    PARTIAL("partial"),
+    NONE("none"),
+    NOT_CHECKED("not_checked"),
+    ;
+
+    companion object {
+        fun parse(value: String?): OperatorReceiptStatus? =
+            entries.firstOrNull { it.reportValue == value?.trim()?.lowercase() }
+    }
 }
 
 internal enum class LiveProofScope(val wireValue: String) {

@@ -668,6 +668,10 @@ class LiveProofCommandTest {
                     reportPath.toString(),
                     "--authorised-live-send",
                     "--operator-observation-ready",
+                    "--operator-receipt-status",
+                    "partial",
+                    "--operator-receipt-detail",
+                    "Hecate missing https://secret.example/cap session_id=abc",
                     "--grid",
                     "agni",
                     "--account",
@@ -700,8 +704,65 @@ class LiveProofCommandTest {
             assertContains(report, "\"loginStartLocationStatus\": \"blocked\"")
             assertContains(report, "\"loginStatus\": \"not_run\"")
             assertContains(report, "\"noticeSendStatus\": \"not_run\"")
-            assertContains(report, "\"operatorReceiptStatus\": \"pending\"")
+            assertContains(report, "\"operatorReceiptStatus\": \"partial\"")
+            assertContains(report, "\"operatorReceiptDetail\": \"Hecate missing [redacted-url] session_id=[redacted]\"")
             assertContains(report, "\"operatorObservationReady\": \"true\"")
+            assertFalse(report.contains("HOSTESS_PROOF_CREDENTIAL"))
+            assertFalse(report.contains("https://secret.example/cap"))
+            assertFalse(report.contains("session_id=abc"))
+        } finally {
+            directory.toFile().deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `invalid operator receipt status blocks before live runtime`() {
+        val directory = Files.createTempDirectory("hostess-live-proof-invalid-receipt")
+        try {
+            val reportPath = directory.resolve("live-proof.json")
+            val output = RecordingCliOutput()
+
+            val exitCode = CommandRegistry.default(CliCompositionRoot()).execute(
+                listOf(
+                    "live-proof",
+                    "--report",
+                    reportPath.toString(),
+                    "--authorised-live-send",
+                    "--operator-observation-ready",
+                    "--operator-receipt-status",
+                    "banana",
+                    "--grid",
+                    "agni",
+                    "--account",
+                    "venue-proof",
+                    "--credential-env",
+                    "HOSTESS_PROOF_CREDENTIAL",
+                    "--proof-account-attested",
+                    "--scripted-agent-attested",
+                    "--operator",
+                    "test-operator",
+                    "--proof-account-label",
+                    "test-proof-account",
+                    "--target",
+                    "Venue Hosts",
+                    "--subject",
+                    "Tonight",
+                    "--body",
+                    "Doors at eight",
+                    "--existing-attachment-name",
+                    "Venue Landmark",
+                ),
+                output,
+            )
+
+            val report = reportPath.readText()
+            assertEquals(2, exitCode)
+            assertTrue(output.lines.any { it.contains("operator-receipt-status") })
+            assertContains(report, "\"status\": \"blocked\"")
+            assertContains(report, "\"operatorReceiptStatus\": \"blocked\"")
+            assertContains(report, "\"loginStatus\": \"not_run\"")
+            assertContains(report, "\"noticeSendStatus\": \"not_run\"")
+            assertFalse(report.contains("banana"))
             assertFalse(report.contains("HOSTESS_PROOF_CREDENTIAL"))
         } finally {
             directory.toFile().deleteRecursively()

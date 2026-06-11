@@ -197,6 +197,7 @@ fun defaultPresenceProof(): SimulatorPresenceProof = SimulatorPresenceProof(
     regionHandshakeReplyStatus = SimulatorPresenceProofStatus.PASSED,
     agentMovementStatus = SimulatorPresenceProofStatus.PASSED,
     agentUpdateStatus = SimulatorPresenceProofStatus.PASSED,
+    heartbeatStatus = SimulatorPresenceProofStatus.PASSED,
 )
 
 fun defaultArchiveEntry(): GroupNoticeArchiveEntry = GroupNoticeArchiveEntry(

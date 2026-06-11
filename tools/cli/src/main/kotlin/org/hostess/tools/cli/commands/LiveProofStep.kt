@@ -17,6 +17,7 @@ internal data class LiveProofStep(
             "login-start-location",
             "login",
             "avatar-readiness",
+            "simulator-session",
             "current-groups",
             "select-targets",
             "inventory-catalogue",
@@ -33,6 +34,8 @@ internal data class LiveProofStep(
             "loginStatus",
             "avatarReadinessStatus",
             "simulatorPresenceStatus",
+            "simulatorSessionStatus",
+            "simulatorHeartbeatStatus",
             "regionProtocolStatus",
             "agentAppearanceServiceStatus",
             "cofVersionStatus",
@@ -52,6 +55,7 @@ internal data class LiveProofStep(
             "noticeArchiveTargetCount",
             "noticeArchiveMatchedTargetCount",
             "operatorReceiptStatus",
+            "simulatorLogoutStatus",
             "androidProbeStatus",
         )
         fun passed(name: String, detail: String? = null): LiveProofStep = LiveProofStep(name, "passed", detail)

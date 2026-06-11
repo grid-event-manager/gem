@@ -9,6 +9,7 @@ import org.hostess.protocol.libomv.LibomvSessionIdentity
 import org.hostess.protocol.libomv.transport.ProtocolSimulatorCircuitClient
 import org.hostess.protocol.libomv.transport.SimulatorPresenceResult
 import org.hostess.protocol.libomv.transport.SimulatorPresenceStatus
+import org.hostess.protocol.libomv.transport.SimulatorSessionHealthStatus
 import org.hostess.protocol.libomv.transport.toSimulatorCircuit
 
 internal class ProtocolSimulatorPresenceSource(
@@ -23,10 +24,23 @@ internal class ProtocolSimulatorPresenceSource(
                     regionHandshakeReplyStatus = SimulatorPresenceProofStatus.PASSED,
                     agentMovementStatus = SimulatorPresenceProofStatus.PASSED,
                     agentUpdateStatus = SimulatorPresenceProofStatus.PASSED,
+                    heartbeatStatus = result.heartbeatProofStatus(),
                     pingReplies = result.pingReplies,
+                    redactedMessage = if (result.heartbeatProofStatus() == SimulatorPresenceProofStatus.PASSED) {
+                        null
+                    } else {
+                        HEARTBEAT_PROOF_GAP
+                    },
                 ),
             )
             is SimulatorPresenceResult.Failed -> result.toPresenceFailure()
+        }
+
+    private fun SimulatorPresenceResult.Present.heartbeatProofStatus(): SimulatorPresenceProofStatus =
+        if (heartbeatActive && sessionHealth.status == SimulatorSessionHealthStatus.PRESENT) {
+            SimulatorPresenceProofStatus.PASSED
+        } else {
+            SimulatorPresenceProofStatus.PROOF_GAP
         }
 
     private fun SimulatorPresenceResult.Failed.toPresenceFailure(): SimulatorPresenceProofResult.Failure {
@@ -120,6 +134,7 @@ internal class ProtocolSimulatorPresenceSource(
         regionHandshakeReplyStatus: SimulatorPresenceProofStatus = SimulatorPresenceProofStatus.NOT_RUN,
         agentMovementStatus: SimulatorPresenceProofStatus = SimulatorPresenceProofStatus.NOT_RUN,
         agentUpdateStatus: SimulatorPresenceProofStatus = SimulatorPresenceProofStatus.NOT_RUN,
+        heartbeatStatus: SimulatorPresenceProofStatus = SimulatorPresenceProofStatus.NOT_RUN,
         message: String,
     ): SimulatorPresenceProof = SimulatorPresenceProof(
         simulatorPresenceStatus = simulatorStatus,
@@ -127,6 +142,11 @@ internal class ProtocolSimulatorPresenceSource(
         regionHandshakeReplyStatus = regionHandshakeReplyStatus,
         agentMovementStatus = agentMovementStatus,
         agentUpdateStatus = agentUpdateStatus,
+        heartbeatStatus = heartbeatStatus,
         redactedMessage = message,
     )
+
+    private companion object {
+        const val HEARTBEAT_PROOF_GAP: String = "simulator heartbeat proof_gap"
+    }
 }

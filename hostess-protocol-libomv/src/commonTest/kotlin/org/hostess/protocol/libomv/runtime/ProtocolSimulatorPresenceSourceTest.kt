@@ -7,6 +7,8 @@ import org.hostess.protocol.libomv.transport.ProtocolSimulatorCircuitClient
 import org.hostess.protocol.libomv.transport.RecordingSimulatorSessionGateway
 import org.hostess.protocol.libomv.transport.SimulatorPresenceResult
 import org.hostess.protocol.libomv.transport.SimulatorPresenceStatus
+import org.hostess.protocol.libomv.transport.SimulatorSessionHealth
+import org.hostess.protocol.libomv.transport.SimulatorSessionHealthStatus
 import org.hostess.protocol.libomv.transport.toSimulatorCircuit
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -35,8 +37,33 @@ class ProtocolSimulatorPresenceSourceTest {
         assertEquals(SimulatorPresenceProofStatus.PASSED, proof.regionHandshakeReplyStatus)
         assertEquals(SimulatorPresenceProofStatus.PASSED, proof.agentMovementStatus)
         assertEquals(SimulatorPresenceProofStatus.PASSED, proof.agentUpdateStatus)
+        assertEquals(SimulatorPresenceProofStatus.PASSED, proof.heartbeatStatus)
         assertEquals(1, proof.pingReplies)
         assertEquals(identity().toSimulatorCircuit(), gateway.presenceCircuits.single())
+    }
+
+    @Test
+    fun `maps stale heartbeat to proof gap without failing base presence fields`() {
+        val gateway = RecordingSimulatorSessionGateway(
+            presenceResult = SimulatorPresenceResult.Present(
+                pingReplies = 2,
+                cached = false,
+                heartbeatActive = true,
+                sessionHealth = SimulatorSessionHealth(SimulatorSessionHealthStatus.STALE),
+            ),
+        )
+        val source = ProtocolSimulatorPresenceSource(
+            ProtocolSimulatorCircuitClient(gateway),
+        )
+
+        val proof = assertIs<SimulatorPresenceProofResult.Success>(
+            source.simulatorPresence(identity()),
+        ).proof
+
+        assertEquals(SimulatorPresenceProofStatus.PASSED, proof.simulatorPresenceStatus)
+        assertEquals(SimulatorPresenceProofStatus.PROOF_GAP, proof.heartbeatStatus)
+        assertEquals("simulator heartbeat proof_gap", proof.redactedMessage)
+        assertEquals(2, proof.pingReplies)
     }
 
     @Test
@@ -60,6 +87,7 @@ class ProtocolSimulatorPresenceSourceTest {
         assertEquals(SimulatorPresenceProofStatus.PASSED, failure.proof.regionHandshakeReplyStatus)
         assertEquals(SimulatorPresenceProofStatus.PROOF_GAP, failure.proof.agentMovementStatus)
         assertEquals(SimulatorPresenceProofStatus.NOT_RUN, failure.proof.agentUpdateStatus)
+        assertEquals(SimulatorPresenceProofStatus.NOT_RUN, failure.proof.heartbeatStatus)
         assertEquals("simulator presence proof_gap", failure.failure.redactedMessage)
     }
 

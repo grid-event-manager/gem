@@ -88,11 +88,13 @@ class LiveProofRunnerTest {
             assertContains(report, "\"status\": \"passed\"")
             assertContains(report, "\"proofScope\": \"simulator-presence\"")
             assertContains(report, "\"simulatorPresenceStatus\": \"passed\"")
+            assertContains(report, "\"simulatorSessionStatus\": \"passed\"")
+            assertContains(report, "\"simulatorHeartbeatStatus\": \"passed\"")
             assertContains(report, "\"regionHandshakeStatus\": \"passed\"")
             assertContains(report, "\"regionHandshakeReplyStatus\": \"passed\"")
             assertContains(report, "\"agentMovementStatus\": \"passed\"")
             assertContains(report, "\"agentUpdateStatus\": \"passed\"")
-            assertContains(report, "\"detail\": \"pingReplies=0\"")
+            assertContains(report, "\"detail\": \"pingReplies=0; heartbeat=passed\"")
             assertContains(report, "\"currentGroupsStatus\": \"not_run\"")
             assertContains(report, "\"noticeSendStatus\": \"not_run\"")
             assertEquals(1, ports.sessionPort.loginCalls)
@@ -113,6 +115,7 @@ class LiveProofRunnerTest {
                     presenceResult = SimulatorPresenceProofResult.Failure(
                         proof = presenceProof().copy(
                             simulatorPresenceStatus = SimulatorPresenceProofStatus.PROOF_GAP,
+                            heartbeatStatus = SimulatorPresenceProofStatus.NOT_RUN,
                             agentMovementStatus = SimulatorPresenceProofStatus.PROOF_GAP,
                             agentUpdateStatus = SimulatorPresenceProofStatus.NOT_RUN,
                             redactedMessage = "simulator presence proof_gap",
@@ -141,6 +144,8 @@ class LiveProofRunnerTest {
             assertEquals(CommandResult.UNAVAILABLE, exit)
             assertContains(report, "\"status\": \"proof_gap\"")
             assertContains(report, "\"simulatorPresenceStatus\": \"proof_gap\"")
+            assertContains(report, "\"simulatorSessionStatus\": \"proof_gap\"")
+            assertContains(report, "\"simulatorHeartbeatStatus\": \"not_run\"")
             assertContains(report, "\"agentMovementStatus\": \"proof_gap\"")
             assertContains(report, "\"agentUpdateStatus\": \"not_run\"")
             assertContains(report, "simulator presence proof_gap")
@@ -705,6 +710,7 @@ class LiveProofRunnerTest {
             regionHandshakeReplyStatus = SimulatorPresenceProofStatus.PASSED,
             agentMovementStatus = SimulatorPresenceProofStatus.PASSED,
             agentUpdateStatus = SimulatorPresenceProofStatus.PASSED,
+            heartbeatStatus = SimulatorPresenceProofStatus.PASSED,
         )
 
         fun archiveEntry(): GroupNoticeArchiveEntry = GroupNoticeArchiveEntry(

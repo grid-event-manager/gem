@@ -76,10 +76,7 @@ class LiveNoticeSendProofRunnerTest {
                 GroupMembership.fromValues("minx", "m!nx", true, true),
             )
             val ports = Ports(
-                groupPort = RecordingGroupPort(
-                    result = GroupListResult.Success(groups),
-                    presenceResult = failingPresenceResult(),
-                ),
+                groupPort = RecordingGroupPort(result = GroupListResult.Success(groups)),
             )
             ports.inventoryPort.listResult = InventoryItemListResult.Success(
                 listOf(inventoryItem("Venue Landmark", "landmark-item", copyable = true)),
@@ -104,6 +101,8 @@ class LiveNoticeSendProofRunnerTest {
             assertContains(report, "\"noticeSendStatus\": \"passed\"")
             assertContains(report, "\"avatarReadinessStatus\": \"passed\"")
             assertContains(report, "\"simulatorPresenceStatus\": \"passed\"")
+            assertContains(report, "\"simulatorSessionStatus\": \"passed\"")
+            assertContains(report, "\"simulatorHeartbeatStatus\": \"passed\"")
             assertContains(report, "\"regionProtocolStatus\": \"passed\"")
             assertContains(report, "\"agentAppearanceServiceStatus\": \"passed\"")
             assertContains(report, "\"cofVersionStatus\": \"passed\"")
@@ -111,6 +110,7 @@ class LiveNoticeSendProofRunnerTest {
             assertContains(report, "\"noticeArchiveStatus\": \"passed\"")
             assertContains(report, "\"noticeArchiveTargetCount\": \"2\"")
             assertContains(report, "\"noticeArchiveMatchedTargetCount\": \"2\"")
+            assertContains(report, "\"simulatorLogoutStatus\": \"passed\"")
             assertContains(report, "\"existingAttachmentDisplayName\": \"Venue Landmark\"")
             assertContains(report, "\"loginStartLocationStatus\": \"passed\"")
             assertContains(report, "\"loginStartLocation\": \"uri:London City&76&174&23\"")
@@ -121,6 +121,7 @@ class LiveNoticeSendProofRunnerTest {
                     "login-start-location",
                     "login",
                     "avatar-readiness",
+                    "simulator-session",
                     "current-groups",
                     "select-targets",
                     "inventory-catalogue",
@@ -142,11 +143,74 @@ class LiveNoticeSendProofRunnerTest {
             assertEquals(1, ports.sessionPort.loginCalls)
             assertEquals(1, ports.sessionPort.logoutCalls)
             assertEquals(1, ports.avatarPort.calls)
-            assertEquals(0, ports.groupPort.simulatorPresenceCalls)
+            assertEquals(1, ports.groupPort.simulatorPresenceCalls)
             assertEquals(listOf("Owks", "m!nx"), ports.groupPort.noticeArchiveGroups.map { it.displayName.value })
             assertEquals(setOf(InventoryItemKind.LANDMARK), ports.inventoryPort.listQueries.single().kinds)
             assertFalse(RAW_UUID.containsMatchIn(report))
             assertFalse(report.contains("landmark-item"))
+        }
+    }
+
+    @Test
+    fun `simulator heartbeat proof gap logs out before groups inventory or send`() {
+        withReport { reportPath ->
+            val ports = Ports(
+                groupPort = RecordingGroupPort(
+                    presenceResult = SimulatorPresenceProofResult.Success(
+                        presenceProof(
+                            heartbeatStatus = SimulatorPresenceProofStatus.PROOF_GAP,
+                            message = "simulator heartbeat proof_gap",
+                        ),
+                    ),
+                ),
+            )
+
+            val exit = runner(ports.runtime(), reportPath, inputs()).run()
+
+            val report = reportPath.readText()
+            assertEquals(CommandResult.UNAVAILABLE, exit)
+            assertContains(report, "\"status\": \"proof_gap\"")
+            assertContains(report, "\"simulatorSessionStatus\": \"passed\"")
+            assertContains(report, "\"simulatorHeartbeatStatus\": \"proof_gap\"")
+            assertContains(report, "\"step\": \"simulator-session\"")
+            assertContains(report, "\"state\": \"proof_gap\"")
+            assertContains(report, "simulator heartbeat proof_gap")
+            assertContains(report, "\"currentGroupsStatus\": \"not_run\"")
+            assertContains(report, "\"noticeSendStatus\": \"not_run\"")
+            assertContains(report, "\"logoutStatus\": \"passed\"")
+            assertContains(report, "\"simulatorLogoutStatus\": \"passed\"")
+            assertEquals(1, ports.groupPort.simulatorPresenceCalls)
+            assertEquals(0, ports.groupPort.currentGroupsCalls)
+            assertEquals(0, ports.noticePort.groups.size)
+            assertEquals(1, ports.sessionPort.logoutCalls)
+        }
+    }
+
+    @Test
+    fun `operator receipt diagnostic is redacted and does not override archive pass`() {
+        withReport { reportPath ->
+            val ports = Ports()
+            ports.inventoryPort.listResult = InventoryItemListResult.Success(
+                listOf(inventoryItem("Venue Landmark", "landmark-item", copyable = true)),
+            )
+
+            val exit = runner(
+                ports.runtime(),
+                reportPath,
+                inputs(
+                    operatorReceiptStatus = OperatorReceiptStatus.PARTIAL,
+                    operatorReceiptDetail = "Hecate missing; https://secret.example/cap session_id=abc",
+                ),
+            ).run()
+
+            val report = reportPath.readText()
+            assertEquals(CommandResult.SUCCESS, exit)
+            assertContains(report, "\"status\": \"passed\"")
+            assertContains(report, "\"noticeArchiveStatus\": \"passed\"")
+            assertContains(report, "\"operatorReceiptStatus\": \"partial\"")
+            assertContains(report, "\"operatorReceiptDetail\": \"Hecate missing; [redacted-url] session_id=[redacted]\"")
+            assertFalse(report.contains("https://secret.example/cap"))
+            assertFalse(report.contains("session_id=abc"))
         }
     }
 
@@ -504,6 +568,8 @@ class LiveNoticeSendProofRunnerTest {
     private fun inputs(
         targets: List<String> = listOf("Venue Hosts"),
         existingAttachmentName: String? = "Venue Landmark",
+        operatorReceiptStatus: OperatorReceiptStatus? = null,
+        operatorReceiptDetail: String? = null,
     ): LiveProofInputs = LiveProofInputs(
         proofScope = LiveProofScope.FULL,
         grid = "second-life",
@@ -520,6 +586,8 @@ class LiveNoticeSendProofRunnerTest {
         body = "Doors at eight",
         authorisedLiveSend = true,
         operatorObservationReady = true,
+        operatorReceiptStatus = operatorReceiptStatus,
+        operatorReceiptDetail = operatorReceiptDetail,
         existingAttachmentName = existingAttachmentName,
     )
 
@@ -718,6 +786,7 @@ class LiveNoticeSendProofRunnerTest {
             regionHandshakeReplyStatus: SimulatorPresenceProofStatus = SimulatorPresenceProofStatus.PASSED,
             agentMovementStatus: SimulatorPresenceProofStatus = SimulatorPresenceProofStatus.PASSED,
             agentUpdateStatus: SimulatorPresenceProofStatus = SimulatorPresenceProofStatus.PASSED,
+            heartbeatStatus: SimulatorPresenceProofStatus = SimulatorPresenceProofStatus.PASSED,
             message: String? = null,
         ): SimulatorPresenceProof = SimulatorPresenceProof(
             simulatorPresenceStatus = simulatorPresenceStatus,
@@ -725,6 +794,7 @@ class LiveNoticeSendProofRunnerTest {
             regionHandshakeReplyStatus = regionHandshakeReplyStatus,
             agentMovementStatus = agentMovementStatus,
             agentUpdateStatus = agentUpdateStatus,
+            heartbeatStatus = heartbeatStatus,
             redactedMessage = message,
         )
 
@@ -733,6 +803,7 @@ class LiveNoticeSendProofRunnerTest {
                 simulatorPresenceStatus = SimulatorPresenceProofStatus.PROOF_GAP,
                 agentMovementStatus = SimulatorPresenceProofStatus.PROOF_GAP,
                 agentUpdateStatus = SimulatorPresenceProofStatus.NOT_RUN,
+                heartbeatStatus = SimulatorPresenceProofStatus.NOT_RUN,
                 message = "diagnostic simulator presence proof_gap",
             ),
             failure = CoreFailure(CoreFailureReason.GROUP_LIST_FAILED, "diagnostic simulator presence proof_gap"),

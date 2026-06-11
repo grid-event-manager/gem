@@ -130,7 +130,9 @@ class LiveProofCommand(
                     "--credential-env <name> --proof-account-attested --scripted-agent-attested " +
                     "--operator <label> --proof-account-label <label> --target <display-name> " +
                     "--subject <subject> --body <body> --existing-attachment-name <display-name> " +
-                    "[--operator-observation-ready for real Second Life]",
+                    "[--operator-observation-ready for real Second Life] " +
+                    "[--operator-receipt-status all_received|partial|none|not_checked] " +
+                    "[--operator-receipt-detail <redacted-note>]",
             )
         }
     }

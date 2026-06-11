@@ -146,6 +146,7 @@ class LibomvGroupAdapterTest {
         regionHandshakeReplyStatus = SimulatorPresenceProofStatus.PASSED,
         agentMovementStatus = SimulatorPresenceProofStatus.PASSED,
         agentUpdateStatus = SimulatorPresenceProofStatus.PASSED,
+        heartbeatStatus = SimulatorPresenceProofStatus.PASSED,
     )
 
     private fun groupMembership(): GroupMembership =
