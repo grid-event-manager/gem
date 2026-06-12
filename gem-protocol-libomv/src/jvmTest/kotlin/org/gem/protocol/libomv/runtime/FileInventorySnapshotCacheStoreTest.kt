@@ -45,7 +45,7 @@ class FileInventorySnapshotCacheStoreTest {
     }
 
     private fun withTempDirectory(assertion: (Path) -> Unit) {
-        val dir = Files.createTempDirectory("hostess-inventory-cache-test")
+        val dir = Files.createTempDirectory("gem-inventory-cache-test")
         try {
             assertion(dir)
         } finally {

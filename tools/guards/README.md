@@ -1,4 +1,4 @@
-# Hostess Boundary Guards
+# Gem Boundary Guards
 
 This directory is the single owner for public source boundary scans.
 
@@ -56,8 +56,14 @@ Notice totals rules:
 - The notice totals guard scans `gem-core` common/JVM production source, CLI/app production shells, and public readmes for local notice totals classes, report fields, and stale owner language.
 - Historical mentions are allowed only outside public production source and public readmes, such as private RFC/brief/archive/reference/evidence material, or inside this guard owner script and README.
 
+Legacy identity classification:
+
+- Current public source, README, Gradle, package, Android, thread, and test-tag identity must use Gem names.
+- Legacy Hostess strings are allowed only inside desktop storage migration owners/tests, exact single-instance cleanup markers/tests, this guard owner, and retained promotion/provenance notes.
+- Guard checks must fail if an old package root, module name, boundary task, UI tag, simulator thread, or current `.deb` route appears.
+
 Non-production proof allowlist for broad source scans:
 
-- `README.md`: public repo-split documentation may mention `../private` to explain where private Hostess workbench material lives.
+- `README.md`: public repo-split documentation may mention `../private` to explain where private Gem workbench material lives.
 - `tools/guards/check-boundaries.sh`: guard owner script contains forbidden literals as rule definitions.
 - `tools/guards/README.md`: guard owner documentation may mention forbidden literals and allowlist paths.

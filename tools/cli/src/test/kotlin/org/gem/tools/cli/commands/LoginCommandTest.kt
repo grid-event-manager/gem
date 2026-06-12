@@ -32,7 +32,7 @@ class LoginCommandTest {
 
     @Test
     fun `fake login passes through compliance and writes redacted status fields`() {
-        val directory = Files.createTempDirectory("hostess-login-fake")
+        val directory = Files.createTempDirectory("gem-login-fake")
         try {
             val reportPath = directory.resolve("login.json")
             val output = RecordingCliOutput()
@@ -66,7 +66,7 @@ class LoginCommandTest {
 
     @Test
     fun `live login missing compliance evidence writes blocked report before login`() {
-        val directory = Files.createTempDirectory("hostess-login-compliance-block")
+        val directory = Files.createTempDirectory("gem-login-compliance-block")
         try {
             val reportPath = directory.resolve("login.json")
             val output = RecordingCliOutput()
@@ -108,7 +108,7 @@ class LoginCommandTest {
 
     @Test
     fun `live login requires scripted agent evidence even when automated use false`() {
-        val directory = Files.createTempDirectory("hostess-login-scripted-evidence-block")
+        val directory = Files.createTempDirectory("gem-login-scripted-evidence-block")
         try {
             val reportPath = directory.resolve("login.json")
             val output = RecordingCliOutput()

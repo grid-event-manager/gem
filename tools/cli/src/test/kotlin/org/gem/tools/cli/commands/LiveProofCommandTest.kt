@@ -23,7 +23,7 @@ class LiveProofCommandTest {
 
     @Test
     fun `fake mode cannot satisfy live proof`() {
-        val directory = Files.createTempDirectory("hostess-live-proof-fake")
+        val directory = Files.createTempDirectory("gem-live-proof-fake")
         try {
             val reportPath = directory.resolve("live-proof.json")
             val output = RecordingCliOutput()
@@ -80,7 +80,7 @@ class LiveProofCommandTest {
 
     @Test
     fun `missing live proof inputs write blocked report before send`() {
-        val directory = Files.createTempDirectory("hostess-live-proof-missing")
+        val directory = Files.createTempDirectory("gem-live-proof-missing")
         try {
             val reportPath = directory.resolve("live-proof.json")
             val output = RecordingCliOutput()
@@ -113,7 +113,7 @@ class LiveProofCommandTest {
 
     @Test
     fun `simulator presence scope does not require send notice inputs`() {
-        val directory = Files.createTempDirectory("hostess-live-proof-simulator-presence")
+        val directory = Files.createTempDirectory("gem-live-proof-simulator-presence")
         try {
             val reportPath = directory.resolve("live-proof.json")
             val output = RecordingCliOutput()
@@ -161,7 +161,7 @@ class LiveProofCommandTest {
 
     @Test
     fun `notice archive scope does not require send notice inputs`() {
-        val directory = Files.createTempDirectory("hostess-live-proof-notice-archive")
+        val directory = Files.createTempDirectory("gem-live-proof-notice-archive")
         try {
             val reportPath = directory.resolve("live-proof.json")
             val output = RecordingCliOutput()
@@ -210,7 +210,7 @@ class LiveProofCommandTest {
 
     @Test
     fun `notice archive scope requires target display name only from send inputs`() {
-        val directory = Files.createTempDirectory("hostess-live-proof-notice-archive-target")
+        val directory = Files.createTempDirectory("gem-live-proof-notice-archive-target")
         try {
             val reportPath = directory.resolve("live-proof.json")
             val output = RecordingCliOutput()
@@ -257,7 +257,7 @@ class LiveProofCommandTest {
 
     @Test
     fun `read groups scope does not require send inputs`() {
-        val directory = Files.createTempDirectory("hostess-live-proof-read-groups")
+        val directory = Files.createTempDirectory("gem-live-proof-read-groups")
         try {
             val reportPath = directory.resolve("live-proof.json")
             val output = RecordingCliOutput()
@@ -305,7 +305,7 @@ class LiveProofCommandTest {
 
     @Test
     fun `read groups scope requires credential env handle`() {
-        val directory = Files.createTempDirectory("hostess-live-proof-read-groups-missing")
+        val directory = Files.createTempDirectory("gem-live-proof-read-groups-missing")
         try {
             val reportPath = directory.resolve("live-proof.json")
             val output = RecordingCliOutput()
@@ -342,7 +342,7 @@ class LiveProofCommandTest {
 
     @Test
     fun `login only scope does not require send notice inputs`() {
-        val directory = Files.createTempDirectory("hostess-live-proof-login-only")
+        val directory = Files.createTempDirectory("gem-live-proof-login-only")
         try {
             val reportPath = directory.resolve("live-proof.json")
             val output = RecordingCliOutput()
@@ -392,7 +392,7 @@ class LiveProofCommandTest {
 
     @Test
     fun `login only missing inputs do not mention send or notice compliance fields`() {
-        val directory = Files.createTempDirectory("hostess-live-proof-login-only-missing")
+        val directory = Files.createTempDirectory("gem-live-proof-login-only-missing")
         try {
             val reportPath = directory.resolve("live-proof.json")
             val output = RecordingCliOutput()
@@ -434,7 +434,7 @@ class LiveProofCommandTest {
 
     @Test
     fun `login only requires scripted agent evidence even when automated use false`() {
-        val directory = Files.createTempDirectory("hostess-live-proof-login-only-scripted")
+        val directory = Files.createTempDirectory("gem-live-proof-login-only-scripted")
         try {
             val reportPath = directory.resolve("live-proof.json")
             val output = RecordingCliOutput()
@@ -481,7 +481,7 @@ class LiveProofCommandTest {
 
     @Test
     fun `inventory catalogue scope does not require send notice inputs`() {
-        val directory = Files.createTempDirectory("hostess-live-proof-inventory-catalogue")
+        val directory = Files.createTempDirectory("gem-live-proof-inventory-catalogue")
         try {
             val reportPath = directory.resolve("live-proof.json")
             val output = RecordingCliOutput()
@@ -533,7 +533,7 @@ class LiveProofCommandTest {
 
     @Test
     fun `inventory catalogue missing inputs do not mention send or notice compliance fields`() {
-        val directory = Files.createTempDirectory("hostess-live-proof-inventory-catalogue-missing")
+        val directory = Files.createTempDirectory("gem-live-proof-inventory-catalogue-missing")
         try {
             val reportPath = directory.resolve("live-proof.json")
             val output = RecordingCliOutput()
@@ -577,11 +577,11 @@ class LiveProofCommandTest {
 
     @Test
     fun `credential file route blocks without reading or reporting path`() {
-        val directory = Files.createTempDirectory("hostess-live-proof-credential-file")
+        val directory = Files.createTempDirectory("gem-live-proof-credential-file")
         try {
             val reportPath = directory.resolve("live-proof.json")
             val output = RecordingCliOutput()
-            val forbiddenPath = "/tmp/hostess-secret-file.json"
+            val forbiddenPath = "/tmp/gem-secret-file.json"
 
             val exitCode = CommandRegistry.default(CliCompositionRoot()).execute(
                 listOf(
@@ -615,7 +615,7 @@ class LiveProofCommandTest {
 
     @Test
     fun `second life full proof requires operator observation before live runtime`() {
-        val directory = Files.createTempDirectory("hostess-live-proof-operator-observation")
+        val directory = Files.createTempDirectory("gem-live-proof-operator-observation")
         try {
             val reportPath = directory.resolve("live-proof.json")
             val output = RecordingCliOutput()
@@ -665,7 +665,7 @@ class LiveProofCommandTest {
 
     @Test
     fun `second life full proof with operator observation blocks when start location is uncontrolled`() {
-        val directory = Files.createTempDirectory("hostess-live-proof-operator-ready")
+        val directory = Files.createTempDirectory("gem-live-proof-operator-ready")
         try {
             val reportPath = directory.resolve("live-proof.json")
             val output = RecordingCliOutput()
@@ -726,7 +726,7 @@ class LiveProofCommandTest {
 
     @Test
     fun `invalid operator receipt status blocks before live runtime`() {
-        val directory = Files.createTempDirectory("hostess-live-proof-invalid-receipt")
+        val directory = Files.createTempDirectory("gem-live-proof-invalid-receipt")
         try {
             val reportPath = directory.resolve("live-proof.json")
             val output = RecordingCliOutput()
@@ -780,7 +780,7 @@ class LiveProofCommandTest {
 
     @Test
     fun `complete live proof inputs reach shared runtime and fail closed without leaking inputs`() {
-        val directory = Files.createTempDirectory("hostess-live-proof-unavailable")
+        val directory = Files.createTempDirectory("gem-live-proof-unavailable")
         try {
             val reportPath = directory.resolve("live-proof.json")
             val output = RecordingCliOutput()
@@ -793,7 +793,7 @@ class LiveProofCommandTest {
                     "--authorised-live-send",
                     "--operator-observation-ready",
                     "--grid",
-                    "hostess-local",
+                    "gem-local",
                     "--account",
                     "venue-proof",
                     "--credential-env",
@@ -841,7 +841,7 @@ class LiveProofCommandTest {
 
     @Test
     fun `stale full proof recipient count options are rejected before live runtime`() {
-        val directory = Files.createTempDirectory("hostess-live-proof-stale-count")
+        val directory = Files.createTempDirectory("gem-live-proof-stale-count")
         try {
             val reportPath = directory.resolve("live-proof.json")
             val output = RecordingCliOutput()

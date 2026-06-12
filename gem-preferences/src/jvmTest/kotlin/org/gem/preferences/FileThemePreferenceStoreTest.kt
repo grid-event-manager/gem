@@ -87,7 +87,7 @@ class FileThemePreferenceStoreTest {
     }
 
     private fun withTempDirectory(assertion: (Path) -> Unit) {
-        val dir = Files.createTempDirectory("hostess-theme-preference-store-test")
+        val dir = Files.createTempDirectory("gem-theme-preference-store-test")
         try {
             assertion(dir)
         } finally {

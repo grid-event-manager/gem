@@ -174,7 +174,7 @@ class EncryptedGemVaultTest {
     }
 
     private fun withTempDirectory(assertion: (Path) -> Unit) {
-        val dir = Files.createTempDirectory("hostess-encrypted-vault-test")
+        val dir = Files.createTempDirectory("gem-encrypted-vault-test")
         try {
             assertion(dir)
         } finally {

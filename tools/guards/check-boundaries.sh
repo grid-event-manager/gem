@@ -22,7 +22,7 @@ UI_DIRECT_NOTICE_PATTERN='sendGroupNotice|NoticePort|selectedGroups.*(forEach|ma
 UI_FORBIDDEN_OWNER_PATTERN='(^|[^[:alnum:]_])(UiManager|StyleUtils|CommonUi|ScreenHelpers|CredentialHelper|VaultManager|InventoryBrowserService|NoticeSender|BulkSender)([^[:alnum:]_]|$)'
 UI_WEBVIEW_PATTERN='WebView|android\.webkit|<html|styles\.css|prototype\.js'
 UI_STAGED_PATTERN='STAGED_ENTRYPOINT|TODO|NotImplemented|UnsupportedOperationException|error\("not implemented"\)'
-UI_TEXT_CATALOGUE_PATTERN='"(Hostess|User Name|Password|Show|Hide|Login|Add new login|Add new login\.\.\.|Save and login|Settings|Add new account|Save new account|Delete account|Delete|Send notices|Online|Offline|Inventory|Landmarks|Textures|Add all|Select\.\.\.)"'
+UI_TEXT_CATALOGUE_PATTERN='"(User Name|Password|Show|Hide|Login|Add new login|Add new login\.\.\.|Save and login|Settings|Add new account|Save new account|Delete account|Delete|Send notices|Online|Offline|Inventory|Landmarks|Textures|Add all|Select\.\.\.)"'
 UI_STYLE_TOKEN_PATTERN='#[0-9A-Fa-f]{6}|Color\(|[0-9]+\.dp'
 UI_DIRECT_CONTROL_PATTERN='(^|[^[:alnum:]_])(OutlinedTextField|DropdownMenu|DropdownMenuItem|ExposedDropdownMenu|ExposedDropdownMenuBox|Button|OutlinedButton|verticalScroll|rememberScrollState|VerticalScrollbar|rememberScrollbarAdapter)[[:space:]]*\('
 SESSION_PROTOCOL_DIRECT_RUNTIME_PATTERN='EnvironmentLoginSecretResolver|ProtocolSimulatorCircuitClient|AgentDataUpdateRequestTransport|EventQueueGetClient'
@@ -99,7 +99,10 @@ INVENTORY_CAPABILITY_EVENT_QUEUE_SEED_PATTERN='fun[[:space:]]+seed[[:space:]]*\(
 INVENTORY_CAPABILITY_CLI_DIRECT_PROTOCOL_PATTERN='(^|[^[:alnum:]_])(ProtocolInventoryRuntime|ProtocolCurrentGroupsSource|ProtocolCapabilitySeedClient|EventQueueGetClient)([^[:alnum:]_]|$)'
 INVENTORY_CAPABILITY_CLI_RAW_CAPABILITY_PATTERN='seedCapability|capabilityUrl|EventQueueGet|FetchInventory2|FetchInventoryDescendents2'
 KMP_COMMON_FORBIDDEN_PLATFORM_PATTERN='java\.|javax\.|okhttp|android\.|System\.|MessageDigest|NetworkInterface|Datagram|ByteBuffer|UUID|Class\.forName|::class\.java'
-KMP_PARALLEL_PATH_PATTERN='gem-core-kmp|hostess-protocol-android|AndroidProtocolLibomvModule|JvmProtocolLibomvModule|GroupReader|CurrentGroupsClient|LoginRuntimeAndroid|(^|/)[^/]*(Manager|Utils|Helpers|Common)\.kt$|(^|[^[:alnum:]_])((data[[:space:]]+)?class|object|interface|fun)[[:space:]]+[A-Za-z0-9_]*(Manager|Utils|Helpers|Common)([^[:alnum:]_]|$)'
+KMP_PARALLEL_PATH_PATTERN='gem-core-kmp|gem-protocol-android|AndroidProtocolLibomvModule|JvmProtocolLibomvModule|GroupReader|CurrentGroupsClient|LoginRuntimeAndroid|(^|/)[^/]*(Manager|Utils|Helpers|Common)\.kt$|(^|[^[:alnum:]_])((data[[:space:]]+)?class|object|interface|fun)[[:space:]]+[A-Za-z0-9_]*(Manager|Utils|Helpers|Common)([^[:alnum:]_]|$)'
+LEGACY_STALE_LOWER_PRODUCT='hostess'
+LEGACY_STALE_TITLE_PRODUCT='Hostess'
+GEM_STALE_PUBLIC_IDENTITY_PATTERN="org\\.${LEGACY_STALE_LOWER_PRODUCT}|${LEGACY_STALE_TITLE_PRODUCT}|${LEGACY_STALE_LOWER_PRODUCT}|:${LEGACY_STALE_LOWER_PRODUCT}-|check${LEGACY_STALE_TITLE_PRODUCT}Boundaries|data-${LEGACY_STALE_LOWER_PRODUCT}-|${LEGACY_STALE_LOWER_PRODUCT}-simulator-session|${LEGACY_STALE_LOWER_PRODUCT}_[^[:space:]]*\\.deb"
 KMP_PLATFORM_API_PATTERN='okhttp3\.|OkHttpClient|System(::|\.)getenv|NetworkInterface|java\.net\.Datagram|Datagram(Packet|Socket)|javax\.xml|org\.xml\.sax|DocumentBuilderFactory|java\.util\.UUID|MessageDigest|java\.nio\.ByteBuffer'
 OWNER_DECLARATION_PREFIX='^[[:space:]]*(internal[[:space:]]+|private[[:space:]]+|public[[:space:]]+)?(open[[:space:]]+|sealed[[:space:]]+)?(data[[:space:]]+class|class|object|interface|fun[[:space:]]+interface|value[[:space:]]+class)[[:space:]]+'
 
@@ -395,6 +398,52 @@ check_no_old_shared_roots() {
         printf '%s\n' "${matches[@]}"
         failures=1
     fi
+}
+
+check_no_hostess_module_dirs() {
+    local matches=()
+    while IFS= read -r path; do
+        matches+=("$path")
+    done < <(find . -maxdepth 1 -type d -name 'hostess-*' -print 2>/dev/null || true)
+
+    if [[ "${#matches[@]}" -eq 0 ]]; then
+        echo "PASS: Gem technical rename old hostess module directories absent"
+    else
+        echo "FAIL: Gem technical rename old hostess module directories absent"
+        printf '%s\n' "${matches[@]}"
+        failures=1
+    fi
+}
+
+check_no_stale_gem_identity() {
+    local targets=()
+    local path
+    while IFS= read -r path; do
+        case "$path" in
+            ./tools/guards/check-boundaries.sh) ;;
+            ./tools/guards/README.md) ;;
+            ./gem-protocol-libomv/PROMOTION-MANIFEST.md) ;;
+            ./gem-credential-vault/src/jvmMain/kotlin/org/gem/credential/vault/LegacyDesktopVaultMigration.kt) ;;
+            ./gem-credential-vault/src/jvmTest/kotlin/org/gem/credential/vault/LegacyDesktopVaultMigrationTest.kt) ;;
+            ./gem-preferences/src/jvmMain/kotlin/org/gem/preferences/LegacyDesktopPreferenceMigration.kt) ;;
+            ./gem-preferences/src/jvmTest/kotlin/org/gem/preferences/LegacyDesktopPreferenceMigrationTest.kt) ;;
+            ./apps/desktop/src/main/kotlin/org/gem/apps/desktop/GemDesktopSingleInstanceGuard.kt) ;;
+            ./apps/desktop/src/test/kotlin/org/gem/apps/desktop/GemDesktopCompositionRootTest.kt) ;;
+            ./apps/desktop/src/test/kotlin/org/gem/apps/desktop/GemDesktopSingleInstanceGuardTest.kt) ;;
+            *) targets+=("${path#./}") ;;
+        esac
+    done < <(find . \
+        \( -path './build' -o -path './.gradle' -o -path './.kotlin' -o -path '*/build' \) -prune \
+        -o -type f \
+        \( -path './apps/*' -o -path './gem-*/*' -o -path './tools/*' \
+        -o -path './README.md' -o -path './settings.gradle.kts' \
+        -o -path './build.gradle.kts' -o -path './gradle/*' \) \
+        -print 2>/dev/null || true)
+
+    check_no_hits \
+        "Gem technical rename stale Hostess public identity absent" \
+        "$GEM_STALE_PUBLIC_IDENTITY_PATTERN" \
+        "${targets[@]}"
 }
 
 check_path_exists() {
@@ -1386,6 +1435,10 @@ done < <(find \
     "apps/android/src/main" \
     -type f -name '*.kt' 2>/dev/null || true)
 
+check_no_hostess_module_dirs
+
+check_no_stale_gem_identity
+
 check_no_hits \
     "gem-core forbidden dependencies" \
     "$CORE_FORBIDDEN_PATTERN" \
@@ -2106,6 +2159,41 @@ check_pattern_matches \
     'class AndroidProtocolLibomvModule'
 
 check_pattern_matches \
+    "self-test Gem stale identity pattern catches old package root" \
+    "$GEM_STALE_PUBLIC_IDENTITY_PATTERN" \
+    "package org.${LEGACY_STALE_LOWER_PRODUCT}.core"
+
+check_pattern_matches \
+    "self-test Gem stale identity pattern catches Hostess source owner" \
+    "$GEM_STALE_PUBLIC_IDENTITY_PATTERN" \
+    'class HostessApp'
+
+check_pattern_matches \
+    "self-test Gem stale identity pattern catches old Gradle project" \
+    "$GEM_STALE_PUBLIC_IDENTITY_PATTERN" \
+    'implementation(project(":hostess-core"))'
+
+check_pattern_matches \
+    "self-test Gem stale identity pattern catches old boundary task" \
+    "$GEM_STALE_PUBLIC_IDENTITY_PATTERN" \
+    './gradlew checkHostessBoundaries'
+
+check_pattern_matches \
+    "self-test Gem stale identity pattern catches old UI tag" \
+    "$GEM_STALE_PUBLIC_IDENTITY_PATTERN" \
+    'data-hostess-app'
+
+check_pattern_matches \
+    "self-test Gem stale identity pattern catches old simulator thread" \
+    "$GEM_STALE_PUBLIC_IDENTITY_PATTERN" \
+    'hostess-simulator-session'
+
+check_pattern_matches \
+    "self-test Gem stale identity pattern catches old deb artifact" \
+    "$GEM_STALE_PUBLIC_IDENTITY_PATTERN" \
+    'hostess_0.1.10_amd64.deb'
+
+check_pattern_matches \
     "self-test KMP migration platform API confinement pattern" \
     "$KMP_PLATFORM_API_PATTERN" \
     'import java.security.MessageDigest'
@@ -2349,4 +2437,4 @@ if [[ "$failures" -ne 0 ]]; then
     exit 1
 fi
 
-echo "Hostess boundary checks passed."
+echo "Gem boundary checks passed."

@@ -592,7 +592,7 @@ class LiveNoticeSendProofRunnerTest {
     )
 
     private fun withReport(assertion: (java.nio.file.Path) -> Unit) {
-        val directory = Files.createTempDirectory("hostess-live-notice-proof")
+        val directory = Files.createTempDirectory("gem-live-notice-proof")
         try {
             assertion(directory.resolve("live-proof.json"))
         } finally {

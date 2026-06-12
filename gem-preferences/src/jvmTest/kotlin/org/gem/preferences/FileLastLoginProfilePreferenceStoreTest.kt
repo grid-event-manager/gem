@@ -12,7 +12,7 @@ import kotlin.test.assertIs
 class FileLastLoginProfilePreferenceStoreTest {
     @Test
     fun `round trips profile id through atomic preference file`() {
-        val directory = Files.createTempDirectory("hostess-last-login-profile-test")
+        val directory = Files.createTempDirectory("gem-last-login-profile-test")
         try {
             val profileId = AccountProfileId("profile:v1:jack")
             val store = FileLastLoginProfilePreferenceStore(directory.resolve("last-login-profile.txt"))
@@ -26,7 +26,7 @@ class FileLastLoginProfilePreferenceStoreTest {
 
     @Test
     fun `missing and invalid values are explicit`() {
-        val directory = Files.createTempDirectory("hostess-last-login-profile-invalid-test")
+        val directory = Files.createTempDirectory("gem-last-login-profile-invalid-test")
         try {
             val preferenceFile = directory.resolve("last-login-profile.txt")
             val store = FileLastLoginProfilePreferenceStore(preferenceFile)

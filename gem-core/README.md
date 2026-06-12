@@ -1,4 +1,4 @@
-# Hostess Core
+# Gem Core
 
 Reusable JVM boundary for the Second Life notice workflow.
 
@@ -10,6 +10,6 @@ Current responsibilities:
 - select and resolve a pre-provisioned landmark inventory item for notice attachment;
 - send notices to one or more selected group IDs with pacing, per-group result reporting, and retry-safe failure handling.
 
-This module owns Hostess domain objects, application services, and port interfaces. The protocol adapter is separate: `gem-protocol-libomv/` is the only production module intended to wrap promoted libomv-derived protocol code.
+This module owns Gem domain objects, application services, and port interfaces. The protocol adapter is separate: `gem-protocol-libomv/` is the only production module intended to wrap promoted libomv-derived protocol code.
 
 Android, desktop, and CLI surfaces should depend on this boundary instead of calling reference libraries directly.

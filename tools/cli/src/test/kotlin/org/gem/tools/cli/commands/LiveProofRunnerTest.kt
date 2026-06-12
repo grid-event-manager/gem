@@ -528,7 +528,7 @@ class LiveProofRunnerTest {
     )
 
     private fun withReport(assertion: (java.nio.file.Path) -> Unit) {
-        val directory = Files.createTempDirectory("hostess-live-proof-runner")
+        val directory = Files.createTempDirectory("gem-live-proof-runner")
         try {
             assertion(directory.resolve("live-proof.json"))
         } finally {

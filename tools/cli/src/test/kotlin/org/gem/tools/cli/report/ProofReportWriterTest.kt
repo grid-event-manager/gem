@@ -10,7 +10,7 @@ import kotlin.test.assertNotNull
 class ProofReportWriterTest {
     @Test
     fun `writes stable proof report schema fields`() {
-        val directory = Files.createTempDirectory("hostess-proof-report")
+        val directory = Files.createTempDirectory("gem-proof-report")
         try {
             val reportPath = directory.resolve("report.json")
 

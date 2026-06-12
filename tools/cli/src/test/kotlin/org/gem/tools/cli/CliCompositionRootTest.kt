@@ -43,7 +43,7 @@ class CliCompositionRootTest {
 
     @Test
     fun `live proof validates credential handle before live execution`() {
-        val directory = Files.createTempDirectory("hostess-live-proof-composition")
+        val directory = Files.createTempDirectory("gem-live-proof-composition")
         try {
             val output = RecordingCliOutput()
             val exitCode = CommandRegistry.default(CliCompositionRoot()).execute(

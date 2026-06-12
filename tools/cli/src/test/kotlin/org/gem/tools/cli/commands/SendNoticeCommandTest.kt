@@ -233,7 +233,7 @@ class SendNoticeCommandTest {
     }
 
     private fun withReport(assertion: (java.nio.file.Path) -> Unit) {
-        val directory = Files.createTempDirectory("hostess-send-notice")
+        val directory = Files.createTempDirectory("gem-send-notice")
         try {
             assertion(directory.resolve("send-notice.json"))
         } finally {
