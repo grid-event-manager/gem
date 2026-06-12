@@ -1,50 +1,50 @@
-package org.gem.credential.vault
+package org.gem.preferences
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class DesktopVaultPathsTest {
+class DesktopGemPreferencePathsTest {
     @Test
     fun `selects linux xdg data home when present`() {
-        val path = DesktopVaultPaths.defaultVaultDirectory(
+        val path = DesktopGemPreferencePaths.defaultPreferenceFile(
             osName = "Linux",
             env = mapOf("XDG_DATA_HOME" to "/var/tmp/xdg"),
             userHome = "/home/gemuser",
         )
 
-        assertEquals("/var/tmp/xdg/gem/vault", path)
+        assertEquals("/var/tmp/xdg/gem/preferences/ui.properties", path)
     }
 
     @Test
     fun `selects linux home fallback when xdg data home is absent`() {
-        val path = DesktopVaultPaths.defaultVaultDirectory(
+        val path = DesktopGemPreferencePaths.defaultPreferenceFile(
             osName = "Linux",
             env = emptyMap(),
             userHome = "/home/gemuser",
         )
 
-        assertEquals("/home/gemuser/.local/share/gem/vault", path)
+        assertEquals("/home/gemuser/.local/share/gem/preferences/ui.properties", path)
     }
 
     @Test
-    fun `selects windows app data path`() {
-        val path = DesktopVaultPaths.defaultVaultDirectory(
+    fun `selects windows app data path and preserves backslashes`() {
+        val path = DesktopGemPreferencePaths.defaultPreferenceFile(
             osName = "Windows 11",
             env = mapOf("APPDATA" to """C:\Users\GemUser\AppData\Roaming"""),
             userHome = """C:\Users\GemUser""",
         )
 
-        assertEquals("""C:\Users\GemUser\AppData\Roaming\gem\vault""", path)
+        assertEquals("""C:\Users\GemUser\AppData\Roaming\gem\preferences\ui.properties""", path)
     }
 
     @Test
     fun `selects mac application support path`() {
-        val path = DesktopVaultPaths.defaultVaultDirectory(
+        val path = DesktopGemPreferencePaths.defaultPreferenceFile(
             osName = "Mac OS X",
             env = emptyMap(),
             userHome = "/Users/gemuser",
         )
 
-        assertEquals("/Users/gemuser/Library/Application Support/gem/vault", path)
+        assertEquals("/Users/gemuser/Library/Application Support/gem/preferences/ui.properties", path)
     }
 }

@@ -725,6 +725,7 @@ while IFS= read -r path; do
         gem-protocol-libomv/src/jvmAndroidMain/kotlin/org/gem/protocol/libomv/runtime/JvmMd5DigestPort.kt) ;;
         gem-protocol-libomv/src/jvmAndroidMain/kotlin/org/gem/protocol/libomv/runtime/EnvironmentLoginSecretResolver.kt) ;;
         gem-protocol-libomv/src/jvmAndroidMain/kotlin/org/gem/protocol/libomv/runtime/DefaultHostessHardwareAddressSource.kt) ;;
+        apps/desktop/src/main/kotlin/org/gem/apps/desktop/GemDesktopStorageMigration.kt) ;;
         apps/desktop/src/main/kotlin/org/gem/apps/desktop/DesktopVaultComposition.kt) ;;
         apps/desktop/src/main/kotlin/org/gem/apps/desktop/DesktopPreferenceComposition.kt) ;;
         *) kmp_platform_api_forbidden_targets+=("$path") ;;
@@ -939,6 +940,7 @@ credential_env_forbidden_targets=()
 while IFS= read -r path; do
     case "$path" in
         *"/EnvironmentLoginSecretResolver.kt") ;;
+        *"/GemDesktopStorageMigration.kt") ;;
         *"/DesktopVaultComposition.kt") ;;
         *"/DesktopPreferenceComposition.kt") ;;
         *) credential_env_forbidden_targets+=("$path") ;;

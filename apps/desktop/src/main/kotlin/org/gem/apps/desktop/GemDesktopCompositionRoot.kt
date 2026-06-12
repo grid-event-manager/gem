@@ -30,25 +30,29 @@ import org.gem.ui.runtime.GemLoginComplianceProvider
 import org.gem.ui.runtime.GemUiRuntime
 
 object GemDesktopCompositionRoot {
-    fun create(): GemUiRuntime =
-        GemRuntimeComposition.create(
+    fun create(): GemUiRuntime {
+        GemDesktopStorageMigration.run()
+        return GemRuntimeComposition.create(
             vaultAccess = DesktopVaultComposition.open(),
             themePreferenceService = DesktopPreferenceComposition.open(),
             lastLoginProfilePreferenceService = DesktopPreferenceComposition.openLastLoginProfile(),
             inventorySnapshotCacheDirectory = DesktopPreferenceComposition.inventorySnapshotCacheDirectory(),
         )
+    }
 
     internal fun create(
         osName: String,
         env: Map<String, String>,
         userHome: String,
-    ): GemUiRuntime =
-        GemRuntimeComposition.create(
+    ): GemUiRuntime {
+        GemDesktopStorageMigration.run(osName, env, userHome)
+        return GemRuntimeComposition.create(
             vaultAccess = DesktopVaultComposition.open(osName, env, userHome),
             themePreferenceService = DesktopPreferenceComposition.open(osName, env, userHome),
             lastLoginProfilePreferenceService = DesktopPreferenceComposition.openLastLoginProfile(osName, env, userHome),
             inventorySnapshotCacheDirectory = DesktopPreferenceComposition.inventorySnapshotCacheDirectory(osName, env, userHome),
         )
+    }
 
     private object GemRuntimeComposition {
         fun create(

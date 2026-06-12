@@ -11,9 +11,10 @@ import org.gem.core.preferences.LastLoginProfilePreferenceSaveResult
 import org.gem.core.services.GemCredentialRuntimeReady
 import org.gem.core.theme.ThemePreference
 import org.gem.core.theme.ThemePreferenceSaveResult
-import org.gem.preferences.DesktopHostessPreferencePaths
+import org.gem.preferences.DesktopGemPreferencePaths
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -22,7 +23,7 @@ import kotlin.test.assertTrue
 class GemDesktopCompositionRootTest {
     @Test
     fun `creates shared UI runtime through desktop app-shell root`() {
-        val tempDataHome = Files.createTempDirectory("hostess-desktop-composition-root-test")
+        val tempDataHome = Files.createTempDirectory("gem-desktop-composition-root-test")
         try {
             val runtime = GemDesktopCompositionRoot.create(
                 osName = "Linux",
@@ -56,6 +57,35 @@ class GemDesktopCompositionRootTest {
         }
     }
 
+    @Test
+    fun `migrates legacy desktop storage before opening app stores`() {
+        val tempDataHome = Files.createTempDirectory("gem-desktop-composition-migration-test")
+        val legacyVault = tempDataHome.resolve("Hostess/vault")
+        val legacyPreferences = tempDataHome.resolve("Hostess/preferences")
+        try {
+            Files.createDirectories(legacyVault)
+            Files.createDirectories(legacyPreferences.resolve("inventory-snapshots"))
+            Files.writeString(legacyPreferences.resolve("ui.properties"), "themePreference=LIGHT\n")
+            Files.writeString(legacyPreferences.resolve("last-login-profile.txt"), "profile:v1:legacy")
+            Files.writeString(legacyPreferences.resolve("inventory-snapshots/cache.json"), "{}")
+
+            val runtime = GemDesktopCompositionRoot.create(
+                osName = "Linux",
+                env = mapOf("XDG_DATA_HOME" to tempDataHome.toString()),
+                userHome = tempDataHome.resolve("home").toString(),
+            )
+
+            assertFalse(Files.exists(legacyVault))
+            assertFalse(Files.exists(legacyPreferences))
+            assertTrue(Files.exists(tempDataHome.resolve("gem/vault/vault.bin")))
+            assertEquals(ThemePreference.LIGHT, runtime.themePreferenceService.loadPreference().preference)
+            assertTrue(Files.exists(tempDataHome.resolve("gem/preferences/last-login-profile.txt")))
+            assertTrue(Files.exists(tempDataHome.resolve("gem/preferences/inventory-snapshots/cache.json")))
+        } finally {
+            DesktopTestDirectoryCleaner.deleteRecursively(tempDataHome)
+        }
+    }
+
     private fun fakeProfile(): SavedAccountProfile =
         SavedAccountProfile(
             profileId = AccountProfileId("profile:v1:desktop-proof"),
@@ -66,14 +96,14 @@ class GemDesktopCompositionRootTest {
         )
 
     private fun preferenceFile(tempDataHome: Path): String =
-        DesktopHostessPreferencePaths.defaultPreferenceFile(
+        DesktopGemPreferencePaths.defaultPreferenceFile(
             osName = "Linux",
             env = mapOf("XDG_DATA_HOME" to tempDataHome.toString()),
             userHome = tempDataHome.resolve("home").toString(),
         )
 
     private fun lastLoginProfileFile(tempDataHome: Path): String =
-        DesktopHostessPreferencePaths.defaultLastLoginProfileFile(
+        DesktopGemPreferencePaths.defaultLastLoginProfileFile(
             osName = "Linux",
             env = mapOf("XDG_DATA_HOME" to tempDataHome.toString()),
             userHome = tempDataHome.resolve("home").toString(),

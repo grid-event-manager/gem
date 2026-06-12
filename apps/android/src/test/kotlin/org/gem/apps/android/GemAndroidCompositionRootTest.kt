@@ -10,7 +10,7 @@ import org.gem.core.ports.CredentialHandle
 import org.gem.core.preferences.LastLoginProfilePreferenceSaveResult
 import org.gem.core.theme.ThemePreference
 import org.gem.core.theme.ThemePreferenceSaveResult
-import org.gem.preferences.AndroidHostessPreferencePaths
+import org.gem.preferences.AndroidGemPreferencePaths
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -19,7 +19,7 @@ import kotlin.test.assertTrue
 class GemAndroidCompositionRootTest {
     @Test
     fun `creates shared UI runtime through Android app-shell root`() {
-        val appFilesDir = Files.createTempDirectory("hostess-android-composition-root-test")
+        val appFilesDir = Files.createTempDirectory("gem-android-composition-root-test")
         try {
             val runtime = GemAndroidCompositionRoot.create(appFilesDir.toFile())
 
@@ -55,10 +55,10 @@ class GemAndroidCompositionRootTest {
         )
 
     private fun preferenceFile(appFilesDir: Path): String =
-        AndroidHostessPreferencePaths.defaultPreferenceFile(appFilesDir.toString())
+        AndroidGemPreferencePaths.defaultPreferenceFile(appFilesDir.toString())
 
     private fun lastLoginProfileFile(appFilesDir: Path): String =
-        AndroidHostessPreferencePaths.defaultLastLoginProfileFile(appFilesDir.toString())
+        AndroidGemPreferencePaths.defaultLastLoginProfileFile(appFilesDir.toString())
 
     private fun loginName(): SecondLifeLoginName =
         when (val result = SecondLifeLoginName.fromUserInput("android proof")) {

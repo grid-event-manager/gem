@@ -15,7 +15,7 @@ object DesktopVaultPaths {
             else ->
                 env["XDG_DATA_HOME"].orEmpty().ifBlank { joinPath(userHome, ".local", "share") }
         }
-        return joinPath(base, "Hostess", "vault")
+        return joinPath(base, "gem", "vault")
     }
 
     private fun joinPath(

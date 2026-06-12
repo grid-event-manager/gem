@@ -35,7 +35,7 @@ import kotlin.test.assertTrue
 class DesktopVaultCompositionTest {
     @Test
     fun `creates desktop credential runtime state from temp app data`() {
-        val tempDataHome = Files.createTempDirectory("hostess-desktop-vault-test")
+        val tempDataHome = Files.createTempDirectory("gem-desktop-vault-test")
         try {
             val state = DesktopVaultComposition.create(
                 osName = "Linux",
@@ -44,8 +44,8 @@ class DesktopVaultCompositionTest {
             )
 
             assertIs<GemCredentialRuntimeReady>(state)
-            assertTrue(Files.exists(tempDataHome.resolve("Hostess/vault/vault.bin")))
-            assertTrue(Files.exists(tempDataHome.resolve("Hostess/vault/${LocalUserFileVaultKeySource.KEY_FILE_NAME}")))
+            assertTrue(Files.exists(tempDataHome.resolve("gem/vault/vault.bin")))
+            assertTrue(Files.exists(tempDataHome.resolve("gem/vault/${LocalUserFileVaultKeySource.KEY_FILE_NAME}")))
         } finally {
             tempDataHome.deleteRecursively()
         }

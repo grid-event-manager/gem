@@ -1,6 +1,6 @@
 package org.gem.preferences
 
-object DesktopHostessPreferencePaths {
+object DesktopGemPreferencePaths {
     fun defaultPreferenceFile(
         osName: String,
         env: Map<String, String>,
@@ -15,7 +15,7 @@ object DesktopHostessPreferencePaths {
     ): String =
         joinPath(defaultPreferenceDirectory(osName, env, userHome), "last-login-profile.txt")
 
-    private fun defaultPreferenceDirectory(
+    fun defaultPreferenceDirectory(
         osName: String,
         env: Map<String, String>,
         userHome: String,
@@ -29,7 +29,7 @@ object DesktopHostessPreferencePaths {
             else ->
                 env["XDG_DATA_HOME"].orEmpty().ifBlank { joinPath(userHome, ".local", "share") }
         }
-        return joinPath(base, "Hostess", "preferences")
+        return joinPath(base, "gem", "preferences")
     }
 
     private fun joinPath(

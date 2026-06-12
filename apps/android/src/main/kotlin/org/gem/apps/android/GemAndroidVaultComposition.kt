@@ -23,7 +23,7 @@ object GemAndroidVaultComposition {
         )
 
     internal fun vaultFile(appFilesDir: File): File =
-        File(appFilesDir, "Hostess/vault/vault.bin")
+        File(appFilesDir, "gem/vault/vault.bin")
 
     private fun openVault(appFilesDir: File): VaultAccessOpenResult =
         VaultAccessService(

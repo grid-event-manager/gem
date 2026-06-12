@@ -1,6 +1,6 @@
 package org.gem.preferences
 
-object AndroidHostessPreferencePaths {
+object AndroidGemPreferencePaths {
     fun defaultPreferenceFile(appFilesDir: String): String =
         joinPath(defaultPreferenceDirectory(appFilesDir), "ui.properties")
 
@@ -8,7 +8,7 @@ object AndroidHostessPreferencePaths {
         joinPath(defaultPreferenceDirectory(appFilesDir), "last-login-profile.txt")
 
     private fun defaultPreferenceDirectory(appFilesDir: String): String =
-        joinPath(appFilesDir, "Hostess", "preferences")
+        joinPath(appFilesDir, "gem", "preferences")
 
     private fun joinPath(
         first: String,

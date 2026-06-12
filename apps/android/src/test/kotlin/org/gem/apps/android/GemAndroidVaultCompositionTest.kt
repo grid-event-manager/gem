@@ -62,11 +62,11 @@ class GemAndroidVaultCompositionTest {
     }
 
     @Test
-    fun `uses app private Hostess vault file path`() {
-        val appFilesDir = File("/tmp/hostess-test-app-files")
+    fun `uses app private gem vault file path`() {
+        val appFilesDir = File("/tmp/gem-test-app-files")
 
         assertEquals(
-            File(appFilesDir, "Hostess/vault/vault.bin").path,
+            File(appFilesDir, "gem/vault/vault.bin").path,
             GemAndroidVaultComposition.vaultFile(appFilesDir).path,
         )
     }

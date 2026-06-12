@@ -4,7 +4,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import org.gem.core.theme.ThemePreference
 import org.gem.core.theme.ThemePreferenceSaveResult
-import org.gem.preferences.AndroidHostessPreferencePaths
+import org.gem.preferences.AndroidGemPreferencePaths
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -12,7 +12,7 @@ import kotlin.test.assertTrue
 class GemAndroidPreferenceCompositionTest {
     @Test
     fun `opens android theme preference service at app files preference path`() {
-        val appFilesDir = Files.createTempDirectory("hostess-android-preference-composition-test")
+        val appFilesDir = Files.createTempDirectory("gem-android-preference-composition-test")
         try {
             val service = GemAndroidPreferenceComposition.open(appFilesDir.toFile())
 
@@ -25,6 +25,6 @@ class GemAndroidPreferenceCompositionTest {
     }
 
     private fun preferenceFile(appFilesDir: Path): String =
-        AndroidHostessPreferencePaths.defaultPreferenceFile(appFilesDir.toString())
+        AndroidGemPreferencePaths.defaultPreferenceFile(appFilesDir.toString())
 
 }
