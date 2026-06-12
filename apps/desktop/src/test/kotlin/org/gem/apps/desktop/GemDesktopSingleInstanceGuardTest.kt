@@ -8,8 +8,8 @@ import kotlin.test.assertTrue
 class GemDesktopSingleInstanceGuardTest {
     @Test
     fun `terminates other current Gem launcher instances but not current process`() {
-        val current = FakeDesktopProcess(pid = 10, command = "/opt/gem/bin/gem")
-        val older = FakeDesktopProcess(pid = 11, command = "/opt/gem/bin/gem")
+        val current = FakeDesktopProcess(pid = 10, command = "/opt/gema/bin/gema")
+        val older = FakeDesktopProcess(pid = 11, command = "/usr/bin/gema")
         val unrelated = FakeDesktopProcess(pid = 12, command = "/usr/bin/other-app")
 
         val report = GemDesktopSingleInstanceGuard.terminateOtherInstances(
@@ -26,22 +26,24 @@ class GemDesktopSingleInstanceGuardTest {
     }
 
     @Test
-    fun `terminates exact legacy Hostess launcher and main class instances`() {
-        val legacyLauncher = FakeDesktopProcess(pid = 20, command = "/opt/hostess/bin/hostess")
-        val legacyWindowsLauncher = FakeDesktopProcess(pid = 21, command = "C:\\Program Files\\Hostess\\hostess.exe")
+    fun `terminates exact legacy Gem and Hostess launcher and main class instances`() {
+        val legacyGemLauncher = FakeDesktopProcess(pid = 20, command = "/opt/gem/bin/gem")
+        val legacyLauncher = FakeDesktopProcess(pid = 21, command = "/opt/hostess/bin/hostess")
+        val legacyWindowsLauncher = FakeDesktopProcess(pid = 22, command = "C:\\Program Files\\Hostess\\hostess.exe")
         val legacyMainClass = FakeDesktopProcess(
-            pid = 22,
+            pid = 23,
             command = "/usr/bin/java",
             commandLine = "java ${GemDesktopSingleInstanceGuard.LegacyMainClassMarker}",
         )
 
         val report = GemDesktopSingleInstanceGuard.terminateOtherInstances(
-            processes = listOf(legacyLauncher, legacyWindowsLauncher, legacyMainClass),
-            currentPid = 23,
+            processes = listOf(legacyGemLauncher, legacyLauncher, legacyWindowsLauncher, legacyMainClass),
+            currentPid = 24,
         )
 
-        assertEquals(3, report.matchedProcessCount)
-        assertEquals(3, report.terminatedProcessCount)
+        assertEquals(4, report.matchedProcessCount)
+        assertEquals(4, report.terminatedProcessCount)
+        assertTrue(legacyGemLauncher.destroyCalled)
         assertTrue(legacyLauncher.destroyCalled)
         assertTrue(legacyWindowsLauncher.destroyCalled)
         assertTrue(legacyMainClass.destroyCalled)

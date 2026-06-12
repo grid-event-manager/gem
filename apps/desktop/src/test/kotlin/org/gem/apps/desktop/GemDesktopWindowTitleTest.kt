@@ -6,6 +6,6 @@ import kotlin.test.assertEquals
 class GemDesktopWindowTitleTest {
     @Test
     fun `desktop window title uses package identity and visible version`() {
-        assertEquals("GEM 0.1.14", GemDesktopWindowTitle.current())
+        assertEquals("GEM 0.1.15", GemDesktopWindowTitle.current())
     }
 }

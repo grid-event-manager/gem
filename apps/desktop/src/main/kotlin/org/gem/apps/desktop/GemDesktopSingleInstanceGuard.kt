@@ -56,8 +56,13 @@ object GemDesktopSingleInstanceGuard {
     internal const val CurrentMainClassMarker: String = "org.gem.apps.desktop.GemDesktopAppKt"
     internal val LegacyMainClassMarker: String =
         "org.$LegacyPackageSegment.apps.desktop.${LegacyTypePrefix}DesktopAppKt"
-    private val CurrentLauncherNames: Set<String> = setOf("gem", "gem.exe")
-    private val LegacyLauncherNames: Set<String> = setOf(LegacyPackageSegment, "$LegacyPackageSegment.exe")
+    private val CurrentLauncherNames: Set<String> = setOf("gema", "gema.exe")
+    private val LegacyLauncherNames: Set<String> = setOf(
+        "gem",
+        "gem.exe",
+        LegacyPackageSegment,
+        "$LegacyPackageSegment.exe",
+    )
     private const val LegacyPackageSegment: String = "hostess"
     private const val LegacyTypePrefix: String = "Hostess"
     private const val GracefulShutdownTimeoutMillis: Long = 2_000L
