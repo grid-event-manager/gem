@@ -13,6 +13,15 @@ import org.hostess.tools.cli.composition.CliCompositionRoot
 
 class LiveProofCommandTest {
     @Test
+    fun `protocol bootstrap blocked reason uses durable wording`() {
+        assertEquals(
+            "protocol bootstrap unavailable; live grid proof not attempted",
+            PROTOCOL_BOOTSTRAP_BLOCKED_REASON,
+        )
+        assertFalse(PROTOCOL_BOOTSTRAP_BLOCKED_REASON.contains("HS"))
+    }
+
+    @Test
     fun `fake mode cannot satisfy live proof`() {
         val directory = Files.createTempDirectory("hostess-live-proof-fake")
         try {

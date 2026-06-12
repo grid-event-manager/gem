@@ -8,6 +8,9 @@ import org.hostess.tools.cli.CommandResult
 import org.hostess.tools.cli.composition.CliCompositionRoot
 import org.hostess.tools.cli.report.ProofReportStatus
 
+internal const val PROTOCOL_BOOTSTRAP_BLOCKED_REASON: String =
+    "protocol bootstrap unavailable; live grid proof not attempted"
+
 class LiveProofCommand(
     private val compositionRoot: CliCompositionRoot,
 ) : CliCommand {
@@ -59,7 +62,7 @@ class LiveProofCommand(
         }
 
         if (!runtime.protocolAvailable) {
-            val reason = "protocol bootstrap unavailable; live grid proof not attempted"
+            val reason = PROTOCOL_BOOTSTRAP_BLOCKED_REASON
             val results = listOf(LiveProofStep.passed("validate-inputs")) +
                 LiveProofStep.blockedPlan("login", reason)
             runtime.proofReportWriter.writeIfRequested(
