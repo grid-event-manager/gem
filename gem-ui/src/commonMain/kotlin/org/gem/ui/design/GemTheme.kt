@@ -23,7 +23,9 @@ object GemTheme {
         content: @Composable () -> Unit,
     ) {
         CompositionLocalProvider(LocalGemDesignTokens provides tokens) {
-            content()
+            GemPlatformContextMenus {
+                content()
+            }
         }
     }
 

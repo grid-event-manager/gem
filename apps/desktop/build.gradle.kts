@@ -23,7 +23,7 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Deb)
             packageName = "gem"
-            packageVersion = "0.1.13"
+            packageVersion = "0.1.14"
             description = "Second Life venue notice helper"
             vendor = "Grid Event Manager"
         }

@@ -13,6 +13,7 @@ import org.gem.ui.text.GemTextCatalogue
 import org.gem.ui.text.GemTextKey
 
 fun main() {
+    GemDesktopContextMenuPolicy.install()
     GemDesktopSingleInstanceGuard.terminateOtherInstances()
     val runtime = GemDesktopCompositionRoot.create()
     application {
@@ -35,7 +36,7 @@ fun main() {
 }
 
 internal object GemDesktopWindowTitle {
-    private const val Version = "0.1.13"
+    private const val Version = "0.1.14"
 
     fun current(textCatalogue: GemTextCatalogue = EnglishGemTextCatalogue): String =
         "${textCatalogue.text(GemTextKey.BrandInitials)} $Version"
