@@ -23,26 +23,26 @@ class AndroidCompatibilityProbe {
         val adapterLoad = loadState?.adapterLoad ?: false
         val runtimeLoad = loadState?.runtimeLoad ?: false
         val transportLoad = loadState?.transportLoad ?: false
-        val trackAVaultLoad = probeTrackAVaultLoad()
-        val trackCClassLoad = runtimeLoad && transportLoad
-        val trackDComplianceLoad = probeTrackDComplianceLoad()
-        val trackDsLoginPackageLoad = probeTrackDsLoginPackageLoad()
-        val trackGGridLoad = probeTrackGGridLoad()
-        val trackHNoticeLoad = probeTrackHNoticeLoad()
-        val trackJAvatarLoad = loadState?.avatarLoad == true && probeTrackJAvatarLoad()
+        val vaultRuntimeLoad = probeVaultRuntimeLoad()
+        val protocolAdapterLoad = runtimeLoad && transportLoad
+        val loginComplianceLoad = probeLoginComplianceLoad()
+        val loginPackageSerializationLoad = probeLoginPackageSerializationLoad()
+        val inventoryCapabilityLoad = probeInventoryCapabilityLoad()
+        val noticeProtocolLoad = probeNoticeProtocolLoad()
+        val avatarReadinessLoad = loadState?.avatarLoad == true && probeAvatarReadinessLoad()
 
         return if (
             coreCompile &&
             adapterLoad &&
             runtimeLoad &&
             transportLoad &&
-            trackAVaultLoad &&
-            trackCClassLoad &&
-            trackDComplianceLoad &&
-            trackDsLoginPackageLoad &&
-            trackGGridLoad &&
-            trackHNoticeLoad &&
-            trackJAvatarLoad
+            vaultRuntimeLoad &&
+            protocolAdapterLoad &&
+            loginComplianceLoad &&
+            loginPackageSerializationLoad &&
+            inventoryCapabilityLoad &&
+            noticeProtocolLoad &&
+            avatarReadinessLoad
         ) {
             AndroidCompatibilityResult.passed()
         } else {
@@ -51,25 +51,25 @@ class AndroidCompatibilityProbe {
                 adapterLoad = adapterLoad,
                 runtimeLoad = runtimeLoad,
                 transportLoad = transportLoad,
-                trackAVaultLoad = trackAVaultLoad,
-                trackCClassLoad = trackCClassLoad,
-                trackDComplianceLoad = trackDComplianceLoad,
-                trackDsLoginPackageLoad = trackDsLoginPackageLoad,
-                trackGGridLoad = trackGGridLoad,
-                trackHNoticeLoad = trackHNoticeLoad,
-                trackJAvatarLoad = trackJAvatarLoad,
+                vaultRuntimeLoad = vaultRuntimeLoad,
+                protocolAdapterLoad = protocolAdapterLoad,
+                loginComplianceLoad = loginComplianceLoad,
+                loginPackageSerializationLoad = loginPackageSerializationLoad,
+                inventoryCapabilityLoad = inventoryCapabilityLoad,
+                noticeProtocolLoad = noticeProtocolLoad,
+                avatarReadinessLoad = avatarReadinessLoad,
                 reason = blockedReason(
                     coreCompile,
                     adapterLoad,
                     runtimeLoad,
                     transportLoad,
-                    trackAVaultLoad,
-                    trackCClassLoad,
-                    trackDComplianceLoad,
-                    trackDsLoginPackageLoad,
-                    trackGGridLoad,
-                    trackHNoticeLoad,
-                    trackJAvatarLoad,
+                    vaultRuntimeLoad,
+                    protocolAdapterLoad,
+                    loginComplianceLoad,
+                    loginPackageSerializationLoad,
+                    inventoryCapabilityLoad,
+                    noticeProtocolLoad,
+                    avatarReadinessLoad,
                     runtimeResult.exceptionOrNull(),
                 ),
             )
@@ -94,39 +94,39 @@ class AndroidCompatibilityProbe {
         return draft.validateForSend() == NoticeDraftValidation.Valid
     }
 
-    private fun probeTrackDComplianceLoad(): Boolean =
+    private fun probeLoginComplianceLoad(): Boolean =
         listOf(
             HostessViewerIdentityProvider::class.java,
             LoginComplianceService::class.java,
             NoticeDispatchService::class.java,
         ).all { it.name.isNotBlank() }
 
-    private fun probeTrackAVaultLoad(): Boolean =
-        TRACK_A_VAULT_CLASSES.all { className ->
+    private fun probeVaultRuntimeLoad(): Boolean =
+        VAULT_RUNTIME_CLASSES.all { className ->
             runCatching { Class.forName(className, false, javaClass.classLoader).name.isNotBlank() }
                 .getOrDefault(false)
         }
 
-    private fun probeTrackDsLoginPackageLoad(): Boolean =
-        TRACK_DS_LOGIN_PACKAGE_CLASSES.all { className ->
+    private fun probeLoginPackageSerializationLoad(): Boolean =
+        LOGIN_PACKAGE_SERIALIZATION_CLASSES.all { className ->
             runCatching { Class.forName(className, false, javaClass.classLoader).name.isNotBlank() }
                 .getOrDefault(false)
         }
 
-    private fun probeTrackGGridLoad(): Boolean =
-        TRACK_G_GRID_CLASSES.all { className ->
+    private fun probeInventoryCapabilityLoad(): Boolean =
+        INVENTORY_CAPABILITY_CLASSES.all { className ->
             runCatching { Class.forName(className, false, javaClass.classLoader).name.isNotBlank() }
                 .getOrDefault(false)
         }
 
-    private fun probeTrackHNoticeLoad(): Boolean =
-        TRACK_H_NOTICE_CLASSES.all { className ->
+    private fun probeNoticeProtocolLoad(): Boolean =
+        NOTICE_PROTOCOL_CLASSES.all { className ->
             runCatching { Class.forName(className, false, javaClass.classLoader).name.isNotBlank() }
                 .getOrDefault(false)
         }
 
-    private fun probeTrackJAvatarLoad(): Boolean =
-        TRACK_J_AVATAR_CLASSES.all { className ->
+    private fun probeAvatarReadinessLoad(): Boolean =
+        AVATAR_READINESS_CLASSES.all { className ->
             runCatching { Class.forName(className, false, javaClass.classLoader).name.isNotBlank() }
                 .getOrDefault(false)
         }
@@ -136,13 +136,13 @@ class AndroidCompatibilityProbe {
         adapterLoad: Boolean,
         runtimeLoad: Boolean,
         transportLoad: Boolean,
-        trackAVaultLoad: Boolean,
-        trackCClassLoad: Boolean,
-        trackDComplianceLoad: Boolean,
-        trackDsLoginPackageLoad: Boolean,
-        trackGGridLoad: Boolean,
-        trackHNoticeLoad: Boolean,
-        trackJAvatarLoad: Boolean,
+        vaultRuntimeLoad: Boolean,
+        protocolAdapterLoad: Boolean,
+        loginComplianceLoad: Boolean,
+        loginPackageSerializationLoad: Boolean,
+        inventoryCapabilityLoad: Boolean,
+        noticeProtocolLoad: Boolean,
+        avatarReadinessLoad: Boolean,
         failure: Throwable?,
     ): String {
         val failedLanes = listOfNotNull(
@@ -150,13 +150,13 @@ class AndroidCompatibilityProbe {
             "adapterLoad".takeUnless { adapterLoad },
             "runtimeLoad".takeUnless { runtimeLoad },
             "transportLoad".takeUnless { transportLoad },
-            "trackAVaultLoad".takeUnless { trackAVaultLoad },
-            "trackCClassLoad".takeUnless { trackCClassLoad },
-            "trackDComplianceLoad".takeUnless { trackDComplianceLoad },
-            "trackDsLoginPackageLoad".takeUnless { trackDsLoginPackageLoad },
-            "trackGGridLoad".takeUnless { trackGGridLoad },
-            "trackHNoticeLoad".takeUnless { trackHNoticeLoad },
-            "trackJAvatarLoad".takeUnless { trackJAvatarLoad },
+            "vaultRuntimeLoad".takeUnless { vaultRuntimeLoad },
+            "protocolAdapterLoad".takeUnless { protocolAdapterLoad },
+            "loginComplianceLoad".takeUnless { loginComplianceLoad },
+            "loginPackageSerializationLoad".takeUnless { loginPackageSerializationLoad },
+            "inventoryCapabilityLoad".takeUnless { inventoryCapabilityLoad },
+            "noticeProtocolLoad".takeUnless { noticeProtocolLoad },
+            "avatarReadinessLoad".takeUnless { avatarReadinessLoad },
         )
         val cause = failure?.let { " cause=${it::class.java.simpleName}" }.orEmpty()
         return "Android compatibility probe failed lanes=${failedLanes.joinToString(",")}$cause"
@@ -179,7 +179,7 @@ class AndroidCompatibilityProbe {
             )
         }
 
-        val TRACK_A_VAULT_CLASSES = listOf(
+        val VAULT_RUNTIME_CLASSES = listOf(
             "org.hostess.apps.android.HostessAndroidVaultComposition",
             "org.hostess.core.services.HostessCredentialRuntimeState",
             "org.hostess.core.services.HostessCredentialRuntimeReady",
@@ -192,14 +192,14 @@ class AndroidCompatibilityProbe {
             "org.hostess.credential.vault.VaultFileAccountProfileStore",
             "org.hostess.protocol.libomv.runtime.CredentialVaultLoginSecretResolver",
         )
-        val TRACK_DS_LOGIN_PACKAGE_CLASSES = listOf(
+        val LOGIN_PACKAGE_SERIALIZATION_CLASSES = listOf(
             "org.hostess.protocol.libomv.runtime.LoginPackageBuilder",
             "org.hostess.protocol.libomv.runtime.LoginPackageSerializer",
             "org.hostess.protocol.libomv.runtime.SecondLifePasswordHash",
             "org.hostess.protocol.libomv.runtime.HostessMachineIdentityProvider",
             "org.hostess.protocol.libomv.runtime.DefaultHostessMachineIdentityProvider",
         )
-        val TRACK_G_GRID_CLASSES = listOf(
+        val INVENTORY_CAPABILITY_CLASSES = listOf(
             "org.hostess.core.services.InventoryDirectoryService",
             "org.hostess.core.domain.InventoryItemDescriptor",
             "org.hostess.core.domain.InventoryItemQuery",
@@ -209,12 +209,12 @@ class AndroidCompatibilityProbe {
             "org.hostess.protocol.libomv.runtime.ProtocolInventoryHttpSource",
             "org.hostess.protocol.libomv.mapping.LibomvInventoryItemMapping",
         )
-        val TRACK_H_NOTICE_CLASSES = listOf(
+        val NOTICE_PROTOCOL_CLASSES = listOf(
             "org.hostess.protocol.libomv.transport.ProtocolSimulatorCircuitClient",
             "org.hostess.protocol.libomv.transport.LibomvNoticePacketCodec",
             "org.hostess.protocol.libomv.runtime.ProtocolNoticeCircuitSource",
         )
-        val TRACK_J_AVATAR_CLASSES = listOf(
+        val AVATAR_READINESS_CLASSES = listOf(
             "org.hostess.core.services.AvatarReadinessService",
             "org.hostess.core.ports.AvatarPort",
             "org.hostess.core.ports.AvatarReadinessProof",
@@ -238,13 +238,13 @@ data class AndroidCompatibilityResult(
     val adapterLoad: Boolean,
     val runtimeLoad: Boolean,
     val transportLoad: Boolean,
-    val trackAVaultLoad: Boolean,
-    val trackCClassLoad: Boolean,
-    val trackDComplianceLoad: Boolean,
-    val trackDsLoginPackageLoad: Boolean,
-    val trackGGridLoad: Boolean,
-    val trackHNoticeLoad: Boolean,
-    val trackJAvatarLoad: Boolean,
+    val vaultRuntimeLoad: Boolean,
+    val protocolAdapterLoad: Boolean,
+    val loginComplianceLoad: Boolean,
+    val loginPackageSerializationLoad: Boolean,
+    val inventoryCapabilityLoad: Boolean,
+    val noticeProtocolLoad: Boolean,
+    val avatarReadinessLoad: Boolean,
     val noLiveGridContact: Boolean,
     val noUiSurface: Boolean,
     val blockedReason: String?,
@@ -256,13 +256,13 @@ data class AndroidCompatibilityResult(
             adapterLoad = true,
             runtimeLoad = true,
             transportLoad = true,
-            trackAVaultLoad = true,
-            trackCClassLoad = true,
-            trackDComplianceLoad = true,
-            trackDsLoginPackageLoad = true,
-            trackGGridLoad = true,
-            trackHNoticeLoad = true,
-            trackJAvatarLoad = true,
+            vaultRuntimeLoad = true,
+            protocolAdapterLoad = true,
+            loginComplianceLoad = true,
+            loginPackageSerializationLoad = true,
+            inventoryCapabilityLoad = true,
+            noticeProtocolLoad = true,
+            avatarReadinessLoad = true,
             noLiveGridContact = true,
             noUiSurface = true,
             blockedReason = null,
@@ -273,13 +273,13 @@ data class AndroidCompatibilityResult(
             adapterLoad: Boolean,
             runtimeLoad: Boolean,
             transportLoad: Boolean,
-            trackAVaultLoad: Boolean,
-            trackCClassLoad: Boolean,
-            trackDComplianceLoad: Boolean,
-            trackDsLoginPackageLoad: Boolean,
-            trackGGridLoad: Boolean,
-            trackHNoticeLoad: Boolean,
-            trackJAvatarLoad: Boolean,
+            vaultRuntimeLoad: Boolean,
+            protocolAdapterLoad: Boolean,
+            loginComplianceLoad: Boolean,
+            loginPackageSerializationLoad: Boolean,
+            inventoryCapabilityLoad: Boolean,
+            noticeProtocolLoad: Boolean,
+            avatarReadinessLoad: Boolean,
             reason: String,
         ): AndroidCompatibilityResult = AndroidCompatibilityResult(
             status = "android_gap",
@@ -287,13 +287,13 @@ data class AndroidCompatibilityResult(
             adapterLoad = adapterLoad,
             runtimeLoad = runtimeLoad,
             transportLoad = transportLoad,
-            trackAVaultLoad = trackAVaultLoad,
-            trackCClassLoad = trackCClassLoad,
-            trackDComplianceLoad = trackDComplianceLoad,
-            trackDsLoginPackageLoad = trackDsLoginPackageLoad,
-            trackGGridLoad = trackGGridLoad,
-            trackHNoticeLoad = trackHNoticeLoad,
-            trackJAvatarLoad = trackJAvatarLoad,
+            vaultRuntimeLoad = vaultRuntimeLoad,
+            protocolAdapterLoad = protocolAdapterLoad,
+            loginComplianceLoad = loginComplianceLoad,
+            loginPackageSerializationLoad = loginPackageSerializationLoad,
+            inventoryCapabilityLoad = inventoryCapabilityLoad,
+            noticeProtocolLoad = noticeProtocolLoad,
+            avatarReadinessLoad = avatarReadinessLoad,
             noLiveGridContact = true,
             noUiSurface = true,
             blockedReason = reason,

@@ -18,13 +18,13 @@ class AndroidCompatibilityProbeTest {
         assertTrue(result.adapterLoad)
         assertTrue(result.runtimeLoad)
         assertTrue(result.transportLoad)
-        assertTrue(result.trackAVaultLoad)
-        assertTrue(result.trackCClassLoad)
-        assertTrue(result.trackDComplianceLoad)
-        assertTrue(result.trackDsLoginPackageLoad)
-        assertTrue(result.trackGGridLoad)
-        assertTrue(result.trackHNoticeLoad)
-        assertTrue(result.trackJAvatarLoad)
+        assertTrue(result.vaultRuntimeLoad)
+        assertTrue(result.protocolAdapterLoad)
+        assertTrue(result.loginComplianceLoad)
+        assertTrue(result.loginPackageSerializationLoad)
+        assertTrue(result.inventoryCapabilityLoad)
+        assertTrue(result.noticeProtocolLoad)
+        assertTrue(result.avatarReadinessLoad)
         assertTrue(result.noLiveGridContact)
         assertTrue(result.noUiSurface)
         assertNull(result.blockedReason)
@@ -37,14 +37,14 @@ class AndroidCompatibilityProbeTest {
             adapterLoad = false,
             runtimeLoad = false,
             transportLoad = false,
-            trackAVaultLoad = false,
-            trackCClassLoad = false,
-            trackDComplianceLoad = true,
-            trackDsLoginPackageLoad = true,
-            trackGGridLoad = false,
-            trackHNoticeLoad = false,
-            trackJAvatarLoad = false,
-            reason = "Android compatibility probe failed lanes=adapterLoad,runtimeLoad,transportLoad,trackAVaultLoad,trackGGridLoad,trackHNoticeLoad,trackJAvatarLoad",
+            vaultRuntimeLoad = false,
+            protocolAdapterLoad = false,
+            loginComplianceLoad = true,
+            loginPackageSerializationLoad = true,
+            inventoryCapabilityLoad = false,
+            noticeProtocolLoad = false,
+            avatarReadinessLoad = false,
+            reason = "Android compatibility probe failed lanes=adapterLoad,runtimeLoad,transportLoad,vaultRuntimeLoad,inventoryCapabilityLoad,noticeProtocolLoad,avatarReadinessLoad",
         )
 
         assertEquals("android_gap", result.status)
@@ -52,22 +52,22 @@ class AndroidCompatibilityProbeTest {
         assertFalse(result.adapterLoad)
         assertFalse(result.runtimeLoad)
         assertFalse(result.transportLoad)
-        assertFalse(result.trackAVaultLoad)
-        assertFalse(result.trackCClassLoad)
-        assertTrue(result.trackDComplianceLoad)
-        assertTrue(result.trackDsLoginPackageLoad)
-        assertFalse(result.trackGGridLoad)
-        assertFalse(result.trackHNoticeLoad)
-        assertFalse(result.trackJAvatarLoad)
+        assertFalse(result.vaultRuntimeLoad)
+        assertFalse(result.protocolAdapterLoad)
+        assertTrue(result.loginComplianceLoad)
+        assertTrue(result.loginPackageSerializationLoad)
+        assertFalse(result.inventoryCapabilityLoad)
+        assertFalse(result.noticeProtocolLoad)
+        assertFalse(result.avatarReadinessLoad)
         assertTrue(result.noLiveGridContact)
         assertTrue(result.noUiSurface)
         val reason = assertNotNull(result.blockedReason)
         assertContains(reason, "adapterLoad")
         assertContains(reason, "runtimeLoad")
         assertContains(reason, "transportLoad")
-        assertContains(reason, "trackAVaultLoad")
-        assertContains(reason, "trackGGridLoad")
-        assertContains(reason, "trackHNoticeLoad")
-        assertContains(reason, "trackJAvatarLoad")
+        assertContains(reason, "vaultRuntimeLoad")
+        assertContains(reason, "inventoryCapabilityLoad")
+        assertContains(reason, "noticeProtocolLoad")
+        assertContains(reason, "avatarReadinessLoad")
     }
 }
