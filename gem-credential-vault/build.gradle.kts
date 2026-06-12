@@ -11,7 +11,7 @@ kotlin {
     }
 
     android {
-        namespace = "org.hostess.credential.vault"
+        namespace = "org.gem.credential.vault"
         compileSdk = 36
         minSdk = 26
         withHostTestBuilder {}.configure {}
@@ -23,7 +23,7 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation(project(":hostess-core"))
+                implementation(project(":gem-core"))
             }
         }
         val jvmAndroidMain by creating {

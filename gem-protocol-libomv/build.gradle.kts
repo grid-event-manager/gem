@@ -106,7 +106,7 @@ kotlin {
     }
 
     android {
-        namespace = "org.hostess.protocol.libomv"
+        namespace = "org.gem.protocol.libomv"
         compileSdk = 36
         minSdk = 26
         withJava()
@@ -119,7 +119,7 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation(project(":hostess-core"))
+                implementation(project(":gem-core"))
             }
         }
         val jvmAndroidMain by creating {

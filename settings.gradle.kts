@@ -14,13 +14,13 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "hostess"
+rootProject.name = "gem"
 
-include(":hostess-core")
-include(":hostess-ui")
-include(":hostess-credential-vault")
-include(":hostess-preferences")
-include(":hostess-protocol-libomv")
+include(":gem-core")
+include(":gem-ui")
+include(":gem-credential-vault")
+include(":gem-preferences")
+include(":gem-protocol-libomv")
 include(":tools:cli")
 include(":apps:desktop")
 include(":apps:android")

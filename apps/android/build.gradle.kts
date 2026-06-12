@@ -28,13 +28,13 @@ android {
 }
 
 dependencies {
-    implementation(project(":hostess-core"))
-    implementation(project(":hostess-ui"))
-    implementation(project(":hostess-preferences"))
-    implementation(project(":hostess-credential-vault"))
-    implementation(project(":hostess-protocol-libomv"))
+    implementation(project(":gem-core"))
+    implementation(project(":gem-ui"))
+    implementation(project(":gem-preferences"))
+    implementation(project(":gem-credential-vault"))
+    implementation(project(":gem-protocol-libomv"))
     implementation(libs.androidx.activity.compose)
-    androidTestImplementation(project(":hostess-credential-vault"))
+    androidTestImplementation(project(":gem-credential-vault"))
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.runner)
     testImplementation(kotlin("test-junit"))

@@ -22,7 +22,7 @@ Promoted file list:
 
 Generated packet output policy:
 
-- Gradle task: `:hostess-protocol-libomv:generateLibomvPacketCatalog`.
+- Gradle task: `:gem-protocol-libomv:generateLibomvPacketCatalog`.
 - Input: `hostess-protocol-libomv/src/protocol-bootstrap/message_template.msg`.
 - Output: `hostess-protocol-libomv/build/generated/sources/libomvPackets/kotlin/commonTest/libomv/packets/`.
 - Output shape: `Packet.kt`, `PacketType.kt`, `PacketCatalog.kt`, and one packet skeleton class per top-level packet definition.

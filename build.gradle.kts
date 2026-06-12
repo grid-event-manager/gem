@@ -8,15 +8,15 @@ plugins {
     alias(libs.plugins.kotlin.multiplatform) apply false
 }
 
-val checkHostessBoundaries by tasks.registering(Exec::class) {
+val checkGemBoundaries by tasks.registering(Exec::class) {
     group = "verification"
-    description = "Runs Hostess public source boundary checks."
+    description = "Runs Gem public source boundary checks."
     commandLine("bash", layout.projectDirectory.file("tools/guards/check-boundaries.sh").asFile.absolutePath)
 }
 
 subprojects {
-    group = "org.hostess"
-version = "0.1.10-SNAPSHOT"
+    group = "org.gem"
+    version = "0.1.11-SNAPSHOT"
 
     plugins.withId("org.jetbrains.kotlin.jvm") {
         extensions.configure<org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension> {
@@ -26,13 +26,13 @@ version = "0.1.10-SNAPSHOT"
         }
 
         tasks.named("check") {
-            dependsOn(checkHostessBoundaries)
+            dependsOn(checkGemBoundaries)
         }
     }
 
     plugins.withId("org.jetbrains.kotlin.multiplatform") {
         tasks.named("check") {
-            dependsOn(checkHostessBoundaries)
+            dependsOn(checkGemBoundaries)
         }
     }
 
@@ -50,13 +50,13 @@ version = "0.1.10-SNAPSHOT"
 
     plugins.withId("com.android.application") {
         tasks.named("check") {
-            dependsOn(checkHostessBoundaries)
+            dependsOn(checkGemBoundaries)
         }
     }
 
     plugins.withId("com.android.kotlin.multiplatform.library") {
         tasks.named("check") {
-            dependsOn(checkHostessBoundaries)
+            dependsOn(checkGemBoundaries)
         }
     }
 }

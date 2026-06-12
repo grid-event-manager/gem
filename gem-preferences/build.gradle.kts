@@ -1,11 +1,7 @@
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.android.kotlin.multiplatform.library)
-    alias(libs.plugins.compose)
-    alias(libs.plugins.kotlin.compose)
 }
-
-val materialIconsCore = libs.compose.material.icons.core
 
 kotlin {
     jvm {
@@ -15,7 +11,7 @@ kotlin {
     }
 
     android {
-        namespace = "org.hostess.ui"
+        namespace = "org.gem.preferences"
         compileSdk = 36
         minSdk = 26
         withHostTestBuilder {}.configure {}
@@ -25,23 +21,24 @@ kotlin {
     }
 
     sourceSets {
-        commonMain {
+        val commonMain by getting {
             dependencies {
-                implementation(project(":hostess-core"))
-                implementation(compose.runtime)
-                implementation(compose.foundation)
-                implementation(compose.animation)
-                implementation(compose.ui)
-                implementation(compose.material3)
-                implementation(materialIconsCore)
-                implementation(libs.kotlinx.coroutines.core)
+                implementation(project(":gem-core"))
             }
         }
-
+        val jvmAndroidMain by creating {
+            dependsOn(commonMain)
+        }
         commonTest {
             dependencies {
                 implementation(kotlin("test"))
             }
+        }
+        jvmMain {
+            dependsOn(jvmAndroidMain)
+        }
+        androidMain {
+            dependsOn(jvmAndroidMain)
         }
     }
 }

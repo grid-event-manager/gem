@@ -7,7 +7,7 @@ cd "$ROOT_DIR"
 failures=0
 
 RAW_LIBOMV_PATTERN='(^|[^[:alnum:]_.])libomv\.'
-CORE_FORBIDDEN_PATTERN="hostess-protocol-libomv|org\.hostess\.protocol\.libomv|:apps:|:tools:cli|reference/|\.\./private|$RAW_LIBOMV_PATTERN"
+CORE_FORBIDDEN_PATTERN="gem-protocol-libomv|org\.hostess\.protocol\.libomv|org\.gem\.protocol\.libomv|:apps:|:tools:cli|reference/|\.\./private|$RAW_LIBOMV_PATTERN"
 PRIVATE_REFERENCE_PATTERN='reference/|\.\./private'
 FORBIDDEN_PLATFORM_PATTERN='TrustAll|ALLOW_ALL|HostnameVerifier|X509TrustManager|sslSocketFactory|org\.apache\.http|sun\.security|java\.awt|javax\.swing|METAbolt|WinForms|printStackTrace\(|println\('
 CLI_COMMAND_REPORT_WRITE_PATTERN='File\(|Path\.of\(|Files\.|writeText\(|appendText\('
@@ -61,7 +61,7 @@ UI_REMEDIATION_SPLIT_LOGIN_PATTERN='LoginSavedAccountPanel|AddLoginPanel|addLogi
 UI_REMEDIATION_FAKE_LOCATION_PATTERN='startLocation\.orEmpty|SavedAccountProfile\.startLocation|London City|Welcome Area|locationLabel = "[^"]+"'
 UI_REMEDIATION_SCAFFOLD_REQUIRED_PATTERN='HostessAppScaffold'
 UI_REMEDIATION_CUSTOM_ICON_PATTERN='Canvas|drawLine|MenuBarCount|BackIconMidpoint|foundation\.Canvas'
-THEME_UI_PREFERENCE_ADAPTER_PATTERN='org\.hostess\.preferences|:hostess-preferences'
+THEME_UI_PREFERENCE_ADAPTER_PATTERN='org\.hostess\.preferences|:gem-preferences'
 THEME_VAULT_STORAGE_PATTERN='ThemePreference|themePreference|ui\.properties|preferences'
 THEME_HACCU_COLOUR_PATTERN='#[0-9A-Fa-f]{6}|Color\(0x'
 THEME_VISIBLE_LABEL_PATTERN='"(Grid Event Manager|GEM|GRID EVENT MANAGER|Light|Dark|Theme|Theme preference unavailable|Theme preference could not be saved)"'
@@ -99,7 +99,7 @@ INVENTORY_CAPABILITY_EVENT_QUEUE_SEED_PATTERN='fun[[:space:]]+seed[[:space:]]*\(
 INVENTORY_CAPABILITY_CLI_DIRECT_PROTOCOL_PATTERN='(^|[^[:alnum:]_])(ProtocolInventoryRuntime|ProtocolCurrentGroupsSource|ProtocolCapabilitySeedClient|EventQueueGetClient)([^[:alnum:]_]|$)'
 INVENTORY_CAPABILITY_CLI_RAW_CAPABILITY_PATTERN='seedCapability|capabilityUrl|EventQueueGet|FetchInventory2|FetchInventoryDescendents2'
 KMP_COMMON_FORBIDDEN_PLATFORM_PATTERN='java\.|javax\.|okhttp|android\.|System\.|MessageDigest|NetworkInterface|Datagram|ByteBuffer|UUID|Class\.forName|::class\.java'
-KMP_PARALLEL_PATH_PATTERN='hostess-core-kmp|hostess-protocol-android|AndroidProtocolLibomvModule|JvmProtocolLibomvModule|GroupReader|CurrentGroupsClient|LoginRuntimeAndroid|(^|/)[^/]*(Manager|Utils|Helpers|Common)\.kt$|(^|[^[:alnum:]_])((data[[:space:]]+)?class|object|interface|fun)[[:space:]]+[A-Za-z0-9_]*(Manager|Utils|Helpers|Common)([^[:alnum:]_]|$)'
+KMP_PARALLEL_PATH_PATTERN='gem-core-kmp|hostess-protocol-android|AndroidProtocolLibomvModule|JvmProtocolLibomvModule|GroupReader|CurrentGroupsClient|LoginRuntimeAndroid|(^|/)[^/]*(Manager|Utils|Helpers|Common)\.kt$|(^|[^[:alnum:]_])((data[[:space:]]+)?class|object|interface|fun)[[:space:]]+[A-Za-z0-9_]*(Manager|Utils|Helpers|Common)([^[:alnum:]_]|$)'
 KMP_PLATFORM_API_PATTERN='okhttp3\.|OkHttpClient|System(::|\.)getenv|NetworkInterface|java\.net\.Datagram|Datagram(Packet|Socket)|javax\.xml|org\.xml\.sax|DocumentBuilderFactory|java\.util\.UUID|MessageDigest|java\.nio\.ByteBuffer'
 OWNER_DECLARATION_PREFIX='^[[:space:]]*(internal[[:space:]]+|private[[:space:]]+|public[[:space:]]+)?(open[[:space:]]+|sealed[[:space:]]+)?(data[[:space:]]+class|class|object|interface|fun[[:space:]]+interface|value[[:space:]]+class)[[:space:]]+'
 
@@ -384,8 +384,8 @@ check_no_old_shared_roots() {
     while IFS= read -r path; do
         matches+=("$path")
     done < <(find \
-        "hostess-core/src/main/kotlin" \
-        "hostess-protocol-libomv/src/main/kotlin" \
+        "gem-core/src/main/kotlin" \
+        "gem-protocol-libomv/src/main/kotlin" \
         -type f 2>/dev/null || true)
 
     if [[ "${#matches[@]}" -eq 0 ]]; then
@@ -452,8 +452,8 @@ check_exact_owner_count() {
 check_notice_dispatch_overloads() {
     local files=()
     add_existing files \
-        "hostess-core/src/commonMain/kotlin/org/hostess/core/services/NoticeDispatchService.kt" \
-        "hostess-core/src/main/kotlin/org/hostess/core/services/NoticeDispatchService.kt"
+        "gem-core/src/commonMain/kotlin/org/hostess/core/services/NoticeDispatchService.kt" \
+        "gem-core/src/main/kotlin/org/hostess/core/services/NoticeDispatchService.kt"
 
     if [[ "${#files[@]}" -eq 0 ]]; then
         echo "ERROR: notice totals notice dispatch overload scan has no scan targets"
@@ -511,19 +511,19 @@ check_simulator_session_boundaries() {
             *) session_production_targets+=("$path") ;;
         esac
     done < <(find \
-        "hostess-core/src/commonMain" \
-        "hostess-core/src/jvmMain" \
-        "hostess-core/src/androidMain" \
-        "hostess-core/src/jvmAndroidMain" \
-        "hostess-core/src/main" \
-        "hostess-protocol-libomv/src/commonMain" \
-        "hostess-protocol-libomv/src/jvmMain" \
-        "hostess-protocol-libomv/src/androidMain" \
-        "hostess-protocol-libomv/src/jvmAndroidMain" \
-        "hostess-protocol-libomv/src/main" \
-        "hostess-ui/src/commonMain" \
-        "hostess-ui/src/jvmMain" \
-        "hostess-ui/src/androidMain" \
+        "gem-core/src/commonMain" \
+        "gem-core/src/jvmMain" \
+        "gem-core/src/androidMain" \
+        "gem-core/src/jvmAndroidMain" \
+        "gem-core/src/main" \
+        "gem-protocol-libomv/src/commonMain" \
+        "gem-protocol-libomv/src/jvmMain" \
+        "gem-protocol-libomv/src/androidMain" \
+        "gem-protocol-libomv/src/jvmAndroidMain" \
+        "gem-protocol-libomv/src/main" \
+        "gem-ui/src/commonMain" \
+        "gem-ui/src/jvmMain" \
+        "gem-ui/src/androidMain" \
         "tools/cli/src/main" \
         "apps/desktop/src/main" \
         "apps/android/src/main" \
@@ -536,7 +536,7 @@ check_simulator_session_boundaries() {
 
     local circuit_client_targets=()
     add_existing circuit_client_targets \
-        "hostess-protocol-libomv/src/commonMain/kotlin/org/hostess/protocol/libomv/transport/ProtocolSimulatorCircuitClient.kt"
+        "gem-protocol-libomv/src/commonMain/kotlin/org/hostess/protocol/libomv/transport/ProtocolSimulatorCircuitClient.kt"
 
     check_no_hits \
         "simulator session old circuit-client local receive state absent" \
@@ -545,11 +545,11 @@ check_simulator_session_boundaries() {
 
     local session_gateway_targets=()
     add_existing session_gateway_targets \
-        "hostess-protocol-libomv/src/commonMain" \
-        "hostess-protocol-libomv/src/jvmMain" \
-        "hostess-protocol-libomv/src/androidMain" \
-        "hostess-protocol-libomv/src/jvmAndroidMain" \
-        "hostess-protocol-libomv/src/main"
+        "gem-protocol-libomv/src/commonMain" \
+        "gem-protocol-libomv/src/jvmMain" \
+        "gem-protocol-libomv/src/androidMain" \
+        "gem-protocol-libomv/src/jvmAndroidMain" \
+        "gem-protocol-libomv/src/main"
 
     check_exact_owner_count \
         "simulator session single ThreadedSimulatorSessionGateway owner" \
@@ -569,14 +569,14 @@ check_simulator_session_boundaries() {
 
     local app_core_ui_cli_targets=()
     add_existing app_core_ui_cli_targets \
-        "hostess-core/src/commonMain" \
-        "hostess-core/src/jvmMain" \
-        "hostess-core/src/androidMain" \
-        "hostess-core/src/jvmAndroidMain" \
-        "hostess-core/src/main" \
-        "hostess-ui/src/commonMain" \
-        "hostess-ui/src/jvmMain" \
-        "hostess-ui/src/androidMain" \
+        "gem-core/src/commonMain" \
+        "gem-core/src/jvmMain" \
+        "gem-core/src/androidMain" \
+        "gem-core/src/jvmAndroidMain" \
+        "gem-core/src/main" \
+        "gem-ui/src/commonMain" \
+        "gem-ui/src/jvmMain" \
+        "gem-ui/src/androidMain" \
         "tools/cli/src/main" \
         "apps/desktop/src/main" \
         "apps/android/src/main"
@@ -588,19 +588,19 @@ check_simulator_session_boundaries() {
 
     local raw_identifier_targets=()
     add_existing raw_identifier_targets \
-        "hostess-core/src/commonMain" \
-        "hostess-core/src/jvmMain" \
-        "hostess-core/src/androidMain" \
-        "hostess-core/src/jvmAndroidMain" \
-        "hostess-core/src/main" \
-        "hostess-protocol-libomv/src/commonMain" \
-        "hostess-protocol-libomv/src/jvmMain" \
-        "hostess-protocol-libomv/src/androidMain" \
-        "hostess-protocol-libomv/src/jvmAndroidMain" \
-        "hostess-protocol-libomv/src/main" \
-        "hostess-ui/src/commonMain" \
-        "hostess-ui/src/jvmMain" \
-        "hostess-ui/src/androidMain" \
+        "gem-core/src/commonMain" \
+        "gem-core/src/jvmMain" \
+        "gem-core/src/androidMain" \
+        "gem-core/src/jvmAndroidMain" \
+        "gem-core/src/main" \
+        "gem-protocol-libomv/src/commonMain" \
+        "gem-protocol-libomv/src/jvmMain" \
+        "gem-protocol-libomv/src/androidMain" \
+        "gem-protocol-libomv/src/jvmAndroidMain" \
+        "gem-protocol-libomv/src/main" \
+        "gem-ui/src/commonMain" \
+        "gem-ui/src/jvmMain" \
+        "gem-ui/src/androidMain" \
         "tools/cli/src/main" \
         "apps/desktop/src/main" \
         "apps/android/src/main" \
@@ -614,12 +614,12 @@ check_simulator_session_boundaries() {
 
 core_targets=()
 add_existing core_targets \
-    "hostess-core/build.gradle.kts" \
-    "hostess-core/src/commonMain" \
-    "hostess-core/src/jvmMain" \
-    "hostess-core/src/androidMain" \
-    "hostess-core/src/jvmAndroidMain" \
-    "hostess-core/src/main"
+    "gem-core/build.gradle.kts" \
+    "gem-core/src/commonMain" \
+    "gem-core/src/jvmMain" \
+    "gem-core/src/androidMain" \
+    "gem-core/src/jvmAndroidMain" \
+    "gem-core/src/main"
 
 app_cli_targets=()
 add_existing app_cli_targets \
@@ -636,22 +636,22 @@ add_existing production_targets \
     "settings.gradle.kts" \
     "build.gradle.kts" \
     "gradle/libs.versions.toml" \
-    "hostess-core/build.gradle.kts" \
-    "hostess-core/src/commonMain" \
-    "hostess-core/src/jvmMain" \
-    "hostess-core/src/androidMain" \
-    "hostess-core/src/jvmAndroidMain" \
-    "hostess-core/src/main" \
-    "hostess-protocol-libomv/build.gradle.kts" \
-    "hostess-protocol-libomv/src/commonMain" \
-    "hostess-protocol-libomv/src/jvmMain" \
-    "hostess-protocol-libomv/src/androidMain" \
-    "hostess-protocol-libomv/src/jvmAndroidMain" \
-    "hostess-protocol-libomv/src/main" \
-    "hostess-ui/build.gradle.kts" \
-    "hostess-ui/src/commonMain" \
-    "hostess-ui/src/jvmMain" \
-    "hostess-ui/src/androidMain" \
+    "gem-core/build.gradle.kts" \
+    "gem-core/src/commonMain" \
+    "gem-core/src/jvmMain" \
+    "gem-core/src/androidMain" \
+    "gem-core/src/jvmAndroidMain" \
+    "gem-core/src/main" \
+    "gem-protocol-libomv/build.gradle.kts" \
+    "gem-protocol-libomv/src/commonMain" \
+    "gem-protocol-libomv/src/jvmMain" \
+    "gem-protocol-libomv/src/androidMain" \
+    "gem-protocol-libomv/src/jvmAndroidMain" \
+    "gem-protocol-libomv/src/main" \
+    "gem-ui/build.gradle.kts" \
+    "gem-ui/src/commonMain" \
+    "gem-ui/src/jvmMain" \
+    "gem-ui/src/androidMain" \
     "tools/cli/build.gradle.kts" \
     "tools/cli/src/main" \
     "apps/desktop/build.gradle.kts" \
@@ -661,33 +661,33 @@ add_existing production_targets \
 
 kmp_all_source_targets=()
 add_existing kmp_all_source_targets \
-    "hostess-core/src/commonMain" \
-    "hostess-core/src/commonTest" \
-    "hostess-core/src/jvmMain" \
-    "hostess-core/src/jvmTest" \
-    "hostess-core/src/androidMain" \
-    "hostess-core/src/androidTest" \
-    "hostess-core/src/androidUnitTest" \
-    "hostess-core/src/androidHostTest" \
-    "hostess-core/src/jvmAndroidMain" \
-    "hostess-core/src/main" \
-    "hostess-protocol-libomv/src/commonMain" \
-    "hostess-protocol-libomv/src/commonTest" \
-    "hostess-protocol-libomv/src/jvmMain" \
-    "hostess-protocol-libomv/src/jvmTest" \
-    "hostess-protocol-libomv/src/androidMain" \
-    "hostess-protocol-libomv/src/androidTest" \
-    "hostess-protocol-libomv/src/androidUnitTest" \
-    "hostess-protocol-libomv/src/androidHostTest" \
-    "hostess-protocol-libomv/src/jvmAndroidMain" \
-    "hostess-protocol-libomv/src/main" \
-    "hostess-protocol-libomv/build/generated/sources/libomvPackets/kotlin/commonMain" \
-    "hostess-ui/src/commonMain" \
-    "hostess-ui/src/commonTest" \
-    "hostess-ui/src/jvmMain" \
-    "hostess-ui/src/jvmTest" \
-    "hostess-ui/src/androidMain" \
-    "hostess-ui/src/androidTest" \
+    "gem-core/src/commonMain" \
+    "gem-core/src/commonTest" \
+    "gem-core/src/jvmMain" \
+    "gem-core/src/jvmTest" \
+    "gem-core/src/androidMain" \
+    "gem-core/src/androidTest" \
+    "gem-core/src/androidUnitTest" \
+    "gem-core/src/androidHostTest" \
+    "gem-core/src/jvmAndroidMain" \
+    "gem-core/src/main" \
+    "gem-protocol-libomv/src/commonMain" \
+    "gem-protocol-libomv/src/commonTest" \
+    "gem-protocol-libomv/src/jvmMain" \
+    "gem-protocol-libomv/src/jvmTest" \
+    "gem-protocol-libomv/src/androidMain" \
+    "gem-protocol-libomv/src/androidTest" \
+    "gem-protocol-libomv/src/androidUnitTest" \
+    "gem-protocol-libomv/src/androidHostTest" \
+    "gem-protocol-libomv/src/jvmAndroidMain" \
+    "gem-protocol-libomv/src/main" \
+    "gem-protocol-libomv/build/generated/sources/libomvPackets/kotlin/commonMain" \
+    "gem-ui/src/commonMain" \
+    "gem-ui/src/commonTest" \
+    "gem-ui/src/jvmMain" \
+    "gem-ui/src/jvmTest" \
+    "gem-ui/src/androidMain" \
+    "gem-ui/src/androidTest" \
     "tools/cli/src/main" \
     "tools/cli/src/test" \
     "apps/desktop/src/main" \
@@ -697,22 +697,22 @@ add_existing kmp_all_source_targets \
 
 kmp_common_targets=()
 add_existing kmp_common_targets \
-    "hostess-core/src/commonMain" \
-    "hostess-protocol-libomv/src/commonMain"
+    "gem-core/src/commonMain" \
+    "gem-protocol-libomv/src/commonMain"
 
 architecture_owner_targets=()
 add_existing architecture_owner_targets \
-    "hostess-core/src/commonMain" \
-    "hostess-core/src/jvmMain" \
-    "hostess-core/src/androidMain" \
-    "hostess-core/src/jvmAndroidMain" \
-    "hostess-protocol-libomv/src/commonMain" \
-    "hostess-protocol-libomv/src/jvmMain" \
-    "hostess-protocol-libomv/src/androidMain" \
-    "hostess-protocol-libomv/src/jvmAndroidMain" \
-    "hostess-ui/src/commonMain" \
-    "hostess-ui/src/jvmMain" \
-    "hostess-ui/src/androidMain" \
+    "gem-core/src/commonMain" \
+    "gem-core/src/jvmMain" \
+    "gem-core/src/androidMain" \
+    "gem-core/src/jvmAndroidMain" \
+    "gem-protocol-libomv/src/commonMain" \
+    "gem-protocol-libomv/src/jvmMain" \
+    "gem-protocol-libomv/src/androidMain" \
+    "gem-protocol-libomv/src/jvmAndroidMain" \
+    "gem-ui/src/commonMain" \
+    "gem-ui/src/jvmMain" \
+    "gem-ui/src/androidMain" \
     "tools/cli/src/main" \
     "apps/desktop/src/main" \
     "apps/android/src/main"
@@ -720,29 +720,29 @@ add_existing architecture_owner_targets \
 kmp_platform_api_forbidden_targets=()
 while IFS= read -r path; do
     case "$path" in
-        hostess-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/transport/OkHttpProtocolHttpClient.kt) ;;
-        hostess-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/transport/UdpSimulatorDatagramSender.kt) ;;
-        hostess-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/runtime/JvmMd5DigestPort.kt) ;;
-        hostess-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/runtime/EnvironmentLoginSecretResolver.kt) ;;
-        hostess-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/runtime/DefaultHostessHardwareAddressSource.kt) ;;
+        gem-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/transport/OkHttpProtocolHttpClient.kt) ;;
+        gem-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/transport/UdpSimulatorDatagramSender.kt) ;;
+        gem-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/runtime/JvmMd5DigestPort.kt) ;;
+        gem-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/runtime/EnvironmentLoginSecretResolver.kt) ;;
+        gem-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/runtime/DefaultHostessHardwareAddressSource.kt) ;;
         apps/desktop/src/main/kotlin/org/hostess/apps/desktop/DesktopVaultComposition.kt) ;;
         apps/desktop/src/main/kotlin/org/hostess/apps/desktop/DesktopPreferenceComposition.kt) ;;
         *) kmp_platform_api_forbidden_targets+=("$path") ;;
     esac
 done < <(find \
-    "hostess-core/src/commonMain" \
-    "hostess-core/src/jvmMain" \
-    "hostess-core/src/androidMain" \
-    "hostess-core/src/jvmAndroidMain" \
-    "hostess-core/src/main" \
-    "hostess-protocol-libomv/src/commonMain" \
-    "hostess-protocol-libomv/src/jvmMain" \
-    "hostess-protocol-libomv/src/androidMain" \
-    "hostess-protocol-libomv/src/jvmAndroidMain" \
-    "hostess-protocol-libomv/src/main" \
-    "hostess-ui/src/commonMain" \
-    "hostess-ui/src/jvmMain" \
-    "hostess-ui/src/androidMain" \
+    "gem-core/src/commonMain" \
+    "gem-core/src/jvmMain" \
+    "gem-core/src/androidMain" \
+    "gem-core/src/jvmAndroidMain" \
+    "gem-core/src/main" \
+    "gem-protocol-libomv/src/commonMain" \
+    "gem-protocol-libomv/src/jvmMain" \
+    "gem-protocol-libomv/src/androidMain" \
+    "gem-protocol-libomv/src/jvmAndroidMain" \
+    "gem-protocol-libomv/src/main" \
+    "gem-ui/src/commonMain" \
+    "gem-ui/src/jvmMain" \
+    "gem-ui/src/androidMain" \
     "tools/cli/src/main" \
     "apps/desktop/src/main" \
     "apps/android/src/main" \
@@ -753,13 +753,13 @@ add_existing okhttp_forbidden_targets \
     "settings.gradle.kts" \
     "build.gradle.kts" \
     "gradle/libs.versions.toml" \
-    "hostess-core/build.gradle.kts" \
-    "hostess-core/src/commonMain" \
-    "hostess-core/src/jvmMain" \
-    "hostess-core/src/androidMain" \
-    "hostess-core/src/jvmAndroidMain" \
-    "hostess-core/src/main" \
-    "hostess-protocol-libomv/build.gradle.kts" \
+    "gem-core/build.gradle.kts" \
+    "gem-core/src/commonMain" \
+    "gem-core/src/jvmMain" \
+    "gem-core/src/androidMain" \
+    "gem-core/src/jvmAndroidMain" \
+    "gem-core/src/main" \
+    "gem-protocol-libomv/build.gradle.kts" \
     "tools/cli/build.gradle.kts" \
     "tools/cli/src/main" \
     "apps/desktop/build.gradle.kts" \
@@ -767,11 +767,11 @@ add_existing okhttp_forbidden_targets \
     "apps/android/build.gradle.kts" \
     "apps/android/src/main"
 for protocol_root in \
-    "hostess-protocol-libomv/src/commonMain" \
-    "hostess-protocol-libomv/src/jvmMain" \
-    "hostess-protocol-libomv/src/androidMain" \
-    "hostess-protocol-libomv/src/jvmAndroidMain" \
-    "hostess-protocol-libomv/src/main"; do
+    "gem-protocol-libomv/src/commonMain" \
+    "gem-protocol-libomv/src/jvmMain" \
+    "gem-protocol-libomv/src/androidMain" \
+    "gem-protocol-libomv/src/jvmAndroidMain" \
+    "gem-protocol-libomv/src/main"; do
     while IFS= read -r path; do
         okhttp_forbidden_targets+=("$path")
     done < <(find "$protocol_root" -type f ! -path '*/transport/*' 2>/dev/null || true)
@@ -779,20 +779,20 @@ done
 
 protocol_boundary_runtime_forbidden_targets=()
 add_existing protocol_boundary_runtime_forbidden_targets \
-    "hostess-core/src/commonMain" \
-    "hostess-core/src/jvmMain" \
-    "hostess-core/src/androidMain" \
-    "hostess-core/src/jvmAndroidMain" \
-    "hostess-core/src/main" \
+    "gem-core/src/commonMain" \
+    "gem-core/src/jvmMain" \
+    "gem-core/src/androidMain" \
+    "gem-core/src/jvmAndroidMain" \
+    "gem-core/src/main" \
     "tools/cli/src/main" \
     "apps/desktop/src/main" \
     "apps/android/src/main"
 
 ui_targets=()
 add_existing ui_targets \
-    "hostess-ui/src/commonMain" \
-    "hostess-ui/src/jvmMain" \
-    "hostess-ui/src/androidMain"
+    "gem-ui/src/commonMain" \
+    "gem-ui/src/jvmMain" \
+    "gem-ui/src/androidMain"
 
 ui_text_forbidden_targets=()
 while IFS= read -r path; do
@@ -801,9 +801,9 @@ while IFS= read -r path; do
         *) ui_text_forbidden_targets+=("$path") ;;
     esac
 done < <(find \
-    "hostess-ui/src/commonMain" \
-    "hostess-ui/src/jvmMain" \
-    "hostess-ui/src/androidMain" \
+    "gem-ui/src/commonMain" \
+    "gem-ui/src/jvmMain" \
+    "gem-ui/src/androidMain" \
     "apps/desktop/src/main" \
     "apps/android/src/main" \
     -type f 2>/dev/null || true)
@@ -818,9 +818,9 @@ while IFS= read -r path; do
         *) ui_style_forbidden_targets+=("$path") ;;
     esac
 done < <(find \
-    "hostess-ui/src/commonMain/kotlin/org/hostess/ui" \
-    "hostess-ui/src/jvmMain/kotlin/org/hostess/ui" \
-    "hostess-ui/src/androidMain/kotlin/org/hostess/ui" \
+    "gem-ui/src/commonMain/kotlin/org/hostess/ui" \
+    "gem-ui/src/jvmMain/kotlin/org/hostess/ui" \
+    "gem-ui/src/androidMain/kotlin/org/hostess/ui" \
     -type f -name '*.kt' 2>/dev/null || true)
 
 ui_direct_control_forbidden_targets=()
@@ -837,44 +837,44 @@ while IFS= read -r path; do
         *) ui_direct_control_forbidden_targets+=("$path") ;;
     esac
 done < <(find \
-    "hostess-ui/src/commonMain/kotlin/org/hostess/ui" \
-    "hostess-ui/src/jvmMain/kotlin/org/hostess/ui" \
-    "hostess-ui/src/androidMain/kotlin/org/hostess/ui" \
+    "gem-ui/src/commonMain/kotlin/org/hostess/ui" \
+    "gem-ui/src/jvmMain/kotlin/org/hostess/ui" \
+    "gem-ui/src/androidMain/kotlin/org/hostess/ui" \
     -type f -name '*.kt' 2>/dev/null || true)
 
 ui_remediation_split_login_targets=()
 add_existing ui_remediation_split_login_targets \
-    "hostess-ui/src/commonMain"
+    "gem-ui/src/commonMain"
 
 ui_remediation_fake_location_targets=()
 add_existing ui_remediation_fake_location_targets \
-    "hostess-ui/src/commonMain" \
-    "hostess-core/src/commonMain" \
-    "hostess-protocol-libomv/src/commonMain"
+    "gem-ui/src/commonMain" \
+    "gem-core/src/commonMain" \
+    "gem-protocol-libomv/src/commonMain"
 
 ui_remediation_scaffold_required_targets=()
 add_existing ui_remediation_scaffold_required_targets \
-    "hostess-ui/src/commonMain/kotlin/org/hostess/ui/HostessApp.kt" \
-    "hostess-ui/src/commonMain/kotlin/org/hostess/ui/components/HostessAppScaffold.kt"
+    "gem-ui/src/commonMain/kotlin/org/hostess/ui/HostessApp.kt" \
+    "gem-ui/src/commonMain/kotlin/org/hostess/ui/components/HostessAppScaffold.kt"
 
 ui_remediation_custom_icon_targets=()
 add_existing ui_remediation_custom_icon_targets \
-    "hostess-ui/src/commonMain/kotlin/org/hostess/ui/components/HostessIcons.kt"
+    "gem-ui/src/commonMain/kotlin/org/hostess/ui/components/HostessIcons.kt"
 
 theme_ui_adapter_targets=()
 add_existing theme_ui_adapter_targets \
-    "hostess-ui/build.gradle.kts" \
-    "hostess-ui/src/commonMain" \
-    "hostess-ui/src/jvmMain" \
-    "hostess-ui/src/androidMain"
+    "gem-ui/build.gradle.kts" \
+    "gem-ui/src/commonMain" \
+    "gem-ui/src/jvmMain" \
+    "gem-ui/src/androidMain"
 
 theme_vault_storage_targets=()
 add_existing theme_vault_storage_targets \
-    "hostess-credential-vault/build.gradle.kts" \
-    "hostess-credential-vault/src/commonMain" \
-    "hostess-credential-vault/src/jvmMain" \
-    "hostess-credential-vault/src/androidMain" \
-    "hostess-credential-vault/src/jvmAndroidMain"
+    "gem-credential-vault/build.gradle.kts" \
+    "gem-credential-vault/src/commonMain" \
+    "gem-credential-vault/src/jvmMain" \
+    "gem-credential-vault/src/androidMain" \
+    "gem-credential-vault/src/jvmAndroidMain"
 
 theme_colour_forbidden_targets=()
 while IFS= read -r path; do
@@ -883,9 +883,9 @@ while IFS= read -r path; do
         *) theme_colour_forbidden_targets+=("$path") ;;
     esac
 done < <(find \
-    "hostess-ui/src/commonMain/kotlin/org/hostess/ui" \
-    "hostess-ui/src/jvmMain/kotlin/org/hostess/ui" \
-    "hostess-ui/src/androidMain/kotlin/org/hostess/ui" \
+    "gem-ui/src/commonMain/kotlin/org/hostess/ui" \
+    "gem-ui/src/jvmMain/kotlin/org/hostess/ui" \
+    "gem-ui/src/androidMain/kotlin/org/hostess/ui" \
     "apps/desktop/src/main" \
     "apps/android/src/main" \
     -type f -name '*.kt' 2>/dev/null || true)
@@ -897,18 +897,18 @@ while IFS= read -r path; do
         *) theme_visible_label_forbidden_targets+=("$path") ;;
     esac
 done < <(find \
-    "hostess-ui/src/commonMain" \
-    "hostess-ui/src/jvmMain" \
-    "hostess-ui/src/androidMain" \
+    "gem-ui/src/commonMain" \
+    "gem-ui/src/jvmMain" \
+    "gem-ui/src/androidMain" \
     "apps/desktop/src/main" \
     "apps/android/src/main" \
     -type f -name '*.kt' 2>/dev/null || true)
 
 theme_prototype_forbidden_targets=()
 add_existing theme_prototype_forbidden_targets \
-    "hostess-ui/src/commonMain" \
-    "hostess-ui/src/jvmMain" \
-    "hostess-ui/src/androidMain" \
+    "gem-ui/src/commonMain" \
+    "gem-ui/src/jvmMain" \
+    "gem-ui/src/androidMain" \
     "apps/desktop/src/main" \
     "apps/android/src/main"
 
@@ -925,11 +925,11 @@ while IFS= read -r path; do
         *) session_protocol_runtime_forbidden_targets+=("$path") ;;
     esac
 done < <(find \
-    "hostess-core/src/commonMain" \
-    "hostess-core/src/jvmMain" \
-    "hostess-core/src/androidMain" \
-    "hostess-core/src/jvmAndroidMain" \
-    "hostess-core/src/main" \
+    "gem-core/src/commonMain" \
+    "gem-core/src/jvmMain" \
+    "gem-core/src/androidMain" \
+    "gem-core/src/jvmAndroidMain" \
+    "gem-core/src/main" \
     "tools/cli/src/main" \
     "apps/desktop/src/main" \
     "apps/android/src/main" \
@@ -944,16 +944,16 @@ while IFS= read -r path; do
         *) credential_env_forbidden_targets+=("$path") ;;
     esac
 done < <(find \
-    "hostess-core/src/commonMain" \
-    "hostess-core/src/jvmMain" \
-    "hostess-core/src/androidMain" \
-    "hostess-core/src/jvmAndroidMain" \
-    "hostess-core/src/main" \
-    "hostess-protocol-libomv/src/commonMain" \
-    "hostess-protocol-libomv/src/jvmMain" \
-    "hostess-protocol-libomv/src/androidMain" \
-    "hostess-protocol-libomv/src/jvmAndroidMain" \
-    "hostess-protocol-libomv/src/main" \
+    "gem-core/src/commonMain" \
+    "gem-core/src/jvmMain" \
+    "gem-core/src/androidMain" \
+    "gem-core/src/jvmAndroidMain" \
+    "gem-core/src/main" \
+    "gem-protocol-libomv/src/commonMain" \
+    "gem-protocol-libomv/src/jvmMain" \
+    "gem-protocol-libomv/src/androidMain" \
+    "gem-protocol-libomv/src/jvmAndroidMain" \
+    "gem-protocol-libomv/src/main" \
     "tools/cli/src/main" \
     "apps/desktop/src/main" \
     "apps/android/src/main" \
@@ -966,24 +966,24 @@ while IFS= read -r path; do
         *) credential_file_route_forbidden_targets+=("$path") ;;
     esac
 done < <(find \
-    "hostess-core/src/commonMain" \
-    "hostess-core/src/jvmMain" \
-    "hostess-core/src/androidMain" \
-    "hostess-core/src/jvmAndroidMain" \
-    "hostess-core/src/main" \
-    "hostess-protocol-libomv/src/commonMain" \
-    "hostess-protocol-libomv/src/jvmMain" \
-    "hostess-protocol-libomv/src/androidMain" \
-    "hostess-protocol-libomv/src/jvmAndroidMain" \
-    "hostess-protocol-libomv/src/main" \
+    "gem-core/src/commonMain" \
+    "gem-core/src/jvmMain" \
+    "gem-core/src/androidMain" \
+    "gem-core/src/jvmAndroidMain" \
+    "gem-core/src/main" \
+    "gem-protocol-libomv/src/commonMain" \
+    "gem-protocol-libomv/src/jvmMain" \
+    "gem-protocol-libomv/src/androidMain" \
+    "gem-protocol-libomv/src/jvmAndroidMain" \
+    "gem-protocol-libomv/src/main" \
     "tools/cli/src/main" \
     "apps/desktop/src/main" \
     "apps/android/src/main" \
     -type f 2>/dev/null || true)
 
 login_compliance_main_roots=(
-    "hostess-core"
-    "hostess-protocol-libomv"
+    "gem-core"
+    "gem-protocol-libomv"
     "tools"
     "apps"
 )
@@ -996,11 +996,11 @@ add_existing login_compliance_tools_apps_targets \
 
 notice_dispatch_targets=()
 add_existing notice_dispatch_targets \
-    "hostess-core/src/commonMain" \
-    "hostess-core/src/jvmMain" \
-    "hostess-core/src/androidMain" \
-    "hostess-core/src/jvmAndroidMain" \
-    "hostess-core/src/main" \
+    "gem-core/src/commonMain" \
+    "gem-core/src/jvmMain" \
+    "gem-core/src/androidMain" \
+    "gem-core/src/jvmAndroidMain" \
+    "gem-core/src/main" \
     "tools/cli/src/main" \
     "apps/desktop/src/main" \
     "apps/android/src/main"
@@ -1013,11 +1013,11 @@ while IFS= read -r path; do
         *) viewer_identity_provider_forbidden_targets+=("$path") ;;
     esac
 done < <(find \
-    "hostess-core/src/commonMain" \
-    "hostess-core/src/jvmMain" \
-    "hostess-core/src/androidMain" \
-    "hostess-core/src/jvmAndroidMain" \
-    "hostess-core/src/main" \
+    "gem-core/src/commonMain" \
+    "gem-core/src/jvmMain" \
+    "gem-core/src/androidMain" \
+    "gem-core/src/jvmAndroidMain" \
+    "gem-core/src/main" \
     "tools/cli/src/main" \
     "apps/desktop/src/main" \
     "apps/android/src/main" \
@@ -1044,11 +1044,11 @@ while IFS= read -r path; do
         *) login_package_direct_owner_forbidden_targets+=("$path") ;;
     esac
 done < <(find \
-    "hostess-core/src/commonMain" \
-    "hostess-core/src/jvmMain" \
-    "hostess-core/src/androidMain" \
-    "hostess-core/src/jvmAndroidMain" \
-    "hostess-core/src/main" \
+    "gem-core/src/commonMain" \
+    "gem-core/src/jvmMain" \
+    "gem-core/src/androidMain" \
+    "gem-core/src/jvmAndroidMain" \
+    "gem-core/src/main" \
     "tools/cli/src/main" \
     "apps/desktop/src/main" \
     "apps/android/src/main" \
@@ -1056,17 +1056,17 @@ done < <(find \
 
 login_package_targets=()
 add_existing login_package_targets \
-    "hostess-protocol-libomv/src/commonMain/kotlin/org/hostess/protocol/libomv/runtime/ProtocolLoginRuntime.kt" \
-    "hostess-protocol-libomv/src/jvmMain/kotlin/org/hostess/protocol/libomv/runtime/ProtocolLoginRuntime.kt" \
-    "hostess-protocol-libomv/src/androidMain/kotlin/org/hostess/protocol/libomv/runtime/ProtocolLoginRuntime.kt" \
-    "hostess-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/runtime/ProtocolLoginRuntime.kt" \
-    "hostess-protocol-libomv/src/main/kotlin/org/hostess/protocol/libomv/runtime/ProtocolLoginRuntime.kt"
+    "gem-protocol-libomv/src/commonMain/kotlin/org/hostess/protocol/libomv/runtime/ProtocolLoginRuntime.kt" \
+    "gem-protocol-libomv/src/jvmMain/kotlin/org/hostess/protocol/libomv/runtime/ProtocolLoginRuntime.kt" \
+    "gem-protocol-libomv/src/androidMain/kotlin/org/hostess/protocol/libomv/runtime/ProtocolLoginRuntime.kt" \
+    "gem-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/runtime/ProtocolLoginRuntime.kt" \
+    "gem-protocol-libomv/src/main/kotlin/org/hostess/protocol/libomv/runtime/ProtocolLoginRuntime.kt"
 for protocol_runtime_root in \
-    "hostess-protocol-libomv/src/commonMain/kotlin/org/hostess/protocol/libomv/runtime" \
-    "hostess-protocol-libomv/src/jvmMain/kotlin/org/hostess/protocol/libomv/runtime" \
-    "hostess-protocol-libomv/src/androidMain/kotlin/org/hostess/protocol/libomv/runtime" \
-    "hostess-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/runtime" \
-    "hostess-protocol-libomv/src/main/kotlin/org/hostess/protocol/libomv/runtime"; do
+    "gem-protocol-libomv/src/commonMain/kotlin/org/hostess/protocol/libomv/runtime" \
+    "gem-protocol-libomv/src/jvmMain/kotlin/org/hostess/protocol/libomv/runtime" \
+    "gem-protocol-libomv/src/androidMain/kotlin/org/hostess/protocol/libomv/runtime" \
+    "gem-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/runtime" \
+    "gem-protocol-libomv/src/main/kotlin/org/hostess/protocol/libomv/runtime"; do
     while IFS= read -r path; do
         login_package_targets+=("$path")
     done < <(find "$protocol_runtime_root" -maxdepth 1 -type f -name 'LoginPackage*.kt' 2>/dev/null || true)
@@ -1074,38 +1074,38 @@ done
 
 session_login_service_targets=()
 add_existing session_login_service_targets \
-    "hostess-core/src/commonMain/kotlin/org/hostess/core/services/SessionService.kt" \
-    "hostess-core/src/main/kotlin/org/hostess/core/services/SessionService.kt"
+    "gem-core/src/commonMain/kotlin/org/hostess/core/services/SessionService.kt" \
+    "gem-core/src/main/kotlin/org/hostess/core/services/SessionService.kt"
 
 notice_time_targets=()
 add_existing notice_time_targets \
-    "hostess-core/src/commonMain/kotlin/org/hostess/core/services/NoticeComplianceService.kt" \
-    "hostess-core/src/main/kotlin/org/hostess/core/services/NoticeComplianceService.kt"
+    "gem-core/src/commonMain/kotlin/org/hostess/core/services/NoticeComplianceService.kt" \
+    "gem-core/src/main/kotlin/org/hostess/core/services/NoticeComplianceService.kt"
 
 login_package_old_login_targets=()
 add_existing login_package_old_login_targets \
-    "hostess-protocol-libomv/src/commonMain/kotlin/org/hostess/protocol/libomv/runtime/ProtocolLoginRuntime.kt" \
-    "hostess-protocol-libomv/src/jvmMain/kotlin/org/hostess/protocol/libomv/runtime/ProtocolLoginRuntime.kt" \
-    "hostess-protocol-libomv/src/androidMain/kotlin/org/hostess/protocol/libomv/runtime/ProtocolLoginRuntime.kt" \
-    "hostess-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/runtime/ProtocolLoginRuntime.kt" \
-    "hostess-protocol-libomv/src/main/kotlin/org/hostess/protocol/libomv/runtime/ProtocolLoginRuntime.kt"
+    "gem-protocol-libomv/src/commonMain/kotlin/org/hostess/protocol/libomv/runtime/ProtocolLoginRuntime.kt" \
+    "gem-protocol-libomv/src/jvmMain/kotlin/org/hostess/protocol/libomv/runtime/ProtocolLoginRuntime.kt" \
+    "gem-protocol-libomv/src/androidMain/kotlin/org/hostess/protocol/libomv/runtime/ProtocolLoginRuntime.kt" \
+    "gem-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/runtime/ProtocolLoginRuntime.kt" \
+    "gem-protocol-libomv/src/main/kotlin/org/hostess/protocol/libomv/runtime/ProtocolLoginRuntime.kt"
 
 attachment_kotlin_targets=()
 add_existing attachment_kotlin_targets \
-    "hostess-core/src/commonMain" \
-    "hostess-core/src/commonTest" \
-    "hostess-core/src/jvmMain" \
-    "hostess-core/src/jvmTest" \
-    "hostess-core/src/androidMain" \
-    "hostess-core/src/androidTest" \
-    "hostess-core/src/jvmAndroidMain" \
-    "hostess-protocol-libomv/src/commonMain" \
-    "hostess-protocol-libomv/src/commonTest" \
-    "hostess-protocol-libomv/src/jvmMain" \
-    "hostess-protocol-libomv/src/jvmTest" \
-    "hostess-protocol-libomv/src/androidMain" \
-    "hostess-protocol-libomv/src/androidTest" \
-    "hostess-protocol-libomv/src/jvmAndroidMain" \
+    "gem-core/src/commonMain" \
+    "gem-core/src/commonTest" \
+    "gem-core/src/jvmMain" \
+    "gem-core/src/jvmTest" \
+    "gem-core/src/androidMain" \
+    "gem-core/src/androidTest" \
+    "gem-core/src/jvmAndroidMain" \
+    "gem-protocol-libomv/src/commonMain" \
+    "gem-protocol-libomv/src/commonTest" \
+    "gem-protocol-libomv/src/jvmMain" \
+    "gem-protocol-libomv/src/jvmTest" \
+    "gem-protocol-libomv/src/androidMain" \
+    "gem-protocol-libomv/src/androidTest" \
+    "gem-protocol-libomv/src/jvmAndroidMain" \
     "tools/cli/src/main" \
     "tools/cli/src/test" \
     "apps/desktop/src/main" \
@@ -1121,8 +1121,8 @@ add_existing live_proof_fake_default_targets \
 
 live_proof_local_http_targets=()
 add_existing live_proof_local_http_targets \
-    "hostess-protocol-libomv/src/commonMain" \
-    "hostess-protocol-libomv/src/jvmAndroidMain"
+    "gem-protocol-libomv/src/commonMain" \
+    "gem-protocol-libomv/src/jvmAndroidMain"
 
 android_probe_injection_targets=()
 add_existing android_probe_injection_targets \
@@ -1130,43 +1130,43 @@ add_existing android_probe_injection_targets \
 
 packet_generation_targets=()
 add_existing packet_generation_targets \
-    "hostess-protocol-libomv/build.gradle.kts"
+    "gem-protocol-libomv/build.gradle.kts"
 
 packet_generation_production_import_targets=()
 add_existing packet_generation_production_import_targets \
-    "hostess-core/src/commonMain" \
-    "hostess-core/src/jvmMain" \
-    "hostess-core/src/androidMain" \
-    "hostess-core/src/jvmAndroidMain" \
-    "hostess-core/src/main" \
-    "hostess-protocol-libomv/src/commonMain" \
-    "hostess-protocol-libomv/src/jvmMain" \
-    "hostess-protocol-libomv/src/androidMain" \
-    "hostess-protocol-libomv/src/jvmAndroidMain" \
-    "hostess-protocol-libomv/src/main" \
+    "gem-core/src/commonMain" \
+    "gem-core/src/jvmMain" \
+    "gem-core/src/androidMain" \
+    "gem-core/src/jvmAndroidMain" \
+    "gem-core/src/main" \
+    "gem-protocol-libomv/src/commonMain" \
+    "gem-protocol-libomv/src/jvmMain" \
+    "gem-protocol-libomv/src/androidMain" \
+    "gem-protocol-libomv/src/jvmAndroidMain" \
+    "gem-protocol-libomv/src/main" \
     "tools/cli/src/main" \
     "apps/desktop/src/main" \
     "apps/android/src/main"
 
 inventory_capability_main_targets=()
 add_existing inventory_capability_main_targets \
-    "hostess-core/src/commonMain" \
-    "hostess-core/src/jvmMain" \
-    "hostess-core/src/androidMain" \
-    "hostess-core/src/jvmAndroidMain" \
-    "hostess-core/src/main" \
-    "hostess-protocol-libomv/src/commonMain" \
-    "hostess-protocol-libomv/src/jvmMain" \
-    "hostess-protocol-libomv/src/androidMain" \
-    "hostess-protocol-libomv/src/jvmAndroidMain" \
-    "hostess-protocol-libomv/src/main" \
+    "gem-core/src/commonMain" \
+    "gem-core/src/jvmMain" \
+    "gem-core/src/androidMain" \
+    "gem-core/src/jvmAndroidMain" \
+    "gem-core/src/main" \
+    "gem-protocol-libomv/src/commonMain" \
+    "gem-protocol-libomv/src/jvmMain" \
+    "gem-protocol-libomv/src/androidMain" \
+    "gem-protocol-libomv/src/jvmAndroidMain" \
+    "gem-protocol-libomv/src/main" \
     "tools/cli/src/main" \
     "apps/desktop/src/main" \
     "apps/android/src/main"
 
 inventory_capability_event_queue_targets=()
 add_existing inventory_capability_event_queue_targets \
-    "hostess-protocol-libomv/src/commonMain/kotlin/org/hostess/protocol/libomv/transport/EventQueueGetClient.kt"
+    "gem-protocol-libomv/src/commonMain/kotlin/org/hostess/protocol/libomv/transport/EventQueueGetClient.kt"
 
 inventory_capability_cli_targets=()
 add_existing inventory_capability_cli_targets \
@@ -1184,16 +1184,16 @@ add_existing live_notice_proof_full_targets \
 
 notice_protocol_stale_targets=()
 add_existing notice_protocol_stale_targets \
-    "hostess-core/src/commonMain" \
-    "hostess-core/src/jvmMain" \
-    "hostess-core/src/androidMain" \
-    "hostess-core/src/jvmAndroidMain" \
-    "hostess-core/src/main" \
-    "hostess-protocol-libomv/src/commonMain" \
-    "hostess-protocol-libomv/src/jvmMain" \
-    "hostess-protocol-libomv/src/androidMain" \
-    "hostess-protocol-libomv/src/jvmAndroidMain" \
-    "hostess-protocol-libomv/src/main" \
+    "gem-core/src/commonMain" \
+    "gem-core/src/jvmMain" \
+    "gem-core/src/androidMain" \
+    "gem-core/src/jvmAndroidMain" \
+    "gem-core/src/main" \
+    "gem-protocol-libomv/src/commonMain" \
+    "gem-protocol-libomv/src/jvmMain" \
+    "gem-protocol-libomv/src/androidMain" \
+    "gem-protocol-libomv/src/jvmAndroidMain" \
+    "gem-protocol-libomv/src/main" \
     "tools/cli/src/main" \
     "apps/desktop/src/main" \
     "apps/android/src/main"
@@ -1214,20 +1214,20 @@ done < <(find \
 simulator_exchange_duplicate_targets=()
 while IFS= read -r path; do
     case "$path" in
-        "hostess-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/transport/UdpSimulatorDatagramSender.kt") ;;
+        "gem-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/transport/UdpSimulatorDatagramSender.kt") ;;
         *) simulator_exchange_duplicate_targets+=("$path") ;;
     esac
 done < <(find \
-    "hostess-core/src/commonMain" \
-    "hostess-core/src/jvmMain" \
-    "hostess-core/src/androidMain" \
-    "hostess-core/src/jvmAndroidMain" \
-    "hostess-core/src/main" \
-    "hostess-protocol-libomv/src/commonMain" \
-    "hostess-protocol-libomv/src/jvmMain" \
-    "hostess-protocol-libomv/src/androidMain" \
-    "hostess-protocol-libomv/src/jvmAndroidMain" \
-    "hostess-protocol-libomv/src/main" \
+    "gem-core/src/commonMain" \
+    "gem-core/src/jvmMain" \
+    "gem-core/src/androidMain" \
+    "gem-core/src/jvmAndroidMain" \
+    "gem-core/src/main" \
+    "gem-protocol-libomv/src/commonMain" \
+    "gem-protocol-libomv/src/jvmMain" \
+    "gem-protocol-libomv/src/androidMain" \
+    "gem-protocol-libomv/src/jvmAndroidMain" \
+    "gem-protocol-libomv/src/main" \
     "tools/cli/src/main" \
     "apps/desktop/src/main" \
     "apps/android/src/main" \
@@ -1249,16 +1249,16 @@ add_existing full_proof_archive_targets \
 
 group_membership_mutation_targets=()
 add_existing group_membership_mutation_targets \
-    "hostess-core/src/commonMain" \
-    "hostess-core/src/jvmMain" \
-    "hostess-core/src/androidMain" \
-    "hostess-core/src/jvmAndroidMain" \
-    "hostess-core/src/main" \
-    "hostess-protocol-libomv/src/commonMain" \
-    "hostess-protocol-libomv/src/jvmMain" \
-    "hostess-protocol-libomv/src/androidMain" \
-    "hostess-protocol-libomv/src/jvmAndroidMain" \
-    "hostess-protocol-libomv/src/main" \
+    "gem-core/src/commonMain" \
+    "gem-core/src/jvmMain" \
+    "gem-core/src/androidMain" \
+    "gem-core/src/jvmAndroidMain" \
+    "gem-core/src/main" \
+    "gem-protocol-libomv/src/commonMain" \
+    "gem-protocol-libomv/src/jvmMain" \
+    "gem-protocol-libomv/src/androidMain" \
+    "gem-protocol-libomv/src/jvmAndroidMain" \
+    "gem-protocol-libomv/src/main" \
     "tools/cli/src/main" \
     "apps/desktop/src/main" \
     "apps/android/src/main"
@@ -1272,41 +1272,41 @@ add_existing vault_dependency_targets \
     "gradle/libs.versions.toml" \
     "settings.gradle.kts" \
     "build.gradle.kts" \
-    "hostess-core/build.gradle.kts" \
-    "hostess-credential-vault/build.gradle.kts" \
-    "hostess-protocol-libomv/build.gradle.kts" \
+    "gem-core/build.gradle.kts" \
+    "gem-credential-vault/build.gradle.kts" \
+    "gem-protocol-libomv/build.gradle.kts" \
     "tools/cli/build.gradle.kts" \
     "apps/desktop/build.gradle.kts" \
     "apps/android/build.gradle.kts"
 
 vault_production_targets=()
 add_existing vault_production_targets \
-    "hostess-core/src/commonMain" \
-    "hostess-core/src/jvmMain" \
-    "hostess-core/src/androidMain" \
-    "hostess-core/src/jvmAndroidMain" \
-    "hostess-credential-vault/src/commonMain" \
-    "hostess-credential-vault/src/jvmMain" \
-    "hostess-credential-vault/src/androidMain" \
-    "hostess-credential-vault/src/jvmAndroidMain" \
-    "hostess-protocol-libomv/src/commonMain" \
-    "hostess-protocol-libomv/src/jvmMain" \
-    "hostess-protocol-libomv/src/androidMain" \
-    "hostess-protocol-libomv/src/jvmAndroidMain" \
+    "gem-core/src/commonMain" \
+    "gem-core/src/jvmMain" \
+    "gem-core/src/androidMain" \
+    "gem-core/src/jvmAndroidMain" \
+    "gem-credential-vault/src/commonMain" \
+    "gem-credential-vault/src/jvmMain" \
+    "gem-credential-vault/src/androidMain" \
+    "gem-credential-vault/src/jvmAndroidMain" \
+    "gem-protocol-libomv/src/commonMain" \
+    "gem-protocol-libomv/src/jvmMain" \
+    "gem-protocol-libomv/src/androidMain" \
+    "gem-protocol-libomv/src/jvmAndroidMain" \
     "tools/cli/src/main" \
     "apps/desktop/src/main" \
     "apps/android/src/main"
 
 vault_raw_key_forbidden_targets=()
 add_existing vault_raw_key_forbidden_targets \
-    "hostess-core/src/commonMain" \
-    "hostess-core/src/jvmMain" \
-    "hostess-core/src/androidMain" \
-    "hostess-core/src/jvmAndroidMain" \
-    "hostess-protocol-libomv/src/commonMain" \
-    "hostess-protocol-libomv/src/jvmMain" \
-    "hostess-protocol-libomv/src/androidMain" \
-    "hostess-protocol-libomv/src/jvmAndroidMain" \
+    "gem-core/src/commonMain" \
+    "gem-core/src/jvmMain" \
+    "gem-core/src/androidMain" \
+    "gem-core/src/jvmAndroidMain" \
+    "gem-protocol-libomv/src/commonMain" \
+    "gem-protocol-libomv/src/jvmMain" \
+    "gem-protocol-libomv/src/androidMain" \
+    "gem-protocol-libomv/src/jvmAndroidMain" \
     "tools/cli/src/main" \
     "apps/desktop/src/main" \
     "apps/android/src/main"
@@ -1318,8 +1318,8 @@ add_existing vault_app_composition_targets \
 
 notice_totals_stale_compliance_targets=()
 add_existing notice_totals_stale_compliance_targets \
-    "hostess-core/src/commonMain" \
-    "hostess-core/src/jvmMain" \
+    "gem-core/src/commonMain" \
+    "gem-core/src/jvmMain" \
     "tools/cli/src/main" \
     "apps/desktop/src/main" \
     "apps/android/src/main"
@@ -1327,30 +1327,30 @@ add_existing notice_totals_stale_compliance_targets \
 notice_totals_public_doc_targets=()
 add_existing notice_totals_public_doc_targets \
     "README.md" \
-    "hostess-core/README.md" \
+    "gem-core/README.md" \
     "tools/cli/README.md" \
     "apps/desktop/README.md" \
     "apps/android/README.md"
 
 avatar_main_targets=()
 add_existing avatar_main_targets \
-    "hostess-core/src/commonMain" \
-    "hostess-core/src/jvmMain" \
-    "hostess-core/src/androidMain" \
-    "hostess-core/src/jvmAndroidMain" \
-    "hostess-core/src/main" \
-    "hostess-protocol-libomv/src/commonMain" \
-    "hostess-protocol-libomv/src/jvmMain" \
-    "hostess-protocol-libomv/src/androidMain" \
-    "hostess-protocol-libomv/src/jvmAndroidMain" \
-    "hostess-protocol-libomv/src/main" \
+    "gem-core/src/commonMain" \
+    "gem-core/src/jvmMain" \
+    "gem-core/src/androidMain" \
+    "gem-core/src/jvmAndroidMain" \
+    "gem-core/src/main" \
+    "gem-protocol-libomv/src/commonMain" \
+    "gem-protocol-libomv/src/jvmMain" \
+    "gem-protocol-libomv/src/androidMain" \
+    "gem-protocol-libomv/src/jvmAndroidMain" \
+    "gem-protocol-libomv/src/main" \
     "tools/cli/src/main" \
     "apps/desktop/src/main" \
     "apps/android/src/main"
 
 avatar_source_targets=()
 add_existing avatar_source_targets \
-    "hostess-protocol-libomv/src/commonMain/kotlin/org/hostess/protocol/libomv/runtime/ProtocolAvatarAppearanceSource.kt"
+    "gem-protocol-libomv/src/commonMain/kotlin/org/hostess/protocol/libomv/runtime/ProtocolAvatarAppearanceSource.kt"
 
 avatar_cli_command_targets=()
 add_existing avatar_cli_command_targets \
@@ -1363,29 +1363,29 @@ add_existing avatar_full_proof_targets \
 avatar_simulator_exchange_impl_targets=()
 while IFS= read -r path; do
     case "$path" in
-        "hostess-protocol-libomv/src/commonMain/kotlin/org/hostess/protocol/libomv/transport/SimulatorPacketExchange.kt") ;;
-        "hostess-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/transport/SimulatorPacketExchangeFactory.kt") ;;
-        "hostess-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/transport/UdpSimulatorDatagramSender.kt") ;;
+        "gem-protocol-libomv/src/commonMain/kotlin/org/hostess/protocol/libomv/transport/SimulatorPacketExchange.kt") ;;
+        "gem-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/transport/SimulatorPacketExchangeFactory.kt") ;;
+        "gem-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/transport/UdpSimulatorDatagramSender.kt") ;;
         *) avatar_simulator_exchange_impl_targets+=("$path") ;;
     esac
 done < <(find \
-    "hostess-core/src/commonMain" \
-    "hostess-core/src/jvmMain" \
-    "hostess-core/src/androidMain" \
-    "hostess-core/src/jvmAndroidMain" \
-    "hostess-core/src/main" \
-    "hostess-protocol-libomv/src/commonMain" \
-    "hostess-protocol-libomv/src/jvmMain" \
-    "hostess-protocol-libomv/src/androidMain" \
-    "hostess-protocol-libomv/src/jvmAndroidMain" \
-    "hostess-protocol-libomv/src/main" \
+    "gem-core/src/commonMain" \
+    "gem-core/src/jvmMain" \
+    "gem-core/src/androidMain" \
+    "gem-core/src/jvmAndroidMain" \
+    "gem-core/src/main" \
+    "gem-protocol-libomv/src/commonMain" \
+    "gem-protocol-libomv/src/jvmMain" \
+    "gem-protocol-libomv/src/androidMain" \
+    "gem-protocol-libomv/src/jvmAndroidMain" \
+    "gem-protocol-libomv/src/main" \
     "tools/cli/src/main" \
     "apps/desktop/src/main" \
     "apps/android/src/main" \
     -type f -name '*.kt' 2>/dev/null || true)
 
 check_no_hits \
-    "hostess-core forbidden dependencies" \
+    "gem-core forbidden dependencies" \
     "$CORE_FORBIDDEN_PATTERN" \
     "${core_targets[@]}"
 
@@ -1421,7 +1421,7 @@ check_no_hits \
 
 check_path_exists \
     "protocol boundary shared UI module exists" \
-    "hostess-ui/src/commonMain"
+    "gem-ui/src/commonMain"
 
 check_no_hits \
     "protocol boundary UI direct protocol/runtime path" \
@@ -1538,17 +1538,17 @@ check_no_hits \
 check_required_hits \
     "theme brand logo owner present" \
     "$THEME_LOGO_OWNER_PATTERN" \
-    "hostess-ui/src/commonMain/kotlin/org/hostess/ui/components/HostessIcons.kt"
+    "gem-ui/src/commonMain/kotlin/org/hostess/ui/components/HostessIcons.kt"
 
 check_required_hits \
     "theme theme toggle owner present" \
     "$THEME_TOGGLE_OWNER_PATTERN" \
-    "hostess-ui/src/commonMain/kotlin/org/hostess/ui/components/ThemeModeToggle.kt"
+    "gem-ui/src/commonMain/kotlin/org/hostess/ui/components/ThemeModeToggle.kt"
 
 check_required_hits \
     "theme palette provider present" \
     "$THEME_PALETTE_OWNER_PATTERN" \
-    "hostess-ui/src/commonMain/kotlin/org/hostess/ui/design/HaccuHostessPaletteProvider.kt"
+    "gem-ui/src/commonMain/kotlin/org/hostess/ui/design/HaccuHostessPaletteProvider.kt"
 
 check_required_hits \
     "theme Android app label explicit" \
@@ -1889,7 +1889,7 @@ check_no_hits \
 check_pattern_matches \
     "self-test core forbidden dependency pattern" \
     "$CORE_FORBIDDEN_PATTERN" \
-    'implementation(project(":hostess-protocol-libomv"))'
+    'implementation(project(":gem-protocol-libomv"))'
 
 check_pattern_matches \
     "self-test raw libomv pattern" \
@@ -2016,7 +2016,7 @@ check_pattern_matches \
 check_pattern_matches \
     "self-test theme UI preference adapter pattern" \
     "$THEME_UI_PREFERENCE_ADAPTER_PATTERN" \
-    'implementation(project(":hostess-preferences"))'
+    'implementation(project(":gem-preferences"))'
 
 check_pattern_matches \
     "self-test theme vault theme storage pattern" \

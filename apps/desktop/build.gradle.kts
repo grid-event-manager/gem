@@ -7,11 +7,11 @@ plugins {
 }
 
 dependencies {
-    implementation(project(":hostess-core"))
-    implementation(project(":hostess-ui"))
-    implementation(project(":hostess-preferences"))
-    implementation(project(":hostess-credential-vault"))
-    implementation(project(":hostess-protocol-libomv"))
+    implementation(project(":gem-core"))
+    implementation(project(":gem-ui"))
+    implementation(project(":gem-preferences"))
+    implementation(project(":gem-credential-vault"))
+    implementation(project(":gem-protocol-libomv"))
     implementation(compose.desktop.currentOs)
     testImplementation(kotlin("test-junit"))
 }

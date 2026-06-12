@@ -4,8 +4,8 @@ plugins {
 }
 
 dependencies {
-    implementation(project(":hostess-core"))
-    implementation(project(":hostess-protocol-libomv"))
+    implementation(project(":gem-core"))
+    implementation(project(":gem-protocol-libomv"))
     testImplementation(kotlin("test"))
 }
 

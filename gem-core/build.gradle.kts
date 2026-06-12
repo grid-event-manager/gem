@@ -11,7 +11,7 @@ kotlin {
     }
 
     android {
-        namespace = "org.hostess.preferences"
+        namespace = "org.gem.core"
         compileSdk = 36
         minSdk = 26
         withHostTestBuilder {}.configure {}
@@ -21,24 +21,10 @@ kotlin {
     }
 
     sourceSets {
-        val commonMain by getting {
-            dependencies {
-                implementation(project(":hostess-core"))
-            }
-        }
-        val jvmAndroidMain by creating {
-            dependsOn(commonMain)
-        }
         commonTest {
             dependencies {
                 implementation(kotlin("test"))
             }
-        }
-        jvmMain {
-            dependsOn(jvmAndroidMain)
-        }
-        androidMain {
-            dependsOn(jvmAndroidMain)
         }
     }
 }
