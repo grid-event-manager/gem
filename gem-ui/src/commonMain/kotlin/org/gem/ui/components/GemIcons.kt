@@ -107,11 +107,23 @@ private val GemBrandLogoVector: ImageVector =
             strokeLineCap = StrokeCap.Round,
             strokeLineJoin = StrokeJoin.Round,
         ) {
-            moveTo(12f, 3.5f)
-            lineTo(20.5f, 12f)
-            lineTo(12f, 20.5f)
-            lineTo(3.5f, 12f)
+            moveTo(7f, 4f)
+            lineTo(17f, 4f)
+            lineTo(21f, 9f)
+            lineTo(12f, 21f)
+            lineTo(3f, 9f)
             close()
+            moveTo(3f, 9f)
+            lineTo(21f, 9f)
+            moveTo(7f, 4f)
+            lineTo(9.5f, 9f)
+            lineTo(12f, 21f)
+            moveTo(17f, 4f)
+            lineTo(14.5f, 9f)
+            lineTo(12f, 21f)
+            moveTo(9.5f, 9f)
+            lineTo(12f, 4f)
+            lineTo(14.5f, 9f)
         }
     }.build()
 

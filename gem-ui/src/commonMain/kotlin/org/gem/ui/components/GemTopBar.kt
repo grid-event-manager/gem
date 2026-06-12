@@ -55,7 +55,7 @@ fun GemTopBar(
                 Text(
                     text = textCatalogue.text(GemTextKey.BrandInitials),
                     style = GemTheme.typeScale.brandTitle,
-                    color = GemTheme.colors.topBarInk,
+                    color = GemTheme.colors.brandInitialsInk,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )

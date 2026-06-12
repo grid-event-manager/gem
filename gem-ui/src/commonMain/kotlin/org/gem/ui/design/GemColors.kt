@@ -42,6 +42,7 @@ data class GemColors(
     val fieldSurface: Color = surfaceStrong,
     val fieldBorder: Color = lineStrong,
     val brandWordmark: Color = muted,
+    val brandInitialsInk: Color = topBarInk,
     val brandAccent: Color = brandMark,
     val buttonLabelInk: Color = secondary,
     val toggleTrack: Color = lineStrong,

@@ -8,6 +8,9 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import org.gem.ui.GemApp
+import org.gem.ui.text.EnglishGemTextCatalogue
+import org.gem.ui.text.GemTextCatalogue
+import org.gem.ui.text.GemTextKey
 
 fun main() {
     GemDesktopSingleInstanceGuard.terminateOtherInstances()
@@ -32,8 +35,8 @@ fun main() {
 }
 
 internal object GemDesktopWindowTitle {
-    private const val AppId = "gem"
-    private const val Version = "0.1.12"
+    private const val Version = "0.1.13"
 
-    fun current(): String = "$AppId $Version"
+    fun current(textCatalogue: GemTextCatalogue = EnglishGemTextCatalogue): String =
+        "${textCatalogue.text(GemTextKey.BrandInitials)} $Version"
 }
