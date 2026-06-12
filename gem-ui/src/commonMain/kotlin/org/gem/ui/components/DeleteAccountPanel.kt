@@ -23,7 +23,7 @@ fun DeleteAccountPanel(
     GemPanel(
         modifier = modifier.testTag(GemTestTags.DeleteAccountPanel),
     ) {
-        HostessSecondaryButton(
+        GemSecondaryButton(
             text = if (state.deleteExpanded && state.deleteEnabled) {
                 textCatalogue.text(GemTextKey.Delete)
             } else {
@@ -43,7 +43,7 @@ fun DeleteAccountPanel(
                 verticalArrangement = Arrangement.spacedBy(GemTheme.spacing.fieldGap),
             ) {
                 state.savedLoginOptions.forEach { option ->
-                    HostessCheckboxCard(
+                    GemCheckboxCard(
                         text = option.loginName,
                         checked = option.profileId in state.selectedDeleteProfileIds,
                         onCheckedChange = { selected -> onAccountSelected(option.profileId, selected) },

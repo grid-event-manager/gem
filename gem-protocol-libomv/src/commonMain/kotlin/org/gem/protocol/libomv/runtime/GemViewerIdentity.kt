@@ -1,9 +1,9 @@
 package org.gem.protocol.libomv.runtime
 
-data class HostessViewerIdentity(
+data class GemViewerIdentity(
     val channel: String,
     val version: String,
     val author: String,
-    val platform: HostessPlatformIdentity,
-    val host: HostessHostIdentity,
+    val platform: GemPlatformIdentity,
+    val host: GemHostIdentity,
 )

@@ -91,7 +91,7 @@ object GemAndroidCompositionRoot {
                 proofAccountAttested = true,
                 automatedUse = true,
                 scriptedAgentAttested = true,
-                operatorLabel = OperatorLabel("Hostess Android"),
+                operatorLabel = OperatorLabel("Grid Event Manager Android"),
                 proofAccountLabel = profile.label,
                 evidenceSource = ScriptedAgentEvidenceSource.OPERATOR_ATTESTED,
             )

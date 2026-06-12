@@ -37,7 +37,7 @@ fun GemOverflowMenu(
             .background(GemTheme.colors.menuSurface)
             .testTag(GemTestTags.AppMenu),
     ) {
-        HostessMenuRow(
+        GemMenuRow(
             text = textCatalogue.text(GemTextKey.Settings),
             onClick = onSettingsClick,
             modifier = Modifier.testTag(GemTestTags.OpenSettings),
@@ -46,7 +46,7 @@ fun GemOverflowMenu(
             color = GemTheme.colors.line,
             thickness = GemTheme.spacing.borderWidth,
         )
-        HostessMenuRow(
+        GemMenuRow(
             text = textCatalogue.text(GemTextKey.LogOut),
             onClick = onLogoutClick,
             enabled = logoutEnabled,
@@ -56,7 +56,7 @@ fun GemOverflowMenu(
 }
 
 @Composable
-private fun HostessMenuRow(
+private fun GemMenuRow(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,

@@ -16,7 +16,7 @@ import androidx.compose.ui.window.Dialog
 import org.gem.ui.design.GemTheme
 
 @Composable
-fun HostessConfirmModal(
+fun GemConfirmModal(
     visible: Boolean,
     title: String,
     confirmText: String,
@@ -56,7 +56,7 @@ fun HostessConfirmModal(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(spacing.rowGap, Alignment.CenterHorizontally),
                 ) {
-                    HostessSecondaryButton(
+                    GemSecondaryButton(
                         text = confirmText,
                         onClick = onConfirm,
                         modifier = Modifier
@@ -64,7 +64,7 @@ fun HostessConfirmModal(
                             .widthIn(min = spacing.modalActionMinWidth)
                             .then(confirmModifier),
                     )
-                    HostessSecondaryButton(
+                    GemSecondaryButton(
                         text = cancelText,
                         onClick = onCancel,
                         modifier = Modifier

@@ -26,19 +26,19 @@ fun InventoryShortcutBar(
             .testTag(GemTestTags.InventoryTarget),
         horizontalArrangement = Arrangement.spacedBy(GemTheme.spacing.fieldGap),
     ) {
-        HostessSegmentButton(
+        GemSegmentButton(
             text = textCatalogue.text(GemTextKey.Landmarks),
             selected = state.landmarksSelected,
             onClick = { onShortcutSelected(InventoryShortcut.LANDMARKS) },
             modifier = Modifier.weight(weight = 1f),
         )
-        HostessSegmentButton(
+        GemSegmentButton(
             text = textCatalogue.text(GemTextKey.Inventory),
             selected = state.rootSelected,
             onClick = { onShortcutSelected(InventoryShortcut.ROOT) },
             modifier = Modifier.weight(weight = 1f),
         )
-        HostessSegmentButton(
+        GemSegmentButton(
             text = textCatalogue.text(GemTextKey.Textures),
             selected = state.texturesSelected,
             onClick = { onShortcutSelected(InventoryShortcut.TEXTURES) },

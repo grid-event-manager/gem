@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.Dp
 import org.gem.ui.design.GemTheme
 
 @Composable
-fun HostessMenuIcon(
+fun GemMenuIcon(
     modifier: Modifier = Modifier,
     tint: Color = GemTheme.colors.secondary,
 ) {
@@ -31,12 +31,12 @@ fun HostessMenuIcon(
 }
 
 @Composable
-fun HostessBackIcon(
+fun GemBackIcon(
     modifier: Modifier = Modifier,
     tint: Color = GemTheme.colors.secondary,
 ) {
     Icon(
-        imageVector = HostessBackArrowVector,
+        imageVector = GemBackArrowVector,
         contentDescription = null,
         tint = tint,
         modifier = modifier.size(GemTheme.spacing.backIconSize),
@@ -54,7 +54,7 @@ fun GemBrandLogoIcon(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun HostessLandmarkIcon(
+fun GemLandmarkIcon(
     modifier: Modifier = Modifier,
     tint: Color = GemTheme.colors.secondary,
 ) {
@@ -80,7 +80,7 @@ fun GemTextureIcon(
 }
 
 @Composable
-fun HostessClearIcon(
+fun GemClearIcon(
     modifier: Modifier = Modifier,
     tint: Color = GemTheme.colors.secondary,
 ) {
@@ -118,9 +118,9 @@ private val GemBrandLogoVector: ImageVector =
         }
     }.build()
 
-private val HostessBackArrowVector: ImageVector =
+private val GemBackArrowVector: ImageVector =
     ImageVector.Builder(
-        name = "HostessBackArrow",
+        name = "GemBackArrow",
         defaultWidth = Dp(24f),
         defaultHeight = Dp(24f),
         viewportWidth = 24f,

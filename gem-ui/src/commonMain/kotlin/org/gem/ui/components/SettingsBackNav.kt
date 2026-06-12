@@ -61,7 +61,7 @@ fun SettingsBackNav(
                 horizontalArrangement = Arrangement.spacedBy(GemTheme.spacing.fieldGap),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                HostessBackIcon(tint = backColor)
+                GemBackIcon(tint = backColor)
                 Text(
                     text = text,
                     color = backColor,

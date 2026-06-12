@@ -84,7 +84,7 @@ fun GemSendFooter(
                 modifier = Modifier.testTag(GemTestTags.StatusText),
             )
         }
-        HostessPrimaryButton(
+        GemPrimaryButton(
             text = textCatalogue.text(state.primaryLabelKey),
             onClick = onPrimaryAction,
             enabled = !state.sending,

@@ -6,10 +6,10 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-class HostessViewerIdentityProviderTest {
+class GemViewerIdentityProviderTest {
     @Test
-    fun `default provider resolves truthful Hostess identity from deterministic host inputs`() {
-        val identity = DefaultHostessViewerIdentityProvider.resolve(
+    fun `default provider resolves truthful GEM identity from deterministic host inputs`() {
+        val identity = DefaultGemViewerIdentityProvider.resolve(
             systemProperty = mapOf(
                 "os.name" to "Linux",
                 "os.version" to "6.8.0",
@@ -25,9 +25,9 @@ class HostessViewerIdentityProviderTest {
             },
         )
 
-        assertEquals("Hostess", identity.channel)
+        assertEquals("GEM", identity.channel)
         assertEquals("0.1.0.0", identity.version)
-        assertEquals("Hostess", identity.author)
+        assertEquals("GEM", identity.author)
         assertEquals("Linux", identity.platform.platform)
         assertEquals("6.8.0", identity.platform.platformVersion)
         assertTrue(identity.platform.platformString.contains("Linux"))
@@ -43,7 +43,7 @@ class HostessViewerIdentityProviderTest {
     @Test
     fun `default provider fails closed without host identity`() {
         val failure = assertFailsWith<IllegalStateException> {
-            DefaultHostessViewerIdentityProvider.resolve(
+            DefaultGemViewerIdentityProvider.resolve(
                 systemProperty = { "" },
                 hardwareAddresses = { emptyList() },
             )
@@ -64,7 +64,7 @@ class HostessViewerIdentityProviderTest {
 
     @Test
     fun `host identity digest derivation uses supplied digest port`() {
-        val identity = DefaultHostessViewerIdentityProvider.resolve(
+        val identity = DefaultGemViewerIdentityProvider.resolve(
             systemProperty = mapOf(
                 "os.name" to "Linux",
                 "os.version" to "",
@@ -72,8 +72,8 @@ class HostessViewerIdentityProviderTest {
                 "java.runtime.name" to "",
                 "java.runtime.version" to "",
             )::get,
-            hardwareAddressSource = HostessHardwareAddressSource {
-                listOf(HostessHardwareAddress("eth0", byteArrayOf(0x01, 0x02, 0x03)))
+            hardwareAddressSource = GemHardwareAddressSource {
+                listOf(GemHardwareAddress("eth0", byteArrayOf(0x01, 0x02, 0x03)))
             },
             digestPort = SequencedDigestPort(
                 "00000000000000000000000000000001",
@@ -90,7 +90,7 @@ class HostessViewerIdentityProviderTest {
     @Test
     fun `host identity rejects non-redacted values`() {
         assertFailsWith<IllegalArgumentException> {
-            HostessHostIdentity(
+            GemHostIdentity(
                 mac = "raw-mac-address",
                 id0 = "00000000000000000000000000000000",
                 hostId = "00000000000000000000000000000000",
@@ -99,7 +99,7 @@ class HostessViewerIdentityProviderTest {
     }
 
     private fun platformFor(osName: String): String =
-        DefaultHostessViewerIdentityProvider.resolve(
+        DefaultGemViewerIdentityProvider.resolve(
             systemProperty = mapOf(
                 "os.name" to osName,
                 "os.version" to "",

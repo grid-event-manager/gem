@@ -44,7 +44,7 @@ fun GemAppScaffold(
             topBar()
             navigation?.invoke()
             sessionStrip()
-            HostessScrollableColumn(
+            GemScrollableColumn(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f, fill = false),

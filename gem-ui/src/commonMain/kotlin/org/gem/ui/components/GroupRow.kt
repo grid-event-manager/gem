@@ -20,7 +20,7 @@ fun GroupRow(
     textCatalogue: GemTextCatalogue,
     onSelectedChange: (Boolean) -> Unit,
 ) {
-    HostessSelectableRow(
+    GemSelectableRow(
         title = row.displayName,
         subtitle = if (row.canSendNotices) {
             textCatalogue.text(GemTextKey.CanSendNotices)

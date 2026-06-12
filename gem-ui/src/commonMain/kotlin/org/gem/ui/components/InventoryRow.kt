@@ -13,7 +13,7 @@ fun InventoryFolderRow(
     textCatalogue: GemTextCatalogue,
     onOpen: () -> Unit,
 ) {
-    HostessSelectableRow(
+    GemSelectableRow(
         title = row.displayName,
         selected = false,
         onClick = onOpen,
@@ -28,14 +28,14 @@ fun InventoryAssetRow(
     textCatalogue: GemTextCatalogue,
     onSelect: () -> Unit,
 ) {
-    HostessSelectableRow(
+    GemSelectableRow(
         title = row.displayName,
         selected = row.selected,
         onClick = onSelect,
         compact = true,
         titleStyle = GemTheme.typeScale.smallLabel,
         leading = if (row.kind == InventoryItemKind.LANDMARK) {
-            { HostessLandmarkIcon() }
+            { GemLandmarkIcon() }
         } else {
             null
         },

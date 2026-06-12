@@ -102,7 +102,7 @@ class ProtocolLoginRuntimeTest {
         assertEquals(NormalizedLoginString("string", "Venue"), normalized.fields["first"])
         assertEquals(NormalizedLoginString("string", "Host"), normalized.fields["last"])
         assertEquals(NormalizedLoginString("string", "last"), normalized.fields["start"])
-        assertEquals(NormalizedLoginString("string", "Hostess"), normalized.fields[LoginKeys.CHANNEL])
+        assertEquals(NormalizedLoginString("string", "GEM"), normalized.fields[LoginKeys.CHANNEL])
         assertEquals(NormalizedLoginString("string", "0.1.0.0"), normalized.fields[LoginKeys.VERSION])
         assertEquals(
             NormalizedLoginString("string", "Linux 6.8.0 amd64 Test Runtime 17"),
@@ -169,7 +169,7 @@ class ProtocolLoginRuntimeTest {
         val runtime = protocolLoginRuntime(
             clientSession = LibomvClientSession.inactive(),
             httpClient = httpClient,
-            viewerIdentityProvider = HostessViewerIdentityProvider { throw IllegalStateException("host identity unavailable") },
+            viewerIdentityProvider = GemViewerIdentityProvider { throw IllegalStateException("host identity unavailable") },
             secretResolver = LoginSecretResolver { resolvedSecret() },
             machineIdentityProvider = machineIdentityProvider(),
         )
@@ -191,7 +191,7 @@ class ProtocolLoginRuntimeTest {
             httpClient = httpClient,
             viewerIdentityProvider = viewerIdentityProvider(),
             secretResolver = LoginSecretResolver { resolvedSecret() },
-            machineIdentityProvider = HostessMachineIdentityProvider { throw IllegalStateException("host identity unavailable") },
+            machineIdentityProvider = GemMachineIdentityProvider { throw IllegalStateException("host identity unavailable") },
         )
 
         val result = runtime.login(loginRequest("proof-handle"))
@@ -441,17 +441,17 @@ class ProtocolLoginRuntimeTest {
         sharedSecret = sharedSecret,
     )
 
-    private fun viewerIdentityProvider(): HostessViewerIdentityProvider = HostessViewerIdentityProvider {
-        HostessViewerIdentity(
-            channel = "Hostess",
+    private fun viewerIdentityProvider(): GemViewerIdentityProvider = GemViewerIdentityProvider {
+        GemViewerIdentity(
+            channel = "GEM",
             version = "0.1.0.0",
-            author = "Hostess",
-            platform = HostessPlatformIdentity(
+            author = "GEM",
+            platform = GemPlatformIdentity(
                 platform = "Linux",
                 platformVersion = "6.8.0",
                 platformString = "Linux 6.8.0 amd64 Test Runtime 17",
             ),
-            host = HostessHostIdentity(
+            host = GemHostIdentity(
                 mac = "00000000000000000000000000000001",
                 id0 = "00000000000000000000000000000002",
                 hostId = "00000000000000000000000000000003",
@@ -459,8 +459,8 @@ class ProtocolLoginRuntimeTest {
         )
     }
 
-    private fun machineIdentityProvider(): HostessMachineIdentityProvider = HostessMachineIdentityProvider {
-        HostessMachineIdentity(
+    private fun machineIdentityProvider(): GemMachineIdentityProvider = GemMachineIdentityProvider {
+        GemMachineIdentity(
             mac = "08:00:27:DC:4A:9E",
             id0 = "08:00:27:DC:4A:9E",
         )
@@ -496,10 +496,10 @@ class ProtocolLoginRuntimeTest {
     private fun protocolLoginRuntime(
         clientSession: LibomvClientSession,
         httpClient: ProtocolHttpClient,
-        viewerIdentityProvider: HostessViewerIdentityProvider,
+        viewerIdentityProvider: GemViewerIdentityProvider,
         secretResolver: LoginSecretResolver = LoginSecretResolver.unavailable(),
         clockPort: ClockPort = FixedClockPort(GemInstant.EPOCH),
-        machineIdentityProvider: HostessMachineIdentityProvider = machineIdentityProvider(),
+        machineIdentityProvider: GemMachineIdentityProvider = machineIdentityProvider(),
         digestPort: Md5DigestPort = JvmMd5DigestPort,
         circuitClient: ProtocolSimulatorCircuitClient = ProtocolSimulatorCircuitClient(
             RecordingSimulatorSessionGateway(),
@@ -680,8 +680,8 @@ class ProtocolLoginRuntimeTest {
         }
     }
 
-    private object FailsIfCalledViewerIdentityProvider : HostessViewerIdentityProvider {
-        override fun resolve(): HostessViewerIdentity {
+    private object FailsIfCalledViewerIdentityProvider : GemViewerIdentityProvider {
+        override fun resolve(): GemViewerIdentity {
             error("viewer identity must not resolve before the login secret")
         }
     }

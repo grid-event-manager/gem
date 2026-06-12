@@ -1,6 +1,6 @@
 package org.gem.protocol.libomv.runtime
 
-data class HostessMachineIdentity(
+data class GemMachineIdentity(
     val mac: String,
     val id0: String,
 ) {
@@ -10,10 +10,10 @@ data class HostessMachineIdentity(
     }
 
     internal companion object {
-        fun fromHardwareBytes(bytes: ByteArray): HostessMachineIdentity {
+        fun fromHardwareBytes(bytes: ByteArray): GemMachineIdentity {
             require(bytes.size >= MIN_HARDWARE_ADDRESS_LENGTH) { "host identity unavailable" }
             val address = bytes.joinToString(":") { byte -> byte.toUpperHexByte() }
-            return HostessMachineIdentity(mac = address, id0 = address)
+            return GemMachineIdentity(mac = address, id0 = address)
         }
 
         private fun Byte.toUpperHexByte(): String {

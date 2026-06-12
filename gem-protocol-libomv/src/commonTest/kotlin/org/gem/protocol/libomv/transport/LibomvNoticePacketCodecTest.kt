@@ -35,7 +35,7 @@ class LibomvNoticePacketCodecTest {
                 byteArrayOf(DIALOG.toByte()) +
                 LibomvPacketTestBytes.uuid(INSTANT_MESSAGE_ID) +
                 u32(TIMESTAMP) +
-                variable1("Hostess Viewer") +
+                variable1("Gem Viewer") +
                 variable2("Set|Doors open") +
                 variable2(byteArrayOf(1, 0, 2, 3)),
             decoded,
@@ -65,7 +65,7 @@ class LibomvNoticePacketCodecTest {
                 byteArrayOf(DIALOG.toByte()) +
                 LibomvPacketTestBytes.uuid(INSTANT_MESSAGE_ID) +
                 u32(TIMESTAMP) +
-                variable1("Hostess Viewer") +
+                variable1("Gem Viewer") +
                 variable2("Set|Doors open") +
                 byteArrayOf(0, 0),
             decoded,
@@ -106,7 +106,7 @@ class LibomvNoticePacketCodecTest {
 
     private fun noticePacket(
         agentId: String = AGENT_ID,
-        fromAgentName: String = "Hostess Viewer",
+        fromAgentName: String = "Gem Viewer",
         message: String = "Set|Doors open",
         binaryBucket: ByteArray = ByteArray(0),
     ): LibomvNoticePacket = LibomvNoticePacket(

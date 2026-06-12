@@ -23,7 +23,7 @@ import androidx.compose.ui.semantics.Role
 import org.gem.ui.design.GemTheme
 
 @Composable
-fun HostessPrimaryButton(
+fun GemPrimaryButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -46,12 +46,12 @@ fun HostessPrimaryButton(
             disabledContentColor = colors.disabledInk,
         ),
     ) {
-        HostessButtonText(text)
+        GemButtonText(text)
     }
 }
 
 @Composable
-fun HostessSecondaryButton(
+fun GemSecondaryButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -76,12 +76,12 @@ fun HostessSecondaryButton(
             disabledContentColor = colors.disabledInk,
         ),
     ) {
-        HostessButtonText(text)
+        GemButtonText(text)
     }
 }
 
 @Composable
-fun HostessPlainButton(
+fun GemPlainButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -105,12 +105,12 @@ fun HostessPlainButton(
             disabledContentColor = colors.disabledInk,
         ),
     ) {
-        HostessButtonText(text)
+        GemButtonText(text)
     }
 }
 
 @Composable
-fun HostessStaticButtonSurface(
+fun GemStaticButtonSurface(
     text: String,
     modifier: Modifier = Modifier,
 ) {
@@ -128,13 +128,13 @@ fun HostessStaticButtonSurface(
         Box(
             contentAlignment = Alignment.Center,
         ) {
-            HostessButtonText(text)
+            GemButtonText(text)
         }
     }
 }
 
 @Composable
-fun HostessIconButton(
+fun GemIconButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
@@ -206,7 +206,7 @@ fun GemTopBarIconButton(
 }
 
 @Composable
-fun HostessInlineIconButton(
+fun GemInlineIconButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
@@ -232,7 +232,7 @@ fun HostessInlineIconButton(
 }
 
 @Composable
-private fun HostessButtonText(text: String) {
+private fun GemButtonText(text: String) {
     Text(
         text = text,
         maxLines = 1,

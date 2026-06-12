@@ -3,8 +3,8 @@ package org.gem.protocol.libomv.runtime
 import java.net.NetworkInterface
 import java.net.SocketException
 
-internal object DefaultHostessHardwareAddressSource : HostessHardwareAddressSource {
-    override fun candidates(): List<HostessHardwareAddress> {
+internal object DefaultGemHardwareAddressSource : GemHardwareAddressSource {
+    override fun candidates(): List<GemHardwareAddress> {
         val interfaces = try {
             NetworkInterface.getNetworkInterfaces()?.toList().orEmpty()
         } catch (ex: SocketException) {
@@ -19,7 +19,7 @@ internal object DefaultHostessHardwareAddressSource : HostessHardwareAddressSour
                     !networkInterface.isVirtual &&
                     hardwareAddress != null
                 ) {
-                    HostessHardwareAddress(networkInterface.name, hardwareAddress.copyOf())
+                    GemHardwareAddress(networkInterface.name, hardwareAddress.copyOf())
                 } else {
                     null
                 }

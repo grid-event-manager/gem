@@ -21,7 +21,7 @@ import kotlin.test.assertNull
 
 class LibomvClientSessionTest {
     @Test
-    fun `matching active Hostess session passes binding check`() {
+    fun `matching active Gem session passes binding check`() {
         val session = gemSession("live-session")
         val clientSession = activeSession(session)
 
@@ -123,7 +123,7 @@ class LibomvClientSessionTest {
     }
 
     @Test
-    fun `mismatched Hostess session fails without leaking IDs`() {
+    fun `mismatched Gem session fails without leaking IDs`() {
         val clientSession = LibomvClientSession.active(gemSession("live-session"))
         val failure = clientSession.requireSession(gemSession("other-session"))
 
@@ -154,7 +154,7 @@ class LibomvClientSessionTest {
     }
 
     @Test
-    fun `inactive Hostess session fails binding check`() {
+    fun `inactive Gem session fails binding check`() {
         val session = gemSession("live-session")
         val failure = LibomvClientSession.active(session).requireSession(session.copy(isActive = false))
 

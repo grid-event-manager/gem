@@ -27,7 +27,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import org.gem.ui.design.GemTheme
 
 @Composable
-fun HostessSelectableRow(
+fun GemSelectableRow(
     title: String,
     selected: Boolean,
     onClick: () -> Unit,
@@ -99,7 +99,7 @@ fun HostessSelectableRow(
 }
 
 @Composable
-fun HostessCheckboxCard(
+fun GemCheckboxCard(
     text: String,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
@@ -152,7 +152,7 @@ fun HostessCheckboxCard(
 }
 
 @Composable
-fun HostessSegmentButton(
+fun GemSegmentButton(
     text: String,
     selected: Boolean,
     onClick: () -> Unit,

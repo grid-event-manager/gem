@@ -66,7 +66,7 @@ fun GemScrollablePane(
                 verticalArrangement = verticalArrangement,
                 content = content,
             )
-            HostessPlatformVerticalScrollbar(
+            GemPlatformVerticalScrollbar(
                 scrollState = scrollState,
                 thumbColor = colors.secondary.copy(alpha = ScrollbarThumbAlpha),
                 hoverThumbColor = colors.secondary,
@@ -80,7 +80,7 @@ fun GemScrollablePane(
 }
 
 @Composable
-fun HostessScrollableColumn(
+fun GemScrollableColumn(
     modifier: Modifier = Modifier,
     verticalArrangement: Arrangement.Vertical = Arrangement.Top,
     content: @Composable ColumnScope.() -> Unit,
@@ -97,7 +97,7 @@ fun HostessScrollableColumn(
             verticalArrangement = verticalArrangement,
             content = content,
         )
-        HostessPlatformVerticalScrollbar(
+        GemPlatformVerticalScrollbar(
             scrollState = scrollState,
             thumbColor = colors.secondary.copy(alpha = ScrollbarThumbAlpha),
             hoverThumbColor = colors.secondary,
@@ -114,17 +114,17 @@ private const val ScrollbarThumbAlpha = 0.7f
 object GemPlatformUi {
     val scrollbarContentInset: Dp
         @Composable
-        get() = if (HostessPlatformVisibleScrollbars) {
+        get() = if (GemPlatformVisibleScrollbars) {
             GemTheme.spacing.scrollbarWidth
         } else {
             GemTheme.spacing.none
         }
 }
 
-expect val HostessPlatformVisibleScrollbars: Boolean
+expect val GemPlatformVisibleScrollbars: Boolean
 
 @Composable
-internal expect fun HostessPlatformVerticalScrollbar(
+internal expect fun GemPlatformVerticalScrollbar(
     scrollState: ScrollState,
     thumbColor: Color,
     hoverThumbColor: Color,

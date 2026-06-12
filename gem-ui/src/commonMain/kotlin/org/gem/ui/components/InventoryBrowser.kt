@@ -112,7 +112,7 @@ private fun AttachmentStatusLine(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             when (selectedAttachment?.kind) {
-                InventoryItemKind.LANDMARK -> HostessLandmarkIcon()
+                InventoryItemKind.LANDMARK -> GemLandmarkIcon()
                 InventoryItemKind.TEXTURE -> GemTextureIcon()
                 else -> Unit
             }
@@ -130,12 +130,12 @@ private fun AttachmentStatusLine(
                 modifier = Modifier.weight(1f),
             )
             if (selectedAttachment != null) {
-                HostessInlineIconButton(
+                GemInlineIconButton(
                     onClick = onAttachmentCleared,
                     contentDescription = textCatalogue.text(GemTextKey.ClearAttachment),
                     modifier = Modifier.testTag(GemTestTags.ClearAttachment),
                 ) {
-                    HostessClearIcon()
+                    GemClearIcon()
                 }
             }
         }

@@ -84,7 +84,7 @@ fun GemTopBar(
                     contentDescription = textCatalogue.text(GemTextKey.Menu),
                     modifier = Modifier.testTag(GemTestTags.MenuButton),
                 ) {
-                    HostessMenuIcon(tint = GemTheme.colors.topBarMenuInk)
+                    GemMenuIcon(tint = GemTheme.colors.topBarMenuInk)
                 }
                 GemOverflowMenu(
                     expanded = menuOpen,

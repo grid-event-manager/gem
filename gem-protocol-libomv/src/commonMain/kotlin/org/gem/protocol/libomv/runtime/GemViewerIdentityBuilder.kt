@@ -1,6 +1,6 @@
 package org.gem.protocol.libomv.runtime
 
-internal data class HostessSystemIdentity(
+internal data class GemSystemIdentity(
     val osName: String,
     val osVersion: String,
     val osArch: String,
@@ -8,25 +8,25 @@ internal data class HostessSystemIdentity(
     val runtimeVersion: String,
 )
 
-internal class HostessViewerIdentityBuilder(
+internal class GemViewerIdentityBuilder(
     private val digestPort: Md5DigestPort,
 ) {
     fun build(
-        systemIdentity: HostessSystemIdentity,
-        hardwareCandidates: List<HostessHardwareAddress>,
-    ): HostessViewerIdentity {
+        systemIdentity: GemSystemIdentity,
+        hardwareCandidates: List<GemHardwareAddress>,
+    ): GemViewerIdentity {
         val hardwareBytes = hardwareCandidates
             .sortedBy { it.interfaceName }
             .firstOrNull()
             ?.bytes
-            ?: throw HostessHostIdentityUnavailableException()
+            ?: throw GemHostIdentityUnavailableException()
 
-        return HostessViewerIdentity(
+        return GemViewerIdentity(
             channel = CHANNEL,
             version = VERSION,
             author = AUTHOR,
             platform = platformIdentity(systemIdentity),
-            host = HostessHostIdentity(
+            host = GemHostIdentity(
                 mac = digestPort.md5Hex(hardwareBytes),
                 id0 = digestPort.md5Hex(ID0_PREFIX, hardwareBytes),
                 hostId = digestPort.md5Hex(HOST_ID_PREFIX, hardwareBytes),
@@ -34,8 +34,8 @@ internal class HostessViewerIdentityBuilder(
         )
     }
 
-    private fun platformIdentity(systemIdentity: HostessSystemIdentity): HostessPlatformIdentity =
-        HostessPlatformIdentity(
+    private fun platformIdentity(systemIdentity: GemSystemIdentity): GemPlatformIdentity =
+        GemPlatformIdentity(
             platform = normalizedPlatform(systemIdentity.osName),
             platformVersion = systemIdentity.osVersion,
             platformString = listOf(
@@ -59,13 +59,13 @@ internal class HostessViewerIdentityBuilder(
         }
     }
 
-    private class HostessHostIdentityUnavailableException : IllegalStateException("host identity unavailable")
+    private class GemHostIdentityUnavailableException : IllegalStateException("host identity unavailable")
 
     private companion object {
-        const val CHANNEL = "Hostess"
+        const val CHANNEL = "GEM"
         const val VERSION = "0.1.0.0"
-        const val AUTHOR = "Hostess"
-        val ID0_PREFIX = "Hostess:id0:v1".encodeToByteArray()
-        val HOST_ID_PREFIX = "Hostess:host_id:v1".encodeToByteArray()
+        const val AUTHOR = "GEM"
+        val ID0_PREFIX = "GEM:id0:v1".encodeToByteArray()
+        val HOST_ID_PREFIX = "GEM:host_id:v1".encodeToByteArray()
     }
 }

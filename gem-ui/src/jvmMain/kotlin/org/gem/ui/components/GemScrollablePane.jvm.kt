@@ -10,10 +10,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import org.gem.ui.design.GemTheme
 
-actual val HostessPlatformVisibleScrollbars: Boolean = true
+actual val GemPlatformVisibleScrollbars: Boolean = true
 
 @Composable
-internal actual fun HostessPlatformVerticalScrollbar(
+internal actual fun GemPlatformVerticalScrollbar(
     scrollState: ScrollState,
     thumbColor: Color,
     hoverThumbColor: Color,

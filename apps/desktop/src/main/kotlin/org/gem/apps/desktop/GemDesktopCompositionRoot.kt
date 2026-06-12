@@ -102,7 +102,7 @@ object GemDesktopCompositionRoot {
                 proofAccountAttested = true,
                 automatedUse = true,
                 scriptedAgentAttested = true,
-                operatorLabel = OperatorLabel("Hostess Desktop"),
+                operatorLabel = OperatorLabel("Grid Event Manager Desktop"),
                 proofAccountLabel = profile.label,
                 evidenceSource = ScriptedAgentEvidenceSource.OPERATOR_ATTESTED,
             )

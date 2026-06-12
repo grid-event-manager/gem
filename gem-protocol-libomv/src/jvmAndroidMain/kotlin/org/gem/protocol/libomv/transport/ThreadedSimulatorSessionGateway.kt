@@ -624,7 +624,7 @@ internal class ThreadedSimulatorSessionGateway(
         const val NOTICE_PAYLOAD_INVALID = "notice send packet invalid"
         const val NOTICE_PACKET_SEND_FAILED = "notice send packet transport failed"
         const val NOTICE_ACK_TIMEOUT = "notice send ack timeout after 3 attempts"
-        const val WORKER_THREAD_NAME = "hostess-simulator-session"
+        const val WORKER_THREAD_NAME = "gem-simulator-session"
         const val COMMAND_TIMEOUT_MILLIS = 30_000L
         const val RECEIVE_POLL_MILLIS = 25
         const val HEARTBEAT_INTERVAL_MILLIS = 250L

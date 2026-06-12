@@ -61,7 +61,7 @@ class LibomvMappingTest {
     }
 
     @Test
-    fun `maps group ID name powers and notice preference into Hostess membership`() {
+    fun `maps group ID name powers and notice preference into Gem membership`() {
         val membership = LibomvMapping.groupMembership(
             LibomvGroupSnapshot(
                 groupId = "group-id",

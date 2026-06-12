@@ -8,7 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import org.gem.core.domain.AccountProfileId
 import org.gem.ui.components.DeleteAccountPanel
-import org.gem.ui.components.HostessConfirmModal
+import org.gem.ui.components.GemConfirmModal
 import org.gem.ui.components.SettingsAddAccountPanel
 import org.gem.ui.components.SettingsEditAccountPanel
 import org.gem.ui.design.GemTheme
@@ -80,7 +80,7 @@ fun SettingsScreen(
                 onAccountSelected = onDeleteAccountSelected,
             )
         }
-        HostessConfirmModal(
+        GemConfirmModal(
             visible = state.confirmDeleteOpen,
             title = textCatalogue.text(GemTextKey.DeleteConfirmation),
             confirmText = textCatalogue.text(GemTextKey.Ok),

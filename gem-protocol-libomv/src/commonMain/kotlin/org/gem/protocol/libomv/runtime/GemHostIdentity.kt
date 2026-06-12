@@ -1,6 +1,6 @@
 package org.gem.protocol.libomv.runtime
 
-data class HostessHostIdentity(
+data class GemHostIdentity(
     val mac: String,
     val id0: String,
     val hostId: String,

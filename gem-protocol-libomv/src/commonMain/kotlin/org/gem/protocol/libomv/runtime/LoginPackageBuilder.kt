@@ -7,8 +7,8 @@ internal class LoginPackageBuilder(
 ) {
     fun build(
         secret: LoginSecret,
-        viewerIdentity: HostessViewerIdentity,
-        machineIdentity: HostessMachineIdentity,
+        viewerIdentity: GemViewerIdentity,
+        machineIdentity: GemMachineIdentity,
     ): LoginPackage? {
         val passwordHash = SecondLifePasswordHash.fromSharedSecret(secret.sharedSecret, digestPort) ?: return null
         return LoginPackage(

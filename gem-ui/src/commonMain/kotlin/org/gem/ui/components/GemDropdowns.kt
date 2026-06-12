@@ -40,7 +40,7 @@ data class GemDropdownOption<T>(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun <T> HostessDropdownField(
+fun <T> GemDropdownField(
     label: String,
     selectedLabel: String?,
     placeholderLabel: String,
@@ -57,7 +57,7 @@ fun <T> HostessDropdownField(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(spacing.fieldGap),
     ) {
-        HostessFieldLabel(label)
+        GemFieldLabel(label)
         Surface(
             modifier = fieldModifier
                 .fillMaxWidth()
@@ -88,7 +88,7 @@ fun <T> HostessDropdownField(
                 ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
             }
         }
-        HostessDropdownMenu(
+        GemDropdownMenu(
             expanded = expanded,
             options = options,
             onDismiss = { expanded = false },
@@ -102,7 +102,7 @@ fun <T> HostessDropdownField(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun <T> HostessDropdownTextField(
+fun <T> GemDropdownTextField(
     label: String,
     value: String,
     onValueChange: (String) -> Unit,
@@ -118,7 +118,7 @@ fun <T> HostessDropdownTextField(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(GemTheme.spacing.fieldGap),
     ) {
-        HostessFieldLabel(label)
+        GemFieldLabel(label)
         ExposedDropdownMenuBox(
             expanded = expanded && options.isNotEmpty(),
             onExpandedChange = {
@@ -135,7 +135,7 @@ fun <T> HostessDropdownTextField(
                 singleLine = true,
                 textStyle = GemTheme.typeScale.body,
                 shape = GemTheme.shapes.control,
-                colors = hostessTextFieldColors(),
+                colors = gemTextFieldColors(),
                 trailingIcon = {
                     if (options.isNotEmpty()) {
                         ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
@@ -153,7 +153,7 @@ fun <T> HostessDropdownTextField(
                 containerColor = GemTheme.colors.menuSurface,
                 modifier = Modifier.background(GemTheme.colors.menuSurface),
             ) {
-                HostessDropdownMenuItems(
+                GemDropdownMenuItems(
                     options = options,
                     onSelected = {
                         expanded = false
@@ -166,7 +166,7 @@ fun <T> HostessDropdownTextField(
 }
 
 @Composable
-private fun <T> HostessDropdownMenu(
+private fun <T> GemDropdownMenu(
     expanded: Boolean,
     options: List<GemDropdownOption<T>>,
     onDismiss: () -> Unit,
@@ -178,7 +178,7 @@ private fun <T> HostessDropdownMenu(
         containerColor = GemTheme.colors.menuSurface,
         modifier = Modifier.background(GemTheme.colors.menuSurface),
     ) {
-        HostessDropdownMenuItems(
+        GemDropdownMenuItems(
             options = options,
             onSelected = onSelected,
         )
@@ -186,17 +186,17 @@ private fun <T> HostessDropdownMenu(
 }
 
 @Composable
-private fun <T> HostessDropdownMenuItems(
+private fun <T> GemDropdownMenuItems(
     options: List<GemDropdownOption<T>>,
     onSelected: (T?) -> Unit,
 ) {
     options.forEach { option ->
-        HostessDropdownMenuItem(label = option.label, onClick = { onSelected(option.value) })
+        GemDropdownMenuItem(label = option.label, onClick = { onSelected(option.value) })
     }
 }
 
 @Composable
-private fun HostessDropdownMenuItem(
+private fun GemDropdownMenuItem(
     label: String,
     onClick: () -> Unit,
 ) {

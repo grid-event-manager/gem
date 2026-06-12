@@ -27,17 +27,17 @@ import org.gem.protocol.libomv.mapping.LoginInventoryFolder
 import org.gem.protocol.libomv.mapping.LoginKeys
 import org.gem.protocol.libomv.mapping.LoginInventoryRoots
 import org.gem.protocol.libomv.runtime.EnvironmentLoginSecretResolver
-import org.gem.protocol.libomv.runtime.HostessMachineIdentity
-import org.gem.protocol.libomv.runtime.HostessMachineIdentityProvider
-import org.gem.protocol.libomv.runtime.HostessHostIdentity
+import org.gem.protocol.libomv.runtime.GemMachineIdentity
+import org.gem.protocol.libomv.runtime.GemMachineIdentityProvider
+import org.gem.protocol.libomv.runtime.GemHostIdentity
 import org.gem.protocol.libomv.runtime.JvmMd5DigestPort
 import org.gem.protocol.libomv.runtime.LibomvPlatformAdapterBundle
 import org.gem.protocol.libomv.runtime.LoginSecret
 import org.gem.protocol.libomv.runtime.LoginSecretResolver
 import org.gem.protocol.libomv.runtime.Md5DigestPort
-import org.gem.protocol.libomv.runtime.HostessPlatformIdentity
-import org.gem.protocol.libomv.runtime.HostessViewerIdentity
-import org.gem.protocol.libomv.runtime.HostessViewerIdentityProvider
+import org.gem.protocol.libomv.runtime.GemPlatformIdentity
+import org.gem.protocol.libomv.runtime.GemViewerIdentity
+import org.gem.protocol.libomv.runtime.GemViewerIdentityProvider
 import org.gem.protocol.libomv.transport.ProtocolHttpBody
 import org.gem.protocol.libomv.transport.ProtocolHttpClient
 import org.gem.protocol.libomv.transport.ProtocolHttpRequest
@@ -135,7 +135,7 @@ class ProtocolLibomvModuleTest {
         assertTrue(body.contains("<methodName>login_to_simulator</methodName>"))
         assertTrue(body.contains("<name>${LoginKeys.SECRET}</name>"))
         assertTrue(body.contains("<name>first</name><value><string>Venue</string></value>"))
-        assertTrue(body.contains("<name>${LoginKeys.CHANNEL}</name><value><string>Hostess</string></value>"))
+        assertTrue(body.contains("<name>${LoginKeys.CHANNEL}</name><value><string>GEM</string></value>"))
         assertTrue(body.contains("<name>${LoginKeys.MAC}</name><value><string>08:00:27:DC:4A:9E</string></value>"))
         assertFalse(body.contains("<llsd>"))
         assertFalse(body.contains(LoginKeys.HOST_ID))
@@ -503,17 +503,17 @@ class ProtocolLibomvModuleTest {
         </llsd>
     """.trimIndent()
 
-    private fun viewerIdentityProvider(): HostessViewerIdentityProvider = HostessViewerIdentityProvider {
-        HostessViewerIdentity(
-            channel = "Hostess",
+    private fun viewerIdentityProvider(): GemViewerIdentityProvider = GemViewerIdentityProvider {
+        GemViewerIdentity(
+            channel = "GEM",
             version = "0.1.0.0",
-            author = "Hostess",
-            platform = HostessPlatformIdentity(
+            author = "GEM",
+            platform = GemPlatformIdentity(
                 platform = "Linux",
                 platformVersion = "6.8.0",
                 platformString = "Linux 6.8.0 amd64 Test Runtime 17",
             ),
-            host = HostessHostIdentity(
+            host = GemHostIdentity(
                 mac = "00000000000000000000000000000001",
                 id0 = "00000000000000000000000000000002",
                 hostId = "00000000000000000000000000000003",
@@ -521,8 +521,8 @@ class ProtocolLibomvModuleTest {
         )
     }
 
-    private fun machineIdentityProvider(): HostessMachineIdentityProvider = HostessMachineIdentityProvider {
-        HostessMachineIdentity(
+    private fun machineIdentityProvider(): GemMachineIdentityProvider = GemMachineIdentityProvider {
+        GemMachineIdentity(
             mac = "08:00:27:DC:4A:9E",
             id0 = "08:00:27:DC:4A:9E",
         )
@@ -531,8 +531,8 @@ class ProtocolLibomvModuleTest {
     private fun platformBundle(
         httpClient: ProtocolHttpClient = RecordingHttpClient(ByteArray(0)),
         secretResolver: LoginSecretResolver = LoginSecretResolver.unavailable(),
-        viewerIdentityProvider: HostessViewerIdentityProvider = viewerIdentityProvider(),
-        machineIdentityProvider: HostessMachineIdentityProvider = machineIdentityProvider(),
+        viewerIdentityProvider: GemViewerIdentityProvider = viewerIdentityProvider(),
+        machineIdentityProvider: GemMachineIdentityProvider = machineIdentityProvider(),
         clockPort: ClockPort = FixedClockPort,
         md5DigestPort: Md5DigestPort = JvmMd5DigestPort,
         circuitSender: ProtocolSimulatorCircuitClient = ProtocolSimulatorCircuitClient(

@@ -12,7 +12,7 @@ import org.gem.core.services.AvatarReadinessService
 import org.gem.core.services.LoginComplianceService
 import org.gem.core.services.NoticeDispatchService
 import org.gem.protocol.libomv.ProtocolLibomvModule
-import org.gem.protocol.libomv.runtime.HostessViewerIdentityProvider
+import org.gem.protocol.libomv.runtime.GemViewerIdentityProvider
 import org.gem.protocol.libomv.runtime.LoginSecretResolver
 
 class AndroidCompatibilityProbe {
@@ -96,7 +96,7 @@ class AndroidCompatibilityProbe {
 
     private fun probeLoginComplianceLoad(): Boolean =
         listOf(
-            HostessViewerIdentityProvider::class.java,
+            GemViewerIdentityProvider::class.java,
             LoginComplianceService::class.java,
             NoticeDispatchService::class.java,
         ).all { it.name.isNotBlank() }
@@ -196,8 +196,8 @@ class AndroidCompatibilityProbe {
             "org.gem.protocol.libomv.runtime.LoginPackageBuilder",
             "org.gem.protocol.libomv.runtime.LoginPackageSerializer",
             "org.gem.protocol.libomv.runtime.SecondLifePasswordHash",
-            "org.gem.protocol.libomv.runtime.HostessMachineIdentityProvider",
-            "org.gem.protocol.libomv.runtime.DefaultHostessMachineIdentityProvider",
+            "org.gem.protocol.libomv.runtime.GemMachineIdentityProvider",
+            "org.gem.protocol.libomv.runtime.DefaultGemMachineIdentityProvider",
         )
         val INVENTORY_CAPABILITY_CLASSES = listOf(
             "org.gem.core.services.InventoryDirectoryService",

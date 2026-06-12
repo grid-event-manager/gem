@@ -46,7 +46,7 @@ fun GemTextField(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(spacing.fieldGap),
     ) {
-        HostessFieldLabel(label)
+        GemFieldLabel(label)
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
@@ -56,14 +56,14 @@ fun GemTextField(
             maxLines = if (singleLine) 1 else Int.MAX_VALUE,
             textStyle = GemTheme.typeScale.body,
             shape = GemTheme.shapes.control,
-            colors = hostessTextFieldColors(),
+            colors = gemTextFieldColors(),
             modifier = textFieldModifier,
         )
     }
 }
 
 @Composable
-fun HostessPasswordField(
+fun GemPasswordField(
     label: String,
     value: String,
     onValueChange: (String) -> Unit,
@@ -80,7 +80,7 @@ fun HostessPasswordField(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(spacing.fieldGap),
     ) {
-        HostessFieldLabel(label)
+        GemFieldLabel(label)
         Row(horizontalArrangement = Arrangement.spacedBy(spacing.fieldGap)) {
             OutlinedTextField(
                 value = value,
@@ -94,7 +94,7 @@ fun HostessPasswordField(
                 } else {
                     PasswordVisualTransformation()
                 },
-                colors = hostessTextFieldColors(),
+                colors = gemTextFieldColors(),
                 modifier = Modifier
                     .weight(weight = 1f)
                     .height(spacing.controlHeight)
@@ -104,7 +104,7 @@ fun HostessPasswordField(
                         }
                     },
             )
-            HostessPlainButton(
+            GemPlainButton(
                 text = if (revealed) hideText else revealText,
                 onClick = { onRevealChanged(!revealed) },
                 enabled = enabled,
@@ -115,7 +115,7 @@ fun HostessPasswordField(
 }
 
 @Composable
-fun HostessFieldLabel(label: String) {
+fun GemFieldLabel(label: String) {
     Text(
         text = label,
         color = GemTheme.colors.secondary,
@@ -124,7 +124,7 @@ fun HostessFieldLabel(label: String) {
 }
 
 @Composable
-fun hostessTextFieldColors() = OutlinedTextFieldDefaults.colors(
+fun gemTextFieldColors() = OutlinedTextFieldDefaults.colors(
     focusedTextColor = GemTheme.colors.ink,
     unfocusedTextColor = GemTheme.colors.ink,
     disabledTextColor = GemTheme.colors.disabledInk,

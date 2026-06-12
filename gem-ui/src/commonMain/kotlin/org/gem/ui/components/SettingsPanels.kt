@@ -24,7 +24,7 @@ fun SettingsEditAccountPanel(
     modifier: Modifier = Modifier,
 ) {
     GemPanel(modifier = modifier) {
-        HostessSecondaryButton(
+        GemSecondaryButton(
             text = textCatalogue.text(GemTextKey.EditAccount),
             onClick = onToggle,
             modifier = Modifier.fillMaxWidth(),
@@ -38,7 +38,7 @@ fun SettingsEditAccountPanel(
                 textCatalogue = textCatalogue,
                 onSelected = onSavedAccountSelected,
             )
-            HostessPasswordField(
+            GemPasswordField(
                 label = textCatalogue.text(GemTextKey.Password),
                 value = state.passwordDraft,
                 onValueChange = onPasswordChanged,
@@ -49,7 +49,7 @@ fun SettingsEditAccountPanel(
                 enabled = state.passwordEnabled,
                 modifier = Modifier.testTag(GemTestTags.AccountPassword),
             )
-            HostessSecondaryButton(
+            GemSecondaryButton(
                 text = textCatalogue.text(GemTextKey.SavePassword),
                 onClick = onSave,
                 enabled = state.saveEditedPasswordEnabled,
@@ -74,7 +74,7 @@ fun SettingsAddAccountPanel(
 ) {
     GemPanel(modifier = modifier) {
         if (expandable) {
-            HostessSecondaryButton(
+            GemSecondaryButton(
                 text = textCatalogue.text(GemTextKey.AddNewAccount),
                 onClick = onToggle,
                 modifier = Modifier
@@ -82,7 +82,7 @@ fun SettingsAddAccountPanel(
                     .testTag(GemTestTags.AddAccount),
             )
         } else {
-            HostessStaticButtonSurface(
+            GemStaticButtonSurface(
                 text = textCatalogue.text(GemTextKey.AddNewAccount),
                 modifier = Modifier.testTag(GemTestTags.AddAccount),
             )
@@ -94,7 +94,7 @@ fun SettingsAddAccountPanel(
                 value = state.addUsernameDraft,
                 onValueChange = onUsernameChanged,
             )
-            HostessPasswordField(
+            GemPasswordField(
                 label = textCatalogue.text(GemTextKey.Password),
                 value = state.addPasswordDraft,
                 onValueChange = onPasswordChanged,
@@ -104,7 +104,7 @@ fun SettingsAddAccountPanel(
                 onRevealChanged = { onPasswordVisibilityToggle() },
                 onPasswordFocus = onPasswordFocus,
             )
-            HostessSecondaryButton(
+            GemSecondaryButton(
                 text = textCatalogue.text(GemTextKey.SaveNewAccount),
                 onClick = onSave,
                 enabled = state.saveNewAccountEnabled,

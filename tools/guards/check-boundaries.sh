@@ -77,14 +77,14 @@ SESSION_LOGIN_OVERLOAD_PATTERN='fun[[:space:]]+login\([[:space:]]*request:[[:spa
 SESSION_LOGIN_ONE_ARG_PATTERN='sessionService\.login\([^,\n)]*\)'
 NOTICE_DISPATCH_OLD_CALL_PATTERN='dispatch\([^\n]*session[^\n]*draft[^,\n]*\)'
 NOTICE_DISPATCH_DIRECT_GROUP_SEND_PATTERN='\.[[:space:]]*sendGroupNotice\('
-VIEWER_IDENTITY_PROVIDER_PATTERN='HostessViewerIdentityProvider'
+VIEWER_IDENTITY_PROVIDER_PATTERN='GemViewerIdentityProvider'
 VIEWER_IDENTITY_SPOOFED_CHANNEL_PATTERN='channel[[:space:]]*=[[:space:]]*"(METAbolt|Firestorm|Alchemy|Second Life Viewer|Linden)"'
 NOTICE_TIME_SOURCE_PATTERN='Instant\.now|LocalDate\.now|Clock\.system|System\.currentTimeMillis'
 REPORT_SECRET_KEY_PATTERN='("(mac|id0|host_id|seedCapability|credentialHandle|ledgerPath)"[[:space:]]+to|put\("(mac|id0|host_id|seedCapability|credentialHandle|ledgerPath)")'
 GROUP_TARGET_UUID_PATTERN='--group-id|--group-uuid|group uuid|uuid target'
 NOTICE_CAP_LITERAL_PATTERN='(^|[^[:alnum:]_])(4500|4_500|5000|5_000)([^[:alnum:]_]|$)'
 LOGIN_PACKAGE_OLD_LLSD_PATTERN='application/llsd\+xml|fun[[:space:]]+loginBody\('
-LOGIN_PACKAGE_DIRECT_OWNER_PATTERN='LoginPackage|SecondLifePasswordHash|HostessMachineIdentity|LoginPackageSerializer'
+LOGIN_PACKAGE_DIRECT_OWNER_PATTERN='LoginPackage|SecondLifePasswordHash|GemMachineIdentity|LoginPackageSerializer'
 LOGIN_PACKAGE_STALE_FIELD_PATTERN='platform_version|platform_string|host_id|token|extended_errors|max-agent-groups|viewer_digest|user_agent'
 ATTACHMENT_STALE_CREATE_UPLOAD_PATTERN='CreateLandmarkAttachment|UploadTextureAttachment|AttachmentPayloadHandle|LocalPosition|createLandmarkAttachment|uploadTextureAttachment|landmarkAssetBytes|AttachmentPayloadSource|InventoryUploadResult|beginTextureUpload|completeTextureUpload|landmarkRequest|textureRequest|createdLandmarkRequest|uploadTextureRequest|landmarkVenue|landmarkRegionId|landmarkLocalPosition|texturePayloadHandle|textureDigest|textureFileName|safeTextureFileName|BinaryUploadBody|application/octet-stream|upload_url|uploadUrl|attachmentPayloadHandle|attachmentSource|payloadHandle|AssetUploadRequest|AssetUploadComplete|CreateLandmarkForEvent'
 ATTACHMENT_FORBIDDEN_OWNER_FILE_PATTERN='(LandmarkAttachmentService|TextureUploadService|AttachmentUploadManager|InventoryUtils|AttachmentHelpers|CommonAttachment|BulkSender)\.kt$'
@@ -724,7 +724,7 @@ while IFS= read -r path; do
         gem-protocol-libomv/src/jvmAndroidMain/kotlin/org/gem/protocol/libomv/transport/UdpSimulatorDatagramSender.kt) ;;
         gem-protocol-libomv/src/jvmAndroidMain/kotlin/org/gem/protocol/libomv/runtime/JvmMd5DigestPort.kt) ;;
         gem-protocol-libomv/src/jvmAndroidMain/kotlin/org/gem/protocol/libomv/runtime/EnvironmentLoginSecretResolver.kt) ;;
-        gem-protocol-libomv/src/jvmAndroidMain/kotlin/org/gem/protocol/libomv/runtime/DefaultHostessHardwareAddressSource.kt) ;;
+        gem-protocol-libomv/src/jvmAndroidMain/kotlin/org/gem/protocol/libomv/runtime/DefaultGemHardwareAddressSource.kt) ;;
         apps/desktop/src/main/kotlin/org/gem/apps/desktop/GemDesktopStorageMigration.kt) ;;
         apps/desktop/src/main/kotlin/org/gem/apps/desktop/DesktopVaultComposition.kt) ;;
         apps/desktop/src/main/kotlin/org/gem/apps/desktop/DesktopPreferenceComposition.kt) ;;
@@ -1629,7 +1629,7 @@ check_exact_owner_count "KMP migration single LibomvBytePacketWriter owner" "Lib
 check_exact_owner_count "KMP migration single ProtocolHttpRequestPolicy owner" "ProtocolHttpRequestPolicy" 1 "${architecture_owner_targets[@]}"
 check_exact_owner_count "KMP migration single Md5DigestPort owner" "Md5DigestPort" 1 "${architecture_owner_targets[@]}"
 check_exact_owner_count "KMP migration single LoginSecretJsonDecoder owner" "LoginSecretJsonDecoder" 1 "${architecture_owner_targets[@]}"
-check_exact_owner_count "KMP migration single HostessViewerIdentityBuilder owner" "HostessViewerIdentityBuilder" 1 "${architecture_owner_targets[@]}"
+check_exact_owner_count "KMP migration single GemViewerIdentityBuilder owner" "GemViewerIdentityBuilder" 1 "${architecture_owner_targets[@]}"
 check_exact_owner_count "KMP migration single ProtocolLoginRuntime owner" "ProtocolLoginRuntime" 1 "${architecture_owner_targets[@]}"
 check_exact_owner_count "KMP migration single ProtocolGroupRuntime owner" "ProtocolGroupRuntime" 1 "${architecture_owner_targets[@]}"
 check_exact_owner_count "KMP migration single ProtocolInventoryRuntime owner" "ProtocolInventoryRuntime" 1 "${architecture_owner_targets[@]}"
@@ -2138,7 +2138,7 @@ check_pattern_matches \
 check_pattern_matches \
     "self-test login compliance viewer provider placement pattern" \
     "$VIEWER_IDENTITY_PROVIDER_PATTERN" \
-    'HostessViewerIdentityProvider'
+    'GemViewerIdentityProvider'
 
 check_pattern_matches \
     "self-test login compliance spoofed channel pattern" \

@@ -13,8 +13,8 @@ import org.gem.protocol.libomv.transport.UdpSimulatorDatagramSender
 internal data class LibomvPlatformAdapterBundle(
     val httpClient: ProtocolHttpClient,
     val secretResolver: LoginSecretResolver,
-    val viewerIdentityProvider: HostessViewerIdentityProvider,
-    val machineIdentityProvider: HostessMachineIdentityProvider,
+    val viewerIdentityProvider: GemViewerIdentityProvider,
+    val machineIdentityProvider: GemMachineIdentityProvider,
     val clockPort: ClockPort,
     val md5DigestPort: Md5DigestPort,
     val circuitSender: ProtocolSimulatorCircuitClient,
@@ -30,8 +30,8 @@ internal object DefaultLibomvPlatformAdapterBundle {
         LibomvPlatformAdapterBundle(
             httpClient = OkHttpProtocolHttpClient(),
             secretResolver = secretResolver,
-            viewerIdentityProvider = DefaultHostessViewerIdentityProvider,
-            machineIdentityProvider = DefaultHostessMachineIdentityProvider,
+            viewerIdentityProvider = DefaultGemViewerIdentityProvider,
+            machineIdentityProvider = DefaultGemMachineIdentityProvider,
             clockPort = JvmProtocolClockPort,
             md5DigestPort = JvmMd5DigestPort,
             circuitSender = ProtocolSimulatorCircuitClient(

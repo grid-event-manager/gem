@@ -7,7 +7,7 @@ import kotlin.test.assertTrue
 
 class LoginPackageCaptureNormalizerTest {
     @Test
-    fun `generated Hostess xml rpc package matches retained canonical shape with approved identity differences`() {
+    fun `generated GEM xml rpc package matches retained canonical shape with approved identity differences`() {
         val loginPackage = LoginPackageBuilder(testDigestPort()).build(
             secret = LoginSecret(
                 loginUri = "https://login.example/cgi-bin/login.cgi",
@@ -16,22 +16,22 @@ class LoginPackageCaptureNormalizerTest {
                 sharedSecret = "secret12",
                 startLocation = "home",
             ),
-            viewerIdentity = HostessViewerIdentity(
-                channel = "Hostess",
+            viewerIdentity = GemViewerIdentity(
+                channel = "GEM",
                 version = "0.1.0.0",
-                author = "Hostess",
-                platform = HostessPlatformIdentity(
+                author = "GEM",
+                platform = GemPlatformIdentity(
                     platform = "Linux",
                     platformVersion = "6.8.0",
                     platformString = "Linux 6.8.0 amd64 Test Runtime 17",
                 ),
-                host = HostessHostIdentity(
+                host = GemHostIdentity(
                     mac = "00000000000000000000000000000001",
                     id0 = "00000000000000000000000000000002",
                     hostId = "00000000000000000000000000000003",
                 ),
             ),
-            machineIdentity = HostessMachineIdentity(
+            machineIdentity = GemMachineIdentity(
                 mac = "08:00:27:DC:4A:9E",
                 id0 = "08:00:27:DC:4A:9E",
             ),
@@ -46,7 +46,7 @@ class LoginPackageCaptureNormalizerTest {
         assertEquals(NormalizedLoginString("string", "Venue"), normalized.fields["first"])
         assertEquals(NormalizedLoginString("string", "Resident"), normalized.fields["last"])
         assertEquals(NormalizedLoginString("string", "home"), normalized.fields["start"])
-        assertEquals(NormalizedLoginString("string", "Hostess"), normalized.fields["channel"])
+        assertEquals(NormalizedLoginString("string", "GEM"), normalized.fields["channel"])
         assertEquals(NormalizedLoginString("string", "0.1.0.0"), normalized.fields["version"])
         assertEquals(
             NormalizedLoginString("string", "Linux 6.8.0 amd64 Test Runtime 17"),

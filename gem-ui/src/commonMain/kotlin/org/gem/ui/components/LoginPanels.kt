@@ -29,7 +29,7 @@ fun SavedLoginDropdown(
 ) {
     val selected = options.firstOrNull { it.profileId == selectedProfileId }
     val placeholder = textCatalogue.text(GemTextKey.SavedLoginPlaceholder)
-    HostessDropdownField(
+    GemDropdownField(
         label = textCatalogue.text(GemTextKey.Username),
         selectedLabel = selected?.loginName,
         placeholderLabel = placeholder,
@@ -67,7 +67,7 @@ fun LoginCredentialPanel(
             onUsernameChanged = onUsernameChanged,
             onSavedLoginSelected = onSavedLoginSelected,
         )
-        HostessPasswordField(
+        GemPasswordField(
             label = textCatalogue.text(GemTextKey.Password),
             value = state.passwordDraft,
             onValueChange = onPasswordChanged,
@@ -80,7 +80,7 @@ fun LoginCredentialPanel(
             modifier = Modifier.testTag(GemTestTags.AccountPassword),
         )
         LoginOperationText(state, textCatalogue)
-        HostessSecondaryButton(
+        GemSecondaryButton(
             text = textCatalogue.text(GemTextKey.Login),
             onClick = onLogin,
             enabled = controlsEnabled && state.loginEnabled,
@@ -102,7 +102,7 @@ private fun LoginUsernameField(
     modifier: Modifier = Modifier,
     onSavedLoginSelected: (AccountProfileId?) -> Unit,
 ) {
-    HostessDropdownTextField(
+    GemDropdownTextField(
         label = textCatalogue.text(GemTextKey.Username),
         value = usernameDraft,
         onValueChange = onUsernameChanged,

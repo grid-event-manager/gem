@@ -11,12 +11,12 @@ import org.gem.core.ports.CredentialHandle
 import org.gem.core.ports.LoginRequest
 import org.gem.core.ports.SessionLoginResult
 import org.gem.core.ports.SessionLogoutResult
-import org.gem.protocol.libomv.runtime.HostessMachineIdentity
-import org.gem.protocol.libomv.runtime.HostessMachineIdentityProvider
-import org.gem.protocol.libomv.runtime.HostessHostIdentity
-import org.gem.protocol.libomv.runtime.HostessPlatformIdentity
-import org.gem.protocol.libomv.runtime.HostessViewerIdentity
-import org.gem.protocol.libomv.runtime.HostessViewerIdentityProvider
+import org.gem.protocol.libomv.runtime.GemMachineIdentity
+import org.gem.protocol.libomv.runtime.GemMachineIdentityProvider
+import org.gem.protocol.libomv.runtime.GemHostIdentity
+import org.gem.protocol.libomv.runtime.GemPlatformIdentity
+import org.gem.protocol.libomv.runtime.GemViewerIdentity
+import org.gem.protocol.libomv.runtime.GemViewerIdentityProvider
 import org.gem.protocol.libomv.runtime.JvmMd5DigestPort
 import org.gem.protocol.libomv.runtime.LoginSecretResolver
 import org.gem.protocol.libomv.runtime.ProtocolLoginRuntime
@@ -94,7 +94,7 @@ class LibomvSessionAdapterTest {
     private fun protocolLoginRuntime(
         clientSession: LibomvClientSession,
         httpClient: ProtocolHttpClient,
-        viewerIdentityProvider: HostessViewerIdentityProvider,
+        viewerIdentityProvider: GemViewerIdentityProvider,
     ): ProtocolLoginRuntime =
         ProtocolLoginRuntime(
             clientSession = clientSession,
@@ -103,19 +103,19 @@ class LibomvSessionAdapterTest {
             viewerIdentityProvider = viewerIdentityProvider,
             secretResolver = LoginSecretResolver.unavailable(),
             clockPort = NoopClockPort,
-            machineIdentityProvider = HostessMachineIdentityProvider {
-                HostessMachineIdentity("08:00:27:DC:4A:9E", "08:00:27:DC:4A:9E")
+            machineIdentityProvider = GemMachineIdentityProvider {
+                GemMachineIdentity("08:00:27:DC:4A:9E", "08:00:27:DC:4A:9E")
             },
             digestPort = JvmMd5DigestPort,
         )
 
-    private fun viewerIdentityProvider(): HostessViewerIdentityProvider = HostessViewerIdentityProvider {
-        HostessViewerIdentity(
-            channel = "Hostess",
+    private fun viewerIdentityProvider(): GemViewerIdentityProvider = GemViewerIdentityProvider {
+        GemViewerIdentity(
+            channel = "GEM",
             version = "0.1.0.0",
-            author = "Hostess",
-            platform = HostessPlatformIdentity("Linux", "6.8.0", "Linux 6.8.0 amd64 Test Runtime 17"),
-            host = HostessHostIdentity(
+            author = "GEM",
+            platform = GemPlatformIdentity("Linux", "6.8.0", "Linux 6.8.0 amd64 Test Runtime 17"),
+            host = GemHostIdentity(
                 mac = "00000000000000000000000000000001",
                 id0 = "00000000000000000000000000000002",
                 hostId = "00000000000000000000000000000003",

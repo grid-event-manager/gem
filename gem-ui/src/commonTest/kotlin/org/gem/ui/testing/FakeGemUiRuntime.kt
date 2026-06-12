@@ -189,7 +189,7 @@ object FakeGemUiRuntime {
                     proofAccountAttested = true,
                     automatedUse = true,
                     scriptedAgentAttested = true,
-                    operatorLabel = OperatorLabel("Hostess test"),
+                    operatorLabel = OperatorLabel("Grid Event Manager test"),
                     proofAccountLabel = profile.label,
                     evidenceSource = ScriptedAgentEvidenceSource.OPERATOR_ATTESTED,
                 )

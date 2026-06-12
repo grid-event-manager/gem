@@ -41,13 +41,13 @@ fun GroupTargetSelector(
                 modifier = Modifier.testTag(GemTestTags.GroupCount),
             )
         }
-        HostessCheckboxCard(
+        GemCheckboxCard(
             text = textCatalogue.text(GemTextKey.AddAll),
             checked = state.mode == org.gem.ui.state.GroupTargetMode.ALL,
             onCheckedChange = onAllGroupsChanged,
             modifier = Modifier.testTag(GemTestTags.AllGroups),
         )
-        HostessCheckboxCard(
+        GemCheckboxCard(
             text = textCatalogue.text(GemTextKey.AddGroups),
             checked = state.mode == org.gem.ui.state.GroupTargetMode.MANUAL,
             onCheckedChange = onManualGroupsChanged,

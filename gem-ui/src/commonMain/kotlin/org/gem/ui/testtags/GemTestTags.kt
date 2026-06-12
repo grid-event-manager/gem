@@ -1,7 +1,7 @@
 package org.gem.ui.testtags
 
 object GemTestTags {
-    const val GemApp: String = "data-hostess-app"
+    const val GemApp: String = "data-gem-app"
     const val MenuButton: String = "data-menu-button"
     const val SecondLifeTime: String = "data-second-life-time"
     const val AppMenu: String = "data-app-menu"

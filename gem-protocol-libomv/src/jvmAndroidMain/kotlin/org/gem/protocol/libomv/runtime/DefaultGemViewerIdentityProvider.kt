@@ -1,30 +1,30 @@
 package org.gem.protocol.libomv.runtime
 
-object DefaultHostessViewerIdentityProvider : HostessViewerIdentityProvider {
-    override fun resolve(): HostessViewerIdentity =
+object DefaultGemViewerIdentityProvider : GemViewerIdentityProvider {
+    override fun resolve(): GemViewerIdentity =
         resolve(
             systemProperty = System::getProperty,
-            hardwareAddressSource = DefaultHostessHardwareAddressSource,
+            hardwareAddressSource = DefaultGemHardwareAddressSource,
         )
 
     internal fun resolve(
         systemProperty: (String) -> String?,
         hardwareAddresses: () -> List<Pair<String, ByteArray>>,
-    ): HostessViewerIdentity =
+    ): GemViewerIdentity =
         resolve(
             systemProperty = systemProperty,
-            hardwareAddressSource = HostessHardwareAddressSource {
-                hardwareAddresses().map { (name, bytes) -> HostessHardwareAddress(name, bytes.copyOf()) }
+            hardwareAddressSource = GemHardwareAddressSource {
+                hardwareAddresses().map { (name, bytes) -> GemHardwareAddress(name, bytes.copyOf()) }
             },
         )
 
     internal fun resolve(
         systemProperty: (String) -> String?,
-        hardwareAddressSource: HostessHardwareAddressSource,
+        hardwareAddressSource: GemHardwareAddressSource,
         digestPort: Md5DigestPort = JvmMd5DigestPort,
-    ): HostessViewerIdentity =
-        HostessViewerIdentityBuilder(digestPort).build(
-            systemIdentity = HostessSystemIdentity(
+    ): GemViewerIdentity =
+        GemViewerIdentityBuilder(digestPort).build(
+            systemIdentity = GemSystemIdentity(
                 osName = systemProperty("os.name").orEmpty(),
                 osVersion = systemProperty("os.version").orEmpty(),
                 osArch = systemProperty("os.arch").orEmpty(),

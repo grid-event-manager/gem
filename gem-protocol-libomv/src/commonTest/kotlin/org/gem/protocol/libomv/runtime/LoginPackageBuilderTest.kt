@@ -7,7 +7,7 @@ import kotlin.test.assertNull
 
 class LoginPackageBuilderTest {
     @Test
-    fun `builder emits canonical Hostess login package fields`() {
+    fun `builder emits canonical GEM login package fields`() {
         val loginPackage = LoginPackageBuilder(testDigestPort()).build(
             secret = loginSecret(lastName = ""),
             viewerIdentity = viewerIdentity(),
@@ -19,7 +19,7 @@ class LoginPackageBuilderTest {
         assertEquals("Resident", loginPackage.last)
         assertEquals("\$1\$8b2fee48cd255fddee9a662b55da4fd4", loginPackage.passwd)
         assertEquals("home", loginPackage.start)
-        assertEquals("Hostess", loginPackage.channel)
+        assertEquals("GEM", loginPackage.channel)
         assertEquals("0.1.0.0", loginPackage.version)
         assertEquals("Linux 6.8.0 amd64 Test Runtime 17", loginPackage.platform)
         assertEquals("08:00:27:DC:4A:9E", loginPackage.mac)
@@ -73,23 +73,23 @@ class LoginPackageBuilderTest {
         startLocation = "home",
     )
 
-    private fun viewerIdentity(): HostessViewerIdentity = HostessViewerIdentity(
-        channel = "Hostess",
+    private fun viewerIdentity(): GemViewerIdentity = GemViewerIdentity(
+        channel = "GEM",
         version = "0.1.0.0",
-        author = "Hostess",
-        platform = HostessPlatformIdentity(
+        author = "GEM",
+        platform = GemPlatformIdentity(
             platform = "Linux",
             platformVersion = "6.8.0",
             platformString = "Linux 6.8.0 amd64 Test Runtime 17",
         ),
-        host = HostessHostIdentity(
+        host = GemHostIdentity(
             mac = "00000000000000000000000000000001",
             id0 = "00000000000000000000000000000002",
             hostId = "00000000000000000000000000000003",
         ),
     )
 
-    private fun machineIdentity(): HostessMachineIdentity = HostessMachineIdentity(
+    private fun machineIdentity(): GemMachineIdentity = GemMachineIdentity(
         mac = "08:00:27:DC:4A:9E",
         id0 = "08:00:27:DC:4A:9E",
     )

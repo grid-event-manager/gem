@@ -45,7 +45,7 @@ class LoginPackageSerializerTest {
         last = "Ho<st",
         passwd = "\$1\$8b2fee48cd255fddee9a662b55da4fd4",
         start = "home",
-        channel = "Hostess",
+        channel = "GEM",
         version = "0.1.0.0",
         platform = "Linux 'Box' & Test",
         mac = "08:00:27:DC:4A:9E",
