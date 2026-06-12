@@ -59,7 +59,7 @@ class LiveProofCommand(
         }
 
         if (!runtime.protocolAvailable) {
-            val reason = "protocol bootstrap unavailable after HS001-A-07; live grid proof not attempted"
+            val reason = "protocol bootstrap unavailable; live grid proof not attempted"
             val results = listOf(LiveProofStep.passed("validate-inputs")) +
                 LiveProofStep.blockedPlan("login", reason)
             runtime.proofReportWriter.writeIfRequested(

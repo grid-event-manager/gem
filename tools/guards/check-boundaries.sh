@@ -14,94 +14,94 @@ CLI_COMMAND_REPORT_WRITE_PATTERN='File\(|Path\.of\(|Files\.|writeText\(|appendTe
 OK_HTTP_CLIENT_SYMBOL='OkHttp'"Client"
 PROTOCOL_PREFIX='Protocol'
 RUNTIME_SUFFIX='Runtime'
-TRACK_B_OKHTTP_PATTERN="(^|[^[:alnum:]_.])okhttp3\.|(^|[^[:alnum:]_.])${OK_HTTP_CLIENT_SYMBOL}([^[:alnum:]_]|$)"
-TRACK_B_RUNTIME_PATTERN="(^|[^[:alnum:]_.])(${PROTOCOL_PREFIX}Login${RUNTIME_SUFFIX}|${PROTOCOL_PREFIX}Group${RUNTIME_SUFFIX}|${PROTOCOL_PREFIX}Inventory${RUNTIME_SUFFIX}|${PROTOCOL_PREFIX}Notice${RUNTIME_SUFFIX}|${PROTOCOL_PREFIX}HttpClient)([^[:alnum:]_]|$)"
-TRACK_B_UI_DIRECT_PROTOCOL_PATTERN='Libomv|Protocol[A-Za-z]+Runtime|ProtocolHttpClient|EventQueueGetClient|SimulatorPacketExchange'
-TRACK_B_UI_DIRECT_VAULT_PATTERN='CredentialVault|VaultAccessService|AndroidKeystore|LocalUserFileVaultKeySource|CredentialManager|Keychain|SecretService|passphrase|TOTP|authenticator'
-TRACK_B_UI_DIRECT_NOTICE_PATTERN='sendGroupNotice|NoticePort|selectedGroups.*(forEach|map|for \()'
-TRACK_B_UI_FORBIDDEN_OWNER_PATTERN='(^|[^[:alnum:]_])(UiManager|StyleUtils|CommonUi|ScreenHelpers|CredentialHelper|VaultManager|InventoryBrowserService|NoticeSender|BulkSender)([^[:alnum:]_]|$)'
-TRACK_B_UI_WEBVIEW_PATTERN='WebView|android\.webkit|<html|styles\.css|prototype\.js'
-TRACK_B_UI_STAGED_PATTERN='STAGED_ENTRYPOINT|TODO|NotImplemented|UnsupportedOperationException|error\("not implemented"\)'
-TRACK_B_UI_TEXT_PATTERN='"(Hostess|User Name|Password|Show|Hide|Login|Add new login|Add new login\.\.\.|Save and login|Settings|Add new account|Save new account|Delete account|Delete|Send notices|Online|Offline|Inventory|Landmarks|Textures|Add all|Select\.\.\.)"'
-TRACK_B_UI_STYLE_PATTERN='#[0-9A-Fa-f]{6}|Color\(|[0-9]+\.dp'
-TRACK_B_UI_DIRECT_CONTROL_PATTERN='(^|[^[:alnum:]_])(OutlinedTextField|DropdownMenu|DropdownMenuItem|ExposedDropdownMenu|ExposedDropdownMenuBox|Button|OutlinedButton|verticalScroll|rememberScrollState|VerticalScrollbar|rememberScrollbarAdapter)[[:space:]]*\('
-TRACK_C_RUNTIME_PATTERN='EnvironmentLoginSecretResolver|ProtocolSimulatorCircuitClient|AgentDataUpdateRequestTransport|EventQueueGetClient'
-TRACK_A_FORBIDDEN_DEP_PATTERN='java-keyring|secret-service|multiplatform-settings|KVault|SecureVault|Kassaforte|tink|BouncyCastle|kotlinx\.serialization|protobuf|cbor|EncryptedSharedPreferences|MasterKey|EncryptedFile'
-TRACK_A_STALE_CREDENTIAL_ROUTE_PATTERN='VaultUnlock|passphrase|TOTP|authenticator|platform_deferred|native-store required|VM fallback|plaintext fallback|CredentialManager|PasswordHelper|LoginUtils|VaultManager|VaultHelper|VaultUtils|CommonVault'
-TRACK_A_ANDROIDX_CRYPTO_PATTERN='EncryptedSharedPreferences|EncryptedFile|MasterKey|androidx\.security'
-TRACK_A_RAW_KEY_EXPOSURE_PATTERN='ByteArray.*key|key.*ByteArray|SecretKey'
-TRACK_A_APP_ENV_RESOLVER_PATTERN='EnvironmentLoginSecretResolver'
-TRACK_H_STALE_CIRCUIT_OWNER_PATTERN='BoundedSimulatorCircuit(Client|Sender)'
-TRACK_H_STALE_CLI_LIVE_SEND_PATTERN='sessionProvider|fakeSession\(active = false\)|send-notice --mode live'
-TRACK_H_STALE_FULL_PROOF_PATTERN='sendPlainNotice|runAttachmentProof|runBulkProof|boundedBulkTargetSet|plain-notice|existing-attachment-notice|bulk-notice|existingAttachmentId|--existing-attachment-id|bulkLimit|bulkDelayMs'
-TRACK_H_STALE_NOTICE_PATTERN='(^|[^[:alnum:]_])(GroupNoticeAdd|NoticeSender|BulkSender)([^[:alnum:]_]|$)'
-TRACK_H_DIRECT_APP_NOTICE_PATTERN='(^|[^[:alnum:]_])(ProtocolNoticeRuntime|ProtocolNoticeCircuitSource|LibomvNoticePacketCodec|SimulatorPacketExchange)([^[:alnum:]_]|$)'
-TRACK_HS_DUPLICATE_SIMULATOR_EXCHANGE_PATTERN='SimulatorPacketReceiver|UdpSimulatorDatagramReceiver|class[[:space:]]+.*Presence.*Socket|class[[:space:]]+.*Simulator.*Socket|DatagramSocket\('
-TRACK_HS_DIRECT_ARCHIVE_PATTERN='(^|[^[:alnum:]_])(ProtocolGroupNoticeArchiveSource|requestGroupNoticeArchive|GroupNoticesListRequest|GroupNoticesListReply)([^[:alnum:]_]|$)'
-TRACK_HS_FAKE_LIVE_PASS_PATTERN='fake mode.*passed|CommandMode\.FAKE[^;]*ProofReportStatus\.PASSED|ProofReportStatus\.PASSED[^;]*CommandMode\.FAKE'
-TRACK_HS_FULL_PROOF_ARCHIVE_REQUIRED_PATTERN='if[[:space:]]*\(!noticeArchive\(session,[[:space:]]*targetSet\)\)'
-TRACK_INCIDENT_GROUP_MUTATION_PATTERN='EjectGroupMemberRequest|LeaveGroupRequest|GroupRoleChanges|GroupRoleUpdate|InviteGroupRequest|RequestBanAction|SetGroupAcceptNotices'
-TRACK_ANDROID_PROBE_FORBIDDEN_RUNTIME_PATTERN='EnvironmentLoginSecretResolver|AgentDataUpdateRequestTransport|EventQueueGetClient|ProtocolLoginRuntime|ProtocolGroupRuntime|ProtocolInventoryRuntime|ProtocolNoticeRuntime|SimulatorPacketExchange'
-TRACK_I_STALE_NOTICE_COMPLIANCE_PATTERN='NoticeCompliance(Service|Request|Decision|Receipt|Policy|Clock|LedgerResult|Ledgers?)|DefaultNoticeComplianceClock|NoticeSubmission(Count|Projection|LedgerSnapshot|LedgerPort)|NoticeLedgerDay|noticeSubmissionProjectionStatus|noticeSubmissionsProjected|noticeSubmissionLedgerGroupCount|noticeSubmissionLedgerMaxGroupTotal|noticeSubmissionPerGroupHardCap|noticeLedgerConfigured|notice_submission_cap_exceeded|ledger_snapshot_unavailable|ledger_reserve_failed|ledger_record_failed|notice_ledger_unavailable|NoticeRecipientEstimate|NoticeRecipientCount|NoticeRecipientEstimateSource|recipientDeliveryProjected|recipientDeliveryLedgerTotal|recipientDeliveryHardCap|recipientProjectionStatus|recipient_count_|recipient_delivery_|NoticeDeliveryCount|NoticeDeliveryDay|NoticeDeliveryProjection|NoticeDeliveryLedgerSnapshot|NoticeComplianceLedgerPort|HOSTESS_OWKS_COUNT|HOSTESS_MINX_COUNT'
-TRACK_J_CLASSIC_BAKING_PATTERN='AgentSetAppearance|UploadBakedTexture|CreateBakes|DownloadWearables|WearOutfit|RequestSetAppearance'
-TRACK_J_FORBIDDEN_AVATAR_OWNER_PATTERN='(^|[^[:alnum:]_])(AvatarManager|AppearanceHelper|ViewerUtils)([^[:alnum:]_]|$)'
-TRACK_J_DIRECT_AVATAR_SEED_PATTERN='seedCapability'
-TRACK_J_CLI_DIRECT_AVATAR_PATTERN='(^|[^[:alnum:]_])(LibomvAvatarAdapter|ProtocolAvatarRuntime|ProtocolAvatarAppearanceSource)([^[:alnum:]_]|$)'
-TRACK_J_STALE_FULL_PROOF_SIMULATOR_GATE_PATTERN='simulatorPresence\(session\)'
-TRACK_J_EXTRA_SIMULATOR_EXCHANGE_IMPL_PATTERN='\)[[:space:]]*:[[:space:]]*SimulatorPacketExchange|^[[:space:]]*(class|object)[^=]*:[[:space:]]*SimulatorPacketExchange'
-HS002_TRACK_E_FORBIDDEN_FACADE_RECEIVE_PATTERN='(^|[^[:alnum:]_])(packetExchange|currentExchange|exchange|simulatorPacketExchange)\.receive\('
-HS002_TRACK_E_DEAD_CIRCUIT_CLIENT_PATTERN='presentCircuit|pendingNoticeArchiveReplies|drainPreNoticeTraffic|waitForOutgoingAck|waitForPacket'
-HS002_TRACK_E_DUPLICATE_SIM_GATEWAY_PATTERN='(^|[^[:alnum:]_])(NoticeSender2|ArchiveReader2|SimulatorSessionManager|SessionHelper|UdpHelper|GroupNoticeProofHelper)([^[:alnum:]_]|$)'
-HS002_TRACK_E_FORBIDDEN_FAKE_LIVE_PATTERN='fake.*simulator.*passed|simulator.*fake.*passed|fake.*live.*passed|CommandMode\.FAKE[^;]*ProofReportStatus\.PASSED|ProofReportStatus\.PASSED[^;]*CommandMode\.FAKE|local proof bypass'
-HS002_TRACK_E_RAW_TRACK_IDENTIFIER_PATTERN='TRACK_E|TrackE|track_e|E-[0-9][0-9]-T'
-TRACK_C_ENV_PATTERN='System(::|\.)getenv'
-TRACK_C_FILE_ROUTE_PATTERN='credential-file'
-TRACK_C_UNSUPPORTED_SECRET_PATTERN='keychain|Keychain|KeyStore|plaintext|plain-text|plain text'
-TRACK_C_UI_SPLIT_LOGIN_PATTERN='LoginSavedAccountPanel|AddLoginPanel|addLoginExpanded|newUsernameDraft|newPasswordDraft|saveAndLoginEnabled'
-TRACK_C_UI_FAKE_LOCATION_PATTERN='startLocation\.orEmpty|SavedAccountProfile\.startLocation|London City|Welcome Area|locationLabel = "[^"]+"'
-TRACK_C_UI_SCAFFOLD_REQUIRED_PATTERN='HostessAppScaffold'
-TRACK_C_UI_CUSTOM_ICON_PATTERN='Canvas|drawLine|MenuBarCount|BackIconMidpoint|foundation\.Canvas'
-HS002_TRACK_D_UI_PREFERENCE_ADAPTER_PATTERN='org\.hostess\.preferences|:hostess-preferences'
-HS002_TRACK_D_VAULT_THEME_STORAGE_PATTERN='ThemePreference|themePreference|ui\.properties|preferences'
-HS002_TRACK_D_HACCU_COLOUR_PATTERN='#[0-9A-Fa-f]{6}|Color\(0x'
-HS002_TRACK_D_VISIBLE_LABEL_PATTERN='"(Grid Event Manager|GEM|GRID EVENT MANAGER|Light|Dark|Theme|Theme preference unavailable|Theme preference could not be saved)"'
-HS002_TRACK_D_PROTOTYPE_RUNTIME_PATTERN='WebView|android\.webkit|index-multi|<html|styles\.css|loadDataWithBaseURL'
-HS002_TRACK_D_LOGO_OWNER_PATTERN='fun[[:space:]]+HostessBrandLogoIcon'
-HS002_TRACK_D_TOGGLE_OWNER_PATTERN='fun[[:space:]]+ThemeModeToggle'
-HS002_TRACK_D_PALETTE_OWNER_PATTERN='object[[:space:]]+HaccuHostessPaletteProvider'
-HS002_TRACK_D_ANDROID_LABEL_PATTERN='manifestPlaceholders\["appLabel"\][[:space:]]*=[[:space:]]*"Grid Event Manager"'
-HS002_TRACK_D_DESKTOP_VENDOR_PATTERN='vendor[[:space:]]*=[[:space:]]*"Grid Event Manager"'
-HS002_TRACK_D_ROOT_PROJECT_LABEL_PATTERN='rootProject\.name\.replaceFirstChar'
-TRACK_D_GENERIC_OWNER_PATTERN='(^|/)(LoginCompliance|NoticeCompliance|.*(Manager|Helper|Utils|Common))\.kt$'
-TRACK_D_SESSION_LOGIN_OVERLOAD_PATTERN='fun[[:space:]]+login\([[:space:]]*request:[[:space:]]*LoginRequest[[:space:]]*\)'
-TRACK_D_SESSION_LOGIN_ONE_ARG_PATTERN='sessionService\.login\([^,\n)]*\)'
-TRACK_D_OLD_NOTICE_CALL_PATTERN='dispatch\([^\n]*session[^\n]*draft[^,\n]*\)'
-TRACK_D_SEND_GROUP_NOTICE_CALL_PATTERN='\.[[:space:]]*sendGroupNotice\('
-TRACK_D_VIEWER_PROVIDER_PATTERN='HostessViewerIdentityProvider'
-TRACK_D_SPOOFED_CHANNEL_PATTERN='channel[[:space:]]*=[[:space:]]*"(METAbolt|Firestorm|Alchemy|Second Life Viewer|Linden)"'
-TRACK_D_NOTICE_TIME_PATTERN='Instant\.now|LocalDate\.now|Clock\.system|System\.currentTimeMillis'
-TRACK_D_RAW_REPORT_KEY_PATTERN='("(mac|id0|host_id|seedCapability|credentialHandle|ledgerPath)"[[:space:]]+to|put\("(mac|id0|host_id|seedCapability|credentialHandle|ledgerPath)")'
-TRACK_D_UUID_TARGET_PATTERN='--group-id|--group-uuid|group uuid|uuid target'
-TRACK_D_CLI_CAP_LITERAL_PATTERN='(^|[^[:alnum:]_])(4500|4_500|5000|5_000)([^[:alnum:]_]|$)'
-TRACK_DS_OLD_LOGIN_LLSD_PATTERN='application/llsd\+xml|fun[[:space:]]+loginBody\('
-TRACK_DS_DIRECT_OWNER_PATTERN='LoginPackage|SecondLifePasswordHash|HostessMachineIdentity|LoginPackageSerializer'
-TRACK_DS_STALE_LOGIN_FIELD_PATTERN='platform_version|platform_string|host_id|token|extended_errors|max-agent-groups|viewer_digest|user_agent'
-TRACK_E_STALE_ATTACHMENT_PATTERN='CreateLandmarkAttachment|UploadTextureAttachment|AttachmentPayloadHandle|LocalPosition|createLandmarkAttachment|uploadTextureAttachment|landmarkAssetBytes|AttachmentPayloadSource|InventoryUploadResult|beginTextureUpload|completeTextureUpload|landmarkRequest|textureRequest|createdLandmarkRequest|uploadTextureRequest|landmarkVenue|landmarkRegionId|landmarkLocalPosition|texturePayloadHandle|textureDigest|textureFileName|safeTextureFileName|BinaryUploadBody|application/octet-stream|upload_url|uploadUrl|attachmentPayloadHandle|attachmentSource|payloadHandle|AssetUploadRequest|AssetUploadComplete|CreateLandmarkForEvent'
-TRACK_E_FORBIDDEN_OWNER_FILE_PATTERN='(LandmarkAttachmentService|TextureUploadService|AttachmentUploadManager|InventoryUtils|AttachmentHelpers|CommonAttachment|BulkSender)\.kt$'
-TRACK_E_FORBIDDEN_OWNER_DECL_PATTERN='(^|[^[:alnum:]_])((data[[:space:]]+)?class|object|interface)[[:space:]]+(LandmarkAttachmentService|TextureUploadService|AttachmentUploadManager|InventoryUtils|AttachmentHelpers|CommonAttachment|BulkSender)([^[:alnum:]_]|$)'
-TRACK_E_IMPLICIT_FAKE_PATTERN='null,[[:space:]]*"fake"|option\("mode"\)[[:space:]]*\?:[[:space:]]*"fake"|CommandMode\.parse\(null\)'
-TRACK_E_LOCAL_HTTP_PATTERN='local test servers|isLocalTestServer|127\.0\.0\.1|localhost|::1'
-TRACK_E_ANDROID_PROBE_PATTERN='AndroidCompatibilityProbe[[:space:]]+internal[[:space:]]+constructor|protocolLoadProbe|forbiddenApiScan[[:space:]]*=[[:space:]]*"external_guard_required"|external_guard_required'
-TRACK_E_GENERATED_PACKET_COMMONMAIN_PATTERN='generated/sources/libomvPackets/kotlin/commonMain'
-TRACK_E_PRODUCTION_PACKET_IMPORT_PATTERN='(^|[^[:alnum:]_.])libomv\.packets'
-TRACK_G_FORBIDDEN_OWNER_PATTERN='(^|[^[:alnum:]_])(NotecardService|NotecardPort|ProtocolNotecardRuntime|LibomvNotecardAdapter|LibomvNotecardTextParser|NotecardAssetReader|BulkSender|NoticeSender|InventoryCataloguePort|InventoryLookupPort|InventoryBrowserService|ProtocolInventoryAssetSource)([^[:alnum:]_]|$)'
-TRACK_G_EVENT_QUEUE_SEED_PATTERN='fun[[:space:]]+seed[[:space:]]*\(|seedBody|seedCapability'
-TRACK_G_CLI_DIRECT_PROTOCOL_PATTERN='(^|[^[:alnum:]_])(ProtocolInventoryRuntime|ProtocolCurrentGroupsSource|ProtocolCapabilitySeedClient|EventQueueGetClient)([^[:alnum:]_]|$)'
-TRACK_G_CLI_RAW_CAPABILITY_PATTERN='seedCapability|capabilityUrl|EventQueueGet|FetchInventory2|FetchInventoryDescendents2'
-TRACK_F_COMMON_FORBIDDEN_PATTERN='java\.|javax\.|okhttp|android\.|System\.|MessageDigest|NetworkInterface|Datagram|ByteBuffer|UUID|Class\.forName|::class\.java'
-TRACK_F_PARALLEL_PATH_PATTERN='hostess-core-kmp|hostess-protocol-android|AndroidProtocolLibomvModule|JvmProtocolLibomvModule|GroupReader|CurrentGroupsClient|LoginRuntimeAndroid|(^|/)[^/]*(Manager|Utils|Helpers|Common)\.kt$|(^|[^[:alnum:]_])((data[[:space:]]+)?class|object|interface|fun)[[:space:]]+[A-Za-z0-9_]*(Manager|Utils|Helpers|Common)([^[:alnum:]_]|$)'
-TRACK_F_PLATFORM_API_PATTERN='okhttp3\.|OkHttpClient|System(::|\.)getenv|NetworkInterface|java\.net\.Datagram|Datagram(Packet|Socket)|javax\.xml|org\.xml\.sax|DocumentBuilderFactory|java\.util\.UUID|MessageDigest|java\.nio\.ByteBuffer'
-TRACK_F_OWNER_DECLARATION_PREFIX='^[[:space:]]*(internal[[:space:]]+|private[[:space:]]+|public[[:space:]]+)?(open[[:space:]]+|sealed[[:space:]]+)?(data[[:space:]]+class|class|object|interface|fun[[:space:]]+interface|value[[:space:]]+class)[[:space:]]+'
+PROTOCOL_BOUNDARY_OKHTTP_PATTERN="(^|[^[:alnum:]_.])okhttp3\.|(^|[^[:alnum:]_.])${OK_HTTP_CLIENT_SYMBOL}([^[:alnum:]_]|$)"
+PROTOCOL_BOUNDARY_RUNTIME_PATTERN="(^|[^[:alnum:]_.])(${PROTOCOL_PREFIX}Login${RUNTIME_SUFFIX}|${PROTOCOL_PREFIX}Group${RUNTIME_SUFFIX}|${PROTOCOL_PREFIX}Inventory${RUNTIME_SUFFIX}|${PROTOCOL_PREFIX}Notice${RUNTIME_SUFFIX}|${PROTOCOL_PREFIX}HttpClient)([^[:alnum:]_]|$)"
+UI_DIRECT_PROTOCOL_PATTERN='Libomv|Protocol[A-Za-z]+Runtime|ProtocolHttpClient|EventQueueGetClient|SimulatorPacketExchange'
+UI_DIRECT_VAULT_PATTERN='CredentialVault|VaultAccessService|AndroidKeystore|LocalUserFileVaultKeySource|CredentialManager|Keychain|SecretService|passphrase|TOTP|authenticator'
+UI_DIRECT_NOTICE_PATTERN='sendGroupNotice|NoticePort|selectedGroups.*(forEach|map|for \()'
+UI_FORBIDDEN_OWNER_PATTERN='(^|[^[:alnum:]_])(UiManager|StyleUtils|CommonUi|ScreenHelpers|CredentialHelper|VaultManager|InventoryBrowserService|NoticeSender|BulkSender)([^[:alnum:]_]|$)'
+UI_WEBVIEW_PATTERN='WebView|android\.webkit|<html|styles\.css|prototype\.js'
+UI_STAGED_PATTERN='STAGED_ENTRYPOINT|TODO|NotImplemented|UnsupportedOperationException|error\("not implemented"\)'
+UI_TEXT_CATALOGUE_PATTERN='"(Hostess|User Name|Password|Show|Hide|Login|Add new login|Add new login\.\.\.|Save and login|Settings|Add new account|Save new account|Delete account|Delete|Send notices|Online|Offline|Inventory|Landmarks|Textures|Add all|Select\.\.\.)"'
+UI_STYLE_TOKEN_PATTERN='#[0-9A-Fa-f]{6}|Color\(|[0-9]+\.dp'
+UI_DIRECT_CONTROL_PATTERN='(^|[^[:alnum:]_])(OutlinedTextField|DropdownMenu|DropdownMenuItem|ExposedDropdownMenu|ExposedDropdownMenuBox|Button|OutlinedButton|verticalScroll|rememberScrollState|VerticalScrollbar|rememberScrollbarAdapter)[[:space:]]*\('
+SESSION_PROTOCOL_DIRECT_RUNTIME_PATTERN='EnvironmentLoginSecretResolver|ProtocolSimulatorCircuitClient|AgentDataUpdateRequestTransport|EventQueueGetClient'
+VAULT_FORBIDDEN_DEPENDENCY_PATTERN='java-keyring|secret-service|multiplatform-settings|KVault|SecureVault|Kassaforte|tink|BouncyCastle|kotlinx\.serialization|protobuf|cbor|EncryptedSharedPreferences|MasterKey|EncryptedFile'
+VAULT_STALE_CREDENTIAL_ROUTE_PATTERN='VaultUnlock|passphrase|TOTP|authenticator|platform_deferred|native-store required|VM fallback|plaintext fallback|CredentialManager|PasswordHelper|LoginUtils|VaultManager|VaultHelper|VaultUtils|CommonVault'
+VAULT_ANDROIDX_CRYPTO_PATTERN='EncryptedSharedPreferences|EncryptedFile|MasterKey|androidx\.security'
+VAULT_RAW_KEY_EXPOSURE_PATTERN='ByteArray.*key|key.*ByteArray|SecretKey'
+VAULT_APP_ENV_RESOLVER_PATTERN='EnvironmentLoginSecretResolver'
+SIMULATOR_CIRCUIT_STALE_OWNER_PATTERN='BoundedSimulatorCircuit(Client|Sender)'
+LIVE_NOTICE_PROOF_STALE_CLI_SEND_PATTERN='sessionProvider|fakeSession\(active = false\)|send-notice --mode live'
+LIVE_NOTICE_PROOF_STALE_FULL_PROOF_PATTERN='sendPlainNotice|runAttachmentProof|runBulkProof|boundedBulkTargetSet|plain-notice|existing-attachment-notice|bulk-notice|existingAttachmentId|--existing-attachment-id|bulkLimit|bulkDelayMs'
+NOTICE_PROTOCOL_STALE_OWNER_PATTERN='(^|[^[:alnum:]_])(GroupNoticeAdd|NoticeSender|BulkSender)([^[:alnum:]_]|$)'
+NOTICE_PROTOCOL_DIRECT_APP_CALL_PATTERN='(^|[^[:alnum:]_])(ProtocolNoticeRuntime|ProtocolNoticeCircuitSource|LibomvNoticePacketCodec|SimulatorPacketExchange)([^[:alnum:]_]|$)'
+SIMULATOR_EXCHANGE_DUPLICATE_PATTERN='SimulatorPacketReceiver|UdpSimulatorDatagramReceiver|class[[:space:]]+.*Presence.*Socket|class[[:space:]]+.*Simulator.*Socket|DatagramSocket\('
+NOTICE_ARCHIVE_DIRECT_PATTERN='(^|[^[:alnum:]_])(ProtocolGroupNoticeArchiveSource|requestGroupNoticeArchive|GroupNoticesListRequest|GroupNoticesListReply)([^[:alnum:]_]|$)'
+FAKE_LIVE_PROOF_PASS_PATTERN='fake mode.*passed|CommandMode\.FAKE[^;]*ProofReportStatus\.PASSED|ProofReportStatus\.PASSED[^;]*CommandMode\.FAKE'
+FULL_PROOF_ARCHIVE_REQUIRED_PATTERN='if[[:space:]]*\(!noticeArchive\(session,[[:space:]]*targetSet\)\)'
+GROUP_MEMBERSHIP_MUTATION_PATTERN='EjectGroupMemberRequest|LeaveGroupRequest|GroupRoleChanges|GroupRoleUpdate|InviteGroupRequest|RequestBanAction|SetGroupAcceptNotices'
+ANDROID_PROBE_FORBIDDEN_RUNTIME_PATTERN='EnvironmentLoginSecretResolver|AgentDataUpdateRequestTransport|EventQueueGetClient|ProtocolLoginRuntime|ProtocolGroupRuntime|ProtocolInventoryRuntime|ProtocolNoticeRuntime|SimulatorPacketExchange'
+NOTICE_TOTALS_STALE_COMPLIANCE_PATTERN='NoticeCompliance(Service|Request|Decision|Receipt|Policy|Clock|LedgerResult|Ledgers?)|DefaultNoticeComplianceClock|NoticeSubmission(Count|Projection|LedgerSnapshot|LedgerPort)|NoticeLedgerDay|noticeSubmissionProjectionStatus|noticeSubmissionsProjected|noticeSubmissionLedgerGroupCount|noticeSubmissionLedgerMaxGroupTotal|noticeSubmissionPerGroupHardCap|noticeLedgerConfigured|notice_submission_cap_exceeded|ledger_snapshot_unavailable|ledger_reserve_failed|ledger_record_failed|notice_ledger_unavailable|NoticeRecipientEstimate|NoticeRecipientCount|NoticeRecipientEstimateSource|recipientDeliveryProjected|recipientDeliveryLedgerTotal|recipientDeliveryHardCap|recipientProjectionStatus|recipient_count_|recipient_delivery_|NoticeDeliveryCount|NoticeDeliveryDay|NoticeDeliveryProjection|NoticeDeliveryLedgerSnapshot|NoticeComplianceLedgerPort|HOSTESS_OWKS_COUNT|HOSTESS_MINX_COUNT'
+AVATAR_CLASSIC_BAKING_PATTERN='AgentSetAppearance|UploadBakedTexture|CreateBakes|DownloadWearables|WearOutfit|RequestSetAppearance'
+AVATAR_FORBIDDEN_OWNER_PATTERN='(^|[^[:alnum:]_])(AvatarManager|AppearanceHelper|ViewerUtils)([^[:alnum:]_]|$)'
+AVATAR_DIRECT_CAPABILITY_SEED_PATTERN='seedCapability'
+AVATAR_CLI_DIRECT_PROTOCOL_PATTERN='(^|[^[:alnum:]_])(LibomvAvatarAdapter|ProtocolAvatarRuntime|ProtocolAvatarAppearanceSource)([^[:alnum:]_]|$)'
+AVATAR_STALE_FULL_PROOF_SIMULATOR_GATE_PATTERN='simulatorPresence\(session\)'
+AVATAR_EXTRA_SIMULATOR_EXCHANGE_IMPL_PATTERN='\)[[:space:]]*:[[:space:]]*SimulatorPacketExchange|^[[:space:]]*(class|object)[^=]*:[[:space:]]*SimulatorPacketExchange'
+SIMULATOR_SESSION_FORBIDDEN_FACADE_RECEIVE_PATTERN='(^|[^[:alnum:]_])(packetExchange|currentExchange|exchange|simulatorPacketExchange)\.receive\('
+SIMULATOR_SESSION_DEAD_CIRCUIT_CLIENT_PATTERN='presentCircuit|pendingNoticeArchiveReplies|drainPreNoticeTraffic|waitForOutgoingAck|waitForPacket'
+SIMULATOR_SESSION_DUPLICATE_GATEWAY_PATTERN='(^|[^[:alnum:]_])(NoticeSender2|ArchiveReader2|SimulatorSessionManager|SessionHelper|UdpHelper|GroupNoticeProofHelper)([^[:alnum:]_]|$)'
+SIMULATOR_SESSION_FORBIDDEN_FAKE_LIVE_PATTERN='fake.*simulator.*passed|simulator.*fake.*passed|fake.*live.*passed|CommandMode\.FAKE[^;]*ProofReportStatus\.PASSED|ProofReportStatus\.PASSED[^;]*CommandMode\.FAKE|local proof bypass'
+PUBLIC_SOURCE_BRIEFING_LABEL_IDENTIFIER_PATTERN='(^|[^[:alnum:]_])(TRACK_[A-Z][A-Z0-9_]*|HS[0-9]{3}_TRACK_[A-Z][A-Z0-9_]*|HS[0-9]{3}-[A-Z][A-Z]?(-[0-9][0-9])?|Track[[:space:]]+[A-Z][A-Z]?|Track([A-Z]|[A-Z][A-Z])|track[A-Z][A-Za-z0-9_]*|track_[a-z][a-z0-9_]*|track-[a-z][a-z0-9_-]*|[A-Z]-[0-9][0-9]-T[0-9]+)([^[:alnum:]_]|$)'
+CREDENTIAL_ENV_READ_PATTERN='System(::|\.)getenv'
+CREDENTIAL_FILE_ROUTE_PATTERN='credential-file'
+UNSUPPORTED_SECRET_STORE_PATTERN='keychain|Keychain|KeyStore|plaintext|plain-text|plain text'
+UI_REMEDIATION_SPLIT_LOGIN_PATTERN='LoginSavedAccountPanel|AddLoginPanel|addLoginExpanded|newUsernameDraft|newPasswordDraft|saveAndLoginEnabled'
+UI_REMEDIATION_FAKE_LOCATION_PATTERN='startLocation\.orEmpty|SavedAccountProfile\.startLocation|London City|Welcome Area|locationLabel = "[^"]+"'
+UI_REMEDIATION_SCAFFOLD_REQUIRED_PATTERN='HostessAppScaffold'
+UI_REMEDIATION_CUSTOM_ICON_PATTERN='Canvas|drawLine|MenuBarCount|BackIconMidpoint|foundation\.Canvas'
+THEME_UI_PREFERENCE_ADAPTER_PATTERN='org\.hostess\.preferences|:hostess-preferences'
+THEME_VAULT_STORAGE_PATTERN='ThemePreference|themePreference|ui\.properties|preferences'
+THEME_HACCU_COLOUR_PATTERN='#[0-9A-Fa-f]{6}|Color\(0x'
+THEME_VISIBLE_LABEL_PATTERN='"(Grid Event Manager|GEM|GRID EVENT MANAGER|Light|Dark|Theme|Theme preference unavailable|Theme preference could not be saved)"'
+THEME_PROTOTYPE_RUNTIME_PATTERN='WebView|android\.webkit|index-multi|<html|styles\.css|loadDataWithBaseURL'
+THEME_LOGO_OWNER_PATTERN='fun[[:space:]]+HostessBrandLogoIcon'
+THEME_TOGGLE_OWNER_PATTERN='fun[[:space:]]+ThemeModeToggle'
+THEME_PALETTE_OWNER_PATTERN='object[[:space:]]+HaccuHostessPaletteProvider'
+THEME_ANDROID_LABEL_PATTERN='manifestPlaceholders\["appLabel"\][[:space:]]*=[[:space:]]*"Grid Event Manager"'
+THEME_DESKTOP_VENDOR_PATTERN='vendor[[:space:]]*=[[:space:]]*"Grid Event Manager"'
+THEME_ROOT_PROJECT_LABEL_PATTERN='rootProject\.name\.replaceFirstChar'
+ARCHITECTURE_GENERIC_OWNER_PATTERN='(^|/)(LoginCompliance|NoticeCompliance|.*(Manager|Helper|Utils|Common))\.kt$'
+SESSION_LOGIN_OVERLOAD_PATTERN='fun[[:space:]]+login\([[:space:]]*request:[[:space:]]*LoginRequest[[:space:]]*\)'
+SESSION_LOGIN_ONE_ARG_PATTERN='sessionService\.login\([^,\n)]*\)'
+NOTICE_DISPATCH_OLD_CALL_PATTERN='dispatch\([^\n]*session[^\n]*draft[^,\n]*\)'
+NOTICE_DISPATCH_DIRECT_GROUP_SEND_PATTERN='\.[[:space:]]*sendGroupNotice\('
+VIEWER_IDENTITY_PROVIDER_PATTERN='HostessViewerIdentityProvider'
+VIEWER_IDENTITY_SPOOFED_CHANNEL_PATTERN='channel[[:space:]]*=[[:space:]]*"(METAbolt|Firestorm|Alchemy|Second Life Viewer|Linden)"'
+NOTICE_TIME_SOURCE_PATTERN='Instant\.now|LocalDate\.now|Clock\.system|System\.currentTimeMillis'
+REPORT_SECRET_KEY_PATTERN='("(mac|id0|host_id|seedCapability|credentialHandle|ledgerPath)"[[:space:]]+to|put\("(mac|id0|host_id|seedCapability|credentialHandle|ledgerPath)")'
+GROUP_TARGET_UUID_PATTERN='--group-id|--group-uuid|group uuid|uuid target'
+NOTICE_CAP_LITERAL_PATTERN='(^|[^[:alnum:]_])(4500|4_500|5000|5_000)([^[:alnum:]_]|$)'
+LOGIN_PACKAGE_OLD_LLSD_PATTERN='application/llsd\+xml|fun[[:space:]]+loginBody\('
+LOGIN_PACKAGE_DIRECT_OWNER_PATTERN='LoginPackage|SecondLifePasswordHash|HostessMachineIdentity|LoginPackageSerializer'
+LOGIN_PACKAGE_STALE_FIELD_PATTERN='platform_version|platform_string|host_id|token|extended_errors|max-agent-groups|viewer_digest|user_agent'
+ATTACHMENT_STALE_CREATE_UPLOAD_PATTERN='CreateLandmarkAttachment|UploadTextureAttachment|AttachmentPayloadHandle|LocalPosition|createLandmarkAttachment|uploadTextureAttachment|landmarkAssetBytes|AttachmentPayloadSource|InventoryUploadResult|beginTextureUpload|completeTextureUpload|landmarkRequest|textureRequest|createdLandmarkRequest|uploadTextureRequest|landmarkVenue|landmarkRegionId|landmarkLocalPosition|texturePayloadHandle|textureDigest|textureFileName|safeTextureFileName|BinaryUploadBody|application/octet-stream|upload_url|uploadUrl|attachmentPayloadHandle|attachmentSource|payloadHandle|AssetUploadRequest|AssetUploadComplete|CreateLandmarkForEvent'
+ATTACHMENT_FORBIDDEN_OWNER_FILE_PATTERN='(LandmarkAttachmentService|TextureUploadService|AttachmentUploadManager|InventoryUtils|AttachmentHelpers|CommonAttachment|BulkSender)\.kt$'
+ATTACHMENT_FORBIDDEN_OWNER_DECL_PATTERN='(^|[^[:alnum:]_])((data[[:space:]]+)?class|object|interface)[[:space:]]+(LandmarkAttachmentService|TextureUploadService|AttachmentUploadManager|InventoryUtils|AttachmentHelpers|CommonAttachment|BulkSender)([^[:alnum:]_]|$)'
+LIVE_PROOF_IMPLICIT_FAKE_PATTERN='null,[[:space:]]*"fake"|option\("mode"\)[[:space:]]*\?:[[:space:]]*"fake"|CommandMode\.parse\(null\)'
+LIVE_PROOF_LOCAL_HTTP_PATTERN='local test servers|isLocalTestServer|127\.0\.0\.1|localhost|::1'
+ANDROID_PROBE_INJECTION_STATUS_PATTERN='AndroidCompatibilityProbe[[:space:]]+internal[[:space:]]+constructor|protocolLoadProbe|forbiddenApiScan[[:space:]]*=[[:space:]]*"external_guard_required"|external_guard_required'
+PACKET_GENERATION_COMMONMAIN_PATTERN='generated/sources/libomvPackets/kotlin/commonMain'
+PACKET_GENERATION_PRODUCTION_IMPORT_PATTERN='(^|[^[:alnum:]_.])libomv\.packets'
+INVENTORY_CAPABILITY_FORBIDDEN_OWNER_PATTERN='(^|[^[:alnum:]_])(NotecardService|NotecardPort|ProtocolNotecardRuntime|LibomvNotecardAdapter|LibomvNotecardTextParser|NotecardAssetReader|BulkSender|NoticeSender|InventoryCataloguePort|InventoryLookupPort|InventoryBrowserService|ProtocolInventoryAssetSource)([^[:alnum:]_]|$)'
+INVENTORY_CAPABILITY_EVENT_QUEUE_SEED_PATTERN='fun[[:space:]]+seed[[:space:]]*\(|seedBody|seedCapability'
+INVENTORY_CAPABILITY_CLI_DIRECT_PROTOCOL_PATTERN='(^|[^[:alnum:]_])(ProtocolInventoryRuntime|ProtocolCurrentGroupsSource|ProtocolCapabilitySeedClient|EventQueueGetClient)([^[:alnum:]_]|$)'
+INVENTORY_CAPABILITY_CLI_RAW_CAPABILITY_PATTERN='seedCapability|capabilityUrl|EventQueueGet|FetchInventory2|FetchInventoryDescendents2'
+KMP_COMMON_FORBIDDEN_PLATFORM_PATTERN='java\.|javax\.|okhttp|android\.|System\.|MessageDigest|NetworkInterface|Datagram|ByteBuffer|UUID|Class\.forName|::class\.java'
+KMP_PARALLEL_PATH_PATTERN='hostess-core-kmp|hostess-protocol-android|AndroidProtocolLibomvModule|JvmProtocolLibomvModule|GroupReader|CurrentGroupsClient|LoginRuntimeAndroid|(^|/)[^/]*(Manager|Utils|Helpers|Common)\.kt$|(^|[^[:alnum:]_])((data[[:space:]]+)?class|object|interface|fun)[[:space:]]+[A-Za-z0-9_]*(Manager|Utils|Helpers|Common)([^[:alnum:]_]|$)'
+KMP_PLATFORM_API_PATTERN='okhttp3\.|OkHttpClient|System(::|\.)getenv|NetworkInterface|java\.net\.Datagram|Datagram(Packet|Socket)|javax\.xml|org\.xml\.sax|DocumentBuilderFactory|java\.util\.UUID|MessageDigest|java\.nio\.ByteBuffer'
+OWNER_DECLARATION_PREFIX='^[[:space:]]*(internal[[:space:]]+|private[[:space:]]+|public[[:space:]]+)?(open[[:space:]]+|sealed[[:space:]]+)?(data[[:space:]]+class|class|object|interface|fun[[:space:]]+interface|value[[:space:]]+class)[[:space:]]+'
 
 add_existing() {
     local -n target="$1"
@@ -218,6 +218,108 @@ check_pattern_matches() {
     esac
 }
 
+check_pattern_does_not_match() {
+    local label="$1"
+    local pattern="$2"
+    local sample="$3"
+
+    local output
+    local status
+
+    set +e
+    output="$(printf '%s\n' "$sample" | rg -n -- "$pattern" 2>&1)"
+    status="$?"
+    set -e
+
+    case "$status" in
+        0)
+            echo "FAIL: $label matched preserved fixture"
+            echo "$output"
+            failures=1
+            ;;
+        1)
+            echo "PASS: $label"
+            ;;
+        *)
+            echo "ERROR: $label self-test failed"
+            echo "$output"
+            failures=1
+            ;;
+    esac
+}
+
+check_public_source_briefing_label_identifier_pattern() {
+    check_pattern_matches \
+        "self-test public briefing-label detector catches TRACK_D_SOMETHING" \
+        "$PUBLIC_SOURCE_BRIEFING_LABEL_IDENTIFIER_PATTERN" \
+        'TRACK_D_SOMETHING'
+
+    check_pattern_matches \
+        "self-test public briefing-label detector catches TRACK_E" \
+        "$PUBLIC_SOURCE_BRIEFING_LABEL_IDENTIFIER_PATTERN" \
+        'TRACK_E'
+
+    check_pattern_matches \
+        "self-test public briefing-label detector catches HS002_TRACK_E_SOMETHING" \
+        "$PUBLIC_SOURCE_BRIEFING_LABEL_IDENTIFIER_PATTERN" \
+        'HS002_TRACK_E_SOMETHING'
+
+    check_pattern_matches \
+        "self-test public briefing-label detector catches HS002-E" \
+        "$PUBLIC_SOURCE_BRIEFING_LABEL_IDENTIFIER_PATTERN" \
+        'HS002-E'
+
+    check_pattern_matches \
+        "self-test public briefing-label detector catches HS001-B-01" \
+        "$PUBLIC_SOURCE_BRIEFING_LABEL_IDENTIFIER_PATTERN" \
+        'HS001-B-01'
+
+    check_pattern_matches \
+        "self-test public briefing-label detector catches Track B" \
+        "$PUBLIC_SOURCE_BRIEFING_LABEL_IDENTIFIER_PATTERN" \
+        'Track B'
+
+    check_pattern_matches \
+        "self-test public briefing-label detector catches TrackDS" \
+        "$PUBLIC_SOURCE_BRIEFING_LABEL_IDENTIFIER_PATTERN" \
+        'TrackDS'
+
+    check_pattern_matches \
+        "self-test public briefing-label detector catches trackAVaultLoad" \
+        "$PUBLIC_SOURCE_BRIEFING_LABEL_IDENTIFIER_PATTERN" \
+        'trackAVaultLoad'
+
+    check_pattern_matches \
+        "self-test public briefing-label detector catches track_e_targets" \
+        "$PUBLIC_SOURCE_BRIEFING_LABEL_IDENTIFIER_PATTERN" \
+        'track_e_targets'
+
+    check_pattern_matches \
+        "self-test public briefing-label detector catches E-05-T1" \
+        "$PUBLIC_SOURCE_BRIEFING_LABEL_IDENTIFIER_PATTERN" \
+        'E-05-T1'
+
+    check_pattern_does_not_match \
+        "self-test public briefing-label detector preserves TrackAgent" \
+        "$PUBLIC_SOURCE_BRIEFING_LABEL_IDENTIFIER_PATTERN" \
+        'TrackAgent'
+
+    check_pattern_does_not_match \
+        "self-test public briefing-label detector preserves toggleTrack" \
+        "$PUBLIC_SOURCE_BRIEFING_LABEL_IDENTIFIER_PATTERN" \
+        'toggleTrack'
+
+    check_pattern_does_not_match \
+        "self-test public briefing-label detector preserves toggleTrackSelected" \
+        "$PUBLIC_SOURCE_BRIEFING_LABEL_IDENTIFIER_PATTERN" \
+        'toggleTrackSelected'
+
+    check_pattern_does_not_match \
+        "self-test public briefing-label detector preserves trackingState" \
+        "$PUBLIC_SOURCE_BRIEFING_LABEL_IDENTIFIER_PATTERN" \
+        'trackingState'
+}
+
 check_no_forbidden_files() {
     local label="$1"
     shift
@@ -287,9 +389,9 @@ check_no_old_shared_roots() {
         -type f 2>/dev/null || true)
 
     if [[ "${#matches[@]}" -eq 0 ]]; then
-        echo "PASS: Track F old shared production roots absent"
+        echo "PASS: KMP migration old shared production roots absent"
     else
-        echo "FAIL: Track F old shared production roots absent"
+        echo "FAIL: KMP migration old shared production roots absent"
         printf '%s\n' "${matches[@]}"
         failures=1
     fi
@@ -322,7 +424,7 @@ check_exact_owner_count() {
     local output
     local status
     set +e
-    output="$(rg -n -- "${TRACK_F_OWNER_DECLARATION_PREFIX}${owner}([^[:alnum:]_]|$)" "$@" 2>&1)"
+    output="$(rg -n -- "${OWNER_DECLARATION_PREFIX}${owner}([^[:alnum:]_]|$)" "$@" 2>&1)"
     status="$?"
     set -e
 
@@ -354,7 +456,7 @@ check_notice_dispatch_overloads() {
         "hostess-core/src/main/kotlin/org/hostess/core/services/NoticeDispatchService.kt"
 
     if [[ "${#files[@]}" -eq 0 ]]; then
-        echo "ERROR: Track I notice dispatch overload scan has no scan targets"
+        echo "ERROR: notice totals notice dispatch overload scan has no scan targets"
         failures=1
         return
     fi
@@ -366,15 +468,15 @@ check_notice_dispatch_overloads() {
     set -e
 
     if [[ "$status" -ne 0 ]]; then
-        echo "ERROR: Track D notice dispatch overload scan failed"
+        echo "ERROR: login compliance notice dispatch overload scan failed"
         echo "$output"
         failures=1
     elif [[ -n "$output" ]]; then
-        echo "FAIL: Track I notice dispatch overload forbids local notice compliance"
+        echo "FAIL: notice totals notice dispatch overload forbids local notice compliance"
         echo "$output"
         failures=1
     else
-        echo "PASS: Track I notice dispatch overload forbids local notice compliance"
+        echo "PASS: notice totals notice dispatch overload forbids local notice compliance"
     fi
 }
 
@@ -401,7 +503,7 @@ check_notice_dispatch_call_blocks() {
     fi
 }
 
-check_hs002_track_e_session_boundaries() {
+check_simulator_session_boundaries() {
     local session_production_targets=()
     while IFS= read -r path; do
         case "$path" in
@@ -428,8 +530,8 @@ check_hs002_track_e_session_boundaries() {
         -type f -name '*.kt' 2>/dev/null || true)
 
     check_no_hits \
-        "HS002-E direct SimulatorPacketExchange receive outside session gateway" \
-        "$HS002_TRACK_E_FORBIDDEN_FACADE_RECEIVE_PATTERN" \
+        "simulator session direct SimulatorPacketExchange receive outside session gateway" \
+        "$SIMULATOR_SESSION_FORBIDDEN_FACADE_RECEIVE_PATTERN" \
         "${session_production_targets[@]}"
 
     local circuit_client_targets=()
@@ -437,8 +539,8 @@ check_hs002_track_e_session_boundaries() {
         "hostess-protocol-libomv/src/commonMain/kotlin/org/hostess/protocol/libomv/transport/ProtocolSimulatorCircuitClient.kt"
 
     check_no_hits \
-        "HS002-E old circuit-client local receive state absent" \
-        "$HS002_TRACK_E_DEAD_CIRCUIT_CLIENT_PATTERN" \
+        "simulator session old circuit-client local receive state absent" \
+        "$SIMULATOR_SESSION_DEAD_CIRCUIT_CLIENT_PATTERN" \
         "${circuit_client_targets[@]}"
 
     local session_gateway_targets=()
@@ -450,19 +552,19 @@ check_hs002_track_e_session_boundaries() {
         "hostess-protocol-libomv/src/main"
 
     check_exact_owner_count \
-        "HS002-E single ThreadedSimulatorSessionGateway owner" \
+        "simulator session single ThreadedSimulatorSessionGateway owner" \
         "ThreadedSimulatorSessionGateway" \
         1 \
         "${session_gateway_targets[@]}"
 
     check_no_hits \
-        "HS002-E no duplicate simulator session owner names" \
-        "$HS002_TRACK_E_DUPLICATE_SIM_GATEWAY_PATTERN" \
+        "simulator session no duplicate simulator session owner names" \
+        "$SIMULATOR_SESSION_DUPLICATE_GATEWAY_PATTERN" \
         "${session_gateway_targets[@]}"
 
     check_no_hits \
-        "HS002-E production fake live simulator success routes absent" \
-        "$HS002_TRACK_E_FORBIDDEN_FAKE_LIVE_PATTERN" \
+        "simulator session production fake live simulator success routes absent" \
+        "$SIMULATOR_SESSION_FORBIDDEN_FAKE_LIVE_PATTERN" \
         "${session_production_targets[@]}"
 
     local app_core_ui_cli_targets=()
@@ -480,7 +582,7 @@ check_hs002_track_e_session_boundaries() {
         "apps/android/src/main"
 
     check_no_hits \
-        "HS002-E SimulatorSessionGateway stays inside protocol adapter" \
+        "simulator session SimulatorSessionGateway stays inside protocol adapter" \
         'SimulatorSessionGateway' \
         "${app_core_ui_cli_targets[@]}"
 
@@ -505,8 +607,8 @@ check_hs002_track_e_session_boundaries() {
         "README.md"
 
     check_no_hits \
-        "HS002-E raw track-only persisted identifiers absent" \
-        "$HS002_TRACK_E_RAW_TRACK_IDENTIFIER_PATTERN" \
+        "simulator session briefing-label persisted identifiers absent" \
+        "$PUBLIC_SOURCE_BRIEFING_LABEL_IDENTIFIER_PATTERN" \
         "${raw_identifier_targets[@]}"
 }
 
@@ -557,8 +659,8 @@ add_existing production_targets \
     "apps/android/build.gradle.kts" \
     "apps/android/src/main"
 
-track_f_all_source_targets=()
-add_existing track_f_all_source_targets \
+kmp_all_source_targets=()
+add_existing kmp_all_source_targets \
     "hostess-core/src/commonMain" \
     "hostess-core/src/commonTest" \
     "hostess-core/src/jvmMain" \
@@ -593,13 +695,13 @@ add_existing track_f_all_source_targets \
     "apps/android/src/main" \
     "apps/android/src/test"
 
-track_f_common_targets=()
-add_existing track_f_common_targets \
+kmp_common_targets=()
+add_existing kmp_common_targets \
     "hostess-core/src/commonMain" \
     "hostess-protocol-libomv/src/commonMain"
 
-track_f_owner_targets=()
-add_existing track_f_owner_targets \
+architecture_owner_targets=()
+add_existing architecture_owner_targets \
     "hostess-core/src/commonMain" \
     "hostess-core/src/jvmMain" \
     "hostess-core/src/androidMain" \
@@ -615,7 +717,7 @@ add_existing track_f_owner_targets \
     "apps/desktop/src/main" \
     "apps/android/src/main"
 
-track_f_platform_api_forbidden_targets=()
+kmp_platform_api_forbidden_targets=()
 while IFS= read -r path; do
     case "$path" in
         hostess-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/transport/OkHttpProtocolHttpClient.kt) ;;
@@ -625,7 +727,7 @@ while IFS= read -r path; do
         hostess-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/runtime/DefaultHostessHardwareAddressSource.kt) ;;
         apps/desktop/src/main/kotlin/org/hostess/apps/desktop/DesktopVaultComposition.kt) ;;
         apps/desktop/src/main/kotlin/org/hostess/apps/desktop/DesktopPreferenceComposition.kt) ;;
-        *) track_f_platform_api_forbidden_targets+=("$path") ;;
+        *) kmp_platform_api_forbidden_targets+=("$path") ;;
     esac
 done < <(find \
     "hostess-core/src/commonMain" \
@@ -675,8 +777,8 @@ for protocol_root in \
     done < <(find "$protocol_root" -type f ! -path '*/transport/*' 2>/dev/null || true)
 done
 
-track_b_runtime_forbidden_targets=()
-add_existing track_b_runtime_forbidden_targets \
+protocol_boundary_runtime_forbidden_targets=()
+add_existing protocol_boundary_runtime_forbidden_targets \
     "hostess-core/src/commonMain" \
     "hostess-core/src/jvmMain" \
     "hostess-core/src/androidMain" \
@@ -686,17 +788,17 @@ add_existing track_b_runtime_forbidden_targets \
     "apps/desktop/src/main" \
     "apps/android/src/main"
 
-track_b_ui_targets=()
-add_existing track_b_ui_targets \
+ui_targets=()
+add_existing ui_targets \
     "hostess-ui/src/commonMain" \
     "hostess-ui/src/jvmMain" \
     "hostess-ui/src/androidMain"
 
-track_b_ui_text_forbidden_targets=()
+ui_text_forbidden_targets=()
 while IFS= read -r path; do
     case "$path" in
         *"/HostessText.kt") ;;
-        *) track_b_ui_text_forbidden_targets+=("$path") ;;
+        *) ui_text_forbidden_targets+=("$path") ;;
     esac
 done < <(find \
     "hostess-ui/src/commonMain" \
@@ -705,15 +807,15 @@ done < <(find \
     "apps/desktop/src/main" \
     "apps/android/src/main" \
     -type f 2>/dev/null || true)
-add_existing track_b_ui_text_forbidden_targets \
+add_existing ui_text_forbidden_targets \
     "apps/desktop/build.gradle.kts" \
     "apps/android/build.gradle.kts"
 
-track_b_ui_style_forbidden_targets=()
+ui_style_forbidden_targets=()
 while IFS= read -r path; do
     case "$path" in
         *"/org/hostess/ui/design/"*) ;;
-        *) track_b_ui_style_forbidden_targets+=("$path") ;;
+        *) ui_style_forbidden_targets+=("$path") ;;
     esac
 done < <(find \
     "hostess-ui/src/commonMain/kotlin/org/hostess/ui" \
@@ -721,7 +823,7 @@ done < <(find \
     "hostess-ui/src/androidMain/kotlin/org/hostess/ui" \
     -type f -name '*.kt' 2>/dev/null || true)
 
-track_b_ui_direct_control_forbidden_targets=()
+ui_direct_control_forbidden_targets=()
 while IFS= read -r path; do
     case "$path" in
         *"/HostessButtons.kt") ;;
@@ -732,7 +834,7 @@ while IFS= read -r path; do
         *"/HostessScrollablePane.kt") ;;
         *"/HostessScrollablePane.jvm.kt") ;;
         *"/HostessScrollablePane.android.kt") ;;
-        *) track_b_ui_direct_control_forbidden_targets+=("$path") ;;
+        *) ui_direct_control_forbidden_targets+=("$path") ;;
     esac
 done < <(find \
     "hostess-ui/src/commonMain/kotlin/org/hostess/ui" \
@@ -740,45 +842,45 @@ done < <(find \
     "hostess-ui/src/androidMain/kotlin/org/hostess/ui" \
     -type f -name '*.kt' 2>/dev/null || true)
 
-track_c_ui_split_login_targets=()
-add_existing track_c_ui_split_login_targets \
+ui_remediation_split_login_targets=()
+add_existing ui_remediation_split_login_targets \
     "hostess-ui/src/commonMain"
 
-track_c_ui_fake_location_targets=()
-add_existing track_c_ui_fake_location_targets \
+ui_remediation_fake_location_targets=()
+add_existing ui_remediation_fake_location_targets \
     "hostess-ui/src/commonMain" \
     "hostess-core/src/commonMain" \
     "hostess-protocol-libomv/src/commonMain"
 
-track_c_ui_scaffold_required_targets=()
-add_existing track_c_ui_scaffold_required_targets \
+ui_remediation_scaffold_required_targets=()
+add_existing ui_remediation_scaffold_required_targets \
     "hostess-ui/src/commonMain/kotlin/org/hostess/ui/HostessApp.kt" \
     "hostess-ui/src/commonMain/kotlin/org/hostess/ui/components/HostessAppScaffold.kt"
 
-track_c_ui_custom_icon_targets=()
-add_existing track_c_ui_custom_icon_targets \
+ui_remediation_custom_icon_targets=()
+add_existing ui_remediation_custom_icon_targets \
     "hostess-ui/src/commonMain/kotlin/org/hostess/ui/components/HostessIcons.kt"
 
-hs002_track_d_ui_adapter_targets=()
-add_existing hs002_track_d_ui_adapter_targets \
+theme_ui_adapter_targets=()
+add_existing theme_ui_adapter_targets \
     "hostess-ui/build.gradle.kts" \
     "hostess-ui/src/commonMain" \
     "hostess-ui/src/jvmMain" \
     "hostess-ui/src/androidMain"
 
-hs002_track_d_vault_theme_targets=()
-add_existing hs002_track_d_vault_theme_targets \
+theme_vault_storage_targets=()
+add_existing theme_vault_storage_targets \
     "hostess-credential-vault/build.gradle.kts" \
     "hostess-credential-vault/src/commonMain" \
     "hostess-credential-vault/src/jvmMain" \
     "hostess-credential-vault/src/androidMain" \
     "hostess-credential-vault/src/jvmAndroidMain"
 
-hs002_track_d_colour_forbidden_targets=()
+theme_colour_forbidden_targets=()
 while IFS= read -r path; do
     case "$path" in
         *"/org/hostess/ui/design/"*) ;;
-        *) hs002_track_d_colour_forbidden_targets+=("$path") ;;
+        *) theme_colour_forbidden_targets+=("$path") ;;
     esac
 done < <(find \
     "hostess-ui/src/commonMain/kotlin/org/hostess/ui" \
@@ -788,11 +890,11 @@ done < <(find \
     "apps/android/src/main" \
     -type f -name '*.kt' 2>/dev/null || true)
 
-hs002_track_d_visible_label_forbidden_targets=()
+theme_visible_label_forbidden_targets=()
 while IFS= read -r path; do
     case "$path" in
         *"/HostessText.kt") ;;
-        *) hs002_track_d_visible_label_forbidden_targets+=("$path") ;;
+        *) theme_visible_label_forbidden_targets+=("$path") ;;
     esac
 done < <(find \
     "hostess-ui/src/commonMain" \
@@ -802,25 +904,25 @@ done < <(find \
     "apps/android/src/main" \
     -type f -name '*.kt' 2>/dev/null || true)
 
-hs002_track_d_prototype_forbidden_targets=()
-add_existing hs002_track_d_prototype_forbidden_targets \
+theme_prototype_forbidden_targets=()
+add_existing theme_prototype_forbidden_targets \
     "hostess-ui/src/commonMain" \
     "hostess-ui/src/jvmMain" \
     "hostess-ui/src/androidMain" \
     "apps/desktop/src/main" \
     "apps/android/src/main"
 
-hs002_track_d_root_project_label_targets=()
-add_existing hs002_track_d_root_project_label_targets \
+theme_root_project_label_targets=()
+add_existing theme_root_project_label_targets \
     "apps/desktop/build.gradle.kts" \
     "apps/android/build.gradle.kts"
 
-track_c_runtime_forbidden_targets=()
+session_protocol_runtime_forbidden_targets=()
 while IFS= read -r path; do
     case "$path" in
         # Android no-UI load probe may mention protocol owner class names only.
         "apps/android/src/main/kotlin/org/hostess/apps/android/AndroidCompatibilityProbe.kt") ;;
-        *) track_c_runtime_forbidden_targets+=("$path") ;;
+        *) session_protocol_runtime_forbidden_targets+=("$path") ;;
     esac
 done < <(find \
     "hostess-core/src/commonMain" \
@@ -833,13 +935,13 @@ done < <(find \
     "apps/android/src/main" \
     -type f -name '*.kt' 2>/dev/null || true)
 
-track_c_env_forbidden_targets=()
+credential_env_forbidden_targets=()
 while IFS= read -r path; do
     case "$path" in
         *"/EnvironmentLoginSecretResolver.kt") ;;
         *"/DesktopVaultComposition.kt") ;;
         *"/DesktopPreferenceComposition.kt") ;;
-        *) track_c_env_forbidden_targets+=("$path") ;;
+        *) credential_env_forbidden_targets+=("$path") ;;
     esac
 done < <(find \
     "hostess-core/src/commonMain" \
@@ -857,11 +959,11 @@ done < <(find \
     "apps/android/src/main" \
     -type f 2>/dev/null || true)
 
-track_c_file_route_forbidden_targets=()
+credential_file_route_forbidden_targets=()
 while IFS= read -r path; do
     case "$path" in
         *"/LiveProofInputs.kt") ;;
-        *) track_c_file_route_forbidden_targets+=("$path") ;;
+        *) credential_file_route_forbidden_targets+=("$path") ;;
     esac
 done < <(find \
     "hostess-core/src/commonMain" \
@@ -879,21 +981,21 @@ done < <(find \
     "apps/android/src/main" \
     -type f 2>/dev/null || true)
 
-track_d_main_roots=(
+login_compliance_main_roots=(
     "hostess-core"
     "hostess-protocol-libomv"
     "tools"
     "apps"
 )
 
-track_d_tools_apps_targets=()
-add_existing track_d_tools_apps_targets \
+login_compliance_tools_apps_targets=()
+add_existing login_compliance_tools_apps_targets \
     "tools/cli/src/main" \
     "apps/desktop/src/main" \
     "apps/android/src/main"
 
-track_d_notice_dispatch_targets=()
-add_existing track_d_notice_dispatch_targets \
+notice_dispatch_targets=()
+add_existing notice_dispatch_targets \
     "hostess-core/src/commonMain" \
     "hostess-core/src/jvmMain" \
     "hostess-core/src/androidMain" \
@@ -903,12 +1005,12 @@ add_existing track_d_notice_dispatch_targets \
     "apps/desktop/src/main" \
     "apps/android/src/main"
 
-track_d_viewer_provider_forbidden_targets=()
+viewer_identity_provider_forbidden_targets=()
 while IFS= read -r path; do
     case "$path" in
         # D-08 Android no-UI load probe must class-load this protocol identity provider.
         "apps/android/src/main/kotlin/org/hostess/apps/android/AndroidCompatibilityProbe.kt") ;;
-        *) track_d_viewer_provider_forbidden_targets+=("$path") ;;
+        *) viewer_identity_provider_forbidden_targets+=("$path") ;;
     esac
 done < <(find \
     "hostess-core/src/commonMain" \
@@ -921,25 +1023,25 @@ done < <(find \
     "apps/android/src/main" \
     -type f -name '*.kt' 2>/dev/null || true)
 
-track_d_report_key_targets=()
+report_secret_key_targets=()
 while IFS= read -r path; do
     case "$path" in
         *"/RedactedText.kt") ;;
-        *) track_d_report_key_targets+=("$path") ;;
+        *) report_secret_key_targets+=("$path") ;;
     esac
 done < <(find "tools/cli/src/main/kotlin/org/hostess/tools/cli" -type f -name '*.kt' 2>/dev/null || true)
 
-track_d_cap_forbidden_targets=()
-add_existing track_d_cap_forbidden_targets \
+notice_cap_forbidden_targets=()
+add_existing notice_cap_forbidden_targets \
     "tools/cli/src/main/kotlin/org/hostess/tools/cli/commands/SendNoticeCommand.kt" \
     "tools/cli/src/main/kotlin/org/hostess/tools/cli/commands/LiveProofRunner.kt"
 
-track_ds_direct_owner_forbidden_targets=()
+login_package_direct_owner_forbidden_targets=()
 while IFS= read -r path; do
     case "$path" in
-        # DS Android no-UI load probe may mention Track DS owner class names only.
+        # login package Android no-UI load probe may mention login package owner class names only.
         "apps/android/src/main/kotlin/org/hostess/apps/android/AndroidCompatibilityProbe.kt") ;;
-        *) track_ds_direct_owner_forbidden_targets+=("$path") ;;
+        *) login_package_direct_owner_forbidden_targets+=("$path") ;;
     esac
 done < <(find \
     "hostess-core/src/commonMain" \
@@ -952,8 +1054,8 @@ done < <(find \
     "apps/android/src/main" \
     -type f -name '*.kt' 2>/dev/null || true)
 
-track_ds_login_package_targets=()
-add_existing track_ds_login_package_targets \
+login_package_targets=()
+add_existing login_package_targets \
     "hostess-protocol-libomv/src/commonMain/kotlin/org/hostess/protocol/libomv/runtime/ProtocolLoginRuntime.kt" \
     "hostess-protocol-libomv/src/jvmMain/kotlin/org/hostess/protocol/libomv/runtime/ProtocolLoginRuntime.kt" \
     "hostess-protocol-libomv/src/androidMain/kotlin/org/hostess/protocol/libomv/runtime/ProtocolLoginRuntime.kt" \
@@ -966,30 +1068,30 @@ for protocol_runtime_root in \
     "hostess-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/runtime" \
     "hostess-protocol-libomv/src/main/kotlin/org/hostess/protocol/libomv/runtime"; do
     while IFS= read -r path; do
-        track_ds_login_package_targets+=("$path")
+        login_package_targets+=("$path")
     done < <(find "$protocol_runtime_root" -maxdepth 1 -type f -name 'LoginPackage*.kt' 2>/dev/null || true)
 done
 
-track_d_session_service_targets=()
-add_existing track_d_session_service_targets \
+session_login_service_targets=()
+add_existing session_login_service_targets \
     "hostess-core/src/commonMain/kotlin/org/hostess/core/services/SessionService.kt" \
     "hostess-core/src/main/kotlin/org/hostess/core/services/SessionService.kt"
 
-track_d_notice_time_targets=()
-add_existing track_d_notice_time_targets \
+notice_time_targets=()
+add_existing notice_time_targets \
     "hostess-core/src/commonMain/kotlin/org/hostess/core/services/NoticeComplianceService.kt" \
     "hostess-core/src/main/kotlin/org/hostess/core/services/NoticeComplianceService.kt"
 
-track_ds_old_login_targets=()
-add_existing track_ds_old_login_targets \
+login_package_old_login_targets=()
+add_existing login_package_old_login_targets \
     "hostess-protocol-libomv/src/commonMain/kotlin/org/hostess/protocol/libomv/runtime/ProtocolLoginRuntime.kt" \
     "hostess-protocol-libomv/src/jvmMain/kotlin/org/hostess/protocol/libomv/runtime/ProtocolLoginRuntime.kt" \
     "hostess-protocol-libomv/src/androidMain/kotlin/org/hostess/protocol/libomv/runtime/ProtocolLoginRuntime.kt" \
     "hostess-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/runtime/ProtocolLoginRuntime.kt" \
     "hostess-protocol-libomv/src/main/kotlin/org/hostess/protocol/libomv/runtime/ProtocolLoginRuntime.kt"
 
-track_e_kotlin_targets=()
-add_existing track_e_kotlin_targets \
+attachment_kotlin_targets=()
+add_existing attachment_kotlin_targets \
     "hostess-core/src/commonMain" \
     "hostess-core/src/commonTest" \
     "hostess-core/src/jvmMain" \
@@ -1012,26 +1114,26 @@ add_existing track_e_kotlin_targets \
     "apps/android/src/test" \
     "apps/android/src/androidTest"
 
-track_e_fake_default_targets=()
-add_existing track_e_fake_default_targets \
+live_proof_fake_default_targets=()
+add_existing live_proof_fake_default_targets \
     "tools/cli/src/main" \
     "tools/cli/src/test"
 
-track_e_local_http_targets=()
-add_existing track_e_local_http_targets \
+live_proof_local_http_targets=()
+add_existing live_proof_local_http_targets \
     "hostess-protocol-libomv/src/commonMain" \
     "hostess-protocol-libomv/src/jvmAndroidMain"
 
-track_e_android_probe_targets=()
-add_existing track_e_android_probe_targets \
+android_probe_injection_targets=()
+add_existing android_probe_injection_targets \
     "apps/android/src/main"
 
-track_e_packet_generation_targets=()
-add_existing track_e_packet_generation_targets \
+packet_generation_targets=()
+add_existing packet_generation_targets \
     "hostess-protocol-libomv/build.gradle.kts"
 
-track_e_production_packet_import_targets=()
-add_existing track_e_production_packet_import_targets \
+packet_generation_production_import_targets=()
+add_existing packet_generation_production_import_targets \
     "hostess-core/src/commonMain" \
     "hostess-core/src/jvmMain" \
     "hostess-core/src/androidMain" \
@@ -1046,8 +1148,8 @@ add_existing track_e_production_packet_import_targets \
     "apps/desktop/src/main" \
     "apps/android/src/main"
 
-track_g_main_targets=()
-add_existing track_g_main_targets \
+inventory_capability_main_targets=()
+add_existing inventory_capability_main_targets \
     "hostess-core/src/commonMain" \
     "hostess-core/src/jvmMain" \
     "hostess-core/src/androidMain" \
@@ -1062,26 +1164,26 @@ add_existing track_g_main_targets \
     "apps/desktop/src/main" \
     "apps/android/src/main"
 
-track_g_event_queue_targets=()
-add_existing track_g_event_queue_targets \
+inventory_capability_event_queue_targets=()
+add_existing inventory_capability_event_queue_targets \
     "hostess-protocol-libomv/src/commonMain/kotlin/org/hostess/protocol/libomv/transport/EventQueueGetClient.kt"
 
-track_g_cli_targets=()
-add_existing track_g_cli_targets \
+inventory_capability_cli_targets=()
+add_existing inventory_capability_cli_targets \
     "tools/cli/src/main"
 
-track_h_cli_live_send_targets=()
-add_existing track_h_cli_live_send_targets \
+live_notice_proof_cli_send_targets=()
+add_existing live_notice_proof_cli_send_targets \
     "tools/cli/src/main" \
     "tools/cli/README.md"
 
-track_h_full_proof_targets=()
-add_existing track_h_full_proof_targets \
+live_notice_proof_full_targets=()
+add_existing live_notice_proof_full_targets \
     "tools/cli/src/main" \
     "tools/cli/src/test"
 
-track_h_notice_stale_targets=()
-add_existing track_h_notice_stale_targets \
+notice_protocol_stale_targets=()
+add_existing notice_protocol_stale_targets \
     "hostess-core/src/commonMain" \
     "hostess-core/src/jvmMain" \
     "hostess-core/src/androidMain" \
@@ -1096,12 +1198,12 @@ add_existing track_h_notice_stale_targets \
     "apps/desktop/src/main" \
     "apps/android/src/main"
 
-track_h_direct_app_notice_targets=()
+notice_protocol_direct_app_targets=()
 while IFS= read -r path; do
     case "$path" in
-        # H-08 Android no-UI load probe may mention Track H protocol owner class names only.
+        # notice protocol Android no-UI load probe may mention notice protocol protocol owner class names only.
         "apps/android/src/main/kotlin/org/hostess/apps/android/AndroidCompatibilityProbe.kt") ;;
-        *) track_h_direct_app_notice_targets+=("$path") ;;
+        *) notice_protocol_direct_app_targets+=("$path") ;;
     esac
 done < <(find \
     "tools/cli/src/main" \
@@ -1109,11 +1211,11 @@ done < <(find \
     "apps/android/src/main" \
     -type f -name '*.kt' 2>/dev/null || true)
 
-track_hs_duplicate_exchange_targets=()
+simulator_exchange_duplicate_targets=()
 while IFS= read -r path; do
     case "$path" in
         "hostess-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/transport/UdpSimulatorDatagramSender.kt") ;;
-        *) track_hs_duplicate_exchange_targets+=("$path") ;;
+        *) simulator_exchange_duplicate_targets+=("$path") ;;
     esac
 done < <(find \
     "hostess-core/src/commonMain" \
@@ -1131,22 +1233,22 @@ done < <(find \
     "apps/android/src/main" \
     -type f -name '*.kt' 2>/dev/null || true)
 
-track_hs_direct_archive_targets=()
-add_existing track_hs_direct_archive_targets \
+notice_archive_direct_targets=()
+add_existing notice_archive_direct_targets \
     "tools/cli/src/main" \
     "apps/desktop/src/main" \
     "apps/android/src/main"
 
-track_hs_fake_live_targets=()
-add_existing track_hs_fake_live_targets \
+fake_live_proof_targets=()
+add_existing fake_live_proof_targets \
     "tools/cli/src/main"
 
-track_hs_full_proof_targets=()
-add_existing track_hs_full_proof_targets \
+full_proof_archive_targets=()
+add_existing full_proof_archive_targets \
     "tools/cli/src/main/kotlin/org/hostess/tools/cli/commands/LiveNoticeSendProofRunner.kt"
 
-track_incident_group_mutation_targets=()
-add_existing track_incident_group_mutation_targets \
+group_membership_mutation_targets=()
+add_existing group_membership_mutation_targets \
     "hostess-core/src/commonMain" \
     "hostess-core/src/jvmMain" \
     "hostess-core/src/androidMain" \
@@ -1161,12 +1263,12 @@ add_existing track_incident_group_mutation_targets \
     "apps/desktop/src/main" \
     "apps/android/src/main"
 
-track_android_probe_targets=()
-add_existing track_android_probe_targets \
+android_probe_targets=()
+add_existing android_probe_targets \
     "apps/android/src/main/kotlin/org/hostess/apps/android/AndroidCompatibilityProbe.kt"
 
-track_a_dependency_targets=()
-add_existing track_a_dependency_targets \
+vault_dependency_targets=()
+add_existing vault_dependency_targets \
     "gradle/libs.versions.toml" \
     "settings.gradle.kts" \
     "build.gradle.kts" \
@@ -1177,8 +1279,8 @@ add_existing track_a_dependency_targets \
     "apps/desktop/build.gradle.kts" \
     "apps/android/build.gradle.kts"
 
-track_a_production_targets=()
-add_existing track_a_production_targets \
+vault_production_targets=()
+add_existing vault_production_targets \
     "hostess-core/src/commonMain" \
     "hostess-core/src/jvmMain" \
     "hostess-core/src/androidMain" \
@@ -1195,8 +1297,8 @@ add_existing track_a_production_targets \
     "apps/desktop/src/main" \
     "apps/android/src/main"
 
-track_a_raw_key_forbidden_targets=()
-add_existing track_a_raw_key_forbidden_targets \
+vault_raw_key_forbidden_targets=()
+add_existing vault_raw_key_forbidden_targets \
     "hostess-core/src/commonMain" \
     "hostess-core/src/jvmMain" \
     "hostess-core/src/androidMain" \
@@ -1209,29 +1311,29 @@ add_existing track_a_raw_key_forbidden_targets \
     "apps/desktop/src/main" \
     "apps/android/src/main"
 
-track_a_app_composition_targets=()
-add_existing track_a_app_composition_targets \
+vault_app_composition_targets=()
+add_existing vault_app_composition_targets \
     "apps/desktop/src/main" \
     "apps/android/src/main"
 
-track_i_stale_notice_compliance_targets=()
-add_existing track_i_stale_notice_compliance_targets \
+notice_totals_stale_compliance_targets=()
+add_existing notice_totals_stale_compliance_targets \
     "hostess-core/src/commonMain" \
     "hostess-core/src/jvmMain" \
     "tools/cli/src/main" \
     "apps/desktop/src/main" \
     "apps/android/src/main"
 
-track_i_public_doc_targets=()
-add_existing track_i_public_doc_targets \
+notice_totals_public_doc_targets=()
+add_existing notice_totals_public_doc_targets \
     "README.md" \
     "hostess-core/README.md" \
     "tools/cli/README.md" \
     "apps/desktop/README.md" \
     "apps/android/README.md"
 
-track_j_main_targets=()
-add_existing track_j_main_targets \
+avatar_main_targets=()
+add_existing avatar_main_targets \
     "hostess-core/src/commonMain" \
     "hostess-core/src/jvmMain" \
     "hostess-core/src/androidMain" \
@@ -1246,25 +1348,25 @@ add_existing track_j_main_targets \
     "apps/desktop/src/main" \
     "apps/android/src/main"
 
-track_j_avatar_source_targets=()
-add_existing track_j_avatar_source_targets \
+avatar_source_targets=()
+add_existing avatar_source_targets \
     "hostess-protocol-libomv/src/commonMain/kotlin/org/hostess/protocol/libomv/runtime/ProtocolAvatarAppearanceSource.kt"
 
-track_j_cli_command_targets=()
-add_existing track_j_cli_command_targets \
+avatar_cli_command_targets=()
+add_existing avatar_cli_command_targets \
     "tools/cli/src/main/kotlin/org/hostess/tools/cli/commands"
 
-track_j_full_proof_targets=()
-add_existing track_j_full_proof_targets \
+avatar_full_proof_targets=()
+add_existing avatar_full_proof_targets \
     "tools/cli/src/main/kotlin/org/hostess/tools/cli/commands/LiveNoticeSendProofRunner.kt"
 
-track_j_simulator_exchange_impl_targets=()
+avatar_simulator_exchange_impl_targets=()
 while IFS= read -r path; do
     case "$path" in
         "hostess-protocol-libomv/src/commonMain/kotlin/org/hostess/protocol/libomv/transport/SimulatorPacketExchange.kt") ;;
         "hostess-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/transport/SimulatorPacketExchangeFactory.kt") ;;
         "hostess-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/transport/UdpSimulatorDatagramSender.kt") ;;
-        *) track_j_simulator_exchange_impl_targets+=("$path") ;;
+        *) avatar_simulator_exchange_impl_targets+=("$path") ;;
     esac
 done < <(find \
     "hostess-core/src/commonMain" \
@@ -1308,481 +1410,481 @@ check_no_hits \
     "${cli_command_targets[@]}"
 
 check_no_hits \
-    "Track B direct OkHttp outside protocol transport" \
-    "$TRACK_B_OKHTTP_PATTERN" \
+    "protocol boundary direct OkHttp outside protocol transport" \
+    "$PROTOCOL_BOUNDARY_OKHTTP_PATTERN" \
     "${okhttp_forbidden_targets[@]}"
 
 check_no_hits \
-    "Track B runtime/transport direct calls outside protocol module" \
-    "$TRACK_B_RUNTIME_PATTERN" \
-    "${track_b_runtime_forbidden_targets[@]}"
+    "protocol boundary runtime/transport direct calls outside protocol module" \
+    "$PROTOCOL_BOUNDARY_RUNTIME_PATTERN" \
+    "${protocol_boundary_runtime_forbidden_targets[@]}"
 
 check_path_exists \
-    "Track B shared UI module exists" \
+    "protocol boundary shared UI module exists" \
     "hostess-ui/src/commonMain"
 
 check_no_hits \
-    "Track B UI direct protocol/runtime path" \
-    "$TRACK_B_UI_DIRECT_PROTOCOL_PATTERN" \
-    "${track_b_ui_targets[@]}"
+    "protocol boundary UI direct protocol/runtime path" \
+    "$UI_DIRECT_PROTOCOL_PATTERN" \
+    "${ui_targets[@]}"
 
 check_no_hits \
-    "Track B UI direct vault/native credential path" \
-    "$TRACK_B_UI_DIRECT_VAULT_PATTERN" \
-    "${track_b_ui_targets[@]}"
+    "protocol boundary UI direct vault/native credential path" \
+    "$UI_DIRECT_VAULT_PATTERN" \
+    "${ui_targets[@]}"
 
 check_no_hits \
-    "Track B UI direct notice/group send path" \
-    "$TRACK_B_UI_DIRECT_NOTICE_PATTERN" \
-    "${track_b_ui_targets[@]}"
+    "protocol boundary UI direct notice/group send path" \
+    "$UI_DIRECT_NOTICE_PATTERN" \
+    "${ui_targets[@]}"
 
 check_no_hits \
-    "Track B UI forbidden generic owner names" \
-    "$TRACK_B_UI_FORBIDDEN_OWNER_PATTERN" \
-    "${track_b_ui_targets[@]}"
+    "protocol boundary UI forbidden generic owner names" \
+    "$UI_FORBIDDEN_OWNER_PATTERN" \
+    "${ui_targets[@]}"
 
 check_no_hits \
-    "Track B UI WebView/HTML prototype route" \
-    "$TRACK_B_UI_WEBVIEW_PATTERN" \
-    "${track_b_ui_targets[@]}" \
+    "protocol boundary UI WebView/HTML prototype route" \
+    "$UI_WEBVIEW_PATTERN" \
+    "${ui_targets[@]}" \
     "apps/desktop/src/main" \
     "apps/android/src/main"
 
 check_no_hits \
-    "Track B UI unfinished staged code" \
-    "$TRACK_B_UI_STAGED_PATTERN" \
-    "${track_b_ui_targets[@]}"
+    "protocol boundary UI unfinished staged code" \
+    "$UI_STAGED_PATTERN" \
+    "${ui_targets[@]}"
 
 check_no_hits \
-    "Track B UI visible labels centralized" \
-    "$TRACK_B_UI_TEXT_PATTERN" \
-    "${track_b_ui_text_forbidden_targets[@]}"
+    "protocol boundary UI visible labels centralized" \
+    "$UI_TEXT_CATALOGUE_PATTERN" \
+    "${ui_text_forbidden_targets[@]}"
 
 check_no_hits \
-    "Track B UI style constants centralized" \
-    "$TRACK_B_UI_STYLE_PATTERN" \
-    "${track_b_ui_style_forbidden_targets[@]}"
+    "protocol boundary UI style constants centralized" \
+    "$UI_STYLE_TOKEN_PATTERN" \
+    "${ui_style_forbidden_targets[@]}"
 
 check_no_hits \
-    "Track B UI raw controls centralized" \
-    "$TRACK_B_UI_DIRECT_CONTROL_PATTERN" \
-    "${track_b_ui_direct_control_forbidden_targets[@]}"
+    "protocol boundary UI raw controls centralized" \
+    "$UI_DIRECT_CONTROL_PATTERN" \
+    "${ui_direct_control_forbidden_targets[@]}"
 
 check_no_hits \
-    "Track C direct runtime/transport calls outside protocol module" \
-    "$TRACK_C_RUNTIME_PATTERN" \
-    "${track_c_runtime_forbidden_targets[@]}"
+    "session credential direct runtime/transport calls outside protocol module" \
+    "$SESSION_PROTOCOL_DIRECT_RUNTIME_PATTERN" \
+    "${session_protocol_runtime_forbidden_targets[@]}"
 
 check_no_hits \
-    "Track C raw env reads outside resolver" \
-    "$TRACK_C_ENV_PATTERN" \
-    "${track_c_env_forbidden_targets[@]}"
+    "session credential raw env reads outside resolver" \
+    "$CREDENTIAL_ENV_READ_PATTERN" \
+    "${credential_env_forbidden_targets[@]}"
 
 check_no_hits \
-    "Track C unsupported file route outside blocking parser" \
-    "$TRACK_C_FILE_ROUTE_PATTERN" \
-    "${track_c_file_route_forbidden_targets[@]}"
+    "session credential unsupported file route outside blocking parser" \
+    "$CREDENTIAL_FILE_ROUTE_PATTERN" \
+    "${credential_file_route_forbidden_targets[@]}"
 
 check_no_hits \
-    "Track C unsupported secret stores" \
-    "$TRACK_C_UNSUPPORTED_SECRET_PATTERN" \
+    "session credential unsupported secret stores" \
+    "$UNSUPPORTED_SECRET_STORE_PATTERN" \
     "${production_targets[@]}"
 
 check_no_hits \
-    "Track C UI old split-login route" \
-    "$TRACK_C_UI_SPLIT_LOGIN_PATTERN" \
-    "${track_c_ui_split_login_targets[@]}"
+    "session credential UI old split-login route" \
+    "$UI_REMEDIATION_SPLIT_LOGIN_PATTERN" \
+    "${ui_remediation_split_login_targets[@]}"
 
 check_no_hits \
-    "Track C UI fake session location route" \
-    "$TRACK_C_UI_FAKE_LOCATION_PATTERN" \
-    "${track_c_ui_fake_location_targets[@]}"
+    "session credential UI fake session location route" \
+    "$UI_REMEDIATION_FAKE_LOCATION_PATTERN" \
+    "${ui_remediation_fake_location_targets[@]}"
 
 check_required_hits \
-    "Track C UI scaffold owner present" \
-    "$TRACK_C_UI_SCAFFOLD_REQUIRED_PATTERN" \
-    "${track_c_ui_scaffold_required_targets[@]}"
+    "session credential UI scaffold owner present" \
+    "$UI_REMEDIATION_SCAFFOLD_REQUIRED_PATTERN" \
+    "${ui_remediation_scaffold_required_targets[@]}"
 
 check_no_hits \
-    "Track C UI custom icon route" \
-    "$TRACK_C_UI_CUSTOM_ICON_PATTERN" \
-    "${track_c_ui_custom_icon_targets[@]}"
+    "session credential UI custom icon route" \
+    "$UI_REMEDIATION_CUSTOM_ICON_PATTERN" \
+    "${ui_remediation_custom_icon_targets[@]}"
 
 check_no_hits \
-    "HS002 Track D UI has no preference adapter dependency" \
-    "$HS002_TRACK_D_UI_PREFERENCE_ADAPTER_PATTERN" \
-    "${hs002_track_d_ui_adapter_targets[@]}"
+    "theme UI has no preference adapter dependency" \
+    "$THEME_UI_PREFERENCE_ADAPTER_PATTERN" \
+    "${theme_ui_adapter_targets[@]}"
 
 check_no_hits \
-    "HS002 Track D vault has no theme preference storage" \
-    "$HS002_TRACK_D_VAULT_THEME_STORAGE_PATTERN" \
-    "${hs002_track_d_vault_theme_targets[@]}"
+    "theme vault has no theme preference storage" \
+    "$THEME_VAULT_STORAGE_PATTERN" \
+    "${theme_vault_storage_targets[@]}"
 
 check_no_hits \
-    "HS002 Track D Haccu colours centralized" \
-    "$HS002_TRACK_D_HACCU_COLOUR_PATTERN" \
-    "${hs002_track_d_colour_forbidden_targets[@]}"
+    "theme Haccu colours centralized" \
+    "$THEME_HACCU_COLOUR_PATTERN" \
+    "${theme_colour_forbidden_targets[@]}"
 
 check_no_hits \
-    "HS002 Track D visible labels centralized" \
-    "$HS002_TRACK_D_VISIBLE_LABEL_PATTERN" \
-    "${hs002_track_d_visible_label_forbidden_targets[@]}"
+    "theme visible labels centralized" \
+    "$THEME_VISIBLE_LABEL_PATTERN" \
+    "${theme_visible_label_forbidden_targets[@]}"
 
 check_no_hits \
-    "HS002 Track D prototype runtime not promoted" \
-    "$HS002_TRACK_D_PROTOTYPE_RUNTIME_PATTERN" \
-    "${hs002_track_d_prototype_forbidden_targets[@]}"
+    "theme prototype runtime not promoted" \
+    "$THEME_PROTOTYPE_RUNTIME_PATTERN" \
+    "${theme_prototype_forbidden_targets[@]}"
 
 check_required_hits \
-    "HS002 Track D brand logo owner present" \
-    "$HS002_TRACK_D_LOGO_OWNER_PATTERN" \
+    "theme brand logo owner present" \
+    "$THEME_LOGO_OWNER_PATTERN" \
     "hostess-ui/src/commonMain/kotlin/org/hostess/ui/components/HostessIcons.kt"
 
 check_required_hits \
-    "HS002 Track D theme toggle owner present" \
-    "$HS002_TRACK_D_TOGGLE_OWNER_PATTERN" \
+    "theme theme toggle owner present" \
+    "$THEME_TOGGLE_OWNER_PATTERN" \
     "hostess-ui/src/commonMain/kotlin/org/hostess/ui/components/ThemeModeToggle.kt"
 
 check_required_hits \
-    "HS002 Track D palette provider present" \
-    "$HS002_TRACK_D_PALETTE_OWNER_PATTERN" \
+    "theme palette provider present" \
+    "$THEME_PALETTE_OWNER_PATTERN" \
     "hostess-ui/src/commonMain/kotlin/org/hostess/ui/design/HaccuHostessPaletteProvider.kt"
 
 check_required_hits \
-    "HS002 Track D Android app label explicit" \
-    "$HS002_TRACK_D_ANDROID_LABEL_PATTERN" \
+    "theme Android app label explicit" \
+    "$THEME_ANDROID_LABEL_PATTERN" \
     "apps/android/build.gradle.kts"
 
 check_required_hits \
-    "HS002 Track D desktop vendor explicit" \
-    "$HS002_TRACK_D_DESKTOP_VENDOR_PATTERN" \
+    "theme desktop vendor explicit" \
+    "$THEME_DESKTOP_VENDOR_PATTERN" \
     "apps/desktop/build.gradle.kts"
 
 check_no_hits \
-    "HS002 Track D app labels do not derive from root project name" \
-    "$HS002_TRACK_D_ROOT_PROJECT_LABEL_PATTERN" \
-    "${hs002_track_d_root_project_label_targets[@]}"
+    "theme app labels do not derive from root project name" \
+    "$THEME_ROOT_PROJECT_LABEL_PATTERN" \
+    "${theme_root_project_label_targets[@]}"
 
 check_no_hits \
-    "Track A forbidden vault dependency acquisition" \
-    "$TRACK_A_FORBIDDEN_DEP_PATTERN" \
-    "${track_a_dependency_targets[@]}"
+    "vault forbidden vault dependency acquisition" \
+    "$VAULT_FORBIDDEN_DEPENDENCY_PATTERN" \
+    "${vault_dependency_targets[@]}"
 
 check_no_hits \
-    "Track A stale credential unlock routes" \
-    "$TRACK_A_STALE_CREDENTIAL_ROUTE_PATTERN" \
-    "${track_a_production_targets[@]}"
+    "vault stale credential unlock routes" \
+    "$VAULT_STALE_CREDENTIAL_ROUTE_PATTERN" \
+    "${vault_production_targets[@]}"
 
 check_no_hits \
-    "Track A AndroidX crypto route absent" \
-    "$TRACK_A_ANDROIDX_CRYPTO_PATTERN" \
-    "${track_a_production_targets[@]}" \
-    "${track_a_dependency_targets[@]}"
+    "vault AndroidX crypto route absent" \
+    "$VAULT_ANDROIDX_CRYPTO_PATTERN" \
+    "${vault_production_targets[@]}" \
+    "${vault_dependency_targets[@]}"
 
 check_no_hits \
-    "Track A raw key exposure outside vault module" \
-    "$TRACK_A_RAW_KEY_EXPOSURE_PATTERN" \
-    "${track_a_raw_key_forbidden_targets[@]}"
+    "vault raw key exposure outside vault module" \
+    "$VAULT_RAW_KEY_EXPOSURE_PATTERN" \
+    "${vault_raw_key_forbidden_targets[@]}"
 
 check_no_hits \
-    "Track A app composition does not use env secret resolver" \
-    "$TRACK_A_APP_ENV_RESOLVER_PATTERN" \
-    "${track_a_app_composition_targets[@]}"
+    "vault app composition does not use env secret resolver" \
+    "$VAULT_APP_ENV_RESOLVER_PATTERN" \
+    "${vault_app_composition_targets[@]}"
 
-check_exact_owner_count "Track A single AndroidKeystoreVaultKeySource owner" "AndroidKeystoreVaultKeySource" 1 "${track_a_production_targets[@]}"
-check_exact_owner_count "Track A single LocalUserFileVaultKeySource owner" "LocalUserFileVaultKeySource" 1 "${track_a_production_targets[@]}"
-check_exact_owner_count "Track A single DesktopVaultPaths owner" "DesktopVaultPaths" 1 "${track_a_production_targets[@]}"
-check_exact_owner_count "Track A single CredentialVaultLoginSecretResolver owner" "CredentialVaultLoginSecretResolver" 1 "${track_a_production_targets[@]}"
+check_exact_owner_count "vault single AndroidKeystoreVaultKeySource owner" "AndroidKeystoreVaultKeySource" 1 "${vault_production_targets[@]}"
+check_exact_owner_count "vault single LocalUserFileVaultKeySource owner" "LocalUserFileVaultKeySource" 1 "${vault_production_targets[@]}"
+check_exact_owner_count "vault single DesktopVaultPaths owner" "DesktopVaultPaths" 1 "${vault_production_targets[@]}"
+check_exact_owner_count "vault single CredentialVaultLoginSecretResolver owner" "CredentialVaultLoginSecretResolver" 1 "${vault_production_targets[@]}"
 
 check_no_old_shared_roots
 
 check_no_hits \
-    "Track F commonMain forbidden platform APIs" \
-    "$TRACK_F_COMMON_FORBIDDEN_PATTERN" \
-    "${track_f_common_targets[@]}"
+    "KMP migration commonMain forbidden platform APIs" \
+    "$KMP_COMMON_FORBIDDEN_PLATFORM_PATTERN" \
+    "${kmp_common_targets[@]}"
 
 check_no_hits \
-    "Track F no parallel KMP or generic owner paths" \
-    "$TRACK_F_PARALLEL_PATH_PATTERN" \
-    "${track_f_all_source_targets[@]}"
+    "KMP migration no parallel KMP or generic owner paths" \
+    "$KMP_PARALLEL_PATH_PATTERN" \
+    "${kmp_all_source_targets[@]}"
 
 check_no_hits \
-    "Track F platform APIs confined to platform adapters" \
-    "$TRACK_F_PLATFORM_API_PATTERN" \
-    "${track_f_platform_api_forbidden_targets[@]}"
+    "KMP migration platform APIs confined to platform adapters" \
+    "$KMP_PLATFORM_API_PATTERN" \
+    "${kmp_platform_api_forbidden_targets[@]}"
 
-check_exact_owner_count "Track F single HostessInstant owner" "HostessInstant" 1 "${track_f_owner_targets[@]}"
-check_exact_owner_count "Track F single HostessDelay owner" "HostessDelay" 1 "${track_f_owner_targets[@]}"
-check_exact_owner_count "Track F single ClockPort owner" "ClockPort" 1 "${track_f_owner_targets[@]}"
-check_exact_owner_count "Track F single ProtocolLibomvModule owner" "ProtocolLibomvModule" 1 "${track_f_owner_targets[@]}"
-check_exact_owner_count "Track F single LibomvPlatformAdapterBundle owner" "LibomvPlatformAdapterBundle" 1 "${track_f_owner_targets[@]}"
-check_exact_owner_count "Track F single ProtocolXmlTreeParser owner" "ProtocolXmlTreeParser" 1 "${track_f_owner_targets[@]}"
-check_exact_owner_count "Track F single ProtocolXmlElement owner" "ProtocolXmlElement" 1 "${track_f_owner_targets[@]}"
-check_exact_owner_count "Track F single LibomvUuidCodec owner" "LibomvUuidCodec" 1 "${track_f_owner_targets[@]}"
-check_exact_owner_count "Track F single UnsignedLongBitsParser owner" "UnsignedLongBitsParser" 1 "${track_f_owner_targets[@]}"
-check_exact_owner_count "Track F single LibomvPacketCodec owner" "LibomvPacketCodec" 1 "${track_f_owner_targets[@]}"
-check_exact_owner_count "Track F single LibomvBytePacketWriter owner" "LibomvBytePacketWriter" 1 "${track_f_owner_targets[@]}"
-check_exact_owner_count "Track F single ProtocolHttpRequestPolicy owner" "ProtocolHttpRequestPolicy" 1 "${track_f_owner_targets[@]}"
-check_exact_owner_count "Track F single Md5DigestPort owner" "Md5DigestPort" 1 "${track_f_owner_targets[@]}"
-check_exact_owner_count "Track F single LoginSecretJsonDecoder owner" "LoginSecretJsonDecoder" 1 "${track_f_owner_targets[@]}"
-check_exact_owner_count "Track F single HostessViewerIdentityBuilder owner" "HostessViewerIdentityBuilder" 1 "${track_f_owner_targets[@]}"
-check_exact_owner_count "Track F single ProtocolLoginRuntime owner" "ProtocolLoginRuntime" 1 "${track_f_owner_targets[@]}"
-check_exact_owner_count "Track F single ProtocolGroupRuntime owner" "ProtocolGroupRuntime" 1 "${track_f_owner_targets[@]}"
-check_exact_owner_count "Track F single ProtocolInventoryRuntime owner" "ProtocolInventoryRuntime" 1 "${track_f_owner_targets[@]}"
-check_exact_owner_count "Track F single ProtocolNoticeRuntime owner" "ProtocolNoticeRuntime" 1 "${track_f_owner_targets[@]}"
-check_exact_owner_count "Track F single NoticeDispatchService owner" "NoticeDispatchService" 1 "${track_f_owner_targets[@]}"
+check_exact_owner_count "KMP migration single HostessInstant owner" "HostessInstant" 1 "${architecture_owner_targets[@]}"
+check_exact_owner_count "KMP migration single HostessDelay owner" "HostessDelay" 1 "${architecture_owner_targets[@]}"
+check_exact_owner_count "KMP migration single ClockPort owner" "ClockPort" 1 "${architecture_owner_targets[@]}"
+check_exact_owner_count "KMP migration single ProtocolLibomvModule owner" "ProtocolLibomvModule" 1 "${architecture_owner_targets[@]}"
+check_exact_owner_count "KMP migration single LibomvPlatformAdapterBundle owner" "LibomvPlatformAdapterBundle" 1 "${architecture_owner_targets[@]}"
+check_exact_owner_count "KMP migration single ProtocolXmlTreeParser owner" "ProtocolXmlTreeParser" 1 "${architecture_owner_targets[@]}"
+check_exact_owner_count "KMP migration single ProtocolXmlElement owner" "ProtocolXmlElement" 1 "${architecture_owner_targets[@]}"
+check_exact_owner_count "KMP migration single LibomvUuidCodec owner" "LibomvUuidCodec" 1 "${architecture_owner_targets[@]}"
+check_exact_owner_count "KMP migration single UnsignedLongBitsParser owner" "UnsignedLongBitsParser" 1 "${architecture_owner_targets[@]}"
+check_exact_owner_count "KMP migration single LibomvPacketCodec owner" "LibomvPacketCodec" 1 "${architecture_owner_targets[@]}"
+check_exact_owner_count "KMP migration single LibomvBytePacketWriter owner" "LibomvBytePacketWriter" 1 "${architecture_owner_targets[@]}"
+check_exact_owner_count "KMP migration single ProtocolHttpRequestPolicy owner" "ProtocolHttpRequestPolicy" 1 "${architecture_owner_targets[@]}"
+check_exact_owner_count "KMP migration single Md5DigestPort owner" "Md5DigestPort" 1 "${architecture_owner_targets[@]}"
+check_exact_owner_count "KMP migration single LoginSecretJsonDecoder owner" "LoginSecretJsonDecoder" 1 "${architecture_owner_targets[@]}"
+check_exact_owner_count "KMP migration single HostessViewerIdentityBuilder owner" "HostessViewerIdentityBuilder" 1 "${architecture_owner_targets[@]}"
+check_exact_owner_count "KMP migration single ProtocolLoginRuntime owner" "ProtocolLoginRuntime" 1 "${architecture_owner_targets[@]}"
+check_exact_owner_count "KMP migration single ProtocolGroupRuntime owner" "ProtocolGroupRuntime" 1 "${architecture_owner_targets[@]}"
+check_exact_owner_count "KMP migration single ProtocolInventoryRuntime owner" "ProtocolInventoryRuntime" 1 "${architecture_owner_targets[@]}"
+check_exact_owner_count "KMP migration single ProtocolNoticeRuntime owner" "ProtocolNoticeRuntime" 1 "${architecture_owner_targets[@]}"
+check_exact_owner_count "KMP migration single NoticeDispatchService owner" "NoticeDispatchService" 1 "${architecture_owner_targets[@]}"
 
 check_no_forbidden_files \
-    "Track D generic owner file names" \
-    "${track_d_main_roots[@]}"
+    "login compliance generic owner file names" \
+    "${login_compliance_main_roots[@]}"
 
 check_no_hits \
-    "Track D old SessionService login overload" \
-    "$TRACK_D_SESSION_LOGIN_OVERLOAD_PATTERN" \
-    "${track_d_session_service_targets[@]}"
+    "login compliance old SessionService login overload" \
+    "$SESSION_LOGIN_OVERLOAD_PATTERN" \
+    "${session_login_service_targets[@]}"
 
 check_no_hits \
-    "Track D one-argument CLI/app login calls" \
-    "$TRACK_D_SESSION_LOGIN_ONE_ARG_PATTERN" \
-    "${track_d_tools_apps_targets[@]}"
+    "login compliance one-argument CLI/app login calls" \
+    "$SESSION_LOGIN_ONE_ARG_PATTERN" \
+    "${login_compliance_tools_apps_targets[@]}"
 
 check_notice_dispatch_overloads
 
 check_no_hits \
-    "Track D old notice dispatch single-line route" \
-    "$TRACK_D_OLD_NOTICE_CALL_PATTERN" \
-    "${track_d_notice_dispatch_targets[@]}"
+    "login compliance old notice dispatch single-line route" \
+    "$NOTICE_DISPATCH_OLD_CALL_PATTERN" \
+    "${notice_dispatch_targets[@]}"
 
 check_notice_dispatch_call_blocks \
-    "Track I notice dispatch calls forbid named compliance" \
-    "${track_d_notice_dispatch_targets[@]}"
+    "notice totals notice dispatch calls forbid named compliance" \
+    "${notice_dispatch_targets[@]}"
 
 check_no_hits \
-    "Track D direct tools/apps group notice send" \
-    "$TRACK_D_SEND_GROUP_NOTICE_CALL_PATTERN" \
-    "${track_d_tools_apps_targets[@]}"
+    "login compliance direct tools/apps group notice send" \
+    "$NOTICE_DISPATCH_DIRECT_GROUP_SEND_PATTERN" \
+    "${login_compliance_tools_apps_targets[@]}"
 
 check_no_hits \
-    "Track D spoofed viewer channel names" \
-    "$TRACK_D_SPOOFED_CHANNEL_PATTERN" \
+    "login compliance spoofed viewer channel names" \
+    "$VIEWER_IDENTITY_SPOOFED_CHANNEL_PATTERN" \
     "${production_targets[@]}"
 
 check_no_hits \
-    "Track DS old LLSD login route" \
-    "$TRACK_DS_OLD_LOGIN_LLSD_PATTERN" \
-    "${track_ds_old_login_targets[@]}"
+    "login package old LLSD login route" \
+    "$LOGIN_PACKAGE_OLD_LLSD_PATTERN" \
+    "${login_package_old_login_targets[@]}"
 
 check_no_hits \
-    "Track DS direct package owners outside protocol module" \
-    "$TRACK_DS_DIRECT_OWNER_PATTERN" \
-    "${track_ds_direct_owner_forbidden_targets[@]}"
+    "login package direct package owners outside protocol module" \
+    "$LOGIN_PACKAGE_DIRECT_OWNER_PATTERN" \
+    "${login_package_direct_owner_forbidden_targets[@]}"
 
 check_no_hits \
-    "Track DS stale login package fields" \
-    "$TRACK_DS_STALE_LOGIN_FIELD_PATTERN" \
-    "${track_ds_login_package_targets[@]}"
+    "login package stale login package fields" \
+    "$LOGIN_PACKAGE_STALE_FIELD_PATTERN" \
+    "${login_package_targets[@]}"
 
 check_no_hits \
-    "Track E stale create/upload symbols" \
-    "$TRACK_E_STALE_ATTACHMENT_PATTERN" \
-    "${track_e_kotlin_targets[@]}"
+    "attachment cleanup stale create/upload symbols" \
+    "$ATTACHMENT_STALE_CREATE_UPLOAD_PATTERN" \
+    "${attachment_kotlin_targets[@]}"
 
 check_no_file_path_hits \
-    "Track E forbidden attachment owner file names" \
-    "$TRACK_E_FORBIDDEN_OWNER_FILE_PATTERN" \
-    "${track_e_kotlin_targets[@]}"
+    "attachment cleanup forbidden attachment owner file names" \
+    "$ATTACHMENT_FORBIDDEN_OWNER_FILE_PATTERN" \
+    "${attachment_kotlin_targets[@]}"
 
 check_no_hits \
-    "Track E forbidden attachment owner declarations" \
-    "$TRACK_E_FORBIDDEN_OWNER_DECL_PATTERN" \
-    "${track_e_kotlin_targets[@]}"
+    "attachment cleanup forbidden attachment owner declarations" \
+    "$ATTACHMENT_FORBIDDEN_OWNER_DECL_PATTERN" \
+    "${attachment_kotlin_targets[@]}"
 
 check_no_hits \
-    "Track E implicit fake defaults" \
-    "$TRACK_E_IMPLICIT_FAKE_PATTERN" \
-    "${track_e_fake_default_targets[@]}"
+    "attachment cleanup implicit fake defaults" \
+    "$LIVE_PROOF_IMPLICIT_FAKE_PATTERN" \
+    "${live_proof_fake_default_targets[@]}"
 
 check_no_hits \
-    "Track E production local HTTP allowance" \
-    "$TRACK_E_LOCAL_HTTP_PATTERN" \
-    "${track_e_local_http_targets[@]}"
+    "attachment cleanup production local HTTP allowance" \
+    "$LIVE_PROOF_LOCAL_HTTP_PATTERN" \
+    "${live_proof_local_http_targets[@]}"
 
 check_no_hits \
-    "Track E Android probe injection/status leakage" \
-    "$TRACK_E_ANDROID_PROBE_PATTERN" \
-    "${track_e_android_probe_targets[@]}"
+    "attachment cleanup Android probe injection/status leakage" \
+    "$ANDROID_PROBE_INJECTION_STATUS_PATTERN" \
+    "${android_probe_injection_targets[@]}"
 
 check_no_hits \
-    "Track E generated packet catalogue not wired to commonMain" \
-    "$TRACK_E_GENERATED_PACKET_COMMONMAIN_PATTERN" \
-    "${track_e_packet_generation_targets[@]}"
+    "attachment cleanup generated packet catalogue not wired to commonMain" \
+    "$PACKET_GENERATION_COMMONMAIN_PATTERN" \
+    "${packet_generation_targets[@]}"
 
 check_no_hits \
-    "Track E generated packet imports absent from production source" \
-    "$TRACK_E_PRODUCTION_PACKET_IMPORT_PATTERN" \
-    "${track_e_production_packet_import_targets[@]}"
+    "attachment cleanup generated packet imports absent from production source" \
+    "$PACKET_GENERATION_PRODUCTION_IMPORT_PATTERN" \
+    "${packet_generation_production_import_targets[@]}"
 
 check_no_hits \
-    "Track G forbidden capability/notecard owner names" \
-    "$TRACK_G_FORBIDDEN_OWNER_PATTERN" \
-    "${track_g_main_targets[@]}"
+    "inventory capability forbidden capability/notecard owner names" \
+    "$INVENTORY_CAPABILITY_FORBIDDEN_OWNER_PATTERN" \
+    "${inventory_capability_main_targets[@]}"
 
 check_no_hits \
-    "Track G old EventQueue seed route" \
-    "$TRACK_G_EVENT_QUEUE_SEED_PATTERN" \
-    "${track_g_event_queue_targets[@]}"
+    "inventory capability old EventQueue seed route" \
+    "$INVENTORY_CAPABILITY_EVENT_QUEUE_SEED_PATTERN" \
+    "${inventory_capability_event_queue_targets[@]}"
 
 check_no_hits \
-    "Track G CLI direct protocol route" \
-    "$TRACK_G_CLI_DIRECT_PROTOCOL_PATTERN" \
-    "${track_g_cli_targets[@]}"
+    "inventory capability CLI direct protocol route" \
+    "$INVENTORY_CAPABILITY_CLI_DIRECT_PROTOCOL_PATTERN" \
+    "${inventory_capability_cli_targets[@]}"
 
 check_no_hits \
-    "Track G CLI raw capability evidence labels" \
-    "$TRACK_G_CLI_RAW_CAPABILITY_PATTERN" \
-    "${track_g_cli_targets[@]}"
+    "inventory capability CLI raw capability evidence labels" \
+    "$INVENTORY_CAPABILITY_CLI_RAW_CAPABILITY_PATTERN" \
+    "${inventory_capability_cli_targets[@]}"
 
 check_no_hits \
-    "Track H stale bounded circuit owner" \
-    "$TRACK_H_STALE_CIRCUIT_OWNER_PATTERN" \
-    "${track_f_all_source_targets[@]}"
+    "notice protocol stale bounded circuit owner" \
+    "$SIMULATOR_CIRCUIT_STALE_OWNER_PATTERN" \
+    "${kmp_all_source_targets[@]}"
 
 check_no_hits \
-    "Track H stale CLI live send path" \
-    "$TRACK_H_STALE_CLI_LIVE_SEND_PATTERN" \
-    "${track_h_cli_live_send_targets[@]}"
+    "notice protocol stale CLI live send path" \
+    "$LIVE_NOTICE_PROOF_STALE_CLI_SEND_PATTERN" \
+    "${live_notice_proof_cli_send_targets[@]}"
 
 check_no_hits \
-    "Track H stale full proof routes" \
-    "$TRACK_H_STALE_FULL_PROOF_PATTERN" \
-    "${track_h_full_proof_targets[@]}"
+    "notice protocol stale full proof routes" \
+    "$LIVE_NOTICE_PROOF_STALE_FULL_PROOF_PATTERN" \
+    "${live_notice_proof_full_targets[@]}"
 
 check_no_hits \
-    "Track H stale notice owner routes" \
-    "$TRACK_H_STALE_NOTICE_PATTERN" \
-    "${track_h_notice_stale_targets[@]}"
+    "notice protocol stale notice owner routes" \
+    "$NOTICE_PROTOCOL_STALE_OWNER_PATTERN" \
+    "${notice_protocol_stale_targets[@]}"
 
 check_no_hits \
-    "Track H direct CLI/app notice protocol routes" \
-    "$TRACK_H_DIRECT_APP_NOTICE_PATTERN" \
-    "${track_h_direct_app_notice_targets[@]}"
+    "notice protocol direct CLI/app notice protocol routes" \
+    "$NOTICE_PROTOCOL_DIRECT_APP_CALL_PATTERN" \
+    "${notice_protocol_direct_app_targets[@]}"
 
 check_no_hits \
-    "Track HS duplicate simulator exchange outside UDP owner" \
-    "$TRACK_HS_DUPLICATE_SIMULATOR_EXCHANGE_PATTERN" \
-    "${track_hs_duplicate_exchange_targets[@]}"
+    "simulator archive duplicate simulator exchange outside UDP owner" \
+    "$SIMULATOR_EXCHANGE_DUPLICATE_PATTERN" \
+    "${simulator_exchange_duplicate_targets[@]}"
 
 check_no_hits \
-    "Track HS direct CLI/app archive protocol routes" \
-    "$TRACK_HS_DIRECT_ARCHIVE_PATTERN" \
-    "${track_hs_direct_archive_targets[@]}"
+    "simulator archive direct CLI/app archive protocol routes" \
+    "$NOTICE_ARCHIVE_DIRECT_PATTERN" \
+    "${notice_archive_direct_targets[@]}"
 
 check_no_hits \
-    "Track HS fake live proof pass route" \
-    "$TRACK_HS_FAKE_LIVE_PASS_PATTERN" \
-    "${track_hs_fake_live_targets[@]}"
+    "simulator archive fake live proof pass route" \
+    "$FAKE_LIVE_PROOF_PASS_PATTERN" \
+    "${fake_live_proof_targets[@]}"
 
 check_required_hits \
-    "Track HS full proof requires archive read-back" \
-    "$TRACK_HS_FULL_PROOF_ARCHIVE_REQUIRED_PATTERN" \
-    "${track_hs_full_proof_targets[@]}"
+    "simulator archive full proof requires archive read-back" \
+    "$FULL_PROOF_ARCHIVE_REQUIRED_PATTERN" \
+    "${full_proof_archive_targets[@]}"
 
 check_no_hits \
     "Incident freeze forbids group membership mutation packets" \
-    "$TRACK_INCIDENT_GROUP_MUTATION_PATTERN" \
-    "${track_incident_group_mutation_targets[@]}"
+    "$GROUP_MEMBERSHIP_MUTATION_PATTERN" \
+    "${group_membership_mutation_targets[@]}"
 
 check_no_hits \
     "Android compatibility probe forbidden runtime routes" \
-    "$TRACK_ANDROID_PROBE_FORBIDDEN_RUNTIME_PATTERN" \
-    "${track_android_probe_targets[@]}"
+    "$ANDROID_PROBE_FORBIDDEN_RUNTIME_PATTERN" \
+    "${android_probe_targets[@]}"
 
 check_no_hits \
-    "Track I stale local notice totals production paths" \
-    "$TRACK_I_STALE_NOTICE_COMPLIANCE_PATTERN" \
-    "${track_i_stale_notice_compliance_targets[@]}"
+    "notice totals stale local notice totals production paths" \
+    "$NOTICE_TOTALS_STALE_COMPLIANCE_PATTERN" \
+    "${notice_totals_stale_compliance_targets[@]}"
 
 check_no_hits \
-    "Track I stale local notice totals public docs" \
-    "$TRACK_I_STALE_NOTICE_COMPLIANCE_PATTERN" \
-    "${track_i_public_doc_targets[@]}"
+    "notice totals stale local notice totals public docs" \
+    "$NOTICE_TOTALS_STALE_COMPLIANCE_PATTERN" \
+    "${notice_totals_public_doc_targets[@]}"
 
 check_no_hits \
-    "Track J forbids classic avatar baking production paths" \
-    "$TRACK_J_CLASSIC_BAKING_PATTERN" \
-    "${track_j_main_targets[@]}"
+    "avatar readiness forbids classic avatar baking production paths" \
+    "$AVATAR_CLASSIC_BAKING_PATTERN" \
+    "${avatar_main_targets[@]}"
 
 check_no_hits \
-    "Track J forbidden avatar owner names" \
-    "$TRACK_J_FORBIDDEN_AVATAR_OWNER_PATTERN" \
-    "${track_j_main_targets[@]}"
+    "avatar readiness forbidden avatar owner names" \
+    "$AVATAR_FORBIDDEN_OWNER_PATTERN" \
+    "${avatar_main_targets[@]}"
 
 check_no_hits \
-    "Track J avatar appearance source does not seed capabilities directly" \
-    "$TRACK_J_DIRECT_AVATAR_SEED_PATTERN" \
-    "${track_j_avatar_source_targets[@]}"
+    "avatar readiness avatar appearance source does not seed capabilities directly" \
+    "$AVATAR_DIRECT_CAPABILITY_SEED_PATTERN" \
+    "${avatar_source_targets[@]}"
 
 check_no_hits \
-    "Track J CLI commands do not construct protocol avatar runtime" \
-    "$TRACK_J_CLI_DIRECT_AVATAR_PATTERN" \
-    "${track_j_cli_command_targets[@]}"
+    "avatar readiness CLI commands do not construct protocol avatar runtime" \
+    "$AVATAR_CLI_DIRECT_PROTOCOL_PATTERN" \
+    "${avatar_cli_command_targets[@]}"
 
 check_no_hits \
-    "Track J full proof no stale simulator-presence gate" \
-    "$TRACK_J_STALE_FULL_PROOF_SIMULATOR_GATE_PATTERN" \
-    "${track_j_full_proof_targets[@]}"
+    "avatar readiness full proof no stale simulator-presence gate" \
+    "$AVATAR_STALE_FULL_PROOF_SIMULATOR_GATE_PATTERN" \
+    "${avatar_full_proof_targets[@]}"
 
 check_no_hits \
-    "Track J no extra SimulatorPacketExchange implementations" \
-    "$TRACK_J_EXTRA_SIMULATOR_EXCHANGE_IMPL_PATTERN" \
-    "${track_j_simulator_exchange_impl_targets[@]}"
+    "avatar readiness no extra SimulatorPacketExchange implementations" \
+    "$AVATAR_EXTRA_SIMULATOR_EXCHANGE_IMPL_PATTERN" \
+    "${avatar_simulator_exchange_impl_targets[@]}"
 
-check_hs002_track_e_session_boundaries
+check_simulator_session_boundaries
 
-check_exact_owner_count "Track G single InventoryPort owner" "InventoryPort" 1 "${track_g_main_targets[@]}"
-check_exact_owner_count "Track G single InventoryDirectoryService owner" "InventoryDirectoryService" 1 "${track_g_main_targets[@]}"
-check_exact_owner_count "Track G single ProtocolCapabilitySeedClient owner" "ProtocolCapabilitySeedClient" 1 "${track_g_main_targets[@]}"
-check_exact_owner_count "Track G single ProtocolCapabilityCacheProvider owner" "ProtocolCapabilityCacheProvider" 1 "${track_g_main_targets[@]}"
-check_exact_owner_count "Track H single InventorySelectionService owner" "InventorySelectionService" 1 "${track_f_owner_targets[@]}"
-check_exact_owner_count "Track H single LibomvInventoryPermissionMapping owner" "LibomvInventoryPermissionMapping" 1 "${track_f_owner_targets[@]}"
-check_exact_owner_count "Track H single ProtocolSimulatorCircuitClient owner" "ProtocolSimulatorCircuitClient" 1 "${track_f_owner_targets[@]}"
-check_exact_owner_count "Track H single LibomvNoticePacketCodec owner" "LibomvNoticePacketCodec" 1 "${track_f_owner_targets[@]}"
-check_exact_owner_count "Track H single ProtocolNoticeCircuitSource owner" "ProtocolNoticeCircuitSource" 1 "${track_f_owner_targets[@]}"
-check_exact_owner_count "Track J single AvatarPort owner" "AvatarPort" 1 "${track_f_owner_targets[@]}"
-check_exact_owner_count "Track J single AvatarReadinessService owner" "AvatarReadinessService" 1 "${track_f_owner_targets[@]}"
-check_exact_owner_count "Track J single CurrentOutfitVersionSource owner" "CurrentOutfitVersionSource" 1 "${track_f_owner_targets[@]}"
-check_exact_owner_count "Track J single LibomvAvatarAdapter owner" "LibomvAvatarAdapter" 1 "${track_f_owner_targets[@]}"
-check_exact_owner_count "Track J single ProtocolAvatarRuntime owner" "ProtocolAvatarRuntime" 1 "${track_f_owner_targets[@]}"
-check_exact_owner_count "Track J single ProtocolAvatarAppearanceSource owner" "ProtocolAvatarAppearanceSource" 1 "${track_f_owner_targets[@]}"
+check_exact_owner_count "inventory capability single InventoryPort owner" "InventoryPort" 1 "${inventory_capability_main_targets[@]}"
+check_exact_owner_count "inventory capability single InventoryDirectoryService owner" "InventoryDirectoryService" 1 "${inventory_capability_main_targets[@]}"
+check_exact_owner_count "inventory capability single ProtocolCapabilitySeedClient owner" "ProtocolCapabilitySeedClient" 1 "${inventory_capability_main_targets[@]}"
+check_exact_owner_count "inventory capability single ProtocolCapabilityCacheProvider owner" "ProtocolCapabilityCacheProvider" 1 "${inventory_capability_main_targets[@]}"
+check_exact_owner_count "notice protocol single InventorySelectionService owner" "InventorySelectionService" 1 "${architecture_owner_targets[@]}"
+check_exact_owner_count "notice protocol single LibomvInventoryPermissionMapping owner" "LibomvInventoryPermissionMapping" 1 "${architecture_owner_targets[@]}"
+check_exact_owner_count "notice protocol single ProtocolSimulatorCircuitClient owner" "ProtocolSimulatorCircuitClient" 1 "${architecture_owner_targets[@]}"
+check_exact_owner_count "notice protocol single LibomvNoticePacketCodec owner" "LibomvNoticePacketCodec" 1 "${architecture_owner_targets[@]}"
+check_exact_owner_count "notice protocol single ProtocolNoticeCircuitSource owner" "ProtocolNoticeCircuitSource" 1 "${architecture_owner_targets[@]}"
+check_exact_owner_count "avatar readiness single AvatarPort owner" "AvatarPort" 1 "${architecture_owner_targets[@]}"
+check_exact_owner_count "avatar readiness single AvatarReadinessService owner" "AvatarReadinessService" 1 "${architecture_owner_targets[@]}"
+check_exact_owner_count "avatar readiness single CurrentOutfitVersionSource owner" "CurrentOutfitVersionSource" 1 "${architecture_owner_targets[@]}"
+check_exact_owner_count "avatar readiness single LibomvAvatarAdapter owner" "LibomvAvatarAdapter" 1 "${architecture_owner_targets[@]}"
+check_exact_owner_count "avatar readiness single ProtocolAvatarRuntime owner" "ProtocolAvatarRuntime" 1 "${architecture_owner_targets[@]}"
+check_exact_owner_count "avatar readiness single ProtocolAvatarAppearanceSource owner" "ProtocolAvatarAppearanceSource" 1 "${architecture_owner_targets[@]}"
 
 check_no_hits \
-    "Track D viewer identity provider outside protocol module" \
-    "$TRACK_D_VIEWER_PROVIDER_PATTERN" \
-    "${track_d_viewer_provider_forbidden_targets[@]}"
+    "login compliance viewer identity provider outside protocol module" \
+    "$VIEWER_IDENTITY_PROVIDER_PATTERN" \
+    "${viewer_identity_provider_forbidden_targets[@]}"
 
-if [[ "${#track_d_notice_time_targets[@]}" -gt 0 ]]; then
+if [[ "${#notice_time_targets[@]}" -gt 0 ]]; then
     check_no_hits \
-        "Track D NoticeComplianceService direct system time" \
-        "$TRACK_D_NOTICE_TIME_PATTERN" \
-        "${track_d_notice_time_targets[@]}"
+        "login compliance NoticeComplianceService direct system time" \
+        "$NOTICE_TIME_SOURCE_PATTERN" \
+        "${notice_time_targets[@]}"
 else
-    echo "PASS: Track D NoticeComplianceService direct system time owner deleted"
+    echo "PASS: login compliance NoticeComplianceService direct system time owner deleted"
 fi
 
 check_no_hits \
-    "Track D raw report key leakage" \
-    "$TRACK_D_RAW_REPORT_KEY_PATTERN" \
-    "${track_d_report_key_targets[@]}"
+    "login compliance raw report key leakage" \
+    "$REPORT_SECRET_KEY_PATTERN" \
+    "${report_secret_key_targets[@]}"
 
 check_no_hits \
-    "Track D direct UUID target UX" \
-    "$TRACK_D_UUID_TARGET_PATTERN" \
+    "login compliance direct UUID target UX" \
+    "$GROUP_TARGET_UUID_PATTERN" \
     "${cli_command_targets[@]}"
 
 check_no_hits \
-    "Track D CLI-owned cap literals" \
-    "$TRACK_D_CLI_CAP_LITERAL_PATTERN" \
-    "${track_d_cap_forbidden_targets[@]}"
+    "login compliance CLI-owned cap literals" \
+    "$NOTICE_CAP_LITERAL_PATTERN" \
+    "${notice_cap_forbidden_targets[@]}"
 
 check_pattern_matches \
     "self-test core forbidden dependency pattern" \
@@ -1809,440 +1911,437 @@ check_pattern_matches \
     "$CLI_COMMAND_REPORT_WRITE_PATTERN" \
     'Files.writeString(path, value)'
 
+check_public_source_briefing_label_identifier_pattern
+
 check_pattern_matches \
-    "self-test Track B direct OkHttp pattern" \
-    "$TRACK_B_OKHTTP_PATTERN" \
+    "self-test protocol boundary direct OkHttp pattern" \
+    "$PROTOCOL_BOUNDARY_OKHTTP_PATTERN" \
     "import okhttp3.${OK_HTTP_CLIENT_SYMBOL}"
 
 check_pattern_matches \
-    "self-test Track B runtime/transport direct-call pattern" \
-    "$TRACK_B_RUNTIME_PATTERN" \
+    "self-test protocol boundary runtime/transport direct-call pattern" \
+    "$PROTOCOL_BOUNDARY_RUNTIME_PATTERN" \
     "${PROTOCOL_PREFIX}HttpClient.execute(request)"
 
 check_pattern_matches \
-    "self-test Track B stale platform pattern" \
+    "self-test protocol boundary stale platform pattern" \
     "$FORBIDDEN_PLATFORM_PATTERN" \
     'org.apache.http.client.HttpClient'
 
 check_pattern_matches \
-    "self-test Track B UI direct protocol pattern" \
-    "$TRACK_B_UI_DIRECT_PROTOCOL_PATTERN" \
+    "self-test protocol boundary UI direct protocol pattern" \
+    "$UI_DIRECT_PROTOCOL_PATTERN" \
     'ProtocolNoticeRuntime(clientSession)'
 
 check_pattern_matches \
-    "self-test Track B UI direct vault pattern" \
-    "$TRACK_B_UI_DIRECT_VAULT_PATTERN" \
+    "self-test protocol boundary UI direct vault pattern" \
+    "$UI_DIRECT_VAULT_PATTERN" \
     'CredentialVault.resolve(handle)'
 
 check_pattern_matches \
-    "self-test Track B UI direct notice pattern" \
-    "$TRACK_B_UI_DIRECT_NOTICE_PATTERN" \
+    "self-test protocol boundary UI direct notice pattern" \
+    "$UI_DIRECT_NOTICE_PATTERN" \
     'targetSet.selectedGroups.forEach { noticePort.sendGroupNotice(session, it, draft, null) }'
 
 check_pattern_matches \
-    "self-test Track B UI forbidden owner pattern" \
-    "$TRACK_B_UI_FORBIDDEN_OWNER_PATTERN" \
+    "self-test protocol boundary UI forbidden owner pattern" \
+    "$UI_FORBIDDEN_OWNER_PATTERN" \
     'class ScreenHelpers'
 
 check_pattern_matches \
-    "self-test Track B UI WebView pattern" \
-    "$TRACK_B_UI_WEBVIEW_PATTERN" \
+    "self-test protocol boundary UI WebView pattern" \
+    "$UI_WEBVIEW_PATTERN" \
     'android.webkit.WebView(context).loadUrl("styles.css")'
 
 check_pattern_matches \
-    "self-test Track B UI staged code pattern" \
-    "$TRACK_B_UI_STAGED_PATTERN" \
+    "self-test protocol boundary UI staged code pattern" \
+    "$UI_STAGED_PATTERN" \
     'error("not implemented")'
 
 check_pattern_matches \
-    "self-test Track B UI visible label pattern" \
-    "$TRACK_B_UI_TEXT_PATTERN" \
+    "self-test protocol boundary UI visible label pattern" \
+    "$UI_TEXT_CATALOGUE_PATTERN" \
     '"Send notices"'
 
 check_pattern_matches \
-    "self-test Track B UI style constant pattern" \
-    "$TRACK_B_UI_STYLE_PATTERN" \
+    "self-test protocol boundary UI style constant pattern" \
+    "$UI_STYLE_TOKEN_PATTERN" \
     'val gap = 12.dp'
 
 check_pattern_matches \
-    "self-test Track B UI raw control pattern" \
-    "$TRACK_B_UI_DIRECT_CONTROL_PATTERN" \
+    "self-test protocol boundary UI raw control pattern" \
+    "$UI_DIRECT_CONTROL_PATTERN" \
     'OutlinedTextField(value = name, onValueChange = {})'
 
 check_pattern_matches \
-    "self-test Track C direct runtime pattern" \
-    "$TRACK_C_RUNTIME_PATTERN" \
+    "self-test session credential direct runtime pattern" \
+    "$SESSION_PROTOCOL_DIRECT_RUNTIME_PATTERN" \
     'EventQueueGetClient()'
 
 check_pattern_matches \
-    "self-test Track C raw env pattern" \
-    "$TRACK_C_ENV_PATTERN" \
+    "self-test session credential raw env pattern" \
+    "$CREDENTIAL_ENV_READ_PATTERN" \
     'System.getenv("HOSTESS_SECRET")'
 
 check_pattern_matches \
-    "self-test Track C file route pattern" \
-    "$TRACK_C_FILE_ROUTE_PATTERN" \
+    "self-test session credential file route pattern" \
+    "$CREDENTIAL_FILE_ROUTE_PATTERN" \
     '--credential-file'
 
 check_pattern_matches \
-    "self-test Track C unsupported secret store pattern" \
-    "$TRACK_C_UNSUPPORTED_SECRET_PATTERN" \
+    "self-test session credential unsupported secret store pattern" \
+    "$UNSUPPORTED_SECRET_STORE_PATTERN" \
     'keychain lookup'
 
 check_pattern_matches \
-    "self-test Track C UI split-login pattern" \
-    "$TRACK_C_UI_SPLIT_LOGIN_PATTERN" \
+    "self-test session credential UI split-login pattern" \
+    "$UI_REMEDIATION_SPLIT_LOGIN_PATTERN" \
     'LoginSavedAccountPanel(state)'
 
 check_pattern_matches \
-    "self-test Track C UI fake location pattern" \
-    "$TRACK_C_UI_FAKE_LOCATION_PATTERN" \
+    "self-test session credential UI fake location pattern" \
+    "$UI_REMEDIATION_FAKE_LOCATION_PATTERN" \
     'locationLabel = "London City"'
 
 check_pattern_matches \
-    "self-test Track C UI scaffold pattern" \
-    "$TRACK_C_UI_SCAFFOLD_REQUIRED_PATTERN" \
+    "self-test session credential UI scaffold pattern" \
+    "$UI_REMEDIATION_SCAFFOLD_REQUIRED_PATTERN" \
     'HostessAppScaffold(content = {})'
 
 check_pattern_matches \
-    "self-test Track C UI custom icon pattern" \
-    "$TRACK_C_UI_CUSTOM_ICON_PATTERN" \
+    "self-test session credential UI custom icon pattern" \
+    "$UI_REMEDIATION_CUSTOM_ICON_PATTERN" \
     'Canvas(modifier) { drawLine(color, start, end) }'
 
 check_pattern_matches \
-    "self-test HS002 Track D UI preference adapter pattern" \
-    "$HS002_TRACK_D_UI_PREFERENCE_ADAPTER_PATTERN" \
+    "self-test theme UI preference adapter pattern" \
+    "$THEME_UI_PREFERENCE_ADAPTER_PATTERN" \
     'implementation(project(":hostess-preferences"))'
 
 check_pattern_matches \
-    "self-test HS002 Track D vault theme storage pattern" \
-    "$HS002_TRACK_D_VAULT_THEME_STORAGE_PATTERN" \
+    "self-test theme vault theme storage pattern" \
+    "$THEME_VAULT_STORAGE_PATTERN" \
     'ThemePreferenceService(FileThemePreferenceStore(Path.of("ui.properties")))'
 
 check_pattern_matches \
-    "self-test HS002 Track D Haccu colour pattern" \
-    "$HS002_TRACK_D_HACCU_COLOUR_PATTERN" \
+    "self-test theme Haccu colour pattern" \
+    "$THEME_HACCU_COLOUR_PATTERN" \
     'val accent = Color(0xFF8B0101)'
 
 check_pattern_matches \
-    "self-test HS002 Track D visible label pattern" \
-    "$HS002_TRACK_D_VISIBLE_LABEL_PATTERN" \
+    "self-test theme visible label pattern" \
+    "$THEME_VISIBLE_LABEL_PATTERN" \
     '"Grid Event Manager"'
 
 check_pattern_matches \
-    "self-test HS002 Track D prototype runtime pattern" \
-    "$HS002_TRACK_D_PROTOTYPE_RUNTIME_PATTERN" \
+    "self-test theme prototype runtime pattern" \
+    "$THEME_PROTOTYPE_RUNTIME_PATTERN" \
     'android.webkit.WebView(context).loadDataWithBaseURL("index-multi", "<html", "text/html", "utf-8", null)'
 
 check_pattern_matches \
-    "self-test HS002 Track D logo owner pattern" \
-    "$HS002_TRACK_D_LOGO_OWNER_PATTERN" \
+    "self-test theme logo owner pattern" \
+    "$THEME_LOGO_OWNER_PATTERN" \
     'fun HostessBrandLogoIcon(modifier: Modifier = Modifier)'
 
 check_pattern_matches \
-    "self-test HS002 Track D theme toggle owner pattern" \
-    "$HS002_TRACK_D_TOGGLE_OWNER_PATTERN" \
+    "self-test theme theme toggle owner pattern" \
+    "$THEME_TOGGLE_OWNER_PATTERN" \
     'fun ThemeModeToggle(checked: Boolean, onCheckedChange: (Boolean) -> Unit)'
 
 check_pattern_matches \
-    "self-test HS002 Track D palette provider pattern" \
-    "$HS002_TRACK_D_PALETTE_OWNER_PATTERN" \
+    "self-test theme palette provider pattern" \
+    "$THEME_PALETTE_OWNER_PATTERN" \
     'object HaccuHostessPaletteProvider : HostessPaletteProvider'
 
 check_pattern_matches \
-    "self-test HS002 Track D Android label pattern" \
-    "$HS002_TRACK_D_ANDROID_LABEL_PATTERN" \
+    "self-test theme Android label pattern" \
+    "$THEME_ANDROID_LABEL_PATTERN" \
     'manifestPlaceholders["appLabel"] = "Grid Event Manager"'
 
 check_pattern_matches \
-    "self-test HS002 Track D desktop vendor pattern" \
-    "$HS002_TRACK_D_DESKTOP_VENDOR_PATTERN" \
+    "self-test theme desktop vendor pattern" \
+    "$THEME_DESKTOP_VENDOR_PATTERN" \
     'vendor = "Grid Event Manager"'
 
 check_pattern_matches \
-    "self-test HS002 Track D root project label pattern" \
-    "$HS002_TRACK_D_ROOT_PROJECT_LABEL_PATTERN" \
+    "self-test theme root project label pattern" \
+    "$THEME_ROOT_PROJECT_LABEL_PATTERN" \
     'manifestPlaceholders["appLabel"] = rootProject.name.replaceFirstChar { it.titlecase() }'
 
 check_pattern_matches \
-    "self-test Track A forbidden vault dependency pattern" \
-    "$TRACK_A_FORBIDDEN_DEP_PATTERN" \
+    "self-test vault forbidden vault dependency pattern" \
+    "$VAULT_FORBIDDEN_DEPENDENCY_PATTERN" \
     'implementation("com.example:java-keyring:1.0")'
 
 check_pattern_matches \
-    "self-test Track A stale credential route pattern" \
-    "$TRACK_A_STALE_CREDENTIAL_ROUTE_PATTERN" \
+    "self-test vault stale credential route pattern" \
+    "$VAULT_STALE_CREDENTIAL_ROUTE_PATTERN" \
     'VaultUnlock asks for passphrase'
 
 check_pattern_matches \
-    "self-test Track A AndroidX crypto pattern" \
-    "$TRACK_A_ANDROIDX_CRYPTO_PATTERN" \
+    "self-test vault AndroidX crypto pattern" \
+    "$VAULT_ANDROIDX_CRYPTO_PATTERN" \
     'EncryptedSharedPreferences.create(...)'
 
 check_pattern_matches \
-    "self-test Track A raw key exposure pattern" \
-    "$TRACK_A_RAW_KEY_EXPOSURE_PATTERN" \
+    "self-test vault raw key exposure pattern" \
+    "$VAULT_RAW_KEY_EXPOSURE_PATTERN" \
     'fun exportKey(): SecretKey = key'
 
 check_pattern_matches \
-    "self-test Track A app env resolver pattern" \
-    "$TRACK_A_APP_ENV_RESOLVER_PATTERN" \
+    "self-test vault app env resolver pattern" \
+    "$VAULT_APP_ENV_RESOLVER_PATTERN" \
     'EnvironmentLoginSecretResolver()'
 
 check_pattern_matches \
-    "self-test Track F common forbidden platform API pattern" \
-    "$TRACK_F_COMMON_FORBIDDEN_PATTERN" \
+    "self-test KMP migration common forbidden platform API pattern" \
+    "$KMP_COMMON_FORBIDDEN_PLATFORM_PATTERN" \
     'java.util.UUID.randomUUID()'
 
 check_pattern_matches \
-    "self-test Track F parallel path pattern" \
-    "$TRACK_F_PARALLEL_PATH_PATTERN" \
+    "self-test KMP migration parallel path pattern" \
+    "$KMP_PARALLEL_PATH_PATTERN" \
     'class AndroidProtocolLibomvModule'
 
 check_pattern_matches \
-    "self-test Track F platform API confinement pattern" \
-    "$TRACK_F_PLATFORM_API_PATTERN" \
+    "self-test KMP migration platform API confinement pattern" \
+    "$KMP_PLATFORM_API_PATTERN" \
     'import java.security.MessageDigest'
 
 check_pattern_matches \
-    "self-test Track D generic owner pattern" \
-    "$TRACK_D_GENERIC_OWNER_PATTERN" \
+    "self-test login compliance generic owner pattern" \
+    "$ARCHITECTURE_GENERIC_OWNER_PATTERN" \
     'src/main/kotlin/org/hostess/core/LoginCompliance.kt'
 
 check_pattern_matches \
-    "self-test Track D old login overload pattern" \
-    "$TRACK_D_SESSION_LOGIN_OVERLOAD_PATTERN" \
+    "self-test login compliance old login overload pattern" \
+    "$SESSION_LOGIN_OVERLOAD_PATTERN" \
     'fun login(request: LoginRequest): SessionLoginResult'
 
 check_pattern_matches \
-    "self-test Track D one-argument login call pattern" \
-    "$TRACK_D_SESSION_LOGIN_ONE_ARG_PATTERN" \
+    "self-test login compliance one-argument login call pattern" \
+    "$SESSION_LOGIN_ONE_ARG_PATTERN" \
     'runtime.sessionService.login(request)'
 
 check_pattern_matches \
-    "self-test Track D old notice route pattern" \
-    "$TRACK_D_OLD_NOTICE_CALL_PATTERN" \
+    "self-test login compliance old notice route pattern" \
+    "$NOTICE_DISPATCH_OLD_CALL_PATTERN" \
     'runtime.noticeDispatchService.dispatch(session, draft)'
 
 check_pattern_matches \
-    "self-test Track D direct group notice send pattern" \
-    "$TRACK_D_SEND_GROUP_NOTICE_CALL_PATTERN" \
+    "self-test login compliance direct group notice send pattern" \
+    "$NOTICE_DISPATCH_DIRECT_GROUP_SEND_PATTERN" \
     'runtime.noticePort.sendGroupNotice(session, group, draft, null)'
 
 check_pattern_matches \
-    "self-test Track D viewer provider placement pattern" \
-    "$TRACK_D_VIEWER_PROVIDER_PATTERN" \
+    "self-test login compliance viewer provider placement pattern" \
+    "$VIEWER_IDENTITY_PROVIDER_PATTERN" \
     'HostessViewerIdentityProvider'
 
 check_pattern_matches \
-    "self-test Track D spoofed channel pattern" \
-    "$TRACK_D_SPOOFED_CHANNEL_PATTERN" \
+    "self-test login compliance spoofed channel pattern" \
+    "$VIEWER_IDENTITY_SPOOFED_CHANNEL_PATTERN" \
     'channel = "Firestorm"'
 
 check_pattern_matches \
-    "self-test Track D notice time pattern" \
-    "$TRACK_D_NOTICE_TIME_PATTERN" \
+    "self-test login compliance notice time pattern" \
+    "$NOTICE_TIME_SOURCE_PATTERN" \
     'Instant.now()'
 
 check_pattern_matches \
-    "self-test Track D raw report key pattern" \
-    "$TRACK_D_RAW_REPORT_KEY_PATTERN" \
+    "self-test login compliance raw report key pattern" \
+    "$REPORT_SECRET_KEY_PATTERN" \
     '"seedCapability" to identity.seedCapability'
 
 check_pattern_matches \
-    "self-test Track D UUID target UX pattern" \
-    "$TRACK_D_UUID_TARGET_PATTERN" \
+    "self-test login compliance UUID target UX pattern" \
+    "$GROUP_TARGET_UUID_PATTERN" \
     '--group-uuid'
 
 check_pattern_matches \
-    "self-test Track D CLI cap literal pattern" \
-    "$TRACK_D_CLI_CAP_LITERAL_PATTERN" \
+    "self-test login compliance CLI cap literal pattern" \
+    "$NOTICE_CAP_LITERAL_PATTERN" \
     'if (count > 4_500) return blocked'
 
 check_pattern_matches \
-    "self-test Track DS old LLSD login route pattern" \
-    "$TRACK_DS_OLD_LOGIN_LLSD_PATTERN" \
+    "self-test login package old LLSD login route pattern" \
+    "$LOGIN_PACKAGE_OLD_LLSD_PATTERN" \
     'body = ProtocolHttpBody.TextBody(loginBody(secret), "application/llsd+xml")'
 
 check_pattern_matches \
-    "self-test Track DS direct package owner pattern" \
-    "$TRACK_DS_DIRECT_OWNER_PATTERN" \
+    "self-test login package direct package owner pattern" \
+    "$LOGIN_PACKAGE_DIRECT_OWNER_PATTERN" \
     'LoginPackageBuilder().build(secret, viewer, machine)'
 
 check_pattern_matches \
-    "self-test Track DS stale login field pattern" \
-    "$TRACK_DS_STALE_LOGIN_FIELD_PATTERN" \
+    "self-test login package stale login field pattern" \
+    "$LOGIN_PACKAGE_STALE_FIELD_PATTERN" \
     'field("platform_string", value)'
 
 check_pattern_matches \
-    "self-test Track E stale create upload pattern" \
-    "$TRACK_E_STALE_ATTACHMENT_PATTERN" \
+    "self-test attachment cleanup stale create upload pattern" \
+    "$ATTACHMENT_STALE_CREATE_UPLOAD_PATTERN" \
     'body = ProtocolHttpBody.BinaryUploadBody(bytes, "application/octet-stream")'
 
 check_pattern_matches \
-    "self-test Track E forbidden owner file pattern" \
-    "$TRACK_E_FORBIDDEN_OWNER_FILE_PATTERN" \
+    "self-test attachment cleanup forbidden owner file pattern" \
+    "$ATTACHMENT_FORBIDDEN_OWNER_FILE_PATTERN" \
     'src/main/kotlin/org/hostess/core/AttachmentUploadManager.kt'
 
 check_pattern_matches \
-    "self-test Track E forbidden owner declaration pattern" \
-    "$TRACK_E_FORBIDDEN_OWNER_DECL_PATTERN" \
+    "self-test attachment cleanup forbidden owner declaration pattern" \
+    "$ATTACHMENT_FORBIDDEN_OWNER_DECL_PATTERN" \
     'class LandmarkAttachmentService'
 
 check_pattern_matches \
-    "self-test Track E implicit fake default pattern" \
-    "$TRACK_E_IMPLICIT_FAKE_PATTERN" \
+    "self-test attachment cleanup implicit fake default pattern" \
+    "$LIVE_PROOF_IMPLICIT_FAKE_PATTERN" \
     'CommandMode.parse(null)'
 
 check_pattern_matches \
-    "self-test Track E production local HTTP pattern" \
-    "$TRACK_E_LOCAL_HTTP_PATTERN" \
+    "self-test attachment cleanup production local HTTP pattern" \
+    "$LIVE_PROOF_LOCAL_HTTP_PATTERN" \
     'fun isLocalTestServer() = host == "127.0.0.1"'
 
 check_pattern_matches \
-    "self-test Track E Android probe hook pattern" \
-    "$TRACK_E_ANDROID_PROBE_PATTERN" \
+    "self-test attachment cleanup Android probe hook pattern" \
+    "$ANDROID_PROBE_INJECTION_STATUS_PATTERN" \
     'class AndroidCompatibilityProbe internal constructor(private val protocolLoadProbe: () -> State)'
 
 check_pattern_matches \
-    "self-test Track E generated packet commonMain pattern" \
-    "$TRACK_E_GENERATED_PACKET_COMMONMAIN_PATTERN" \
+    "self-test attachment cleanup generated packet commonMain pattern" \
+    "$PACKET_GENERATION_COMMONMAIN_PATTERN" \
     'generated/sources/libomvPackets/kotlin/commonMain'
 
 check_pattern_matches \
-    "self-test Track E production generated packet import pattern" \
-    "$TRACK_E_PRODUCTION_PACKET_IMPORT_PATTERN" \
+    "self-test attachment cleanup production generated packet import pattern" \
+    "$PACKET_GENERATION_PRODUCTION_IMPORT_PATTERN" \
     'import libomv.packets.AssetUploadRequestPacket'
 
 check_pattern_matches \
-    "self-test Track G forbidden owner pattern" \
-    "$TRACK_G_FORBIDDEN_OWNER_PATTERN" \
+    "self-test inventory capability forbidden owner pattern" \
+    "$INVENTORY_CAPABILITY_FORBIDDEN_OWNER_PATTERN" \
     'class InventoryBrowserService'
 
 check_pattern_matches \
-    "self-test Track G old EventQueue seed pattern" \
-    "$TRACK_G_EVENT_QUEUE_SEED_PATTERN" \
+    "self-test inventory capability old EventQueue seed pattern" \
+    "$INVENTORY_CAPABILITY_EVENT_QUEUE_SEED_PATTERN" \
     'private fun seedBody(requested: Set<String>) = requested.joinToString()'
 
 check_pattern_matches \
-    "self-test Track G CLI direct protocol pattern" \
-    "$TRACK_G_CLI_DIRECT_PROTOCOL_PATTERN" \
+    "self-test inventory capability CLI direct protocol pattern" \
+    "$INVENTORY_CAPABILITY_CLI_DIRECT_PROTOCOL_PATTERN" \
     'ProtocolInventoryRuntime().listItems(session)'
 
 check_pattern_matches \
-    "self-test Track G CLI raw capability label pattern" \
-    "$TRACK_G_CLI_RAW_CAPABILITY_PATTERN" \
+    "self-test inventory capability CLI raw capability label pattern" \
+    "$INVENTORY_CAPABILITY_CLI_RAW_CAPABILITY_PATTERN" \
     '"FetchInventoryDescendents2" to capabilityUrl'
 
 check_pattern_matches \
-    "self-test Track H stale bounded circuit owner pattern" \
-    "$TRACK_H_STALE_CIRCUIT_OWNER_PATTERN" \
+    "self-test notice protocol stale bounded circuit owner pattern" \
+    "$SIMULATOR_CIRCUIT_STALE_OWNER_PATTERN" \
     'class BoundedSimulatorCircuitClient'
 
 check_pattern_matches \
-    "self-test Track H stale CLI live send pattern" \
-    "$TRACK_H_STALE_CLI_LIVE_SEND_PATTERN" \
+    "self-test notice protocol stale CLI live send pattern" \
+    "$LIVE_NOTICE_PROOF_STALE_CLI_SEND_PATTERN" \
     'sessionProvider = { fakeSession(active = false) }'
 
 check_pattern_matches \
-    "self-test Track H stale full proof pattern" \
-    "$TRACK_H_STALE_FULL_PROOF_PATTERN" \
+    "self-test notice protocol stale full proof pattern" \
+    "$LIVE_NOTICE_PROOF_STALE_FULL_PROOF_PATTERN" \
     'private fun runBulkProof() = "bulk-notice"'
 
 check_pattern_matches \
-    "self-test Track H stale notice owner pattern" \
-    "$TRACK_H_STALE_NOTICE_PATTERN" \
+    "self-test notice protocol stale notice owner pattern" \
+    "$NOTICE_PROTOCOL_STALE_OWNER_PATTERN" \
     'class NoticeSender { fun send() = GroupNoticeAdd }'
 
 check_pattern_matches \
-    "self-test Track H direct CLI app notice pattern" \
-    "$TRACK_H_DIRECT_APP_NOTICE_PATTERN" \
+    "self-test notice protocol direct CLI app notice pattern" \
+    "$NOTICE_PROTOCOL_DIRECT_APP_CALL_PATTERN" \
     'ProtocolNoticeCircuitSource(transport).send(packet)'
 
 check_pattern_matches \
-    "self-test Track HS duplicate simulator exchange pattern" \
-    "$TRACK_HS_DUPLICATE_SIMULATOR_EXCHANGE_PATTERN" \
+    "self-test simulator archive duplicate simulator exchange pattern" \
+    "$SIMULATOR_EXCHANGE_DUPLICATE_PATTERN" \
     'class ExtraSimulatorSocket { val socket = DatagramSocket() }'
 
 check_pattern_matches \
-    "self-test Track HS direct archive pattern" \
-    "$TRACK_HS_DIRECT_ARCHIVE_PATTERN" \
+    "self-test simulator archive direct archive pattern" \
+    "$NOTICE_ARCHIVE_DIRECT_PATTERN" \
     'ProtocolGroupNoticeArchiveSource(client).read(group)'
 
 check_pattern_matches \
-    "self-test Track HS fake live pass pattern" \
-    "$TRACK_HS_FAKE_LIVE_PASS_PATTERN" \
+    "self-test simulator archive fake live pass pattern" \
+    "$FAKE_LIVE_PROOF_PASS_PATTERN" \
     'CommandMode.FAKE returns ProofReportStatus.PASSED'
 
 check_pattern_matches \
     "self-test incident group mutation pattern" \
-    "$TRACK_INCIDENT_GROUP_MUTATION_PATTERN" \
+    "$GROUP_MEMBERSHIP_MUTATION_PATTERN" \
     'EjectGroupMemberRequestPacket()'
 
 check_pattern_matches \
     "self-test Android probe forbidden runtime route pattern" \
-    "$TRACK_ANDROID_PROBE_FORBIDDEN_RUNTIME_PATTERN" \
+    "$ANDROID_PROBE_FORBIDDEN_RUNTIME_PATTERN" \
     'val resolver = EnvironmentLoginSecretResolver()'
 
 check_pattern_matches \
-    "self-test Track I stale notice compliance pattern" \
-    "$TRACK_I_STALE_NOTICE_COMPLIANCE_PATTERN" \
+    "self-test notice totals stale notice compliance pattern" \
+    "$NOTICE_TOTALS_STALE_COMPLIANCE_PATTERN" \
     'NoticeComplianceService; NoticeSubmissionLedgerPort; noticeSubmissionProjectionStatus; noticeLedgerConfigured'
 
 check_pattern_matches \
-    "self-test Track J classic baking pattern" \
-    "$TRACK_J_CLASSIC_BAKING_PATTERN" \
+    "self-test avatar readiness classic baking pattern" \
+    "$AVATAR_CLASSIC_BAKING_PATTERN" \
     'client.Appearance.RequestSetAppearance(true); AgentSetAppearance'
 
 check_pattern_matches \
-    "self-test Track J forbidden avatar owner pattern" \
-    "$TRACK_J_FORBIDDEN_AVATAR_OWNER_PATTERN" \
+    "self-test avatar readiness forbidden avatar owner pattern" \
+    "$AVATAR_FORBIDDEN_OWNER_PATTERN" \
     'class AvatarManager'
 
 check_pattern_matches \
-    "self-test Track J direct avatar seed pattern" \
-    "$TRACK_J_DIRECT_AVATAR_SEED_PATTERN" \
+    "self-test avatar readiness direct avatar seed pattern" \
+    "$AVATAR_DIRECT_CAPABILITY_SEED_PATTERN" \
     'identity.seedCapability'
 
 check_pattern_matches \
-    "self-test Track J CLI direct avatar pattern" \
-    "$TRACK_J_CLI_DIRECT_AVATAR_PATTERN" \
+    "self-test avatar readiness CLI direct avatar pattern" \
+    "$AVATAR_CLI_DIRECT_PROTOCOL_PATTERN" \
     'ProtocolAvatarRuntime(clientSession).ensureReady(session)'
 
 check_pattern_matches \
-    "self-test Track J stale full-proof simulator gate pattern" \
-    "$TRACK_J_STALE_FULL_PROOF_SIMULATOR_GATE_PATTERN" \
+    "self-test avatar readiness stale full-proof simulator gate pattern" \
+    "$AVATAR_STALE_FULL_PROOF_SIMULATOR_GATE_PATTERN" \
     'if (simulatorPresence(session).passed) sendNotice()'
 
 check_pattern_matches \
-    "self-test Track J extra simulator exchange implementation pattern" \
-    "$TRACK_J_EXTRA_SIMULATOR_EXCHANGE_IMPL_PATTERN" \
+    "self-test avatar readiness extra simulator exchange implementation pattern" \
+    "$AVATAR_EXTRA_SIMULATOR_EXCHANGE_IMPL_PATTERN" \
     ') : SimulatorPacketExchange {'
 
 check_pattern_matches \
-    "self-test HS002-E direct receive pattern" \
-    "$HS002_TRACK_E_FORBIDDEN_FACADE_RECEIVE_PATTERN" \
+    "self-test simulator session direct receive pattern" \
+    "$SIMULATOR_SESSION_FORBIDDEN_FACADE_RECEIVE_PATTERN" \
     'currentExchange.receive(endpoint, timeoutMillis)'
 
 check_pattern_matches \
-    "self-test HS002-E dead circuit client pattern" \
-    "$HS002_TRACK_E_DEAD_CIRCUIT_CLIENT_PATTERN" \
+    "self-test simulator session dead circuit client pattern" \
+    "$SIMULATOR_SESSION_DEAD_CIRCUIT_CLIENT_PATTERN" \
     'private val pendingNoticeArchiveReplies = mutableListOf<Packet>()'
 
 check_pattern_matches \
-    "self-test HS002-E duplicate session owner pattern" \
-    "$HS002_TRACK_E_DUPLICATE_SIM_GATEWAY_PATTERN" \
+    "self-test simulator session duplicate session owner pattern" \
+    "$SIMULATOR_SESSION_DUPLICATE_GATEWAY_PATTERN" \
     'class SimulatorSessionManager'
 
 check_pattern_matches \
-    "self-test HS002-E fake live route pattern" \
-    "$HS002_TRACK_E_FORBIDDEN_FAKE_LIVE_PATTERN" \
+    "self-test simulator session fake live route pattern" \
+    "$SIMULATOR_SESSION_FORBIDDEN_FAKE_LIVE_PATTERN" \
     'CommandMode.FAKE returns ProofReportStatus.PASSED'
-
-check_pattern_matches \
-    "self-test HS002-E raw track identifier pattern" \
-    "$HS002_TRACK_E_RAW_TRACK_IDENTIFIER_PATTERN" \
-    'E-05-T1'
 
 if [[ "$failures" -ne 0 ]]; then
     exit 1
