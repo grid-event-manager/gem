@@ -3,8 +3,8 @@ package org.gem.apps.desktop
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 
-object HostessDesktopSingleInstanceGuard {
-    fun terminateOtherInstances(): HostessDesktopSingleInstanceReport =
+object GemDesktopSingleInstanceGuard {
+    fun terminateOtherInstances(): GemDesktopSingleInstanceReport =
         terminateOtherInstances(
             processes = ProcessHandle.allProcesses()
                 .map(::ProcessHandleDesktopProcess)
@@ -13,34 +13,35 @@ object HostessDesktopSingleInstanceGuard {
         )
 
     internal fun terminateOtherInstances(
-        processes: List<HostessDesktopProcess>,
+        processes: List<GemDesktopProcess>,
         currentPid: Long,
-    ): HostessDesktopSingleInstanceReport {
+    ): GemDesktopSingleInstanceReport {
         val targets = processes
-            .filter { process -> process.pid != currentPid && process.isHostessDesktopProcess() }
+            .filter { process -> process.pid != currentPid && process.isGemDesktopProcess() }
 
         val terminated = targets.count { process ->
             process.terminate()
         }
 
-        return HostessDesktopSingleInstanceReport(
+        return GemDesktopSingleInstanceReport(
             scannedProcessCount = processes.size,
             matchedProcessCount = targets.size,
             terminatedProcessCount = terminated,
         )
     }
 
-    private fun HostessDesktopProcess.isHostessDesktopProcess(): Boolean {
+    private fun GemDesktopProcess.isGemDesktopProcess(): Boolean {
         val commandText = listOf(command, commandLine)
             .filter { it.isNotBlank() }
             .joinToString(separator = " ")
         val commandName = command.substringAfterLast('/').substringAfterLast('\\')
-        return commandText.contains(MainClassMarker) ||
-            commandName.equals(LauncherName, ignoreCase = true) ||
-            commandName.equals(WindowsLauncherName, ignoreCase = true)
+        return commandText.contains(CurrentMainClassMarker) ||
+            commandText.contains(LegacyMainClassMarker) ||
+            CurrentLauncherNames.any { launcher -> commandName.equals(launcher, ignoreCase = true) } ||
+            LegacyLauncherNames.any { launcher -> commandName.equals(launcher, ignoreCase = true) }
     }
 
-    private fun HostessDesktopProcess.terminate(): Boolean {
+    private fun GemDesktopProcess.terminate(): Boolean {
         if (!isAlive()) {
             return true
         }
@@ -52,20 +53,21 @@ object HostessDesktopSingleInstanceGuard {
         return awaitExit(ForcedShutdownTimeoutMillis) || !isAlive()
     }
 
-    private const val MainClassMarker: String = "org.gem.apps.desktop.HostessDesktopAppKt"
-    private const val LauncherName: String = "hostess"
-    private const val WindowsLauncherName: String = "hostess.exe"
+    internal const val CurrentMainClassMarker: String = "org.gem.apps.desktop.GemDesktopAppKt"
+    internal const val LegacyMainClassMarker: String = "org.hostess.apps.desktop.HostessDesktopAppKt"
+    private val CurrentLauncherNames: Set<String> = setOf("gem", "gem.exe")
+    private val LegacyLauncherNames: Set<String> = setOf("hostess", "hostess.exe")
     private const val GracefulShutdownTimeoutMillis: Long = 2_000L
     private const val ForcedShutdownTimeoutMillis: Long = 1_000L
 }
 
-data class HostessDesktopSingleInstanceReport(
+data class GemDesktopSingleInstanceReport(
     val scannedProcessCount: Int,
     val matchedProcessCount: Int,
     val terminatedProcessCount: Int,
 )
 
-internal interface HostessDesktopProcess {
+internal interface GemDesktopProcess {
     val pid: Long
     val command: String
     val commandLine: String
@@ -77,7 +79,7 @@ internal interface HostessDesktopProcess {
 
 private class ProcessHandleDesktopProcess(
     private val process: ProcessHandle,
-) : HostessDesktopProcess {
+) : GemDesktopProcess {
     override val pid: Long = process.pid()
     override val command: String = process.info().command().orElse("")
     override val commandLine: String = process.info().commandLine().orElse("")

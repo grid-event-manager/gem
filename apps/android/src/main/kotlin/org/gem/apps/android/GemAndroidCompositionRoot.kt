@@ -1,12 +1,14 @@
-package org.gem.apps.desktop
+package org.gem.apps.android
 
+import android.content.Context
+import java.io.File
+import java.nio.file.Path
 import org.gem.core.domain.GemDelay
 import org.gem.core.domain.GemInstant
 import org.gem.core.domain.LoginComplianceRequest
 import org.gem.core.domain.OperatorLabel
 import org.gem.core.domain.SavedAccountProfile
 import org.gem.core.domain.ScriptedAgentEvidenceSource
-import java.nio.file.Path
 import org.gem.core.ports.ClockPort
 import org.gem.core.preferences.LastLoginProfilePreferenceService
 import org.gem.core.services.AttachmentService
@@ -29,28 +31,19 @@ import org.gem.protocol.libomv.runtime.LoginSecretResolver
 import org.gem.ui.runtime.GemLoginComplianceProvider
 import org.gem.ui.runtime.GemUiRuntime
 
-object HostessDesktopCompositionRoot {
-    fun create(): GemUiRuntime =
-        HostessRuntimeComposition.create(
-            vaultAccess = DesktopVaultComposition.open(),
-            themePreferenceService = DesktopPreferenceComposition.open(),
-            lastLoginProfilePreferenceService = DesktopPreferenceComposition.openLastLoginProfile(),
-            inventorySnapshotCacheDirectory = DesktopPreferenceComposition.inventorySnapshotCacheDirectory(),
+object GemAndroidCompositionRoot {
+    fun create(context: Context): GemUiRuntime =
+        create(context.filesDir)
+
+    internal fun create(appFilesDir: File): GemUiRuntime =
+        GemRuntimeComposition.create(
+            vaultAccess = GemAndroidVaultComposition.open(appFilesDir),
+            themePreferenceService = GemAndroidPreferenceComposition.open(appFilesDir),
+            lastLoginProfilePreferenceService = GemAndroidPreferenceComposition.openLastLoginProfile(appFilesDir),
+            inventorySnapshotCacheDirectory = GemAndroidPreferenceComposition.inventorySnapshotCacheDirectory(appFilesDir),
         )
 
-    internal fun create(
-        osName: String,
-        env: Map<String, String>,
-        userHome: String,
-    ): GemUiRuntime =
-        HostessRuntimeComposition.create(
-            vaultAccess = DesktopVaultComposition.open(osName, env, userHome),
-            themePreferenceService = DesktopPreferenceComposition.open(osName, env, userHome),
-            lastLoginProfilePreferenceService = DesktopPreferenceComposition.openLastLoginProfile(osName, env, userHome),
-            inventorySnapshotCacheDirectory = DesktopPreferenceComposition.inventorySnapshotCacheDirectory(osName, env, userHome),
-        )
-
-    private object HostessRuntimeComposition {
+    private object GemRuntimeComposition {
         fun create(
             vaultAccess: GemVaultRuntimeAccess,
             themePreferenceService: ThemePreferenceService,
@@ -64,7 +57,7 @@ object HostessDesktopCompositionRoot {
             val groupDirectoryService = GroupDirectoryService(protocolRuntime.groupPort)
             return GemUiRuntime(
                 credentialRuntimeState = vaultAccess.credentialRuntimeState,
-                clockPort = DesktopAppClockPort,
+                clockPort = AndroidAppClockPort,
                 sessionService = SessionService(
                     sessionPort = protocolRuntime.sessionPort,
                     loginComplianceService = LoginComplianceService(),
@@ -79,7 +72,7 @@ object HostessDesktopCompositionRoot {
                 noticeDraftService = NoticeDraftService(),
                 noticeDispatchService = NoticeDispatchService(
                     noticePort = protocolRuntime.noticePort,
-                    clockPort = DesktopAppClockPort,
+                    clockPort = AndroidAppClockPort,
                 ),
                 noticeConfirmationService = NoticeConfirmationService(groupDirectoryService),
                 loginComplianceProvider = GemUiLoginComplianceProvider,
@@ -98,13 +91,13 @@ object HostessDesktopCompositionRoot {
                 proofAccountAttested = true,
                 automatedUse = true,
                 scriptedAgentAttested = true,
-                operatorLabel = OperatorLabel("Hostess Desktop"),
+                operatorLabel = OperatorLabel("Hostess Android"),
                 proofAccountLabel = profile.label,
                 evidenceSource = ScriptedAgentEvidenceSource.OPERATOR_ATTESTED,
             )
     }
 
-    private object DesktopAppClockPort : ClockPort {
+    private object AndroidAppClockPort : ClockPort {
         override fun now(): GemInstant =
             GemInstant(System.currentTimeMillis())
 

@@ -12,15 +12,15 @@ import org.gem.ui.text.EnglishGemTextCatalogue
 import org.gem.ui.text.GemTextKey
 
 fun main() {
-    HostessDesktopSingleInstanceGuard.terminateOtherInstances()
-    val runtime = HostessDesktopCompositionRoot.create()
+    GemDesktopSingleInstanceGuard.terminateOtherInstances()
+    val runtime = GemDesktopCompositionRoot.create()
     application {
         var exitRequestSerial by remember { mutableStateOf(0) }
         Window(
             onCloseRequest = { exitRequestSerial += 1 },
             state = rememberWindowState(
-                width = HostessDesktopWindowMetrics.initialWidth,
-                height = HostessDesktopWindowMetrics.initialHeight,
+                width = GemDesktopWindowMetrics.initialWidth,
+                height = GemDesktopWindowMetrics.initialHeight,
             ),
             title = EnglishGemTextCatalogue.text(GemTextKey.AppName),
         ) {

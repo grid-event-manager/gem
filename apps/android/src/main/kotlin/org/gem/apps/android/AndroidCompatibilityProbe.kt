@@ -180,7 +180,7 @@ class AndroidCompatibilityProbe {
         }
 
         val VAULT_RUNTIME_CLASSES = listOf(
-            "org.gem.apps.android.HostessAndroidVaultComposition",
+            "org.gem.apps.android.GemAndroidVaultComposition",
             "org.gem.core.services.GemCredentialRuntimeState",
             "org.gem.core.services.GemCredentialRuntimeReady",
             "org.gem.core.services.GemCredentialRuntimeUnavailable",

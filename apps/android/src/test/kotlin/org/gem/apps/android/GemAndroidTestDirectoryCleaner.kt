@@ -4,7 +4,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.util.Comparator
 
-internal object HostessAndroidTestDirectoryCleaner {
+internal object GemAndroidTestDirectoryCleaner {
     fun deleteRecursively(path: Path) {
         if (!Files.exists(path)) {
             return

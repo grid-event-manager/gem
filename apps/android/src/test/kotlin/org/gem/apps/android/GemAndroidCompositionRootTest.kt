@@ -16,12 +16,12 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
-class HostessAndroidCompositionRootTest {
+class GemAndroidCompositionRootTest {
     @Test
     fun `creates shared UI runtime through Android app-shell root`() {
         val appFilesDir = Files.createTempDirectory("hostess-android-composition-root-test")
         try {
-            val runtime = HostessAndroidCompositionRoot.create(appFilesDir.toFile())
+            val runtime = GemAndroidCompositionRoot.create(appFilesDir.toFile())
 
             assertNotNull(runtime.credentialRuntimeState)
             assertNotNull(runtime.sessionService)
@@ -41,7 +41,7 @@ class HostessAndroidCompositionRootTest {
             assertTrue(compliance.automatedUse)
             assertEquals("Android proof account", compliance.proofAccountLabel)
         } finally {
-            HostessAndroidTestDirectoryCleaner.deleteRecursively(appFilesDir)
+            GemAndroidTestDirectoryCleaner.deleteRecursively(appFilesDir)
         }
     }
 

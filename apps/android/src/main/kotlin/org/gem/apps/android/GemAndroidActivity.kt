@@ -5,10 +5,10 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import org.gem.ui.GemApp
 
-class HostessAndroidActivity : ComponentActivity() {
+class GemAndroidActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val runtime = HostessAndroidCompositionRoot.create(applicationContext)
+        val runtime = GemAndroidCompositionRoot.create(applicationContext)
         setContent {
             GemApp(runtime)
         }

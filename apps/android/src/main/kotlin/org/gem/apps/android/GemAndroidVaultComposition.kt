@@ -9,7 +9,7 @@ import org.gem.credential.vault.VaultAccessOpenResult
 import org.gem.credential.vault.VaultAccessService
 import org.gem.credential.vault.VaultCredentialRuntimeStateMapper
 
-object HostessAndroidVaultComposition {
+object GemAndroidVaultComposition {
     fun create(appFilesDir: File): GemCredentialRuntimeState =
         open(appFilesDir).credentialRuntimeState
 

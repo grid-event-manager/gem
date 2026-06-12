@@ -19,12 +19,12 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-class HostessDesktopCompositionRootTest {
+class GemDesktopCompositionRootTest {
     @Test
     fun `creates shared UI runtime through desktop app-shell root`() {
         val tempDataHome = Files.createTempDirectory("hostess-desktop-composition-root-test")
         try {
-            val runtime = HostessDesktopCompositionRoot.create(
+            val runtime = GemDesktopCompositionRoot.create(
                 osName = "Linux",
                 env = mapOf("XDG_DATA_HOME" to tempDataHome.toString()),
                 userHome = tempDataHome.resolve("home").toString(),

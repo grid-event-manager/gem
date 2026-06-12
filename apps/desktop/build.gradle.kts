@@ -18,12 +18,12 @@ dependencies {
 
 compose.desktop {
     application {
-        mainClass = "org.gem.apps.desktop.HostessDesktopAppKt"
+        mainClass = "org.gem.apps.desktop.GemDesktopAppKt"
 
         nativeDistributions {
             targetFormats(TargetFormat.Deb)
-            packageName = "hostess"
-            packageVersion = "0.1.10"
+            packageName = "gem"
+            packageVersion = "0.1.11"
             description = "Second Life venue notice helper"
             vendor = "Grid Event Manager"
         }

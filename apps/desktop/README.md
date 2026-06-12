@@ -1,4 +1,4 @@
-# Hostess Desktop App
+# Gem Desktop App
 
 Linux desktop launcher for the shared Gem Compose UI.
 

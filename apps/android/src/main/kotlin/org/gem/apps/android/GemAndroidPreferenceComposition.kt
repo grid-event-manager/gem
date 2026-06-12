@@ -8,7 +8,7 @@ import org.gem.preferences.AndroidHostessPreferencePaths
 import org.gem.preferences.FileLastLoginProfilePreferenceStore
 import org.gem.preferences.FileThemePreferenceStore
 
-object HostessAndroidPreferenceComposition {
+object GemAndroidPreferenceComposition {
     fun open(appFilesDir: File): ThemePreferenceService {
         val preferenceFile = File(
             AndroidHostessPreferencePaths.defaultPreferenceFile(appFilesDir.path),

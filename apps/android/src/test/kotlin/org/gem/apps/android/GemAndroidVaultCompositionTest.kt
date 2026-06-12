@@ -28,10 +28,10 @@ import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertSame
 
-class HostessAndroidVaultCompositionTest {
+class GemAndroidVaultCompositionTest {
     @Test
     fun `maps ready vault access result to runtime access carrier`() {
-        val access = HostessAndroidVaultComposition.mapOpenResult(readyResult())
+        val access = GemAndroidVaultComposition.mapOpenResult(readyResult())
 
         assertIs<GemCredentialRuntimeReady>(access.credentialRuntimeState)
         assertSame(FakeCredentialVault, access.credentialVault)
@@ -67,7 +67,7 @@ class HostessAndroidVaultCompositionTest {
 
         assertEquals(
             File(appFilesDir, "Hostess/vault/vault.bin").path,
-            HostessAndroidVaultComposition.vaultFile(appFilesDir).path,
+            GemAndroidVaultComposition.vaultFile(appFilesDir).path,
         )
     }
 
@@ -76,7 +76,7 @@ class HostessAndroidVaultCompositionTest {
         reason: GemCredentialRuntimeUnavailableReason,
         message: String,
     ) {
-        val access = HostessAndroidVaultComposition.mapOpenResult(openResult)
+        val access = GemAndroidVaultComposition.mapOpenResult(openResult)
         val state = assertIs<GemCredentialRuntimeUnavailable>(access.credentialRuntimeState)
         assertEquals(reason, state.reason)
         assertEquals(message, state.message)
@@ -88,7 +88,7 @@ class HostessAndroidVaultCompositionTest {
         reason: GemCredentialRuntimeResetReason,
         message: String,
     ) {
-        val access = HostessAndroidVaultComposition.mapOpenResult(openResult)
+        val access = GemAndroidVaultComposition.mapOpenResult(openResult)
         val state = assertIs<GemCredentialRuntimeResetRequired>(access.credentialRuntimeState)
         assertEquals(reason, state.reason)
         assertEquals(message, state.message)
