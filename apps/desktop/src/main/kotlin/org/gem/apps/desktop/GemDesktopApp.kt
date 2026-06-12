@@ -8,8 +8,6 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import org.gem.ui.GemApp
-import org.gem.ui.text.EnglishGemTextCatalogue
-import org.gem.ui.text.GemTextKey
 
 fun main() {
     GemDesktopSingleInstanceGuard.terminateOtherInstances()
@@ -22,7 +20,7 @@ fun main() {
                 width = GemDesktopWindowMetrics.initialWidth,
                 height = GemDesktopWindowMetrics.initialHeight,
             ),
-            title = EnglishGemTextCatalogue.text(GemTextKey.AppName),
+            title = GemDesktopWindowTitle.current(),
         ) {
             GemApp(
                 runtime = runtime,
@@ -31,4 +29,11 @@ fun main() {
             )
         }
     }
+}
+
+internal object GemDesktopWindowTitle {
+    private const val AppId = "gem"
+    private const val Version = "0.1.12"
+
+    fun current(): String = "$AppId $Version"
 }

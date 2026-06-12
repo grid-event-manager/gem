@@ -64,12 +64,14 @@ class GemDesignTokenTest {
         val typeScale = GemTypeScale()
 
         assertEquals(20.sp, typeScale.brandTitle.fontSize)
+        assertEquals(10.sp, typeScale.brandSubtitle.fontSize)
         assertEquals(16.sp, typeScale.sectionTitle.fontSize)
         assertEquals(14.sp, typeScale.body.fontSize)
         assertEquals(12.sp, typeScale.smallLabel.fontSize)
         assertEquals(14.sp, typeScale.button.fontSize)
         assertEquals(12.sp, typeScale.statusPill.fontSize)
         assertEquals(FontWeight.Bold, typeScale.brandTitle.fontWeight)
+        assertEquals(FontWeight.Normal, typeScale.brandSubtitle.fontWeight)
         assertNull(typeScale.sectionTitle.fontWeight)
         assertNull(typeScale.button.fontWeight)
     }

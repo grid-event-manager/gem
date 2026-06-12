@@ -92,29 +92,26 @@ fun GemClearIcon(
     )
 }
 
-private const val HOSTESS_BRAND_LOGO_SOURCE_PATH: String =
-    "M 40 200 C 40 200, 40 35, 100 35 C 160 35, 160 200, 160 200 C 160 200, 160 110, 100 110 C 40 110, 40 200, 40 200"
-
 private val GemBrandLogoVector: ImageVector =
     ImageVector.Builder(
-        name = HOSTESS_BRAND_LOGO_SOURCE_PATH,
-        defaultWidth = Dp(200f),
-        defaultHeight = Dp(220f),
-        viewportWidth = 200f,
-        viewportHeight = 220f,
+        name = "GemBrandDiamond",
+        defaultWidth = Dp(24f),
+        defaultHeight = Dp(24f),
+        viewportWidth = 24f,
+        viewportHeight = 24f,
     ).apply {
         path(
             fill = null,
             stroke = SolidBrush(Color.Black),
-            strokeLineWidth = 14f,
+            strokeLineWidth = 1.8f,
             strokeLineCap = StrokeCap.Round,
             strokeLineJoin = StrokeJoin.Round,
         ) {
-            moveTo(40f, 200f)
-            curveTo(40f, 200f, 40f, 35f, 100f, 35f)
-            curveTo(160f, 35f, 160f, 200f, 160f, 200f)
-            curveTo(160f, 200f, 160f, 110f, 100f, 110f)
-            curveTo(40f, 110f, 40f, 200f, 40f, 200f)
+            moveTo(12f, 3.5f)
+            lineTo(20.5f, 12f)
+            lineTo(12f, 20.5f)
+            lineTo(3.5f, 12f)
+            close()
         }
     }.build()
 

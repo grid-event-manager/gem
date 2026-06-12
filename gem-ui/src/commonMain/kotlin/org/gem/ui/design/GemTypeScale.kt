@@ -12,6 +12,11 @@ data class GemTypeScale(
         lineHeight = 22.sp,
         fontWeight = FontWeight.Bold,
     ),
+    val brandSubtitle: TextStyle = TextStyle(
+        fontSize = 10.sp,
+        lineHeight = 12.sp,
+        fontWeight = FontWeight.Normal,
+    ),
     val sectionTitle: TextStyle = TextStyle(
         fontSize = 16.sp,
         lineHeight = 20.sp,
