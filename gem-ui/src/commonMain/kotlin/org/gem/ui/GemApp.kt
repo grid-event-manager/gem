@@ -22,6 +22,8 @@ import org.gem.ui.components.SessionStrip
 import org.gem.ui.components.SettingsBackNav
 import org.gem.ui.controllers.GroupTargetController
 import org.gem.ui.controllers.GemAppController
+import org.gem.ui.controllers.GemLogoutWorkflow
+import org.gem.ui.controllers.GemLogoutWorkflowAction
 import org.gem.ui.controllers.InventoryBrowserController
 import org.gem.ui.controllers.LoginController
 import org.gem.ui.controllers.NoticeComposerController
@@ -97,18 +99,27 @@ fun GemApp(
     }
 
     fun runLogoutWorkflow(exitAfterLogout: Boolean = false) {
-        if (appController.state.session == null) {
-            if (exitAfterLogout) {
-                onExitReady()
+        val decision = GemLogoutWorkflow.decide(
+            hasActiveSession = appController.state.session != null,
+            logoutInFlight = logoutInFlight,
+            exitAfterLogout = exitAfterLogout,
+            existingExitAfterCurrentLogout = exitAfterCurrentLogout,
+        )
+        when (decision.action) {
+            GemLogoutWorkflowAction.EXIT_IMMEDIATELY -> {
+                if (decision.exitAfterLogout) {
+                    onExitReady()
+                }
+                return
             }
-            return
-        }
-        if (logoutInFlight) {
-            exitAfterCurrentLogout = exitAfterCurrentLogout || exitAfterLogout
-            return
+            GemLogoutWorkflowAction.MERGE_WITH_IN_FLIGHT_LOGOUT -> {
+                exitAfterCurrentLogout = decision.exitAfterLogout
+                return
+            }
+            GemLogoutWorkflowAction.START_LOGOUT -> Unit
         }
 
-        exitAfterCurrentLogout = exitAfterCurrentLogout || exitAfterLogout
+        exitAfterCurrentLogout = decision.exitAfterLogout
         logoutInFlight = true
         val loggingOut = appController.beginLogout()
         appController = loggingOut
