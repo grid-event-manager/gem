@@ -1,0 +1,142 @@
+package org.gem.tools.cli.commands
+
+import org.gem.tools.cli.CliCommand
+import org.gem.tools.cli.CliOutput
+import org.gem.tools.cli.CommandArguments
+import org.gem.tools.cli.CommandMode
+import org.gem.tools.cli.CommandResult
+import org.gem.tools.cli.composition.CliCompositionRoot
+import org.gem.tools.cli.report.ProofReportStatus
+
+internal const val PROTOCOL_BOOTSTRAP_BLOCKED_REASON: String =
+    "protocol bootstrap unavailable; live grid proof not attempted"
+
+class LiveProofCommand(
+    private val compositionRoot: CliCompositionRoot,
+) : CliCommand {
+    override val name: String = "live-proof"
+
+    override fun execute(arguments: CommandArguments, output: CliOutput): CommandResult {
+        val mode = CommandMode.parse(arguments.option("mode") ?: "live")
+        if (mode == CommandMode.FAKE) {
+            val runtime = compositionRoot.runtime(mode)
+            runtime.proofReportWriter.writeIfRequested(
+                reportPath = arguments.option("report"),
+                command = name,
+                mode = mode.label(),
+                status = ProofReportStatus.NOT_RUN,
+                statusFields = LiveProofStep.statusFields(),
+                inputs = mapOf("mode" to mode.label()),
+                results = LiveProofStep.notRunPlan("fake mode cannot satisfy live proof").map(LiveProofStep::toReportMap),
+                blockedReason = "fake mode cannot satisfy live proof",
+            )
+            output.line("live-proof fake not_run: fake mode cannot satisfy live proof")
+            return CommandResult.UNAVAILABLE
+        }
+
+        val reportPath = arguments.option("report")
+        if (reportPath == null) {
+            output.line("live-proof live blocked: report path is required")
+            usage(output, LiveProofScope.parse(arguments.option("proof-scope")))
+            return CommandResult.USAGE_ERROR
+        }
+
+        val inputs = LiveProofInputs.from(arguments)
+        val runtime = compositionRoot.runtime(mode)
+        val missingInputs = inputs.missingRequiredFields()
+        if (missingInputs.isNotEmpty()) {
+            val reason = "missing required live proof input: ${missingInputs.joinToString(", ")}"
+            runtime.proofReportWriter.writeIfRequested(
+                reportPath = reportPath,
+                command = name,
+                mode = mode.label(),
+                status = ProofReportStatus.BLOCKED,
+                statusFields = inputs.validationStatusFields(),
+                inputs = inputs.toReportInputs(mode),
+                results = LiveProofStep.blockedPlan("validate-inputs", reason).map(LiveProofStep::toReportMap),
+                blockedReason = reason,
+            )
+            output.line("live-proof live blocked: $reason")
+            usage(output, inputs.proofScope)
+            return CommandResult.USAGE_ERROR
+        }
+
+        if (!runtime.protocolAvailable) {
+            val reason = PROTOCOL_BOOTSTRAP_BLOCKED_REASON
+            val results = listOf(LiveProofStep.passed("validate-inputs")) +
+                LiveProofStep.blockedPlan("login", reason)
+            runtime.proofReportWriter.writeIfRequested(
+                reportPath = reportPath,
+                command = name,
+                mode = mode.label(),
+                status = ProofReportStatus.BLOCKED,
+                statusFields = bootstrapBlockedStatusFields(inputs),
+                inputs = inputs.toReportInputs(mode),
+                results = results.map(LiveProofStep::toReportMap),
+                blockedReason = reason,
+            )
+            output.line("live-proof live blocked: $reason")
+            return CommandResult.UNAVAILABLE
+        }
+
+        return LiveProofRunner(runtime, inputs, reportPath, output, commandName = name).run()
+    }
+
+    private fun bootstrapBlockedStatusFields(inputs: LiveProofInputs): Map<String, String> =
+        when (inputs.proofScope) {
+            LiveProofScope.SIMULATOR_PRESENCE,
+            LiveProofScope.NOTICE_ARCHIVE,
+            LiveProofScope.READ_GROUPS,
+            LiveProofScope.LOGIN_ONLY,
+            LiveProofScope.INVENTORY_CATALOGUE,
+            ->
+                LiveProofStep.statusFields().toMutableMap().also {
+                    it["credentialStatus"] = "blocked"
+                    it["loginStatus"] = "runtime_gap"
+                    it += inputs.loginComplianceStatusFields()
+                }
+            LiveProofScope.FULL, LiveProofScope.UNSUPPORTED -> LiveProofStep.statusFields("blocked").toMutableMap().also {
+                it += inputs.loginComplianceStatusFields()
+            }
+        }
+
+    private fun usage(output: CliOutput, scope: LiveProofScope) {
+        when (scope) {
+            LiveProofScope.SIMULATOR_PRESENCE -> output.line(
+                "usage: live-proof --mode live --proof-scope simulator-presence --report <path> " +
+                    "--grid <name> --account <label> --credential-env <name> --proof-account-attested " +
+                    "--scripted-agent-attested --operator <label> --proof-account-label <label>",
+            )
+            LiveProofScope.NOTICE_ARCHIVE -> output.line(
+                "usage: live-proof --mode live --proof-scope notice-archive --report <path> " +
+                    "--grid <name> --account <label> --credential-env <name> --proof-account-attested " +
+                    "--scripted-agent-attested --operator <label> --proof-account-label <label> " +
+                    "--target <display-name>",
+            )
+            LiveProofScope.READ_GROUPS -> output.line(
+                "usage: live-proof --mode live --proof-scope read-groups --report <path> " +
+                    "--grid <name> --account <label> --credential-env <name> --proof-account-attested " +
+                    "--scripted-agent-attested --operator <label> --proof-account-label <label>",
+            )
+            LiveProofScope.LOGIN_ONLY -> output.line(
+                "usage: live-proof --mode live --proof-scope login-only --report <path> --grid <name> " +
+                    "--account <label> --credential-env <name> --proof-account-attested --scripted-agent-attested " +
+                    "--operator <label> --proof-account-label <label> [--automated-use true]",
+            )
+            LiveProofScope.INVENTORY_CATALOGUE -> output.line(
+                "usage: live-proof --mode live --proof-scope inventory-catalogue --report <path> " +
+                    "--grid <name> --account <label> --credential-env <name> --proof-account-attested " +
+                    "--scripted-agent-attested --operator <label> --proof-account-label <label>",
+            )
+            LiveProofScope.FULL, LiveProofScope.UNSUPPORTED -> output.line(
+                "usage: live-proof --report <path> --authorised-live-send --grid <name> --account <label> " +
+                    "--credential-env <name> --proof-account-attested --scripted-agent-attested " +
+                    "--operator <label> --proof-account-label <label> --target <display-name> " +
+                    "--subject <subject> --body <body> --existing-attachment-name <display-name> " +
+                    "[--operator-observation-ready for real Second Life] " +
+                    "[--operator-receipt-status all_received|partial|none|not_checked] " +
+                    "[--operator-receipt-detail <redacted-note>]",
+            )
+        }
+    }
+}

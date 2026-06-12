@@ -10,7 +10,7 @@ dependencies {
 }
 
 application {
-    mainClass.set("org.hostess.tools.cli.HostessCli")
+    mainClass.set("org.gem.tools.cli.GemCli")
 }
 
 tasks.test {

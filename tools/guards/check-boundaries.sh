@@ -7,7 +7,7 @@ cd "$ROOT_DIR"
 failures=0
 
 RAW_LIBOMV_PATTERN='(^|[^[:alnum:]_.])libomv\.'
-CORE_FORBIDDEN_PATTERN="gem-protocol-libomv|org\.hostess\.protocol\.libomv|org\.gem\.protocol\.libomv|:apps:|:tools:cli|reference/|\.\./private|$RAW_LIBOMV_PATTERN"
+CORE_FORBIDDEN_PATTERN="gem-protocol-libomv|org\.gem\.protocol\.libomv|org\.gem\.protocol\.libomv|:apps:|:tools:cli|reference/|\.\./private|$RAW_LIBOMV_PATTERN"
 PRIVATE_REFERENCE_PATTERN='reference/|\.\./private'
 FORBIDDEN_PLATFORM_PATTERN='TrustAll|ALLOW_ALL|HostnameVerifier|X509TrustManager|sslSocketFactory|org\.apache\.http|sun\.security|java\.awt|javax\.swing|METAbolt|WinForms|printStackTrace\(|println\('
 CLI_COMMAND_REPORT_WRITE_PATTERN='File\(|Path\.of\(|Files\.|writeText\(|appendText\('
@@ -59,16 +59,16 @@ CREDENTIAL_FILE_ROUTE_PATTERN='credential-file'
 UNSUPPORTED_SECRET_STORE_PATTERN='keychain|Keychain|KeyStore|plaintext|plain-text|plain text'
 UI_REMEDIATION_SPLIT_LOGIN_PATTERN='LoginSavedAccountPanel|AddLoginPanel|addLoginExpanded|newUsernameDraft|newPasswordDraft|saveAndLoginEnabled'
 UI_REMEDIATION_FAKE_LOCATION_PATTERN='startLocation\.orEmpty|SavedAccountProfile\.startLocation|London City|Welcome Area|locationLabel = "[^"]+"'
-UI_REMEDIATION_SCAFFOLD_REQUIRED_PATTERN='HostessAppScaffold'
+UI_REMEDIATION_SCAFFOLD_REQUIRED_PATTERN='GemAppScaffold'
 UI_REMEDIATION_CUSTOM_ICON_PATTERN='Canvas|drawLine|MenuBarCount|BackIconMidpoint|foundation\.Canvas'
-THEME_UI_PREFERENCE_ADAPTER_PATTERN='org\.hostess\.preferences|:gem-preferences'
+THEME_UI_PREFERENCE_ADAPTER_PATTERN='org\.gem\.preferences|:gem-preferences'
 THEME_VAULT_STORAGE_PATTERN='ThemePreference|themePreference|ui\.properties|preferences'
 THEME_HACCU_COLOUR_PATTERN='#[0-9A-Fa-f]{6}|Color\(0x'
 THEME_VISIBLE_LABEL_PATTERN='"(Grid Event Manager|GEM|GRID EVENT MANAGER|Light|Dark|Theme|Theme preference unavailable|Theme preference could not be saved)"'
 THEME_PROTOTYPE_RUNTIME_PATTERN='WebView|android\.webkit|index-multi|<html|styles\.css|loadDataWithBaseURL'
-THEME_LOGO_OWNER_PATTERN='fun[[:space:]]+HostessBrandLogoIcon'
+THEME_LOGO_OWNER_PATTERN='fun[[:space:]]+GemBrandLogoIcon'
 THEME_TOGGLE_OWNER_PATTERN='fun[[:space:]]+ThemeModeToggle'
-THEME_PALETTE_OWNER_PATTERN='object[[:space:]]+HaccuHostessPaletteProvider'
+THEME_PALETTE_OWNER_PATTERN='object[[:space:]]+HaccuGemPaletteProvider'
 THEME_ANDROID_LABEL_PATTERN='manifestPlaceholders\["appLabel"\][[:space:]]*=[[:space:]]*"Grid Event Manager"'
 THEME_DESKTOP_VENDOR_PATTERN='vendor[[:space:]]*=[[:space:]]*"Grid Event Manager"'
 THEME_ROOT_PROJECT_LABEL_PATTERN='rootProject\.name\.replaceFirstChar'
@@ -452,8 +452,8 @@ check_exact_owner_count() {
 check_notice_dispatch_overloads() {
     local files=()
     add_existing files \
-        "gem-core/src/commonMain/kotlin/org/hostess/core/services/NoticeDispatchService.kt" \
-        "gem-core/src/main/kotlin/org/hostess/core/services/NoticeDispatchService.kt"
+        "gem-core/src/commonMain/kotlin/org/gem/core/services/NoticeDispatchService.kt" \
+        "gem-core/src/main/kotlin/org/gem/core/services/NoticeDispatchService.kt"
 
     if [[ "${#files[@]}" -eq 0 ]]; then
         echo "ERROR: notice totals notice dispatch overload scan has no scan targets"
@@ -536,7 +536,7 @@ check_simulator_session_boundaries() {
 
     local circuit_client_targets=()
     add_existing circuit_client_targets \
-        "gem-protocol-libomv/src/commonMain/kotlin/org/hostess/protocol/libomv/transport/ProtocolSimulatorCircuitClient.kt"
+        "gem-protocol-libomv/src/commonMain/kotlin/org/gem/protocol/libomv/transport/ProtocolSimulatorCircuitClient.kt"
 
     check_no_hits \
         "simulator session old circuit-client local receive state absent" \
@@ -629,7 +629,7 @@ add_existing app_cli_targets \
 
 cli_command_targets=()
 add_existing cli_command_targets \
-    "tools/cli/src/main/kotlin/org/hostess/tools/cli/commands"
+    "tools/cli/src/main/kotlin/org/gem/tools/cli/commands"
 
 production_targets=()
 add_existing production_targets \
@@ -720,13 +720,13 @@ add_existing architecture_owner_targets \
 kmp_platform_api_forbidden_targets=()
 while IFS= read -r path; do
     case "$path" in
-        gem-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/transport/OkHttpProtocolHttpClient.kt) ;;
-        gem-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/transport/UdpSimulatorDatagramSender.kt) ;;
-        gem-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/runtime/JvmMd5DigestPort.kt) ;;
-        gem-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/runtime/EnvironmentLoginSecretResolver.kt) ;;
-        gem-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/runtime/DefaultHostessHardwareAddressSource.kt) ;;
-        apps/desktop/src/main/kotlin/org/hostess/apps/desktop/DesktopVaultComposition.kt) ;;
-        apps/desktop/src/main/kotlin/org/hostess/apps/desktop/DesktopPreferenceComposition.kt) ;;
+        gem-protocol-libomv/src/jvmAndroidMain/kotlin/org/gem/protocol/libomv/transport/OkHttpProtocolHttpClient.kt) ;;
+        gem-protocol-libomv/src/jvmAndroidMain/kotlin/org/gem/protocol/libomv/transport/UdpSimulatorDatagramSender.kt) ;;
+        gem-protocol-libomv/src/jvmAndroidMain/kotlin/org/gem/protocol/libomv/runtime/JvmMd5DigestPort.kt) ;;
+        gem-protocol-libomv/src/jvmAndroidMain/kotlin/org/gem/protocol/libomv/runtime/EnvironmentLoginSecretResolver.kt) ;;
+        gem-protocol-libomv/src/jvmAndroidMain/kotlin/org/gem/protocol/libomv/runtime/DefaultHostessHardwareAddressSource.kt) ;;
+        apps/desktop/src/main/kotlin/org/gem/apps/desktop/DesktopVaultComposition.kt) ;;
+        apps/desktop/src/main/kotlin/org/gem/apps/desktop/DesktopPreferenceComposition.kt) ;;
         *) kmp_platform_api_forbidden_targets+=("$path") ;;
     esac
 done < <(find \
@@ -797,7 +797,7 @@ add_existing ui_targets \
 ui_text_forbidden_targets=()
 while IFS= read -r path; do
     case "$path" in
-        *"/HostessText.kt") ;;
+        *"/GemText.kt") ;;
         *) ui_text_forbidden_targets+=("$path") ;;
     esac
 done < <(find \
@@ -814,32 +814,32 @@ add_existing ui_text_forbidden_targets \
 ui_style_forbidden_targets=()
 while IFS= read -r path; do
     case "$path" in
-        *"/org/hostess/ui/design/"*) ;;
+        *"/org/gem/ui/design/"*) ;;
         *) ui_style_forbidden_targets+=("$path") ;;
     esac
 done < <(find \
-    "gem-ui/src/commonMain/kotlin/org/hostess/ui" \
-    "gem-ui/src/jvmMain/kotlin/org/hostess/ui" \
-    "gem-ui/src/androidMain/kotlin/org/hostess/ui" \
+    "gem-ui/src/commonMain/kotlin/org/gem/ui" \
+    "gem-ui/src/jvmMain/kotlin/org/gem/ui" \
+    "gem-ui/src/androidMain/kotlin/org/gem/ui" \
     -type f -name '*.kt' 2>/dev/null || true)
 
 ui_direct_control_forbidden_targets=()
 while IFS= read -r path; do
     case "$path" in
-        *"/HostessButtons.kt") ;;
-        *"/HostessDropdowns.kt") ;;
-        *"/HostessFields.kt") ;;
-        *"/HostessOverflowMenu.kt") ;;
-        *"/HostessRows.kt") ;;
-        *"/HostessScrollablePane.kt") ;;
-        *"/HostessScrollablePane.jvm.kt") ;;
-        *"/HostessScrollablePane.android.kt") ;;
+        *"/GemButtons.kt") ;;
+        *"/GemDropdowns.kt") ;;
+        *"/GemFields.kt") ;;
+        *"/GemOverflowMenu.kt") ;;
+        *"/GemRows.kt") ;;
+        *"/GemScrollablePane.kt") ;;
+        *"/GemScrollablePane.jvm.kt") ;;
+        *"/GemScrollablePane.android.kt") ;;
         *) ui_direct_control_forbidden_targets+=("$path") ;;
     esac
 done < <(find \
-    "gem-ui/src/commonMain/kotlin/org/hostess/ui" \
-    "gem-ui/src/jvmMain/kotlin/org/hostess/ui" \
-    "gem-ui/src/androidMain/kotlin/org/hostess/ui" \
+    "gem-ui/src/commonMain/kotlin/org/gem/ui" \
+    "gem-ui/src/jvmMain/kotlin/org/gem/ui" \
+    "gem-ui/src/androidMain/kotlin/org/gem/ui" \
     -type f -name '*.kt' 2>/dev/null || true)
 
 ui_remediation_split_login_targets=()
@@ -854,12 +854,12 @@ add_existing ui_remediation_fake_location_targets \
 
 ui_remediation_scaffold_required_targets=()
 add_existing ui_remediation_scaffold_required_targets \
-    "gem-ui/src/commonMain/kotlin/org/hostess/ui/HostessApp.kt" \
-    "gem-ui/src/commonMain/kotlin/org/hostess/ui/components/HostessAppScaffold.kt"
+    "gem-ui/src/commonMain/kotlin/org/gem/ui/GemApp.kt" \
+    "gem-ui/src/commonMain/kotlin/org/gem/ui/components/GemAppScaffold.kt"
 
 ui_remediation_custom_icon_targets=()
 add_existing ui_remediation_custom_icon_targets \
-    "gem-ui/src/commonMain/kotlin/org/hostess/ui/components/HostessIcons.kt"
+    "gem-ui/src/commonMain/kotlin/org/gem/ui/components/GemIcons.kt"
 
 theme_ui_adapter_targets=()
 add_existing theme_ui_adapter_targets \
@@ -879,13 +879,13 @@ add_existing theme_vault_storage_targets \
 theme_colour_forbidden_targets=()
 while IFS= read -r path; do
     case "$path" in
-        *"/org/hostess/ui/design/"*) ;;
+        *"/org/gem/ui/design/"*) ;;
         *) theme_colour_forbidden_targets+=("$path") ;;
     esac
 done < <(find \
-    "gem-ui/src/commonMain/kotlin/org/hostess/ui" \
-    "gem-ui/src/jvmMain/kotlin/org/hostess/ui" \
-    "gem-ui/src/androidMain/kotlin/org/hostess/ui" \
+    "gem-ui/src/commonMain/kotlin/org/gem/ui" \
+    "gem-ui/src/jvmMain/kotlin/org/gem/ui" \
+    "gem-ui/src/androidMain/kotlin/org/gem/ui" \
     "apps/desktop/src/main" \
     "apps/android/src/main" \
     -type f -name '*.kt' 2>/dev/null || true)
@@ -893,7 +893,7 @@ done < <(find \
 theme_visible_label_forbidden_targets=()
 while IFS= read -r path; do
     case "$path" in
-        *"/HostessText.kt") ;;
+        *"/GemText.kt") ;;
         *) theme_visible_label_forbidden_targets+=("$path") ;;
     esac
 done < <(find \
@@ -921,7 +921,7 @@ session_protocol_runtime_forbidden_targets=()
 while IFS= read -r path; do
     case "$path" in
         # Android no-UI load probe may mention protocol owner class names only.
-        "apps/android/src/main/kotlin/org/hostess/apps/android/AndroidCompatibilityProbe.kt") ;;
+        "apps/android/src/main/kotlin/org/gem/apps/android/AndroidCompatibilityProbe.kt") ;;
         *) session_protocol_runtime_forbidden_targets+=("$path") ;;
     esac
 done < <(find \
@@ -1009,7 +1009,7 @@ viewer_identity_provider_forbidden_targets=()
 while IFS= read -r path; do
     case "$path" in
         # D-08 Android no-UI load probe must class-load this protocol identity provider.
-        "apps/android/src/main/kotlin/org/hostess/apps/android/AndroidCompatibilityProbe.kt") ;;
+        "apps/android/src/main/kotlin/org/gem/apps/android/AndroidCompatibilityProbe.kt") ;;
         *) viewer_identity_provider_forbidden_targets+=("$path") ;;
     esac
 done < <(find \
@@ -1029,18 +1029,18 @@ while IFS= read -r path; do
         *"/RedactedText.kt") ;;
         *) report_secret_key_targets+=("$path") ;;
     esac
-done < <(find "tools/cli/src/main/kotlin/org/hostess/tools/cli" -type f -name '*.kt' 2>/dev/null || true)
+done < <(find "tools/cli/src/main/kotlin/org/gem/tools/cli" -type f -name '*.kt' 2>/dev/null || true)
 
 notice_cap_forbidden_targets=()
 add_existing notice_cap_forbidden_targets \
-    "tools/cli/src/main/kotlin/org/hostess/tools/cli/commands/SendNoticeCommand.kt" \
-    "tools/cli/src/main/kotlin/org/hostess/tools/cli/commands/LiveProofRunner.kt"
+    "tools/cli/src/main/kotlin/org/gem/tools/cli/commands/SendNoticeCommand.kt" \
+    "tools/cli/src/main/kotlin/org/gem/tools/cli/commands/LiveProofRunner.kt"
 
 login_package_direct_owner_forbidden_targets=()
 while IFS= read -r path; do
     case "$path" in
         # login package Android no-UI load probe may mention login package owner class names only.
-        "apps/android/src/main/kotlin/org/hostess/apps/android/AndroidCompatibilityProbe.kt") ;;
+        "apps/android/src/main/kotlin/org/gem/apps/android/AndroidCompatibilityProbe.kt") ;;
         *) login_package_direct_owner_forbidden_targets+=("$path") ;;
     esac
 done < <(find \
@@ -1056,17 +1056,17 @@ done < <(find \
 
 login_package_targets=()
 add_existing login_package_targets \
-    "gem-protocol-libomv/src/commonMain/kotlin/org/hostess/protocol/libomv/runtime/ProtocolLoginRuntime.kt" \
-    "gem-protocol-libomv/src/jvmMain/kotlin/org/hostess/protocol/libomv/runtime/ProtocolLoginRuntime.kt" \
-    "gem-protocol-libomv/src/androidMain/kotlin/org/hostess/protocol/libomv/runtime/ProtocolLoginRuntime.kt" \
-    "gem-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/runtime/ProtocolLoginRuntime.kt" \
-    "gem-protocol-libomv/src/main/kotlin/org/hostess/protocol/libomv/runtime/ProtocolLoginRuntime.kt"
+    "gem-protocol-libomv/src/commonMain/kotlin/org/gem/protocol/libomv/runtime/ProtocolLoginRuntime.kt" \
+    "gem-protocol-libomv/src/jvmMain/kotlin/org/gem/protocol/libomv/runtime/ProtocolLoginRuntime.kt" \
+    "gem-protocol-libomv/src/androidMain/kotlin/org/gem/protocol/libomv/runtime/ProtocolLoginRuntime.kt" \
+    "gem-protocol-libomv/src/jvmAndroidMain/kotlin/org/gem/protocol/libomv/runtime/ProtocolLoginRuntime.kt" \
+    "gem-protocol-libomv/src/main/kotlin/org/gem/protocol/libomv/runtime/ProtocolLoginRuntime.kt"
 for protocol_runtime_root in \
-    "gem-protocol-libomv/src/commonMain/kotlin/org/hostess/protocol/libomv/runtime" \
-    "gem-protocol-libomv/src/jvmMain/kotlin/org/hostess/protocol/libomv/runtime" \
-    "gem-protocol-libomv/src/androidMain/kotlin/org/hostess/protocol/libomv/runtime" \
-    "gem-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/runtime" \
-    "gem-protocol-libomv/src/main/kotlin/org/hostess/protocol/libomv/runtime"; do
+    "gem-protocol-libomv/src/commonMain/kotlin/org/gem/protocol/libomv/runtime" \
+    "gem-protocol-libomv/src/jvmMain/kotlin/org/gem/protocol/libomv/runtime" \
+    "gem-protocol-libomv/src/androidMain/kotlin/org/gem/protocol/libomv/runtime" \
+    "gem-protocol-libomv/src/jvmAndroidMain/kotlin/org/gem/protocol/libomv/runtime" \
+    "gem-protocol-libomv/src/main/kotlin/org/gem/protocol/libomv/runtime"; do
     while IFS= read -r path; do
         login_package_targets+=("$path")
     done < <(find "$protocol_runtime_root" -maxdepth 1 -type f -name 'LoginPackage*.kt' 2>/dev/null || true)
@@ -1074,21 +1074,21 @@ done
 
 session_login_service_targets=()
 add_existing session_login_service_targets \
-    "gem-core/src/commonMain/kotlin/org/hostess/core/services/SessionService.kt" \
-    "gem-core/src/main/kotlin/org/hostess/core/services/SessionService.kt"
+    "gem-core/src/commonMain/kotlin/org/gem/core/services/SessionService.kt" \
+    "gem-core/src/main/kotlin/org/gem/core/services/SessionService.kt"
 
 notice_time_targets=()
 add_existing notice_time_targets \
-    "gem-core/src/commonMain/kotlin/org/hostess/core/services/NoticeComplianceService.kt" \
-    "gem-core/src/main/kotlin/org/hostess/core/services/NoticeComplianceService.kt"
+    "gem-core/src/commonMain/kotlin/org/gem/core/services/NoticeComplianceService.kt" \
+    "gem-core/src/main/kotlin/org/gem/core/services/NoticeComplianceService.kt"
 
 login_package_old_login_targets=()
 add_existing login_package_old_login_targets \
-    "gem-protocol-libomv/src/commonMain/kotlin/org/hostess/protocol/libomv/runtime/ProtocolLoginRuntime.kt" \
-    "gem-protocol-libomv/src/jvmMain/kotlin/org/hostess/protocol/libomv/runtime/ProtocolLoginRuntime.kt" \
-    "gem-protocol-libomv/src/androidMain/kotlin/org/hostess/protocol/libomv/runtime/ProtocolLoginRuntime.kt" \
-    "gem-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/runtime/ProtocolLoginRuntime.kt" \
-    "gem-protocol-libomv/src/main/kotlin/org/hostess/protocol/libomv/runtime/ProtocolLoginRuntime.kt"
+    "gem-protocol-libomv/src/commonMain/kotlin/org/gem/protocol/libomv/runtime/ProtocolLoginRuntime.kt" \
+    "gem-protocol-libomv/src/jvmMain/kotlin/org/gem/protocol/libomv/runtime/ProtocolLoginRuntime.kt" \
+    "gem-protocol-libomv/src/androidMain/kotlin/org/gem/protocol/libomv/runtime/ProtocolLoginRuntime.kt" \
+    "gem-protocol-libomv/src/jvmAndroidMain/kotlin/org/gem/protocol/libomv/runtime/ProtocolLoginRuntime.kt" \
+    "gem-protocol-libomv/src/main/kotlin/org/gem/protocol/libomv/runtime/ProtocolLoginRuntime.kt"
 
 attachment_kotlin_targets=()
 add_existing attachment_kotlin_targets \
@@ -1166,7 +1166,7 @@ add_existing inventory_capability_main_targets \
 
 inventory_capability_event_queue_targets=()
 add_existing inventory_capability_event_queue_targets \
-    "gem-protocol-libomv/src/commonMain/kotlin/org/hostess/protocol/libomv/transport/EventQueueGetClient.kt"
+    "gem-protocol-libomv/src/commonMain/kotlin/org/gem/protocol/libomv/transport/EventQueueGetClient.kt"
 
 inventory_capability_cli_targets=()
 add_existing inventory_capability_cli_targets \
@@ -1202,7 +1202,7 @@ notice_protocol_direct_app_targets=()
 while IFS= read -r path; do
     case "$path" in
         # notice protocol Android no-UI load probe may mention notice protocol protocol owner class names only.
-        "apps/android/src/main/kotlin/org/hostess/apps/android/AndroidCompatibilityProbe.kt") ;;
+        "apps/android/src/main/kotlin/org/gem/apps/android/AndroidCompatibilityProbe.kt") ;;
         *) notice_protocol_direct_app_targets+=("$path") ;;
     esac
 done < <(find \
@@ -1214,7 +1214,7 @@ done < <(find \
 simulator_exchange_duplicate_targets=()
 while IFS= read -r path; do
     case "$path" in
-        "gem-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/transport/UdpSimulatorDatagramSender.kt") ;;
+        "gem-protocol-libomv/src/jvmAndroidMain/kotlin/org/gem/protocol/libomv/transport/UdpSimulatorDatagramSender.kt") ;;
         *) simulator_exchange_duplicate_targets+=("$path") ;;
     esac
 done < <(find \
@@ -1245,7 +1245,7 @@ add_existing fake_live_proof_targets \
 
 full_proof_archive_targets=()
 add_existing full_proof_archive_targets \
-    "tools/cli/src/main/kotlin/org/hostess/tools/cli/commands/LiveNoticeSendProofRunner.kt"
+    "tools/cli/src/main/kotlin/org/gem/tools/cli/commands/LiveNoticeSendProofRunner.kt"
 
 group_membership_mutation_targets=()
 add_existing group_membership_mutation_targets \
@@ -1265,7 +1265,7 @@ add_existing group_membership_mutation_targets \
 
 android_probe_targets=()
 add_existing android_probe_targets \
-    "apps/android/src/main/kotlin/org/hostess/apps/android/AndroidCompatibilityProbe.kt"
+    "apps/android/src/main/kotlin/org/gem/apps/android/AndroidCompatibilityProbe.kt"
 
 vault_dependency_targets=()
 add_existing vault_dependency_targets \
@@ -1350,22 +1350,22 @@ add_existing avatar_main_targets \
 
 avatar_source_targets=()
 add_existing avatar_source_targets \
-    "gem-protocol-libomv/src/commonMain/kotlin/org/hostess/protocol/libomv/runtime/ProtocolAvatarAppearanceSource.kt"
+    "gem-protocol-libomv/src/commonMain/kotlin/org/gem/protocol/libomv/runtime/ProtocolAvatarAppearanceSource.kt"
 
 avatar_cli_command_targets=()
 add_existing avatar_cli_command_targets \
-    "tools/cli/src/main/kotlin/org/hostess/tools/cli/commands"
+    "tools/cli/src/main/kotlin/org/gem/tools/cli/commands"
 
 avatar_full_proof_targets=()
 add_existing avatar_full_proof_targets \
-    "tools/cli/src/main/kotlin/org/hostess/tools/cli/commands/LiveNoticeSendProofRunner.kt"
+    "tools/cli/src/main/kotlin/org/gem/tools/cli/commands/LiveNoticeSendProofRunner.kt"
 
 avatar_simulator_exchange_impl_targets=()
 while IFS= read -r path; do
     case "$path" in
-        "gem-protocol-libomv/src/commonMain/kotlin/org/hostess/protocol/libomv/transport/SimulatorPacketExchange.kt") ;;
-        "gem-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/transport/SimulatorPacketExchangeFactory.kt") ;;
-        "gem-protocol-libomv/src/jvmAndroidMain/kotlin/org/hostess/protocol/libomv/transport/UdpSimulatorDatagramSender.kt") ;;
+        "gem-protocol-libomv/src/commonMain/kotlin/org/gem/protocol/libomv/transport/SimulatorPacketExchange.kt") ;;
+        "gem-protocol-libomv/src/jvmAndroidMain/kotlin/org/gem/protocol/libomv/transport/SimulatorPacketExchangeFactory.kt") ;;
+        "gem-protocol-libomv/src/jvmAndroidMain/kotlin/org/gem/protocol/libomv/transport/UdpSimulatorDatagramSender.kt") ;;
         *) avatar_simulator_exchange_impl_targets+=("$path") ;;
     esac
 done < <(find \
@@ -1538,17 +1538,17 @@ check_no_hits \
 check_required_hits \
     "theme brand logo owner present" \
     "$THEME_LOGO_OWNER_PATTERN" \
-    "gem-ui/src/commonMain/kotlin/org/hostess/ui/components/HostessIcons.kt"
+    "gem-ui/src/commonMain/kotlin/org/gem/ui/components/GemIcons.kt"
 
 check_required_hits \
     "theme theme toggle owner present" \
     "$THEME_TOGGLE_OWNER_PATTERN" \
-    "gem-ui/src/commonMain/kotlin/org/hostess/ui/components/ThemeModeToggle.kt"
+    "gem-ui/src/commonMain/kotlin/org/gem/ui/components/ThemeModeToggle.kt"
 
 check_required_hits \
     "theme palette provider present" \
     "$THEME_PALETTE_OWNER_PATTERN" \
-    "gem-ui/src/commonMain/kotlin/org/hostess/ui/design/HaccuHostessPaletteProvider.kt"
+    "gem-ui/src/commonMain/kotlin/org/gem/ui/design/HaccuGemPaletteProvider.kt"
 
 check_required_hits \
     "theme Android app label explicit" \
@@ -1613,8 +1613,8 @@ check_no_hits \
     "$KMP_PLATFORM_API_PATTERN" \
     "${kmp_platform_api_forbidden_targets[@]}"
 
-check_exact_owner_count "KMP migration single HostessInstant owner" "HostessInstant" 1 "${architecture_owner_targets[@]}"
-check_exact_owner_count "KMP migration single HostessDelay owner" "HostessDelay" 1 "${architecture_owner_targets[@]}"
+check_exact_owner_count "KMP migration single GemInstant owner" "GemInstant" 1 "${architecture_owner_targets[@]}"
+check_exact_owner_count "KMP migration single GemDelay owner" "GemDelay" 1 "${architecture_owner_targets[@]}"
 check_exact_owner_count "KMP migration single ClockPort owner" "ClockPort" 1 "${architecture_owner_targets[@]}"
 check_exact_owner_count "KMP migration single ProtocolLibomvModule owner" "ProtocolLibomvModule" 1 "${architecture_owner_targets[@]}"
 check_exact_owner_count "KMP migration single LibomvPlatformAdapterBundle owner" "LibomvPlatformAdapterBundle" 1 "${architecture_owner_targets[@]}"
@@ -2006,7 +2006,7 @@ check_pattern_matches \
 check_pattern_matches \
     "self-test session credential UI scaffold pattern" \
     "$UI_REMEDIATION_SCAFFOLD_REQUIRED_PATTERN" \
-    'HostessAppScaffold(content = {})'
+    'GemAppScaffold(content = {})'
 
 check_pattern_matches \
     "self-test session credential UI custom icon pattern" \
@@ -2041,7 +2041,7 @@ check_pattern_matches \
 check_pattern_matches \
     "self-test theme logo owner pattern" \
     "$THEME_LOGO_OWNER_PATTERN" \
-    'fun HostessBrandLogoIcon(modifier: Modifier = Modifier)'
+    'fun GemBrandLogoIcon(modifier: Modifier = Modifier)'
 
 check_pattern_matches \
     "self-test theme theme toggle owner pattern" \
@@ -2051,7 +2051,7 @@ check_pattern_matches \
 check_pattern_matches \
     "self-test theme palette provider pattern" \
     "$THEME_PALETTE_OWNER_PATTERN" \
-    'object HaccuHostessPaletteProvider : HostessPaletteProvider'
+    'object HaccuGemPaletteProvider : GemPaletteProvider'
 
 check_pattern_matches \
     "self-test theme Android label pattern" \
@@ -2111,7 +2111,7 @@ check_pattern_matches \
 check_pattern_matches \
     "self-test login compliance generic owner pattern" \
     "$ARCHITECTURE_GENERIC_OWNER_PATTERN" \
-    'src/main/kotlin/org/hostess/core/LoginCompliance.kt'
+    'src/main/kotlin/org/gem/core/LoginCompliance.kt'
 
 check_pattern_matches \
     "self-test login compliance old login overload pattern" \
@@ -2186,7 +2186,7 @@ check_pattern_matches \
 check_pattern_matches \
     "self-test attachment cleanup forbidden owner file pattern" \
     "$ATTACHMENT_FORBIDDEN_OWNER_FILE_PATTERN" \
-    'src/main/kotlin/org/hostess/core/AttachmentUploadManager.kt'
+    'src/main/kotlin/org/gem/core/AttachmentUploadManager.kt'
 
 check_pattern_matches \
     "self-test attachment cleanup forbidden owner declaration pattern" \

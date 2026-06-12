@@ -1,0 +1,31 @@
+package org.gem.protocol.libomv.runtime
+
+import org.gem.protocol.libomv.LibomvSessionIdentity
+import org.gem.protocol.libomv.mapping.LoginAppearanceState
+import org.gem.protocol.libomv.mapping.LoginInventoryRoots
+
+internal open class CurrentOutfitVersionSource {
+    open fun currentVersion(
+        identity: LibomvSessionIdentity,
+        roots: LoginInventoryRoots,
+        appearanceState: LoginAppearanceState,
+    ): CurrentOutfitVersionResult {
+        val skeletonVersion = roots.inventorySkeleton
+            .singleOrNull { it.typeDefault == CURRENT_OUTFIT_FOLDER_TYPE }
+            ?.version
+            ?.takeIf { it >= 0 }
+        val version = skeletonVersion ?: appearanceState.cofVersion?.takeIf { it >= 0 }
+        return version
+            ?.let(CurrentOutfitVersionResult::Available)
+            ?: CurrentOutfitVersionResult.Unavailable("cof version unavailable")
+    }
+
+    companion object {
+        const val CURRENT_OUTFIT_FOLDER_TYPE: Int = 46
+    }
+}
+
+internal sealed interface CurrentOutfitVersionResult {
+    data class Available(val version: Int) : CurrentOutfitVersionResult
+    data class Unavailable(val redactedMessage: String) : CurrentOutfitVersionResult
+}

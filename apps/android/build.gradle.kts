@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "org.hostess.apps.android"
+    namespace = "org.gem.apps.android"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "org.hostess.apps.android"
+        applicationId = "org.gem.apps.android"
         minSdk = 26
         targetSdk = 36
         versionCode = 11

@@ -18,7 +18,7 @@ dependencies {
 
 compose.desktop {
     application {
-        mainClass = "org.hostess.apps.desktop.HostessDesktopAppKt"
+        mainClass = "org.gem.apps.desktop.HostessDesktopAppKt"
 
         nativeDistributions {
             targetFormats(TargetFormat.Deb)

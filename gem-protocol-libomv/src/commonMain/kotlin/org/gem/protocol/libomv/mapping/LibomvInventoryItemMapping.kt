@@ -1,0 +1,54 @@
+package org.gem.protocol.libomv.mapping
+
+import org.gem.core.domain.InventoryAssetId
+import org.gem.core.domain.AttachmentOwnerId
+import org.gem.core.domain.InventoryFolderId
+import org.gem.core.domain.InventoryItemDescriptor
+import org.gem.core.domain.InventoryItemDisplayName
+import org.gem.core.domain.InventoryItemId
+import org.gem.core.domain.InventoryItemKind
+import org.gem.protocol.libomv.llsd.LlsdValue
+
+internal data class LibomvInventoryItemSnapshot(
+    val itemId: String,
+    val ownerId: String,
+    val parentFolderId: String,
+    val assetId: String,
+    val name: String,
+    val inventoryType: Int,
+    val permissions: LlsdValue? = null,
+    val copyable: Boolean? = null,
+)
+
+internal object LibomvInventoryItemMapping {
+    fun descriptor(snapshot: LibomvInventoryItemSnapshot): InventoryItemDescriptor? {
+        if (
+            snapshot.itemId.isBlank() ||
+            snapshot.ownerId.isBlank() ||
+            snapshot.parentFolderId.isBlank() ||
+            snapshot.assetId.isBlank() ||
+            snapshot.name.isBlank()
+        ) {
+            return null
+        }
+        val kind = when (snapshot.inventoryType) {
+            TEXTURE_INVENTORY_TYPE -> InventoryItemKind.TEXTURE
+            LANDMARK_INVENTORY_TYPE -> InventoryItemKind.LANDMARK
+            NOTECARD_INVENTORY_TYPE -> InventoryItemKind.NOTECARD
+            else -> return null
+        }
+        return InventoryItemDescriptor(
+            itemId = InventoryItemId(snapshot.itemId),
+            parentFolderId = InventoryFolderId(snapshot.parentFolderId),
+            assetId = InventoryAssetId(snapshot.assetId),
+            displayName = InventoryItemDisplayName(snapshot.name),
+            kind = kind,
+            copyable = snapshot.copyable ?: LibomvInventoryPermissionMapping.copyable(snapshot.permissions),
+            ownerId = AttachmentOwnerId(snapshot.ownerId),
+        )
+    }
+
+    private const val TEXTURE_INVENTORY_TYPE = 0
+    private const val LANDMARK_INVENTORY_TYPE = 3
+    private const val NOTECARD_INVENTORY_TYPE = 7
+}

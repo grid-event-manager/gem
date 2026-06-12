@@ -13,17 +13,17 @@ Vault owner rules:
 - Vault/keyring/serializer dependencies such as java-keyring, Secret Service wrappers, AndroidX Security Crypto, Tink, Bouncy Castle, kotlinx serialization, protobuf, CBOR, and KMP vault wrappers are forbidden in build files/version catalogues.
 - Saved-login storage must not grow a passphrase, TOTP/authenticator, VM fallback, plaintext fallback, Android Credential Manager, generic password helper, or duplicate vault manager path.
 - `AndroidKeystoreVaultKeySource`, `LocalUserFileVaultKeySource`, `DesktopVaultPaths`, and `CredentialVaultLoginSecretResolver` have one production owner each.
-- Raw key bytes and `SecretKey` must not appear outside `:gem-credential-vault`; app shells consume `HostessCredentialRuntimeState`.
+- Raw key bytes and `SecretKey` must not appear outside `:gem-credential-vault`; app shells consume `GemCredentialRuntimeState`.
 - App saved-login composition must not use `EnvironmentLoginSecretResolver`; that route remains proof/CLI only.
 
 Protocol and shared UI boundary rules:
 
-- Raw OkHttp package/client symbols are allowed only in `gem-protocol-libomv/src/main/kotlin/org/hostess/protocol/libomv/transport`.
+- Raw OkHttp package/client symbols are allowed only in `gem-protocol-libomv/src/main/kotlin/org/gem/protocol/libomv/transport`.
 - Core, CLI, desktop, and Android production source must not call protocol runtime classes or the protocol HTTP transport contract directly.
 - Runtime and transport composition belongs inside `:gem-protocol-libomv`; app and proof shells must use the existing core service/port/adapter path.
 - Legacy HTTP/TLS, private-reference, GUI, METAbolt, and WinForms names remain forbidden in production source.
 - `:gem-ui` must exist and remains shared Compose UI over `gem-core`; it must not import protocol runtime/transport, vault/native credential, `NoticePort`, `sendGroupNotice`, or UI-side selected-group send loops.
-- Shared UI visible labels live in `HostessText.kt`; style constants live under `org/hostess/ui/design`; production WebView/HTML/CSS/JS prototype routes and staged placeholder code are forbidden.
+- Shared UI visible labels live in `GemText.kt`; style constants live under `org/gem/ui/design`; production WebView/HTML/CSS/JS prototype routes and staged placeholder code are forbidden.
 - Android and desktop app shells may compose services, but must not add platform-specific screen trees or duplicate product behaviour.
 
 Credential and session owner rules:
@@ -32,7 +32,7 @@ Credential and session owner rules:
 - Raw environment reads are allowed only in the protocol env resolver.
 - The CLI may mention `--credential-file` only at the blocking parser point that rejects the unsupported route.
 - Keychain/plaintext secret-store routes remain forbidden in production source.
-- UI remediation must keep one shared `HostessAppScaffold`, must not resurrect the old split login panels, must not project fake session locations such as `London City` or `Welcome Area`, and must not return to custom-drawn menu/back icons.
+- UI remediation must keep one shared `GemAppScaffold`, must not resurrect the old split login panels, must not project fake session locations such as `London City` or `Welcome Area`, and must not return to custom-drawn menu/back icons.
 - Retained `startLocation` data fields may still exist for login material/profile storage; they must not feed the current session strip.
 
 Login package rules:
