@@ -37,7 +37,7 @@ fun main() {
 }
 
 internal object GemDesktopWindowTitle {
-    private const val Version = "0.1.17"
+    private const val Version = "0.1.18"
 
     fun current(textCatalogue: GemTextCatalogue = EnglishGemTextCatalogue): String =
         "${textCatalogue.text(GemTextKey.BrandInitials)} $Version"

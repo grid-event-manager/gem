@@ -11,8 +11,8 @@ android {
         applicationId = "org.gem.apps.android"
         minSdk = 26
         targetSdk = 36
-        versionCode = 18
-        versionName = "0.1.17"
+        versionCode = 19
+        versionName = "0.1.18"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         manifestPlaceholders["appLabel"] = "Grid Event Manager"
     }

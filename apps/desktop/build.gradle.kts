@@ -19,11 +19,16 @@ dependencies {
 
 val desktopPackageName = "gem"
 val desktopCommandName = "gema"
-val desktopPackageVersion = "0.1.17"
-val macPackageVersion = "1.0.17"
+val debPackageName = "gema"
+val desktopPackageDescription = "Grid Event Manager"
+val desktopPackageVersion = "0.1.18"
+val macPackageVersion = "1.0.18"
 val windowsDisplayName = "GEM $desktopPackageVersion"
-val debArtifact = layout.buildDirectory.file(
+val rawDebArtifact = layout.buildDirectory.file(
     "compose/binaries/main/deb/${desktopPackageName}_${desktopPackageVersion}_amd64.deb",
+)
+val debArtifact = layout.buildDirectory.file(
+    "compose/binaries/main/deb/${debPackageName}_${desktopPackageVersion}_amd64.deb",
 )
 val msiArtifact = layout.buildDirectory.file(
     "compose/binaries/main/msi/${desktopPackageName}-${desktopPackageVersion}.msi",
@@ -37,6 +42,38 @@ fun runPackageCommand(vararg command: String) {
     require(exitCode == 0) { "Package command failed ($exitCode): ${command.joinToString(" ")}" }
 }
 
+fun rewriteDebControl(workDir: File) {
+    val controlFile = workDir.resolve("DEBIAN/control")
+    require(controlFile.isFile) { "Expected deb control file missing: ${controlFile.absolutePath}" }
+    val rewritten = controlFile.readLines().map { line ->
+        when {
+            line.startsWith("Package: ") -> "Package: $debPackageName"
+            line.startsWith("Provides: ") -> "Provides: $debPackageName"
+            line.startsWith("Description: ") -> "Description: $desktopPackageDescription"
+            line.startsWith("Maintainer: ") -> "Maintainer: ANVLL <Unknown>"
+            else -> line
+        }
+    }
+    controlFile.writeText(rewritten.joinToString(System.lineSeparator()) + System.lineSeparator())
+}
+
+fun rewriteLinuxDesktopEntry(workDir: File) {
+    val desktopFile = workDir
+        .resolve("opt/$desktopPackageName/lib")
+        .walkTopDown()
+        .firstOrNull { it.isFile && it.extension == "desktop" }
+        ?: return
+    val rewritten = desktopFile.readLines().map { line ->
+        when {
+            line.startsWith("Name=") -> "Name=$windowsDisplayName"
+            line.startsWith("Comment=") -> "Comment=$desktopPackageDescription"
+            line.startsWith("Exec=") -> "Exec=/usr/bin/$desktopCommandName"
+            else -> line
+        }
+    }
+    desktopFile.writeText(rewritten.joinToString(System.lineSeparator()) + System.lineSeparator())
+}
+
 compose.desktop {
     application {
         mainClass = "org.gem.apps.desktop.GemDesktopAppKt"
@@ -45,7 +82,7 @@ compose.desktop {
             targetFormats(TargetFormat.Deb, TargetFormat.Msi, TargetFormat.Dmg)
             packageName = desktopPackageName
             packageVersion = desktopPackageVersion
-            description = "Second Life venue notice helper"
+            description = desktopPackageDescription
             vendor = "ANVLL"
 
             linux {
@@ -75,14 +112,17 @@ compose.desktop {
 tasks.configureEach {
     when (name) {
         "packageDeb" -> doLast {
+            val rawDebFile = rawDebArtifact.get().asFile
             val debFile = debArtifact.get().asFile
-            require(debFile.isFile) { "Expected deb artifact missing: ${debFile.absolutePath}" }
+            require(rawDebFile.isFile) { "Expected deb artifact missing: ${rawDebFile.absolutePath}" }
 
             val workDir = layout.buildDirectory.dir("tmp/packageDebWithCommandLauncher").get().asFile
             delete(workDir)
             workDir.mkdirs()
 
-            runPackageCommand("dpkg-deb", "-R", debFile.absolutePath, workDir.absolutePath)
+            runPackageCommand("dpkg-deb", "-R", rawDebFile.absolutePath, workDir.absolutePath)
+            rewriteDebControl(workDir)
+            rewriteLinuxDesktopEntry(workDir)
 
             val commandLink = workDir.resolve("usr/bin/$desktopPackageName")
             commandLink.parentFile.mkdirs()
@@ -92,6 +132,9 @@ tasks.configureEach {
             runPackageCommand("ln", "-sfn", "/opt/$desktopPackageName/bin/$desktopPackageName", commandAlias.absolutePath)
 
             runPackageCommand("dpkg-deb", "--root-owner-group", "-b", workDir.absolutePath, debFile.absolutePath)
+            if (rawDebFile.absolutePath != debFile.absolutePath) {
+                rawDebFile.delete()
+            }
         }
         "packageMsi" -> doLast {
             if (!System.getProperty("os.name").startsWith("Windows", ignoreCase = true)) {
