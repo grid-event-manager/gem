@@ -1,4 +1,5 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+import org.jetbrains.compose.desktop.application.tasks.AbstractJLinkTask
 import org.jetbrains.compose.desktop.application.tasks.AbstractJPackageTask
 
 plugins {
@@ -21,8 +22,8 @@ val desktopPackageName = "gema"
 val desktopCommandName = "gema"
 val debPackageName = "gema"
 val desktopPackageDescription = "Grid Event Manager"
-val desktopPackageVersion = "0.1.24"
-val macPackageVersion = "1.0.24"
+val desktopPackageVersion = "0.1.27"
+val macPackageVersion = "1.0.27"
 val macApplicationDisplayName = "GEM"
 val nativePackageName = if (System.getProperty("os.name").startsWith("Mac", ignoreCase = true)) {
     macApplicationDisplayName
@@ -116,6 +117,7 @@ compose.desktop {
             packageVersion = desktopPackageVersion
             description = desktopPackageDescription
             vendor = "ANVLL"
+            appResourcesRootDir.set(project.layout.projectDirectory.dir("src/main/package/app-resources"))
 
             linux {
                 iconFile.set(project.file("src/main/package/icons/gem.png"))
@@ -180,6 +182,7 @@ tasks.configureEach {
                 project.file("src/main/package/windows/patch-msi-display.vbs").absolutePath,
                 msiFile.absolutePath,
                 windowsDisplayName,
+                project.file("src/main/package/icons/gem.ico").absolutePath,
             )
         }
         "packageDmg" -> doLast {
@@ -191,5 +194,16 @@ tasks.configureEach {
 tasks.withType<AbstractJPackageTask>().configureEach {
     if (targetFormat == TargetFormat.Msi) {
         freeArgs.add("--win-shortcut-prompt")
+    }
+}
+
+tasks.withType<AbstractJLinkTask>().configureEach {
+    val nativeCommandStripperValue = javaClass.methods
+        .firstOrNull { it.name == "getStripNativeCommands\$compose" }
+        ?.invoke(this)
+    if (nativeCommandStripperValue is org.gradle.api.provider.Property<*>) {
+        @Suppress("UNCHECKED_CAST")
+        val nativeCommandStripper = nativeCommandStripperValue as org.gradle.api.provider.Property<Boolean>
+        nativeCommandStripper.set(false)
     }
 }

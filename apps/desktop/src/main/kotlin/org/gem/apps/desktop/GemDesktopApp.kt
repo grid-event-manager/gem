@@ -37,8 +37,12 @@ fun main() {
 }
 
 internal object GemDesktopWindowTitle {
-    private const val Version = "0.1.20"
+    private const val FallbackVersion = "0.1.27"
+    private const val PackageVersionProperty = "jpackage.app-version"
 
     fun current(textCatalogue: GemTextCatalogue = EnglishGemTextCatalogue): String =
-        "${textCatalogue.text(GemTextKey.BrandInitials)} $Version"
+        "${textCatalogue.text(GemTextKey.BrandInitials)} ${currentVersion()}"
+
+    private fun currentVersion(): String =
+        System.getProperty(PackageVersionProperty).orEmpty().ifBlank { FallbackVersion }
 }

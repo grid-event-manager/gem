@@ -1,0 +1,7 @@
+-Djpackage.app-version=0.1.27
+-Dcompose.application.resources.dir=app\resources
+-Dcompose.application.configure.swing.globals=true
+-Dskiko.library.path=app
+-cp
+app\*
+org.gem.apps.desktop.GemDesktopAppKt
