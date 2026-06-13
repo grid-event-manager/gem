@@ -22,8 +22,8 @@ val desktopPackageName = "gema"
 val desktopCommandName = "gema"
 val debPackageName = "gema"
 val desktopPackageDescription = "Grid Event Manager"
-val desktopPackageVersion = "0.1.27"
-val macPackageVersion = "1.0.27"
+val desktopPackageVersion = "0.1.28"
+val macPackageVersion = "1.0.28"
 val macApplicationDisplayName = "GEM"
 val nativePackageName = if (System.getProperty("os.name").startsWith("Mac", ignoreCase = true)) {
     macApplicationDisplayName
@@ -183,6 +183,8 @@ tasks.configureEach {
                 msiFile.absolutePath,
                 windowsDisplayName,
                 project.file("src/main/package/icons/gem.ico").absolutePath,
+                project.file("src/main/package/windows/assets/gem-installer-dialog.bmp").absolutePath,
+                project.file("src/main/package/windows/assets/gem-installer-banner.bmp").absolutePath,
             )
         }
         "packageDmg" -> doLast {

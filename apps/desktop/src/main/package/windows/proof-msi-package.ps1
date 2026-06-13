@@ -62,10 +62,22 @@ Get-MsiRows $database 'SELECT `Property`, `Value` FROM `Property`' @("Property",
 Assert-Equal "ProductName" $displayName $properties["ProductName"]
 Assert-Equal "Manufacturer" "ANVLL" $properties["Manufacturer"]
 Assert-Equal "ARPPRODUCTICON" "JpARPPRODUCTICON" $properties["ARPPRODUCTICON"]
+Assert-Equal "WixShellExecTarget" "[INSTALLDIR]app\resources\gem-windows-launch.vbs" $properties["WixShellExecTarget"]
+if ($properties.ContainsKey("GEM_LAUNCH_AFTER_INSTALL")) {
+    Fail "launch-after-install checkbox must be unchecked by default"
+}
 
 $icons = Get-MsiRows $database 'SELECT `Name` FROM `Icon`' @("Name")
 if (-not ($icons | Where-Object { $_.Name -eq "JpARPPRODUCTICON" })) {
     Fail "brand icon row JpARPPRODUCTICON missing"
+}
+
+$binaries = Get-MsiRows $database 'SELECT `Name` FROM `Binary`' @("Name")
+if (-not ($binaries | Where-Object { $_.Name -eq "WixUI_Bmp_Dialog" })) {
+    Fail "installer dialog bitmap row missing"
+}
+if (-not ($binaries | Where-Object { $_.Name -eq "WixUI_Bmp_Banner" })) {
+    Fail "installer banner bitmap row missing"
 }
 
 $shortcuts = Get-MsiRows $database 'SELECT `Shortcut`, `Name`, `Target`, `Arguments`, `Icon_`, `WkDir` FROM `Shortcut`' @("Shortcut", "Name", "Target", "Arguments", "Icon", "WorkingDirectory")
@@ -82,6 +94,42 @@ foreach ($shortcut in $visibleShortcuts) {
     Assert-Equal "shortcut icon" "JpARPPRODUCTICON" $shortcut.Icon
     Assert-Equal "shortcut working directory" "INSTALLDIR" $shortcut.WorkingDirectory
 }
+
+$checkboxes = Get-MsiRows $database 'SELECT `Property`, `Value` FROM `CheckBox`' @("Property", "Value")
+$launchCheckbox = $checkboxes | Where-Object { $_.Property -eq "GEM_LAUNCH_AFTER_INSTALL" } | Select-Object -First 1
+if ($null -eq $launchCheckbox) {
+    Fail "launch-after-install checkbox value row missing"
+}
+Assert-Equal "launch checkbox value" "1" $launchCheckbox.Value
+
+$controls = Get-MsiRows $database 'SELECT `Dialog_`, `Control`, `Type`, `X`, `Y`, `Width`, `Height`, `Attributes`, `Property`, `Text`, `Control_Next` FROM `Control`' @("Dialog", "Control", "Type", "X", "Y", "Width", "Height", "Attributes", "Property", "Text", "Next")
+$launchControl = $controls | Where-Object { $_.Dialog -eq "ShortcutPromptDlg" -and $_.Control -eq "LaunchAfterInstall" } | Select-Object -First 1
+if ($null -eq $launchControl) {
+    Fail "launch-after-install control missing from ShortcutPromptDlg"
+}
+Assert-Equal "launch checkbox type" "CheckBox" $launchControl.Type
+Assert-Equal "launch checkbox property" "GEM_LAUNCH_AFTER_INSTALL" $launchControl.Property
+Assert-Equal "launch checkbox text" "Open program after installation" $launchControl.Text
+Assert-Equal "launch checkbox next control" "Next" $launchControl.Next
+$startMenuControl = $controls | Where-Object { $_.Dialog -eq "ShortcutPromptDlg" -and $_.Control -eq "InstallStartMenuShortcut" } | Select-Object -First 1
+Assert-Equal "start menu checkbox next control" "LaunchAfterInstall" $startMenuControl.Next
+
+$customActions = Get-MsiRows $database 'SELECT `Action`, `Type`, `Source`, `Target` FROM `CustomAction`' @("Action", "Type", "Source", "Target")
+$launchAction = $customActions | Where-Object { $_.Action -eq "GemLaunchAfterInstall" } | Select-Object -First 1
+if ($null -eq $launchAction) {
+    Fail "launch-after-install custom action missing"
+}
+Assert-Equal "launch custom action type" "65" $launchAction.Type
+Assert-Equal "launch custom action source" "WixCA" $launchAction.Source
+Assert-Equal "launch custom action target" "WixShellExec" $launchAction.Target
+
+$controlEvents = Get-MsiRows $database 'SELECT `Dialog_`, `Control_`, `Event`, `Argument`, `Condition`, `Ordering` FROM `ControlEvent`' @("Dialog", "Control", "Event", "Argument", "Condition", "Ordering")
+$launchEvent = $controlEvents | Where-Object { $_.Dialog -eq "ExitDialog" -and $_.Control -eq "Finish" -and $_.Event -eq "DoAction" -and $_.Argument -eq "GemLaunchAfterInstall" } | Select-Object -First 1
+if ($null -eq $launchEvent) {
+    Fail "launch-after-install Finish event missing"
+}
+Assert-Equal "launch Finish condition" "GEM_LAUNCH_AFTER_INSTALL=""1"" AND NOT Installed" $launchEvent.Condition
+Assert-Equal "launch Finish ordering" "998" $launchEvent.Ordering
 
 if (Test-Path -LiteralPath $ExtractRoot) {
     Remove-Item -LiteralPath $ExtractRoot -Recurse -Force

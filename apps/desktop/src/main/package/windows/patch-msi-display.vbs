@@ -2,17 +2,21 @@ Option Explicit
 
 Const MsiOpenDatabaseModeTransact = 1
 
-If WScript.Arguments.Count <> 3 Then
-    WScript.Echo "Usage: patch-msi-display.vbs <msi-path> <display-name> <icon-path>"
+If WScript.Arguments.Count <> 5 Then
+    WScript.Echo "Usage: patch-msi-display.vbs <msi-path> <display-name> <icon-path> <dialog-bmp-path> <banner-bmp-path>"
     WScript.Quit 64
 End If
 
 Dim msiPath
 Dim displayName
 Dim iconPath
+Dim dialogBitmapPath
+Dim bannerBitmapPath
 msiPath = WScript.Arguments(0)
 displayName = WScript.Arguments(1)
 iconPath = WScript.Arguments(2)
+dialogBitmapPath = WScript.Arguments(3)
+bannerBitmapPath = WScript.Arguments(4)
 
 If InStr(displayName, "'") > 0 Then
     WScript.Echo "Display name must not contain a single quote."
@@ -25,6 +29,14 @@ If Not fileSystem.FileExists(iconPath) Then
     WScript.Echo "Icon path does not exist: " & iconPath
     WScript.Quit 66
 End If
+If Not fileSystem.FileExists(dialogBitmapPath) Then
+    WScript.Echo "Dialog bitmap path does not exist: " & dialogBitmapPath
+    WScript.Quit 67
+End If
+If Not fileSystem.FileExists(bannerBitmapPath) Then
+    WScript.Echo "Banner bitmap path does not exist: " & bannerBitmapPath
+    WScript.Quit 68
+End If
 
 Dim installer
 Dim database
@@ -32,8 +44,13 @@ Set installer = CreateObject("WindowsInstaller.Installer")
 Set database = installer.OpenDatabase(msiPath, MsiOpenDatabaseModeTransact)
 
 UpsertIcon installer, database, "JpARPPRODUCTICON", iconPath
+UpsertBinary installer, database, "WixUI_Bmp_Dialog", dialogBitmapPath
+UpsertBinary installer, database, "WixUI_Bmp_Banner", bannerBitmapPath
 ExecuteSql database, "UPDATE `Property` SET `Value`='" & displayName & "' WHERE `Property`='ProductName'"
 ExecuteSql database, "UPDATE `Property` SET `Value`='JpARPPRODUCTICON' WHERE `Property`='ARPPRODUCTICON'"
+ExecuteSql database, "DELETE FROM `Property` WHERE `Property`='GEM_LAUNCH_AFTER_INSTALL'"
+ExecuteSql database, "DELETE FROM `Property` WHERE `Property`='WixShellExecTarget'"
+ExecuteSql database, "INSERT INTO `Property` (`Property`, `Value`) VALUES ('WixShellExecTarget', '[INSTALLDIR]app\resources\gem-windows-launch.vbs')"
 ExecuteSql database, "UPDATE `Shortcut` SET " & _
     "`Name`='" & displayName & "', " & _
     "`Target`='[INSTALLDIR]app\resources\gem-windows-launch.vbs', " & _
@@ -42,6 +59,15 @@ ExecuteSql database, "UPDATE `Shortcut` SET " & _
     "`IconIndex`=0, " & _
     "`WkDir`='INSTALLDIR' " & _
     "WHERE `Name`='gem' OR `Name`='gema' OR `Name`='" & displayName & "'"
+ExecuteSql database, "DELETE FROM `CheckBox` WHERE `Property`='GEM_LAUNCH_AFTER_INSTALL'"
+ExecuteSql database, "INSERT INTO `CheckBox` (`Property`, `Value`) VALUES ('GEM_LAUNCH_AFTER_INSTALL', '1')"
+ExecuteSql database, "DELETE FROM `Control` WHERE `Dialog_`='ShortcutPromptDlg' AND `Control`='LaunchAfterInstall'"
+ExecuteSql database, "INSERT INTO `Control` (`Dialog_`, `Control`, `Type`, `X`, `Y`, `Width`, `Height`, `Attributes`, `Property`, `Text`, `Control_Next`) VALUES ('ShortcutPromptDlg', 'LaunchAfterInstall', 'CheckBox', 20, 210, 240, 17, 3, 'GEM_LAUNCH_AFTER_INSTALL', 'Open program after installation', 'Next')"
+ExecuteSql database, "UPDATE `Control` SET `Control_Next`='LaunchAfterInstall' WHERE `Dialog_`='ShortcutPromptDlg' AND `Control`='InstallStartMenuShortcut'"
+ExecuteSql database, "DELETE FROM `CustomAction` WHERE `Action`='GemLaunchAfterInstall'"
+ExecuteSql database, "INSERT INTO `CustomAction` (`Action`, `Type`, `Source`, `Target`) VALUES ('GemLaunchAfterInstall', 65, 'WixCA', 'WixShellExec')"
+ExecuteSql database, "DELETE FROM `ControlEvent` WHERE `Dialog_`='ExitDialog' AND `Control_`='Finish' AND `Event`='DoAction' AND `Argument`='GemLaunchAfterInstall'"
+ExecuteSql database, "INSERT INTO `ControlEvent` (`Dialog_`, `Control_`, `Event`, `Argument`, `Condition`, `Ordering`) VALUES ('ExitDialog', 'Finish', 'DoAction', 'GemLaunchAfterInstall', 'GEM_LAUNCH_AFTER_INSTALL=""1"" AND NOT Installed', 998)"
 database.Commit
 
 Sub ExecuteSql(databaseHandle, sql)
@@ -61,6 +87,20 @@ Sub UpsertIcon(installerHandle, databaseHandle, iconName, sourcePath)
     record.SetStream 2, sourcePath
 
     Set view = databaseHandle.OpenView("INSERT INTO `Icon` (`Name`, `Data`) VALUES (?, ?)")
+    view.Execute record
+    view.Close
+End Sub
+
+Sub UpsertBinary(installerHandle, databaseHandle, binaryName, sourcePath)
+    ExecuteSql databaseHandle, "DELETE FROM `Binary` WHERE `Name`='" & binaryName & "'"
+
+    Dim record
+    Dim view
+    Set record = installerHandle.CreateRecord(2)
+    record.StringData(1) = binaryName
+    record.SetStream 2, sourcePath
+
+    Set view = databaseHandle.OpenView("INSERT INTO `Binary` (`Name`, `Data`) VALUES (?, ?)")
     view.Execute record
     view.Close
 End Sub
