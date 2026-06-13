@@ -17,12 +17,12 @@ dependencies {
     testImplementation(kotlin("test-junit"))
 }
 
-val desktopPackageName = "gem"
+val desktopPackageName = "gema"
 val desktopCommandName = "gema"
 val debPackageName = "gema"
 val desktopPackageDescription = "Grid Event Manager"
-val desktopPackageVersion = "0.1.18"
-val macPackageVersion = "1.0.18"
+val desktopPackageVersion = "0.1.20"
+val macPackageVersion = "1.0.20"
 val windowsDisplayName = "GEM $desktopPackageVersion"
 val rawDebArtifact = layout.buildDirectory.file(
     "compose/binaries/main/deb/${desktopPackageName}_${desktopPackageVersion}_amd64.deb",
@@ -68,6 +68,7 @@ fun rewriteLinuxDesktopEntry(workDir: File) {
             line.startsWith("Name=") -> "Name=$windowsDisplayName"
             line.startsWith("Comment=") -> "Comment=$desktopPackageDescription"
             line.startsWith("Exec=") -> "Exec=/usr/bin/$desktopCommandName"
+            line.startsWith("Icon=") -> "Icon=/opt/$desktopPackageName/lib/$desktopPackageName.png"
             else -> line
         }
     }

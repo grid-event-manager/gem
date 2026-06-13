@@ -8,7 +8,7 @@ import kotlin.test.assertTrue
 class GemDesktopSingleInstanceGuardTest {
     @Test
     fun `terminates other current Gem launcher and command alias instances but not current process`() {
-        val current = FakeDesktopProcess(pid = 10, command = "/opt/gem/bin/gem")
+        val current = FakeDesktopProcess(pid = 10, command = "/opt/gema/bin/gema")
         val older = FakeDesktopProcess(pid = 11, command = "/usr/bin/gema")
         val unrelated = FakeDesktopProcess(pid = 12, command = "/usr/bin/other-app")
 
