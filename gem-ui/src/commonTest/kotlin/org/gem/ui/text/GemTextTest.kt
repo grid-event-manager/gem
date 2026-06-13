@@ -7,7 +7,7 @@ import kotlin.test.assertTrue
 class GemTextTest {
     @Test
     fun fixedKeysCoverPrototypeCopy() {
-        assertEquals(70, GemTextKey.fixedKeys.size)
+        assertEquals(71, GemTextKey.fixedKeys.size)
         assertTrue(GemTextKey.AppName in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.BrandInitials in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.BrandSubtitle in GemTextKey.fixedKeys)
@@ -17,6 +17,7 @@ class GemTextTest {
         assertTrue(GemTextKey.MeridiemPm in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.Menu in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.LogOut in GemTextKey.fixedKeys)
+        assertTrue(GemTextKey.Exit in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.AddGroups in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.SavingLogin in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.SendingLoginDetails in GemTextKey.fixedKeys)
@@ -59,6 +60,7 @@ class GemTextTest {
         assertEquals("PM", catalogue.text(GemTextKey.MeridiemPm))
         assertEquals("Menu", catalogue.text(GemTextKey.Menu))
         assertEquals("Log out", catalogue.text(GemTextKey.LogOut))
+        assertEquals("Exit", catalogue.text(GemTextKey.Exit))
         assertEquals("\u2014 select \u2014", catalogue.text(GemTextKey.SavedLoginPlaceholder))
         assertEquals("Add new login...", catalogue.text(GemTextKey.AddNewLogin))
         assertEquals("Save and login", catalogue.text(GemTextKey.SaveAndLogin))

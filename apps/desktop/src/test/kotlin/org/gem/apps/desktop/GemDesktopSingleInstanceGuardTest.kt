@@ -7,8 +7,8 @@ import kotlin.test.assertTrue
 
 class GemDesktopSingleInstanceGuardTest {
     @Test
-    fun `terminates other current Gem launcher instances but not current process`() {
-        val current = FakeDesktopProcess(pid = 10, command = "/opt/gema/bin/gema")
+    fun `terminates other current Gem launcher and command alias instances but not current process`() {
+        val current = FakeDesktopProcess(pid = 10, command = "/opt/gem/bin/gem")
         val older = FakeDesktopProcess(pid = 11, command = "/usr/bin/gema")
         val unrelated = FakeDesktopProcess(pid = 12, command = "/usr/bin/other-app")
 
@@ -26,8 +26,7 @@ class GemDesktopSingleInstanceGuardTest {
     }
 
     @Test
-    fun `terminates exact legacy Gem and Hostess launcher and main class instances`() {
-        val legacyGemLauncher = FakeDesktopProcess(pid = 20, command = "/opt/gem/bin/gem")
+    fun `terminates exact legacy Hostess launcher and main class instances`() {
         val legacyLauncher = FakeDesktopProcess(pid = 21, command = "/opt/hostess/bin/hostess")
         val legacyWindowsLauncher = FakeDesktopProcess(pid = 22, command = "C:\\Program Files\\Hostess\\hostess.exe")
         val legacyMainClass = FakeDesktopProcess(
@@ -37,13 +36,12 @@ class GemDesktopSingleInstanceGuardTest {
         )
 
         val report = GemDesktopSingleInstanceGuard.terminateOtherInstances(
-            processes = listOf(legacyGemLauncher, legacyLauncher, legacyWindowsLauncher, legacyMainClass),
+            processes = listOf(legacyLauncher, legacyWindowsLauncher, legacyMainClass),
             currentPid = 24,
         )
 
-        assertEquals(4, report.matchedProcessCount)
-        assertEquals(4, report.terminatedProcessCount)
-        assertTrue(legacyGemLauncher.destroyCalled)
+        assertEquals(3, report.matchedProcessCount)
+        assertEquals(3, report.terminatedProcessCount)
         assertTrue(legacyLauncher.destroyCalled)
         assertTrue(legacyWindowsLauncher.destroyCalled)
         assertTrue(legacyMainClass.destroyCalled)

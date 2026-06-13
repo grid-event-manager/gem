@@ -7,6 +7,7 @@ object GemTestTags {
     const val AppMenu: String = "data-app-menu"
     const val OpenSettings: String = "data-open-settings"
     const val LogOut: String = "data-log-out"
+    const val Exit: String = "data-exit"
     const val SessionStrip: String = "data-session-strip"
     const val SessionLocation: String = "data-session-location"
     const val SessionStatus: String = "data-session-status"

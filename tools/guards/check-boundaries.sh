@@ -70,7 +70,7 @@ THEME_LOGO_OWNER_PATTERN='fun[[:space:]]+GemBrandLogoIcon'
 THEME_TOGGLE_OWNER_PATTERN='fun[[:space:]]+ThemeModeToggle'
 THEME_PALETTE_OWNER_PATTERN='object[[:space:]]+HaccuGemPaletteProvider'
 THEME_ANDROID_LABEL_PATTERN='manifestPlaceholders\["appLabel"\][[:space:]]*=[[:space:]]*"Grid Event Manager"'
-THEME_DESKTOP_VENDOR_PATTERN='vendor[[:space:]]*=[[:space:]]*"Grid Event Manager"'
+THEME_DESKTOP_VENDOR_PATTERN='vendor[[:space:]]*=[[:space:]]*"ANVLL"'
 THEME_ROOT_PROJECT_LABEL_PATTERN='rootProject\.name\.replaceFirstChar'
 ARCHITECTURE_GENERIC_OWNER_PATTERN='(^|/)(LoginCompliance|NoticeCompliance|.*(Manager|Helper|Utils|Common))\.kt$'
 SESSION_LOGIN_OVERLOAD_PATTERN='fun[[:space:]]+login\([[:space:]]*request:[[:space:]]*LoginRequest[[:space:]]*\)'
@@ -2116,7 +2116,7 @@ check_pattern_matches \
 check_pattern_matches \
     "self-test theme desktop vendor pattern" \
     "$THEME_DESKTOP_VENDOR_PATTERN" \
-    'vendor = "Grid Event Manager"'
+    'vendor = "ANVLL"'
 
 check_pattern_matches \
     "self-test theme root project label pattern" \

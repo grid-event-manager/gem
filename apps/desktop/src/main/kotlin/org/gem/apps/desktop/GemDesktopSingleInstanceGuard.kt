@@ -56,10 +56,8 @@ object GemDesktopSingleInstanceGuard {
     internal const val CurrentMainClassMarker: String = "org.gem.apps.desktop.GemDesktopAppKt"
     internal val LegacyMainClassMarker: String =
         "org.$LegacyPackageSegment.apps.desktop.${LegacyTypePrefix}DesktopAppKt"
-    private val CurrentLauncherNames: Set<String> = setOf("gema", "gema.exe")
+    private val CurrentLauncherNames: Set<String> = setOf("gem", "gem.exe", "gema", "gema.exe")
     private val LegacyLauncherNames: Set<String> = setOf(
-        "gem",
-        "gem.exe",
         LegacyPackageSegment,
         "$LegacyPackageSegment.exe",
     )

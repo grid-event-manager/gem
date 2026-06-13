@@ -19,9 +19,11 @@ class ShellComponentStateTest {
         assertEquals("data-second-life-time", GemTestTags.SecondLifeTime)
         assertEquals("data-app-menu", GemTestTags.AppMenu)
         assertEquals("data-settings-back", GemTestTags.SettingsBack)
+        assertEquals("data-exit", GemTestTags.Exit)
         assertEquals("data-session-status", GemTestTags.SessionStatus)
         assertEquals("data-delete-modal", GemTestTags.DeleteModal)
         assertEquals("Menu", catalogue.text(GemTextKey.Menu))
+        assertEquals("Exit", catalogue.text(GemTextKey.Exit))
         assertEquals("BACK", catalogue.text(GemTextKey.Back))
     }
 

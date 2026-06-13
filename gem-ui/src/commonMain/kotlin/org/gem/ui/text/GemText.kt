@@ -15,6 +15,7 @@ sealed interface GemTextKey {
     data object MeridiemPm : GemTextKey
     data object Menu : GemTextKey
     data object LogOut : GemTextKey
+    data object Exit : GemTextKey
     data object AddNewLogin : GemTextKey
     data object SaveAndLogin : GemTextKey
     data object Settings : GemTextKey
@@ -90,6 +91,7 @@ sealed interface GemTextKey {
             MeridiemPm,
             Menu,
             LogOut,
+            Exit,
             AddNewLogin,
             SaveAndLogin,
             Settings,
@@ -170,6 +172,7 @@ object EnglishGemTextCatalogue : GemTextCatalogue {
         GemTextKey.MeridiemPm -> "PM"
         GemTextKey.Menu -> "Menu"
         GemTextKey.LogOut -> "Log out"
+        GemTextKey.Exit -> "Exit"
         GemTextKey.AddNewLogin -> "Add new login..."
         GemTextKey.SaveAndLogin -> "Save and login"
         GemTextKey.Settings -> "Settings"

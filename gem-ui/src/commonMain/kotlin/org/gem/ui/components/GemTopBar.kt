@@ -33,6 +33,7 @@ fun GemTopBar(
     onMenuDismiss: () -> Unit,
     onSettingsClick: () -> Unit,
     onLogoutClick: () -> Unit,
+    onExitClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -93,6 +94,7 @@ fun GemTopBar(
                     onDismiss = onMenuDismiss,
                     onSettingsClick = onSettingsClick,
                     onLogoutClick = onLogoutClick,
+                    onExitClick = onExitClick,
                 )
             }
         }

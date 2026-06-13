@@ -27,6 +27,7 @@ fun GemOverflowMenu(
     onDismiss: () -> Unit,
     onSettingsClick: () -> Unit,
     onLogoutClick: () -> Unit,
+    onExitClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     DropdownMenu(
@@ -42,15 +43,20 @@ fun GemOverflowMenu(
             onClick = onSettingsClick,
             modifier = Modifier.testTag(GemTestTags.OpenSettings),
         )
-        HorizontalDivider(
-            color = GemTheme.colors.line,
-            thickness = GemTheme.spacing.borderWidth,
-        )
         GemMenuRow(
             text = textCatalogue.text(GemTextKey.LogOut),
             onClick = onLogoutClick,
             enabled = logoutEnabled,
             modifier = Modifier.testTag(GemTestTags.LogOut),
+        )
+        HorizontalDivider(
+            color = GemTheme.colors.lineStrong,
+            thickness = GemTheme.spacing.borderWidth,
+        )
+        GemMenuRow(
+            text = textCatalogue.text(GemTextKey.Exit),
+            onClick = onExitClick,
+            modifier = Modifier.testTag(GemTestTags.Exit),
         )
     }
 }

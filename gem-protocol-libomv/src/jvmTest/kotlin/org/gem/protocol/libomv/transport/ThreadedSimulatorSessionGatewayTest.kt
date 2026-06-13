@@ -74,6 +74,27 @@ class ThreadedSimulatorSessionGatewayTest {
     }
 
     @Test
+    fun `waits through quiet simulator receive windows until delayed notice ack arrives`() {
+        val exchange = ScriptedPacketExchange(
+            inboundEvents = mutableListOf(
+                regionHandshake(),
+                agentMovementComplete(),
+                *Array(12) { null },
+                LibomvPacketCodec.packetAck(5),
+            ),
+        )
+        val gateway = ThreadedSimulatorSessionGateway(SimulatorPacketExchangeFactory { exchange })
+
+        val result = assertIs<SimulatorCircuitSendResult.Sent>(
+            gateway.sendNotice(circuit(), noticePacket()),
+        )
+        gateway.close()
+
+        assertTrue(result.redactedDetail.orEmpty().contains("transportAck=passed"))
+        assertEquals(1, exchange.sentNames().count { it == "improved_instant_message" })
+    }
+
+    @Test
     fun `caches out-of-order archive replies for later group requests`() {
         val exchange = ScriptedPacketExchange(
             inboundPayloads = mutableListOf(
@@ -96,6 +117,28 @@ class ThreadedSimulatorSessionGatewayTest {
 
         assertEquals("Tonight", first.entries.single().subject)
         assertEquals("Tonight", second.entries.single().subject)
+        assertEquals(1, exchange.sentNames().count { it == "group_notices_list_request" })
+    }
+
+    @Test
+    fun `waits through quiet simulator receive windows until delayed archive reply arrives`() {
+        val exchange = ScriptedPacketExchange(
+            inboundEvents = mutableListOf(
+                regionHandshake(),
+                agentMovementComplete(),
+                LibomvPacketCodec.packetAck(5),
+                *Array(16) { null },
+                groupNoticesListReply(groupId = GROUP_ID),
+            ),
+        )
+        val gateway = ThreadedSimulatorSessionGateway(SimulatorPacketExchangeFactory { exchange })
+
+        val archive = assertIs<SimulatorNoticeArchiveResult.Found>(
+            gateway.requestGroupNoticeArchive(circuit(), GROUP_ID),
+        )
+        gateway.close()
+
+        assertEquals("Tonight", archive.entries.single().subject)
         assertEquals(1, exchange.sentNames().count { it == "group_notices_list_request" })
     }
 
@@ -133,7 +176,9 @@ class ThreadedSimulatorSessionGatewayTest {
     }
 
     private class ScriptedPacketExchange(
-        private val inboundPayloads: MutableList<ByteArray> = mutableListOf(),
+        inboundPayloads: MutableList<ByteArray> = mutableListOf(),
+        private val inboundEvents: MutableList<ByteArray?> =
+            inboundPayloads.map<ByteArray, ByteArray?> { it }.toMutableList(),
     ) : SimulatorPacketExchange, AutoCloseable {
         private val lock = Any()
         var endpoint: SimulatorEndpoint? = null
@@ -151,10 +196,10 @@ class ThreadedSimulatorSessionGatewayTest {
 
         override fun receive(endpoint: SimulatorEndpoint, timeoutMillis: Int): SimulatorInboundPacket? =
             synchronized(lock) {
-                if (inboundPayloads.isEmpty()) {
+                if (inboundEvents.isEmpty()) {
                     null
                 } else {
-                    SimulatorInboundPacket(endpoint, inboundPayloads.removeAt(0))
+                    inboundEvents.removeAt(0)?.let { SimulatorInboundPacket(endpoint, it) }
                 }
             }
 

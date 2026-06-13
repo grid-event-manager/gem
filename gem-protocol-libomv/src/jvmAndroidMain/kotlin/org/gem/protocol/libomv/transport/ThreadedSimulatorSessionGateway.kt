@@ -634,11 +634,11 @@ internal class ThreadedSimulatorSessionGateway(
         const val MOVEMENT_RECEIVE_ATTEMPTS = 12
         const val NOTICE_ACK_RECEIVE_TIMEOUT_MILLIS = 250
         const val NOTICE_ACK_RECEIVE_PACKET_LIMIT = 128
-        const val NOTICE_ACK_RECEIVE_TIMEOUT_LIMIT = 8
+        const val NOTICE_ACK_RECEIVE_TIMEOUT_LIMIT = 24
         const val NOTICE_POST_ACK_RECEIVE_TIMEOUT_MILLIS = 250
         const val NOTICE_POST_ACK_RECEIVE_ATTEMPTS = 4
         const val ARCHIVE_RECEIVE_TIMEOUT_MILLIS = 250
-        const val ARCHIVE_RECEIVE_ATTEMPTS = 12
+        const val ARCHIVE_RECEIVE_ATTEMPTS = 24
         const val LOGOUT_RECEIVE_TIMEOUT_MILLIS = 250
         const val LOGOUT_RECEIVE_ATTEMPTS = 12
     }

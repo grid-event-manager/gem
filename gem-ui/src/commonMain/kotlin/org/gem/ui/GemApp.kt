@@ -232,6 +232,9 @@ fun GemApp(
                     onLogoutClick = {
                         runLogoutWorkflow()
                     },
+                    onExitClick = {
+                        runLogoutWorkflow(exitAfterLogout = true)
+                    },
                 )
             },
             navigation = if (route == UiRoute.Settings) {

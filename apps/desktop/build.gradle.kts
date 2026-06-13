@@ -1,4 +1,5 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+import org.jetbrains.compose.desktop.application.tasks.AbstractJPackageTask
 
 plugins {
     alias(libs.plugins.kotlin.jvm)
@@ -16,11 +17,16 @@ dependencies {
     testImplementation(kotlin("test-junit"))
 }
 
-val desktopPackageName = "gema"
-val desktopPackageVersion = "0.1.16"
-val macPackageVersion = "1.0.16"
+val desktopPackageName = "gem"
+val desktopCommandName = "gema"
+val desktopPackageVersion = "0.1.17"
+val macPackageVersion = "1.0.17"
+val windowsDisplayName = "GEM $desktopPackageVersion"
 val debArtifact = layout.buildDirectory.file(
     "compose/binaries/main/deb/${desktopPackageName}_${desktopPackageVersion}_amd64.deb",
+)
+val msiArtifact = layout.buildDirectory.file(
+    "compose/binaries/main/msi/${desktopPackageName}-${desktopPackageVersion}.msi",
 )
 
 fun runPackageCommand(vararg command: String) {
@@ -40,21 +46,22 @@ compose.desktop {
             packageName = desktopPackageName
             packageVersion = desktopPackageVersion
             description = "Second Life venue notice helper"
-            vendor = "Grid Event Manager"
+            vendor = "ANVLL"
 
             linux {
-                iconFile.set(project.file("src/main/package/icons/gema.png"))
+                iconFile.set(project.file("src/main/package/icons/gem.png"))
                 shortcut = true
             }
 
             windows {
-                iconFile.set(project.file("src/main/package/icons/gema.ico"))
+                iconFile.set(project.file("src/main/package/icons/gem.ico"))
                 menu = true
                 shortcut = true
+                menuGroup = "GEM"
             }
 
             macOS {
-                iconFile.set(project.file("src/main/package/icons/gema.icns"))
+                iconFile.set(project.file("src/main/package/icons/gem.icns"))
                 packageName = desktopPackageName
                 packageVersion = macPackageVersion
                 dmgPackageVersion = macPackageVersion
@@ -66,24 +73,45 @@ compose.desktop {
 }
 
 tasks.configureEach {
-    if (name != "packageDeb") {
-        return@configureEach
+    when (name) {
+        "packageDeb" -> doLast {
+            val debFile = debArtifact.get().asFile
+            require(debFile.isFile) { "Expected deb artifact missing: ${debFile.absolutePath}" }
+
+            val workDir = layout.buildDirectory.dir("tmp/packageDebWithCommandLauncher").get().asFile
+            delete(workDir)
+            workDir.mkdirs()
+
+            runPackageCommand("dpkg-deb", "-R", debFile.absolutePath, workDir.absolutePath)
+
+            val commandLink = workDir.resolve("usr/bin/$desktopPackageName")
+            commandLink.parentFile.mkdirs()
+            commandLink.delete()
+
+            val commandAlias = workDir.resolve("usr/bin/$desktopCommandName")
+            runPackageCommand("ln", "-sfn", "/opt/$desktopPackageName/bin/$desktopPackageName", commandAlias.absolutePath)
+
+            runPackageCommand("dpkg-deb", "--root-owner-group", "-b", workDir.absolutePath, debFile.absolutePath)
+        }
+        "packageMsi" -> doLast {
+            if (!System.getProperty("os.name").startsWith("Windows", ignoreCase = true)) {
+                return@doLast
+            }
+            val msiFile = msiArtifact.get().asFile
+            require(msiFile.isFile) { "Expected MSI artifact missing: ${msiFile.absolutePath}" }
+            runPackageCommand(
+                "cscript.exe",
+                "//NoLogo",
+                project.file("src/main/package/windows/patch-msi-display.vbs").absolutePath,
+                msiFile.absolutePath,
+                windowsDisplayName,
+            )
+        }
     }
+}
 
-    doLast {
-        val debFile = debArtifact.get().asFile
-        require(debFile.isFile) { "Expected deb artifact missing: ${debFile.absolutePath}" }
-
-        val workDir = layout.buildDirectory.dir("tmp/packageDebWithCommandLauncher").get().asFile
-        delete(workDir)
-        workDir.mkdirs()
-
-        runPackageCommand("dpkg-deb", "-R", debFile.absolutePath, workDir.absolutePath)
-
-        val commandLink = workDir.resolve("usr/bin/$desktopPackageName")
-        commandLink.parentFile.mkdirs()
-        runPackageCommand("ln", "-sfn", "/opt/$desktopPackageName/bin/$desktopPackageName", commandLink.absolutePath)
-
-        runPackageCommand("dpkg-deb", "--root-owner-group", "-b", workDir.absolutePath, debFile.absolutePath)
+tasks.withType<AbstractJPackageTask>().configureEach {
+    if (targetFormat == TargetFormat.Msi) {
+        freeArgs.add("--win-shortcut-prompt")
     }
 }
