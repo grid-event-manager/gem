@@ -21,9 +21,14 @@ val desktopPackageName = "gema"
 val desktopCommandName = "gema"
 val debPackageName = "gema"
 val desktopPackageDescription = "Grid Event Manager"
-val desktopPackageVersion = "0.1.23"
-val macPackageVersion = "1.0.23"
+val desktopPackageVersion = "0.1.24"
+val macPackageVersion = "1.0.24"
 val macApplicationDisplayName = "GEM"
+val nativePackageName = if (System.getProperty("os.name").startsWith("Mac", ignoreCase = true)) {
+    macApplicationDisplayName
+} else {
+    desktopPackageName
+}
 val windowsDisplayName = "GEM $desktopPackageVersion"
 val rawDebArtifact = layout.buildDirectory.file(
     "compose/binaries/main/deb/${desktopPackageName}_${desktopPackageVersion}_amd64.deb",
@@ -107,7 +112,7 @@ compose.desktop {
 
         nativeDistributions {
             targetFormats(TargetFormat.Deb, TargetFormat.Msi, TargetFormat.Dmg)
-            packageName = desktopPackageName
+            packageName = nativePackageName
             packageVersion = desktopPackageVersion
             description = desktopPackageDescription
             vendor = "ANVLL"
