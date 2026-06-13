@@ -470,15 +470,21 @@ internal class ThreadedSimulatorSessionGateway(
             SimulatorUdpDiagnosticTrail.record(
                 "ack_wait_start",
                 "sequenceNumber" to sequenceNumber,
-                "packetLimit" to NOTICE_ACK_RECEIVE_PACKET_LIMIT,
+                "packetYieldInterval" to NOTICE_ACK_RECEIVE_BUSY_PACKET_YIELD_INTERVAL,
                 "timeoutLimit" to NOTICE_ACK_RECEIVE_TIMEOUT_LIMIT,
                 "timeoutMillis" to NOTICE_ACK_RECEIVE_TIMEOUT_MILLIS,
+                "deadlineMillis" to NOTICE_ACK_RECEIVE_DEADLINE_MILLIS,
             )
+            val deadline = System.nanoTime() +
+                TimeUnit.MILLISECONDS.toNanos(NOTICE_ACK_RECEIVE_DEADLINE_MILLIS)
             while (
-                observedPackets < NOTICE_ACK_RECEIVE_PACKET_LIMIT &&
-                receiveTimeouts < NOTICE_ACK_RECEIVE_TIMEOUT_LIMIT
+                receiveTimeouts < NOTICE_ACK_RECEIVE_TIMEOUT_LIMIT &&
+                System.nanoTime() < deadline
             ) {
-                val result = serviceInbound(NOTICE_ACK_RECEIVE_TIMEOUT_MILLIS, observations)
+                val remainingMillis = TimeUnit.NANOSECONDS.toMillis(deadline - System.nanoTime())
+                    .coerceIn(1L, NOTICE_ACK_RECEIVE_TIMEOUT_MILLIS.toLong())
+                    .toInt()
+                val result = serviceInbound(remainingMillis, observations)
                 if (result.payload == null) {
                     receiveTimeouts += 1
                     SimulatorUdpDiagnosticTrail.record(
@@ -491,6 +497,15 @@ internal class ThreadedSimulatorSessionGateway(
                     continue
                 }
                 observedPackets += 1
+                if (observedPackets % NOTICE_ACK_RECEIVE_BUSY_PACKET_YIELD_INTERVAL == 0) {
+                    SimulatorUdpDiagnosticTrail.record(
+                        "ack_wait_busy_yield",
+                        "sequenceNumber" to sequenceNumber,
+                        "observedPackets" to observedPackets,
+                        "receiveTimeouts" to receiveTimeouts,
+                    )
+                    Thread.yield()
+                }
                 SimulatorUdpDiagnosticTrail.record(
                     "ack_wait_packet_observed",
                     "sequenceNumber" to sequenceNumber,
@@ -515,6 +530,11 @@ internal class ThreadedSimulatorSessionGateway(
                 "sequenceNumber" to sequenceNumber,
                 "observedPackets" to observedPackets,
                 "receiveTimeouts" to receiveTimeouts,
+                "reason" to if (receiveTimeouts >= NOTICE_ACK_RECEIVE_TIMEOUT_LIMIT) {
+                    "receive_timeout_limit"
+                } else {
+                    "deadline_elapsed"
+                },
             )
             return false
         }
@@ -761,7 +781,8 @@ internal class ThreadedSimulatorSessionGateway(
         const val MOVEMENT_RECEIVE_TIMEOUT_MILLIS = 250
         const val MOVEMENT_RECEIVE_ATTEMPTS = 12
         const val NOTICE_ACK_RECEIVE_TIMEOUT_MILLIS = 250
-        const val NOTICE_ACK_RECEIVE_PACKET_LIMIT = 128
+        const val NOTICE_ACK_RECEIVE_DEADLINE_MILLIS = 6_000L
+        const val NOTICE_ACK_RECEIVE_BUSY_PACKET_YIELD_INTERVAL = 128
         const val NOTICE_ACK_RECEIVE_TIMEOUT_LIMIT = 24
         const val NOTICE_POST_ACK_RECEIVE_TIMEOUT_MILLIS = 250
         const val NOTICE_POST_ACK_RECEIVE_ATTEMPTS = 4

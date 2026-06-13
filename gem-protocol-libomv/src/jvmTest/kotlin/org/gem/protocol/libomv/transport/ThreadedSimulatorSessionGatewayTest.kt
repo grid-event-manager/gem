@@ -105,6 +105,27 @@ class ThreadedSimulatorSessionGatewayTest {
     }
 
     @Test
+    fun `keeps reading past busy packet yield threshold until delayed notice ack arrives`() {
+        val exchange = ScriptedPacketExchange(
+            inboundPayloads = mutableListOf(
+                regionHandshake(),
+                agentMovementComplete(),
+                *Array(140) { index -> layerData(sequence = 300 + index) },
+                LibomvPacketCodec.packetAck(5),
+            ),
+        )
+        val gateway = ThreadedSimulatorSessionGateway(SimulatorPacketExchangeFactory { exchange })
+
+        val result = assertIs<SimulatorCircuitSendResult.Sent>(
+            gateway.sendNotice(circuit(), noticePacket()),
+        )
+        gateway.close()
+
+        assertTrue(result.redactedDetail.orEmpty().contains("transportAck=passed"))
+        assertEquals(1, exchange.sentNames().count { it == "improved_instant_message" })
+    }
+
+    @Test
     fun `waits through quiet simulator receive windows until delayed notice ack arrives`() {
         val exchange = ScriptedPacketExchange(
             inboundEvents = mutableListOf(
