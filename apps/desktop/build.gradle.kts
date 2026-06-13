@@ -17,7 +17,8 @@ dependencies {
 }
 
 val desktopPackageName = "gema"
-val desktopPackageVersion = "0.1.15"
+val desktopPackageVersion = "0.1.16"
+val macPackageVersion = "1.0.16"
 val debArtifact = layout.buildDirectory.file(
     "compose/binaries/main/deb/${desktopPackageName}_${desktopPackageVersion}_amd64.deb",
 )
@@ -55,6 +56,8 @@ compose.desktop {
             macOS {
                 iconFile.set(project.file("src/main/package/icons/gema.icns"))
                 packageName = desktopPackageName
+                packageVersion = macPackageVersion
+                dmgPackageVersion = macPackageVersion
                 dockName = "GEM"
                 bundleID = "org.gem.apps.desktop"
             }
