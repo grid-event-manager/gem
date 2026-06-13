@@ -15,7 +15,6 @@ data class GroupTargetUiState(
 data class GroupTargetRowUiState(
     val groupId: GroupId,
     val displayName: String,
-    val canSendNotices: Boolean,
     val selected: Boolean = false,
 )
 

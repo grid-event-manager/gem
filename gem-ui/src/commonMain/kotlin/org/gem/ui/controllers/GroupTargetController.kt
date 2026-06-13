@@ -92,7 +92,7 @@ class GroupTargetController(
             runtime: GemUiRuntime,
             groups: List<GroupMembership>,
         ): GroupTargetController {
-            val targetSet = runtime.targetSelectionService.emptyTargetSet(groups)
+            val targetSet = runtime.targetSelectionService.emptyTargetSet(groups.filter { it.canSendNotices })
             return GroupTargetController(
                 runtime = runtime,
                 state = projectTargetState(targetSet, GroupTargetMode.NONE, pickerVisible = false),
@@ -115,7 +115,6 @@ private fun projectTargetState(
             GroupTargetRowUiState(
                 groupId = group.groupId,
                 displayName = group.displayName.value,
-                canSendNotices = group.canSendNotices,
                 selected = targetSet.isSelected(group.groupId),
             )
         },

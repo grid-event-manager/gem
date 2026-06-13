@@ -11,29 +11,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import org.gem.ui.design.GemTheme
 import org.gem.ui.state.GroupTargetRowUiState
-import org.gem.ui.text.GemTextCatalogue
-import org.gem.ui.text.GemTextKey
 
 @Composable
 fun GroupRow(
     row: GroupTargetRowUiState,
-    textCatalogue: GemTextCatalogue,
     onSelectedChange: (Boolean) -> Unit,
 ) {
     GemSelectableRow(
         title = row.displayName,
-        subtitle = if (row.canSendNotices) {
-            textCatalogue.text(GemTextKey.CanSendNotices)
-        } else {
-            null
-        },
         selected = row.selected,
-        enabled = row.canSendNotices,
         onClick = { onSelectedChange(!row.selected) },
         leading = {
             Checkbox(
                 checked = row.selected,
-                enabled = row.canSendNotices,
                 onCheckedChange = null,
                 colors = CheckboxDefaults.colors(
                     checkedColor = GemTheme.colors.primary,

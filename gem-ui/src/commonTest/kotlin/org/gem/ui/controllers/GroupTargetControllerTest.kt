@@ -1,5 +1,6 @@
 package org.gem.ui.controllers
 
+import org.gem.core.domain.GroupMembership
 import org.gem.ui.state.GroupTargetMode
 import org.gem.ui.testing.FakeGroupFixtures
 import org.gem.ui.testing.FakeGemUiRuntime
@@ -19,7 +20,8 @@ class GroupTargetControllerTest {
         assertEquals(0, controller.state.selectedCount)
         assertFalse(controller.state.pickerVisible)
         assertFalse(controller.state.loading)
-        assertEquals(3, controller.state.rows.size)
+        assertEquals(2, controller.state.rows.size)
+        assertFalse(controller.state.rows.any { it.displayName == "Audience" })
         assertTrue(controller.state.rows.none { it.selected })
     }
 
@@ -35,7 +37,7 @@ class GroupTargetControllerTest {
         assertEquals(2, controller.state.selectedCount)
         assertTrue(controller.state.rows.first { it.displayName == "Owks" }.selected)
         assertTrue(controller.state.rows.first { it.displayName == "m!nx" }.selected)
-        assertFalse(controller.state.rows.first { it.displayName == "Audience" }.selected)
+        assertFalse(controller.state.rows.any { it.displayName == "Audience" })
     }
 
     @Test
@@ -85,13 +87,29 @@ class GroupTargetControllerTest {
     }
 
     @Test
+    fun hiddenNonSendableDuplicateDoesNotBlockVisibleSendableGroupSelection() {
+        val groups = listOf(
+            group("venue-send", "Venue Notices", canSendNotices = true),
+            group("venue-read", "Venue Notices", canSendNotices = false),
+        )
+
+        val selected = refreshedController(groups)
+            .selectManualGroupsMode()
+            .setManualGroupSelected("Venue Notices", true)
+
+        assertEquals(1, selected.state.rows.size)
+        assertEquals(1, selected.state.selectedCount)
+        assertTrue(selected.state.rows.single().selected)
+    }
+
+    @Test
     fun addAllWithNoSendableGroupsLeavesTargetsEmpty() {
         val controller = refreshedController(listOf(FakeGroupFixtures.audience))
             .selectAllGroupsMode()
 
         assertEquals(GroupTargetMode.ALL, controller.state.mode)
         assertEquals(0, controller.state.selectedCount)
-        assertTrue(controller.state.rows.none { it.selected })
+        assertTrue(controller.state.rows.isEmpty())
     }
 
     @Test
@@ -112,7 +130,7 @@ class GroupTargetControllerTest {
         assertEquals(GemTextKey.GroupsUnavailable, failed.state.errorKey)
     }
 
-    private fun refreshedController(groups: List<org.gem.core.domain.GroupMembership>): GroupTargetController {
+    private fun refreshedController(groups: List<GroupMembership>): GroupTargetController {
         val runtime = FakeGemUiRuntime.ready(groups = groups)
         return NoticeComposerController(
             runtime = runtime,
@@ -120,4 +138,16 @@ class GroupTargetControllerTest {
             avatarReady = true,
         ).refreshGroups()
     }
+
+    private fun group(
+        id: String,
+        displayName: String,
+        canSendNotices: Boolean,
+    ): GroupMembership =
+        GroupMembership.fromValues(
+            groupId = id,
+            displayName = displayName,
+            canSendNotices = canSendNotices,
+            acceptsNotices = true,
+        )
 }

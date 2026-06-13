@@ -19,7 +19,6 @@ class GroupAndSendScreenStateTest {
         assertEquals("Groups", catalogue.text(GemTextKey.Groups))
         assertEquals("Add all", catalogue.text(GemTextKey.AddAll))
         assertEquals("Select...", catalogue.text(GemTextKey.AddGroups))
-        assertEquals("Can send notices", catalogue.text(GemTextKey.CanSendNotices))
         assertEquals("Send notices", catalogue.text(GemTextKey.SendNotices))
         assertEquals("Ready", catalogue.text(GemTextKey.Ready))
         assertEquals("Subject required", catalogue.text(GemTextKey.MissingSubject))

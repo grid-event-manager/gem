@@ -39,7 +39,6 @@ sealed interface GemTextKey {
     data object Groups : GemTextKey
     data object AddAll : GemTextKey
     data object AddGroups : GemTextKey
-    data object CanSendNotices : GemTextKey
     data object SendNotices : GemTextKey
     data object Ready : GemTextKey
     data object MissingSubject : GemTextKey
@@ -114,7 +113,6 @@ sealed interface GemTextKey {
             Groups,
             AddAll,
             AddGroups,
-            CanSendNotices,
             SendNotices,
             Ready,
             MissingSubject,
@@ -196,7 +194,6 @@ object EnglishGemTextCatalogue : GemTextCatalogue {
         GemTextKey.Groups -> "Groups"
         GemTextKey.AddAll -> "Add all"
         GemTextKey.AddGroups -> "Select..."
-        GemTextKey.CanSendNotices -> "Can send notices"
         GemTextKey.SendNotices -> "Send notices"
         GemTextKey.Ready -> "Ready"
         GemTextKey.MissingSubject -> "Subject required"

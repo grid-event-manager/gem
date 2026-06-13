@@ -21,8 +21,9 @@ val desktopPackageName = "gema"
 val desktopCommandName = "gema"
 val debPackageName = "gema"
 val desktopPackageDescription = "Grid Event Manager"
-val desktopPackageVersion = "0.1.22"
-val macPackageVersion = "1.0.22"
+val desktopPackageVersion = "0.1.23"
+val macPackageVersion = "1.0.23"
+val macApplicationDisplayName = "GEM"
 val windowsDisplayName = "GEM $desktopPackageVersion"
 val rawDebArtifact = layout.buildDirectory.file(
     "compose/binaries/main/deb/${desktopPackageName}_${desktopPackageVersion}_amd64.deb",
@@ -32,6 +33,12 @@ val debArtifact = layout.buildDirectory.file(
 )
 val msiArtifact = layout.buildDirectory.file(
     "compose/binaries/main/msi/${desktopPackageName}-${desktopPackageVersion}.msi",
+)
+val rawDmgArtifact = layout.buildDirectory.file(
+    "compose/binaries/main/dmg/${macApplicationDisplayName}-${macPackageVersion}.dmg",
+)
+val dmgArtifact = layout.buildDirectory.file(
+    "compose/binaries/main/dmg/${desktopPackageName}-${macPackageVersion}.dmg",
 )
 
 fun runPackageCommand(vararg command: String) {
@@ -75,6 +82,22 @@ fun rewriteLinuxDesktopEntry(workDir: File) {
     desktopFile.writeText(rewritten.joinToString(System.lineSeparator()) + System.lineSeparator())
 }
 
+fun normalizeMacDmgArtifact() {
+    val rawDmgFile = rawDmgArtifact.get().asFile
+    val dmgFile = dmgArtifact.get().asFile
+    if (rawDmgFile.absolutePath == dmgFile.absolutePath) {
+        return
+    }
+    if (!rawDmgFile.isFile) {
+        require(dmgFile.isFile) { "Expected DMG artifact missing: ${rawDmgFile.absolutePath}" }
+        return
+    }
+    dmgFile.delete()
+    require(rawDmgFile.renameTo(dmgFile)) {
+        "Unable to normalize DMG artifact ${rawDmgFile.absolutePath} to ${dmgFile.absolutePath}"
+    }
+}
+
 compose.desktop {
     application {
         mainClass = "org.gem.apps.desktop.GemDesktopAppKt"
@@ -103,10 +126,10 @@ compose.desktop {
 
             macOS {
                 iconFile.set(project.file("src/main/package/icons/gem.icns"))
-                packageName = desktopPackageName
+                packageName = macApplicationDisplayName
                 packageVersion = macPackageVersion
                 dmgPackageVersion = macPackageVersion
-                dockName = "GEM"
+                dockName = macApplicationDisplayName
                 bundleID = "org.gem.apps.desktop"
             }
         }
@@ -153,6 +176,9 @@ tasks.configureEach {
                 msiFile.absolutePath,
                 windowsDisplayName,
             )
+        }
+        "packageDmg" -> doLast {
+            normalizeMacDmgArtifact()
         }
     }
 }

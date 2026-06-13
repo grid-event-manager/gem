@@ -76,7 +76,6 @@ fun GroupTargetSelector(
                             state.rows.forEach { row ->
                                 GroupRow(
                                     row = row,
-                                    textCatalogue = textCatalogue,
                                     onSelectedChange = { selected ->
                                         onManualGroupSelected(row.displayName, selected)
                                     },
