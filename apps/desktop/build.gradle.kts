@@ -21,8 +21,8 @@ val desktopPackageName = "gema"
 val desktopCommandName = "gema"
 val debPackageName = "gema"
 val desktopPackageDescription = "Grid Event Manager"
-val desktopPackageVersion = "0.1.20"
-val macPackageVersion = "1.0.20"
+val desktopPackageVersion = "0.1.21"
+val macPackageVersion = "1.0.21"
 val windowsDisplayName = "GEM $desktopPackageVersion"
 val rawDebArtifact = layout.buildDirectory.file(
     "compose/binaries/main/deb/${desktopPackageName}_${desktopPackageVersion}_amd64.deb",
@@ -78,6 +78,9 @@ fun rewriteLinuxDesktopEntry(workDir: File) {
 compose.desktop {
     application {
         mainClass = "org.gem.apps.desktop.GemDesktopAppKt"
+        if (providers.gradleProperty("gemDiagnosticUdp").orNull == "true") {
+            jvmArgs("-Dgem.simulator.udp.diagnostics=true")
+        }
 
         nativeDistributions {
             targetFormats(TargetFormat.Deb, TargetFormat.Msi, TargetFormat.Dmg)

@@ -382,31 +382,81 @@ internal class ThreadedSimulatorSessionGateway(
             observations: GatewayNoticeObservationCollector?,
         ): SimulatorCircuitSendResult.Failed? {
             val sequenceNumber = outbound.reliableSequenceNumber ?: return try {
+                SimulatorUdpDiagnosticTrail.record(
+                    "reliable_send_skipped",
+                    "packetType" to LibomvPacketCodec.packetType(outbound.payload).name,
+                )
                 send(outbound)
                 null
             } catch (ex: Exception) {
+                SimulatorUdpDiagnosticTrail.record(
+                    "reliable_send_skipped_exception",
+                    "packetType" to LibomvPacketCodec.packetType(outbound.payload).name,
+                    "exception" to ex.javaClass.simpleName,
+                )
                 SimulatorCircuitSendResult.Failed(NOTICE_PACKET_SEND_FAILED)
             }
+            SimulatorUdpDiagnosticTrail.record(
+                "reliable_send_start",
+                "sequenceNumber" to sequenceNumber,
+                "packetType" to LibomvPacketCodec.packetType(outbound.payload).name,
+            )
             var pending = PendingReliableSend(sequenceNumber, outbound, attempt = 1)
             while (true) {
                 try {
+                    SimulatorUdpDiagnosticTrail.record(
+                        "reliable_send_attempt",
+                        "sequenceNumber" to sequenceNumber,
+                        "attempt" to pending.attempt,
+                        "packetType" to LibomvPacketCodec.packetType(pending.packet.payload).name,
+                    )
                     send(pending.packet)
                 } catch (ex: Exception) {
+                    SimulatorUdpDiagnosticTrail.record(
+                        "reliable_send_exception",
+                        "sequenceNumber" to sequenceNumber,
+                        "attempt" to pending.attempt,
+                        "exception" to ex.javaClass.simpleName,
+                    )
                     return SimulatorCircuitSendResult.Failed(NOTICE_PACKET_SEND_FAILED)
                 }
                 if (waitForAck(sequenceNumber, observations)) {
+                    SimulatorUdpDiagnosticTrail.record(
+                        "reliable_send_ack_passed",
+                        "sequenceNumber" to sequenceNumber,
+                        "attempt" to pending.attempt,
+                    )
                     return null
                 }
                 when (val decision = protocol.onReliableSendTimeout(sequenceNumber)) {
                     is Resend -> {
                         captureHealth()
+                        SimulatorUdpDiagnosticTrail.record(
+                            "reliable_send_resend",
+                            "sequenceNumber" to sequenceNumber,
+                            "nextAttempt" to pending.attempt + 1,
+                            "health" to latestHealth.status.name,
+                        )
                         pending = PendingReliableSend(sequenceNumber, decision.packet, pending.attempt + 1)
                     }
                     is TimedOut -> {
                         captureHealth()
+                        SimulatorUdpDiagnosticTrail.record(
+                            "reliable_send_timed_out",
+                            "sequenceNumber" to sequenceNumber,
+                            "attempts" to pending.attempt,
+                            "health" to latestHealth.status.name,
+                        )
                         return SimulatorCircuitSendResult.Failed(timeoutMessage)
                     }
-                    AwaitAck -> return null
+                    AwaitAck -> {
+                        SimulatorUdpDiagnosticTrail.record(
+                            "reliable_send_await_ack",
+                            "sequenceNumber" to sequenceNumber,
+                            "attempt" to pending.attempt,
+                        )
+                        return null
+                    }
                 }
             }
         }
@@ -417,6 +467,13 @@ internal class ThreadedSimulatorSessionGateway(
         ): Boolean {
             var observedPackets = 0
             var receiveTimeouts = 0
+            SimulatorUdpDiagnosticTrail.record(
+                "ack_wait_start",
+                "sequenceNumber" to sequenceNumber,
+                "packetLimit" to NOTICE_ACK_RECEIVE_PACKET_LIMIT,
+                "timeoutLimit" to NOTICE_ACK_RECEIVE_TIMEOUT_LIMIT,
+                "timeoutMillis" to NOTICE_ACK_RECEIVE_TIMEOUT_MILLIS,
+            )
             while (
                 observedPackets < NOTICE_ACK_RECEIVE_PACKET_LIMIT &&
                 receiveTimeouts < NOTICE_ACK_RECEIVE_TIMEOUT_LIMIT
@@ -424,15 +481,41 @@ internal class ThreadedSimulatorSessionGateway(
                 val result = serviceInbound(NOTICE_ACK_RECEIVE_TIMEOUT_MILLIS, observations)
                 if (result.payload == null) {
                     receiveTimeouts += 1
+                    SimulatorUdpDiagnosticTrail.record(
+                        "ack_wait_empty_receive",
+                        "sequenceNumber" to sequenceNumber,
+                        "receiveTimeouts" to receiveTimeouts,
+                        "observedPackets" to observedPackets,
+                    )
                     sendHeartbeatIfDue()
                     continue
                 }
                 observedPackets += 1
+                SimulatorUdpDiagnosticTrail.record(
+                    "ack_wait_packet_observed",
+                    "sequenceNumber" to sequenceNumber,
+                    "observedPackets" to observedPackets,
+                    "receiveTimeouts" to receiveTimeouts,
+                    "packetType" to LibomvPacketCodec.packetType(result.payload).name,
+                    "outgoingAckSequences" to result.outgoingAcks.joinToString(","),
+                )
                 if (sequenceNumber in result.outgoingAcks) {
+                    SimulatorUdpDiagnosticTrail.record(
+                        "ack_wait_matched",
+                        "sequenceNumber" to sequenceNumber,
+                        "observedPackets" to observedPackets,
+                        "receiveTimeouts" to receiveTimeouts,
+                    )
                     return true
                 }
                 sendHeartbeatIfDue()
             }
+            SimulatorUdpDiagnosticTrail.record(
+                "ack_wait_failed",
+                "sequenceNumber" to sequenceNumber,
+                "observedPackets" to observedPackets,
+                "receiveTimeouts" to receiveTimeouts,
+            )
             return false
         }
 
@@ -468,6 +551,11 @@ internal class ThreadedSimulatorSessionGateway(
             val inbound = try {
                 currentExchange.receive(endpoint, timeoutMillis)
             } catch (ex: Exception) {
+                SimulatorUdpDiagnosticTrail.record(
+                    "service_inbound_receive_exception",
+                    "timeoutMillis" to timeoutMillis,
+                    "exception" to ex.javaClass.simpleName,
+                )
                 return ReceiveServiceResult()
             } ?: return ReceiveServiceResult()
             val actions = protocol.onInbound(circuit, inbound.payload)
@@ -491,6 +579,15 @@ internal class ThreadedSimulatorSessionGateway(
                     -> Unit
                 }
             }
+            SimulatorUdpDiagnosticTrail.record(
+                "service_inbound_packet",
+                "packetType" to LibomvPacketCodec.packetType(inbound.payload).name,
+                "ackSequences" to LibomvPacketCodec.packetAckSequences(inbound.payload).orEmpty().joinToString(","),
+                "actions" to actions.joinToString(",") { it.diagnosticName() },
+                "outgoingAckSequences" to outgoingAcks.joinToString(","),
+                "logoutMatched" to logoutMatched,
+                "health" to latestHealth.status.name,
+            )
             return ReceiveServiceResult(
                 payload = inbound.payload,
                 outgoingAcks = outgoingAcks,
@@ -535,9 +632,28 @@ internal class ThreadedSimulatorSessionGateway(
         }
 
         private fun resetForCircuit(circuit: SimulatorCircuit) {
-            if (activeCircuit == circuit && exchange != null) {
+            val sameCircuit = activeCircuit == circuit
+            val hasExchange = exchange != null
+            val health = protocol.health().status
+            if (
+                sameCircuit &&
+                hasExchange &&
+                health == SimulatorSessionHealthStatus.PRESENT
+            ) {
+                SimulatorUdpDiagnosticTrail.record(
+                    "simulator_circuit_reuse",
+                    "sameCircuit" to sameCircuit,
+                    "hasExchange" to hasExchange,
+                    "health" to health.name,
+                )
                 return
             }
+            SimulatorUdpDiagnosticTrail.record(
+                "simulator_circuit_rebuild",
+                "sameCircuit" to sameCircuit,
+                "hasExchange" to hasExchange,
+                "health" to health.name,
+            )
             closeExchange()
             exchange = packetExchangeFactory.create()
             activeCircuit = circuit
@@ -564,6 +680,18 @@ internal class ThreadedSimulatorSessionGateway(
         private fun captureHealth() {
             latestHealth = protocol.health()
         }
+
+        private fun SimulatorInboundAction.diagnosticName(): String =
+            when (this) {
+                is AckReliable -> "ack_reliable"
+                is ReplyToPing -> "reply_to_ping"
+                is RecordOutgoingAck -> "record_outgoing_ack"
+                is MatchedArchiveReply -> "matched_archive_reply"
+                MatchedLogoutReply -> "matched_logout_reply"
+                is ObserveNoticeTraffic -> "observe_notice_traffic"
+                is MarkFailed -> "mark_failed"
+                IgnoreInbound -> "ignore_inbound"
+            }
 
         private fun SimulatorPresenceStatus.toArchiveStatus(): SimulatorNoticeArchiveStatus =
             when (this) {

@@ -53,6 +53,37 @@ class ThreadedSimulatorSessionGatewayTest {
     }
 
     @Test
+    fun `rebuilds same circuit exchange after failed reliable notice before next send`() {
+        val timedOutExchange = ScriptedPacketExchange(
+            inboundPayloads = mutableListOf(regionHandshake(), agentMovementComplete()),
+        )
+        val recoveredExchange = ScriptedPacketExchange(
+            inboundPayloads = mutableListOf(
+                regionHandshake(),
+                agentMovementComplete(),
+                LibomvPacketCodec.packetAck(5),
+            ),
+        )
+        val exchanges = mutableListOf(timedOutExchange, recoveredExchange)
+        val gateway = ThreadedSimulatorSessionGateway(SimulatorPacketExchangeFactory { exchanges.removeAt(0) })
+
+        val timedOut = assertIs<SimulatorCircuitSendResult.Failed>(
+            gateway.sendNotice(circuit(), noticePacket()),
+        )
+        val recovered = assertIs<SimulatorCircuitSendResult.Sent>(
+            gateway.sendNotice(circuit(), noticePacket()),
+        )
+        gateway.close()
+
+        assertEquals("notice send ack timeout after 3 attempts", timedOut.redactedMessage)
+        assertEquals(3, timedOutExchange.sentNames().count { it == "improved_instant_message" })
+        assertTrue(timedOutExchange.closed)
+        assertTrue(recovered.redactedDetail.orEmpty().contains("transportAck=passed"))
+        assertEquals(1, recoveredExchange.sentNames().count { it == "improved_instant_message" })
+        assertTrue(recoveredExchange.sentNames().contains("use_circuit_code"))
+    }
+
+    @Test
     fun `keeps reading busy simulator traffic until delayed notice ack arrives`() {
         val exchange = ScriptedPacketExchange(
             inboundPayloads = mutableListOf(
