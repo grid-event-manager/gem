@@ -23,6 +23,7 @@ Set installer = CreateObject("WindowsInstaller.Installer")
 Set database = installer.OpenDatabase(msiPath, MsiOpenDatabaseModeTransact)
 
 ExecuteSql database, "UPDATE `Shortcut` SET `Name`='" & displayName & "' WHERE `Name`='gem'"
+ExecuteSql database, "UPDATE `Shortcut` SET `Name`='" & displayName & "' WHERE `Name`='gema'"
 ExecuteSql database, "UPDATE `Property` SET `Value`='" & displayName & "' WHERE `Property`='ProductName'"
 database.Commit
 
