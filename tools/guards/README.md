@@ -59,7 +59,7 @@ Notice totals rules:
 Legacy identity classification:
 
 - Current public source, README, Gradle, package, Android, thread, and test-tag identity must use Gem names.
-- Legacy Hostess strings are allowed only inside desktop storage migration owners/tests, exact single-instance cleanup markers/tests, this guard owner, and retained promotion/provenance notes.
+- Legacy Hostess strings are allowed only inside desktop storage migration owners/tests, exact single-instance cleanup markers/tests, exact package lifecycle cleanup markers, this guard owner, and retained promotion/provenance notes.
 - Guard checks must fail if an old package root, module name, boundary task, UI tag, simulator thread, or current `.deb` route appears.
 
 Non-production proof allowlist for broad source scans:

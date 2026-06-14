@@ -192,6 +192,21 @@ check_required_hits() {
     esac
 }
 
+is_allowed_stale_gem_identity_hit() {
+    local hit="$1"
+
+    case "$hit" in
+        apps/desktop/src/main/package/packaging-text.properties:*linux.staleHostessInstallMessage=Old\ local\ Hostess\ files\ were\ found\ at\ /opt/hostess.*) return 0 ;;
+        apps/desktop/build.gradle.kts:*linuxStaleHostessInstallMessage*) return 0 ;;
+        apps/desktop/build.gradle.kts:*STALE_HOSTESS_MESSAGE*) return 0 ;;
+        apps/desktop/build.gradle.kts:*is_project_jpackage_root\ /opt/hostess\ hostess\ hostess.cfg*) return 0 ;;
+        apps/desktop/src/main/package/windows/gem-running-instance-check.vbs:*org.hostess.apps.desktop.HostessDesktopAppKt*) return 0 ;;
+        apps/desktop/src/main/package/windows/gem-running-instance-check.vbs:*\\Program\ Files\\Hostess\\*) return 0 ;;
+        apps/desktop/src/main/package/windows/gem-running-instance-check.vbs:*\\hostess.exe*) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
 check_pattern_matches() {
     local label="$1"
     local pattern="$2"
@@ -440,10 +455,45 @@ check_no_stale_gem_identity() {
         -o -path './build.gradle.kts' -o -path './gradle/*' \) \
         -print 2>/dev/null || true)
 
-    check_no_hits \
-        "Gem technical rename stale Hostess public identity absent" \
-        "$GEM_STALE_PUBLIC_IDENTITY_PATTERN" \
-        "${targets[@]}"
+    local output
+    local unexpected=()
+    local status
+
+    set +e
+    output="$(rg -n \
+        --glob '!**/build/**' \
+        --glob '!**/.gradle/**' \
+        --glob '!**/.kotlin/**' \
+        -- "$GEM_STALE_PUBLIC_IDENTITY_PATTERN" "${targets[@]}" 2>&1)"
+    status="$?"
+    set -e
+
+    case "$status" in
+        0)
+            local hit
+            while IFS= read -r hit; do
+                if ! is_allowed_stale_gem_identity_hit "$hit"; then
+                    unexpected+=("$hit")
+                fi
+            done <<< "$output"
+
+            if [[ "${#unexpected[@]}" -eq 0 ]]; then
+                echo "PASS: Gem technical rename stale Hostess public identity absent"
+            else
+                echo "FAIL: Gem technical rename stale Hostess public identity absent"
+                printf '%s\n' "${unexpected[@]}"
+                failures=1
+            fi
+            ;;
+        1)
+            echo "PASS: Gem technical rename stale Hostess public identity absent"
+            ;;
+        *)
+            echo "ERROR: Gem technical rename stale Hostess public identity scan failed"
+            echo "$output"
+            failures=1
+            ;;
+    esac
 }
 
 check_path_exists() {

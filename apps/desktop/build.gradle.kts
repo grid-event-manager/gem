@@ -40,9 +40,9 @@ fun packagingText(key: String): String =
 fun versionedPackagingText(key: String, version: String = desktopPackageVersion): String =
     packagingText(key).replace("{version}", version)
 val desktopPackageDescription = packagingText("app.fullName")
-val macApplicationDisplayName = versionedPackagingText("mac.applicationName")
+val macApplicationBundleName = packagingText("mac.bundleName")
 val nativePackageName = if (System.getProperty("os.name").startsWith("Mac", ignoreCase = true)) {
-    macApplicationDisplayName
+    macApplicationBundleName
 } else {
     desktopPackageName
 }
@@ -64,7 +64,7 @@ val msiArtifact = layout.buildDirectory.file(
     "compose/binaries/main/msi/${desktopPackageName}-${desktopPackageVersion}.msi",
 )
 val rawDmgArtifact = layout.buildDirectory.file(
-    "compose/binaries/main/dmg/${macApplicationDisplayName}-${macPackageVersion}.dmg",
+    "compose/binaries/main/dmg/${macApplicationBundleName}-${macPackageVersion}.dmg",
 )
 val dmgArtifact = layout.buildDirectory.file(
     "compose/binaries/main/dmg/${desktopPackageName}-${macPackageVersion}.dmg",
@@ -325,10 +325,10 @@ compose.desktop {
 
             macOS {
                 iconFile.set(project.file("src/main/package/icons/gem.icns"))
-                packageName = macApplicationDisplayName
+                packageName = macApplicationBundleName
                 packageVersion = macPackageVersion
                 dmgPackageVersion = macPackageVersion
-                dockName = macApplicationDisplayName
+                dockName = macApplicationBundleName
                 bundleID = "org.gem.apps.desktop"
             }
         }
