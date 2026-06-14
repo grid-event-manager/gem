@@ -11,6 +11,8 @@ import org.gem.protocol.libomv.runtime.CurrentGroupsSource
 import org.gem.protocol.libomv.runtime.DefaultLibomvPlatformAdapterBundle
 import org.gem.protocol.libomv.runtime.FileInventorySnapshotCacheStore
 import org.gem.protocol.libomv.runtime.GroupNoticeArchiveSource
+import org.gem.protocol.libomv.runtime.GemMachineIdentityProvider
+import org.gem.protocol.libomv.runtime.GemViewerIdentityProvider
 import org.gem.protocol.libomv.runtime.InventorySnapshotCacheStore
 import org.gem.protocol.libomv.runtime.InventoryRuntimeSource
 import org.gem.protocol.libomv.runtime.LibomvPlatformAdapterBundle
@@ -65,6 +67,21 @@ object ProtocolLibomvModule {
     ): LibomvProtocolRuntime =
         liveRuntime(
             bundle = DefaultLibomvPlatformAdapterBundle.create(secretResolver),
+            inventorySnapshotCacheStore = FileInventorySnapshotCacheStore(inventorySnapshotCacheDirectory),
+        )
+
+    fun liveRuntime(
+        secretResolver: LoginSecretResolver,
+        inventorySnapshotCacheDirectory: Path,
+        viewerIdentityProvider: GemViewerIdentityProvider,
+        machineIdentityProvider: GemMachineIdentityProvider,
+    ): LibomvProtocolRuntime =
+        liveRuntime(
+            bundle = DefaultLibomvPlatformAdapterBundle.create(
+                secretResolver = secretResolver,
+                viewerIdentityProvider = viewerIdentityProvider,
+                machineIdentityProvider = machineIdentityProvider,
+            ),
             inventorySnapshotCacheStore = FileInventorySnapshotCacheStore(inventorySnapshotCacheDirectory),
         )
 

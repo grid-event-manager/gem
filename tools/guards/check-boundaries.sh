@@ -824,6 +824,7 @@ while IFS= read -r path; do
         gem-protocol-libomv/src/jvmAndroidMain/kotlin/org/gem/protocol/libomv/runtime/JvmMd5DigestPort.kt) ;;
         gem-protocol-libomv/src/jvmAndroidMain/kotlin/org/gem/protocol/libomv/runtime/EnvironmentLoginSecretResolver.kt) ;;
         gem-protocol-libomv/src/jvmAndroidMain/kotlin/org/gem/protocol/libomv/runtime/DefaultGemHardwareAddressSource.kt) ;;
+        gem-protocol-libomv/src/androidMain/kotlin/org/gem/protocol/libomv/runtime/AndroidGemProtocolIdentityProviders.kt) ;;
         apps/desktop/src/main/kotlin/org/gem/apps/desktop/GemDesktopStorageMigration.kt) ;;
         apps/desktop/src/main/kotlin/org/gem/apps/desktop/DesktopVaultComposition.kt) ;;
         apps/desktop/src/main/kotlin/org/gem/apps/desktop/DesktopPreferenceComposition.kt) ;;
@@ -1109,7 +1110,7 @@ add_existing notice_dispatch_targets \
 viewer_identity_provider_forbidden_targets=()
 while IFS= read -r path; do
     case "$path" in
-        # D-08 Android no-UI load probe must class-load this protocol identity provider.
+        # Android compatibility probe must class-load this protocol identity provider.
         "apps/android/src/main/kotlin/org/gem/apps/android/AndroidCompatibilityProbe.kt") ;;
         *) viewer_identity_provider_forbidden_targets+=("$path") ;;
     esac

@@ -26,6 +26,7 @@ import org.gem.core.services.TargetSelectionService
 import org.gem.core.theme.ThemePreferenceService
 import org.gem.credential.vault.GemVaultRuntimeAccess
 import org.gem.protocol.libomv.ProtocolLibomvModule
+import org.gem.protocol.libomv.liveRuntimeForAndroid
 import org.gem.protocol.libomv.runtime.CredentialVaultLoginSecretResolver
 import org.gem.protocol.libomv.runtime.LoginSecretResolver
 import org.gem.ui.runtime.GemLoginComplianceProvider
@@ -33,10 +34,23 @@ import org.gem.ui.runtime.GemUiRuntime
 
 object GemAndroidCompositionRoot {
     fun create(context: Context): GemUiRuntime =
-        create(context.filesDir)
+        create(
+            androidContext = context,
+            appFilesDir = context.filesDir,
+        )
 
     internal fun create(appFilesDir: File): GemUiRuntime =
+        create(
+            androidContext = null,
+            appFilesDir = appFilesDir,
+        )
+
+    private fun create(
+        androidContext: Context?,
+        appFilesDir: File,
+    ): GemUiRuntime =
         GemRuntimeComposition.create(
+            androidContext = androidContext,
             vaultAccess = GemAndroidVaultComposition.open(appFilesDir),
             themePreferenceService = GemAndroidPreferenceComposition.open(appFilesDir),
             lastLoginProfilePreferenceService = GemAndroidPreferenceComposition.openLastLoginProfile(appFilesDir),
@@ -45,15 +59,25 @@ object GemAndroidCompositionRoot {
 
     private object GemRuntimeComposition {
         fun create(
+            androidContext: Context?,
             vaultAccess: GemVaultRuntimeAccess,
             themePreferenceService: ThemePreferenceService,
             lastLoginProfilePreferenceService: LastLoginProfilePreferenceService,
             inventorySnapshotCacheDirectory: Path,
         ): GemUiRuntime {
-            val protocolRuntime = ProtocolLibomvModule.liveRuntime(
-                secretResolver = vaultAccess.loginSecretResolver(),
-                inventorySnapshotCacheDirectory = inventorySnapshotCacheDirectory,
-            )
+            val secretResolver = vaultAccess.loginSecretResolver()
+            val protocolRuntime = if (androidContext == null) {
+                ProtocolLibomvModule.liveRuntime(
+                    secretResolver = secretResolver,
+                    inventorySnapshotCacheDirectory = inventorySnapshotCacheDirectory,
+                )
+            } else {
+                ProtocolLibomvModule.liveRuntimeForAndroid(
+                    context = androidContext,
+                    secretResolver = secretResolver,
+                    inventorySnapshotCacheDirectory = inventorySnapshotCacheDirectory,
+                )
+            }
             val groupDirectoryService = GroupDirectoryService(protocolRuntime.groupPort)
             return GemUiRuntime(
                 credentialRuntimeState = vaultAccess.credentialRuntimeState,

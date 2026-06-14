@@ -1,7 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
         android:icon="@drawable/ic_gem"
-        android:label="${appLabel}">
+        android:label="${appLabel}"
+        android:theme="@style/GemAndroidTheme">
         <activity
             android:name=".GemAndroidActivity"
             android:exported="true"

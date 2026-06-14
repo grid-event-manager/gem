@@ -26,12 +26,14 @@ internal data class LibomvPlatformAdapterBundle(
 internal object DefaultLibomvPlatformAdapterBundle {
     fun create(
         secretResolver: LoginSecretResolver = EnvironmentLoginSecretResolver(),
+        viewerIdentityProvider: GemViewerIdentityProvider = DefaultGemViewerIdentityProvider,
+        machineIdentityProvider: GemMachineIdentityProvider = DefaultGemMachineIdentityProvider,
     ): LibomvPlatformAdapterBundle =
         LibomvPlatformAdapterBundle(
             httpClient = OkHttpProtocolHttpClient(),
             secretResolver = secretResolver,
-            viewerIdentityProvider = DefaultGemViewerIdentityProvider,
-            machineIdentityProvider = DefaultGemMachineIdentityProvider,
+            viewerIdentityProvider = viewerIdentityProvider,
+            machineIdentityProvider = machineIdentityProvider,
             clockPort = JvmProtocolClockPort,
             md5DigestPort = JvmMd5DigestPort,
             circuitSender = ProtocolSimulatorCircuitClient(
