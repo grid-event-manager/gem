@@ -19,6 +19,12 @@ dependencies {
     testImplementation(kotlin("test-junit"))
 }
 
+sourceSets {
+    main {
+        resources.srcDir("src/main/package/icons")
+    }
+}
+
 val desktopPackageName = "gema"
 val desktopCommandName = "gema"
 val debPackageName = "gema"

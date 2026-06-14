@@ -4,6 +4,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
@@ -26,6 +27,7 @@ fun main() {
                 height = GemDesktopWindowMetrics.initialHeight,
             ),
             title = GemDesktopWindowTitle.current(),
+            icon = painterResource("gem.png"),
         ) {
             GemApp(
                 runtime = runtime,
