@@ -49,6 +49,8 @@ val nativePackageName = if (System.getProperty("os.name").startsWith("Mac", igno
 val windowsDisplayName = versionedPackagingText("windows.displayName")
 val windowsWelcomeTitle = versionedPackagingText("windows.welcomeTitle")
 val windowsLaunchAfterInstallText = packagingText("windows.launchAfterInstall")
+val windowsDowngradeMessage = packagingText("windows.downgradeMessage")
+val windowsRunningInstanceMessage = packagingText("windows.runningInstanceMessage")
 val rawDebArtifact = layout.buildDirectory.file(
     "compose/binaries/main/deb/${desktopPackageName}_${desktopPackageVersion}_amd64.deb",
 )
@@ -327,6 +329,8 @@ tasks.configureEach {
                 project.file("src/main/package/icons/gem.ico").absolutePath,
                 installerBitmaps.dialog.absolutePath,
                 installerBitmaps.banner.absolutePath,
+                windowsDowngradeMessage,
+                windowsRunningInstanceMessage,
             )
         }
         "packageDmg" -> doLast {

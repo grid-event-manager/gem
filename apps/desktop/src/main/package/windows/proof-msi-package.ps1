@@ -63,11 +63,27 @@ function Expand-VersionText([string]$Template) {
     return $Template.Replace("{version}", $Version)
 }
 
+function Require-Row($Rows, [scriptblock]$Predicate, [string]$Name) {
+    $row = $Rows | Where-Object $Predicate | Select-Object -First 1
+    if ($null -eq $row) {
+        Fail "$Name missing"
+    }
+    return $row
+}
+
+function Assert-SequenceRow($Rows, [string]$TableName, [string]$Action, [string]$Condition, [string]$Sequence) {
+    $row = Require-Row $Rows { $_.Action -eq $Action } "$TableName row $Action"
+    Assert-Equal "$TableName $Action condition" $Condition $row.Condition
+    Assert-Equal "$TableName $Action sequence" $Sequence $row.Sequence
+}
+
 $resolvedMsi = (Resolve-Path -LiteralPath $MsiPath).Path
 $displayName = Expand-VersionText (Get-PackagingText "windows.displayName")
 $welcomeTitle = Expand-VersionText (Get-PackagingText "windows.welcomeTitle")
 $welcomeTitleText = "{\WixUI_Font_Title}$welcomeTitle"
 $launchAfterInstallText = Get-PackagingText "windows.launchAfterInstall"
+$downgradeMessage = Get-PackagingText "windows.downgradeMessage"
+$runningInstanceMessage = Get-PackagingText "windows.runningInstanceMessage"
 $installer = New-Object -ComObject WindowsInstaller.Installer
 $database = $installer.OpenDatabase($resolvedMsi, 0)
 
@@ -77,11 +93,19 @@ Get-MsiRows $database 'SELECT `Property`, `Value` FROM `Property`' @("Property",
 }
 
 Assert-Equal "ProductName" $displayName $properties["ProductName"]
+Assert-Equal "ProductVersion" $Version $properties["ProductVersion"]
 Assert-Equal "Manufacturer" "ANVLL" $properties["Manufacturer"]
+Assert-Equal "UpgradeCode" "{1676B6E4-40FB-3524-B5FE-C2AF2836AE7E}" $properties["UpgradeCode"]
 Assert-Equal "ARPPRODUCTICON" "JpARPPRODUCTICON" $properties["ARPPRODUCTICON"]
 Assert-Equal "WixShellExecTarget" "[INSTALLDIR]app\resources\gem-windows-launch.vbs" $properties["WixShellExecTarget"]
 if ($properties.ContainsKey("GEM_LAUNCH_AFTER_INSTALL")) {
     Fail "launch-after-install checkbox must be unchecked by default"
+}
+if ($properties["ProductName"] -like "*GEMA*") {
+    Fail "ProductName contains raw technical label GEMA"
+}
+if ($properties["Manufacturer"] -like "*GEMA*" -or $properties["Manufacturer"] -like "*Grid Event Manager*") {
+    Fail "Manufacturer contains a product label instead of publisher ANVLL"
 }
 
 $icons = Get-MsiRows $database 'SELECT `Name` FROM `Icon`' @("Name")
@@ -96,13 +120,16 @@ if (-not ($binaries | Where-Object { $_.Name -eq "WixUI_Bmp_Dialog" })) {
 if (-not ($binaries | Where-Object { $_.Name -eq "WixUI_Bmp_Banner" })) {
     Fail "installer banner bitmap row missing"
 }
+if (-not ($binaries | Where-Object { $_.Name -eq "GemRunningInstanceCheckScript" })) {
+    Fail "running-instance custom action script row missing"
+}
 
 $shortcuts = Get-MsiRows $database 'SELECT `Shortcut`, `Name`, `Target`, `Arguments`, `Icon_`, `WkDir` FROM `Shortcut`' @("Shortcut", "Name", "Target", "Arguments", "Icon", "WorkingDirectory")
 $visibleShortcuts = $shortcuts | Where-Object { $_.Name -eq $displayName }
 if ($visibleShortcuts.Count -lt 1) {
     Fail "no visible shortcut named '$displayName'"
 }
-if ($shortcuts | Where-Object { $_.Name -eq "gem" -or $_.Name -eq "gema" }) {
+if ($shortcuts | Where-Object { $_.Name -eq "gem" -or $_.Name -eq "gema" -or $_.Name -eq "GEMA" }) {
     Fail "visible shortcut still uses raw technical name"
 }
 foreach ($shortcut in $visibleShortcuts) {
@@ -138,13 +165,22 @@ $startMenuControl = $controls | Where-Object { $_.Dialog -eq "ShortcutPromptDlg"
 Assert-Equal "start menu checkbox next control" "LaunchAfterInstall" $startMenuControl.Next
 
 $customActions = Get-MsiRows $database 'SELECT `Action`, `Type`, `Source`, `Target` FROM `CustomAction`' @("Action", "Type", "Source", "Target")
-$launchAction = $customActions | Where-Object { $_.Action -eq "GemLaunchAfterInstall" } | Select-Object -First 1
-if ($null -eq $launchAction) {
-    Fail "launch-after-install custom action missing"
-}
+$launchAction = Require-Row $customActions { $_.Action -eq "GemLaunchAfterInstall" } "launch-after-install custom action"
 Assert-Equal "launch custom action type" "65" $launchAction.Type
 Assert-Equal "launch custom action source" "WixCA" $launchAction.Source
 Assert-Equal "launch custom action target" "WixShellExec" $launchAction.Target
+$runningCheckAction = Require-Row $customActions { $_.Action -eq "GemCheckRunningInstances" } "running-instance check custom action"
+Assert-Equal "running check custom action type" "6" $runningCheckAction.Type
+Assert-Equal "running check custom action source" "GemRunningInstanceCheckScript" $runningCheckAction.Source
+Assert-Equal "running check custom action target" "" $runningCheckAction.Target
+$downgradeAction = Require-Row $customActions { $_.Action -eq "GemDowngradeBlocked" } "downgrade block custom action"
+Assert-Equal "downgrade block custom action type" "19" $downgradeAction.Type
+Assert-Equal "downgrade block custom action source" "" $downgradeAction.Source
+Assert-Equal "downgrade block custom action target" $downgradeMessage $downgradeAction.Target
+$runningBlockAction = Require-Row $customActions { $_.Action -eq "GemRunningInstanceBlocked" } "running-instance block custom action"
+Assert-Equal "running block custom action type" "19" $runningBlockAction.Type
+Assert-Equal "running block custom action source" "" $runningBlockAction.Source
+Assert-Equal "running block custom action target" $runningInstanceMessage $runningBlockAction.Target
 
 $controlEvents = Get-MsiRows $database 'SELECT `Dialog_`, `Control_`, `Event`, `Argument`, `Condition`, `Ordering` FROM `ControlEvent`' @("Dialog", "Control", "Event", "Argument", "Condition", "Ordering")
 $launchEvent = $controlEvents | Where-Object { $_.Dialog -eq "ExitDialog" -and $_.Control -eq "Finish" -and $_.Event -eq "DoAction" -and $_.Argument -eq "GemLaunchAfterInstall" } | Select-Object -First 1
@@ -153,6 +189,22 @@ if ($null -eq $launchEvent) {
 }
 Assert-Equal "launch Finish condition" "GEM_LAUNCH_AFTER_INSTALL=""1"" AND NOT Installed" $launchEvent.Condition
 Assert-Equal "launch Finish ordering" "998" $launchEvent.Ordering
+
+$upgradeRows = Get-MsiRows $database 'SELECT `UpgradeCode`, `VersionMin`, `VersionMax`, `Attributes`, `ActionProperty` FROM `Upgrade`' @("UpgradeCode", "VersionMin", "VersionMax", "Attributes", "ActionProperty")
+$upgradable = Require-Row $upgradeRows { $_.ActionProperty -eq "JP_UPGRADABLE_FOUND" } "Upgrade table JP_UPGRADABLE_FOUND"
+Assert-Equal "upgradable UpgradeCode" "{1676B6E4-40FB-3524-B5FE-C2AF2836AE7E}" $upgradable.UpgradeCode
+$downgradable = Require-Row $upgradeRows { $_.ActionProperty -eq "JP_DOWNGRADABLE_FOUND" } "Upgrade table JP_DOWNGRADABLE_FOUND"
+Assert-Equal "downgradable UpgradeCode" "{1676B6E4-40FB-3524-B5FE-C2AF2836AE7E}" $downgradable.UpgradeCode
+
+$installUiRows = Get-MsiRows $database 'SELECT `Action`, `Condition`, `Sequence` FROM `InstallUISequence`' @("Action", "Condition", "Sequence")
+Assert-SequenceRow $installUiRows "InstallUISequence" "GemDowngradeBlocked" "JP_DOWNGRADABLE_FOUND" "26"
+Assert-SequenceRow $installUiRows "InstallUISequence" "GemCheckRunningInstances" "NOT REMOVE" "27"
+Assert-SequenceRow $installUiRows "InstallUISequence" "GemRunningInstanceBlocked" "GEM_RUNNING_INSTANCE_FOUND" "28"
+
+$installExecuteRows = Get-MsiRows $database 'SELECT `Action`, `Condition`, `Sequence` FROM `InstallExecuteSequence`' @("Action", "Condition", "Sequence")
+Assert-SequenceRow $installExecuteRows "InstallExecuteSequence" "GemDowngradeBlocked" "JP_DOWNGRADABLE_FOUND" "26"
+Assert-SequenceRow $installExecuteRows "InstallExecuteSequence" "GemCheckRunningInstances" "NOT REMOVE" "27"
+Assert-SequenceRow $installExecuteRows "InstallExecuteSequence" "GemRunningInstanceBlocked" "GEM_RUNNING_INSTANCE_FOUND" "28"
 
 if (Test-Path -LiteralPath $ExtractRoot) {
     Remove-Item -LiteralPath $ExtractRoot -Recurse -Force
