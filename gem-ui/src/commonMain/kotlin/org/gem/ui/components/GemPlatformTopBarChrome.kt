@@ -6,7 +6,7 @@ import org.gem.ui.text.GemTextCatalogue
 import org.gem.ui.time.SecondLifeTimeDisplay
 
 @Composable
-fun GemTopBar(
+internal expect fun GemPlatformTopBarChrome(
     activeAccountLabel: String,
     secondLifeTimeDisplay: SecondLifeTimeDisplay,
     menuOpen: Boolean,
@@ -16,18 +16,5 @@ fun GemTopBar(
     onSettingsClick: () -> Unit,
     onLogoutClick: () -> Unit,
     onExitClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    GemPlatformTopBarChrome(
-        activeAccountLabel = activeAccountLabel,
-        secondLifeTimeDisplay = secondLifeTimeDisplay,
-        menuOpen = menuOpen,
-        textCatalogue = textCatalogue,
-        onMenuClick = onMenuClick,
-        onMenuDismiss = onMenuDismiss,
-        onSettingsClick = onSettingsClick,
-        onLogoutClick = onLogoutClick,
-        onExitClick = onExitClick,
-        modifier = modifier,
-    )
-}
+    modifier: Modifier,
+)
