@@ -51,6 +51,9 @@ val windowsWelcomeTitle = versionedPackagingText("windows.welcomeTitle")
 val windowsLaunchAfterInstallText = packagingText("windows.launchAfterInstall")
 val windowsDowngradeMessage = packagingText("windows.downgradeMessage")
 val windowsRunningInstanceMessage = packagingText("windows.runningInstanceMessage")
+val linuxDowngradeMessage = packagingText("linux.downgradeMessage")
+val linuxStaleGemInstallMessage = packagingText("linux.staleGemInstallMessage")
+val linuxStaleHostessInstallMessage = packagingText("linux.staleHostessInstallMessage")
 val rawDebArtifact = layout.buildDirectory.file(
     "compose/binaries/main/deb/${desktopPackageName}_${desktopPackageVersion}_amd64.deb",
 )
@@ -158,6 +161,56 @@ fun rewriteLinuxDesktopEntry(workDir: File) {
         }
     }
     desktopFile.writeText(rewritten.joinToString(System.lineSeparator()) + System.lineSeparator())
+}
+
+fun shellSingleQuoted(value: String): String = "'${value.replace("'", "'\"'\"'")}'"
+
+fun writeExecutableDebScript(workDir: File, name: String, body: String) {
+    val scriptFile = workDir.resolve("DEBIAN/$name")
+    scriptFile.parentFile.mkdirs()
+    scriptFile.writeText(body.trimIndent() + "\n")
+    scriptFile.setExecutable(true, false)
+}
+
+fun writeDebLifecyclePreinst(workDir: File) {
+    writeExecutableDebScript(
+        workDir,
+        "preinst",
+        """
+        #!/bin/sh
+        set -eu
+
+        PACKAGE_VERSION=${shellSingleQuoted(desktopPackageVersion)}
+        DOWNGRADE_MESSAGE=${shellSingleQuoted(linuxDowngradeMessage)}
+        STALE_GEM_MESSAGE=${shellSingleQuoted(linuxStaleGemInstallMessage)}
+        STALE_HOSTESS_MESSAGE=${shellSingleQuoted(linuxStaleHostessInstallMessage)}
+
+        installed_version="${'$'}(dpkg-query -W -f='${'$'}{Version}' gema 2>/dev/null || true)"
+        if [ -n "${'$'}installed_version" ] && dpkg --compare-versions "${'$'}installed_version" gt "${'$'}PACKAGE_VERSION"; then
+            printf '%s\n' "${'$'}DOWNGRADE_MESSAGE" >&2
+            exit 1
+        fi
+
+        is_project_jpackage_root() {
+            root="${'$'}1"
+            launcher="${'$'}2"
+            cfg="${'$'}3"
+            test -x "${'$'}root/bin/${'$'}launcher" && test -f "${'$'}root/lib/app/${'$'}cfg" && test -d "${'$'}root/lib/runtime"
+        }
+
+        if is_project_jpackage_root /opt/gem gem gem.cfg; then
+            printf '%s\n' "${'$'}STALE_GEM_MESSAGE" >&2
+            exit 1
+        fi
+
+        if is_project_jpackage_root /opt/hostess hostess hostess.cfg; then
+            printf '%s\n' "${'$'}STALE_HOSTESS_MESSAGE" >&2
+            exit 1
+        fi
+
+        exit 0
+        """,
+    )
 }
 
 fun normalizeMacDmgArtifact() {
@@ -296,6 +349,7 @@ tasks.configureEach {
             runPackageCommand("dpkg-deb", "-R", rawDebFile.absolutePath, workDir.absolutePath)
             rewriteDebControl(workDir)
             rewriteLinuxDesktopEntry(workDir)
+            writeDebLifecyclePreinst(workDir)
 
             val commandLink = workDir.resolve("usr/bin/$desktopPackageName")
             commandLink.parentFile.mkdirs()
