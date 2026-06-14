@@ -43,6 +43,12 @@ kotlin {
                 implementation(kotlin("test"))
             }
         }
+
+        androidMain {
+            dependencies {
+                implementation(libs.androidx.activity.compose)
+            }
+        }
     }
 }
 

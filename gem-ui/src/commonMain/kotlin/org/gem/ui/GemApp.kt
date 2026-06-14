@@ -16,6 +16,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
 import org.gem.ui.components.GemAppScaffold
 import org.gem.ui.components.GemOperationModal
+import org.gem.ui.components.GemPlatformBackHandler
 import org.gem.ui.components.GemSendFooter
 import org.gem.ui.components.GemTopBar
 import org.gem.ui.components.SessionStrip
@@ -86,6 +87,12 @@ fun GemApp(
         settingsController = SettingsController(runtime, appState = appController.state).refreshSavedAccounts()
     }
 
+    fun runSettingsBackNavigation() {
+        appController = appController.backFromSettings()
+        refreshLoginFromCredentialStore()
+        refreshSettingsFromCredentialStore()
+    }
+
     fun resetControllersAfterLogout(loggedOut: GemAppController) {
         appController = loggedOut
         loginController = loginController.refreshSavedLogins()
@@ -132,6 +139,23 @@ fun GemApp(
             logoutInFlight = false
             if (exitAfterCurrentLogout) {
                 exitAfterCurrentLogout = false
+                onExitReady()
+            }
+        }
+    }
+
+    fun runBackWorkflow() {
+        when {
+            appController.state.menuOpen -> {
+                appController = appController.closeMenu()
+            }
+            appController.state.route == UiRoute.Settings -> {
+                runSettingsBackNavigation()
+            }
+            appController.state.route == UiRoute.Compose && appController.state.session != null -> {
+                runLogoutWorkflow(exitAfterLogout = true)
+            }
+            else -> {
                 onExitReady()
             }
         }
@@ -215,6 +239,10 @@ fun GemApp(
         ),
     ) {
         val route = appController.state.route
+        GemPlatformBackHandler(
+            enabled = true,
+            onBack = { runBackWorkflow() },
+        )
         GemAppScaffold(
             topBar = {
                 GemTopBar(
@@ -242,9 +270,7 @@ fun GemApp(
                     SettingsBackNav(
                         text = textCatalogue.text(GemTextKey.Back),
                         onBack = {
-                            appController = appController.backFromSettings()
-                            refreshLoginFromCredentialStore()
-                            refreshSettingsFromCredentialStore()
+                            runSettingsBackNavigation()
                         },
                         themeChecked = themeController.state.toggleChecked,
                         themeEnabled = true,

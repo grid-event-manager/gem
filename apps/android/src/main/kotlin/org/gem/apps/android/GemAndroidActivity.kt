@@ -10,7 +10,7 @@ class GemAndroidActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val runtime = GemAndroidCompositionRoot.create(applicationContext)
         setContent {
-            GemApp(runtime)
+            GemApp(runtime, onExitReady = { finish() })
         }
     }
 }

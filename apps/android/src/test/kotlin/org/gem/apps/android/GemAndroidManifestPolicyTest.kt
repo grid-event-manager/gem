@@ -22,4 +22,22 @@ class GemAndroidManifestPolicyTest {
         assertTrue(styles.contains("""<item name="android:windowActionBar">false</item>"""))
         assertTrue(styles.contains("""<item name="android:windowNoTitle">true</item>"""))
     }
+
+    @Test
+    fun `gem activity stays lifecycle shell for back and exit`() {
+        val activity = File("src/main/kotlin/org/gem/apps/android/GemAndroidActivity.kt").readText()
+        val forbiddenRouteTerms = listOf(
+            "UiRoute",
+            "GemAppController",
+            "runLogoutWorkflow",
+            "backFromSettings",
+            "BackHandler",
+            "onBackPressed",
+        )
+
+        assertTrue(activity.contains("onExitReady = { finish() }"))
+        forbiddenRouteTerms.forEach { term ->
+            assertTrue(!activity.contains(term), "Activity must not contain $term")
+        }
+    }
 }
