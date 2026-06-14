@@ -46,6 +46,7 @@ data class GemSpacing(
     val scrollbarRadius: Dp = 4.dp,
     val statusPillMinHeight: Dp = 28.dp,
     val statusPillHorizontalPadding: Dp = 10.dp,
+    val operationSpinnerSize: Dp = 14.dp,
     val noticeBodyMinHeight: Dp = 112.dp,
     val noticeBodyMaxHeight: Dp = 180.dp,
     val inventoryPaneMinHeight: Dp = 132.dp,

@@ -49,8 +49,25 @@ function Get-MsiRows($Database, [string]$Query, [string[]]$Columns) {
     }
 }
 
+function Get-PackagingText([string]$Key) {
+    $cataloguePath = Join-Path $PSScriptRoot "..\packaging-text.properties"
+    $prefix = "$Key="
+    $line = Get-Content -LiteralPath $cataloguePath | Where-Object { $_.StartsWith($prefix) } | Select-Object -First 1
+    if ($null -eq $line) {
+        Fail "missing packaging text key '$Key'"
+    }
+    return $line.Substring($prefix.Length)
+}
+
+function Expand-VersionText([string]$Template) {
+    return $Template.Replace("{version}", $Version)
+}
+
 $resolvedMsi = (Resolve-Path -LiteralPath $MsiPath).Path
-$displayName = "GEM $Version"
+$displayName = Expand-VersionText (Get-PackagingText "windows.displayName")
+$welcomeTitle = Expand-VersionText (Get-PackagingText "windows.welcomeTitle")
+$welcomeTitleText = "{\WixUI_Font_Title}$welcomeTitle"
+$launchAfterInstallText = Get-PackagingText "windows.launchAfterInstall"
 $installer = New-Object -ComObject WindowsInstaller.Installer
 $database = $installer.OpenDatabase($resolvedMsi, 0)
 
@@ -103,13 +120,19 @@ if ($null -eq $launchCheckbox) {
 Assert-Equal "launch checkbox value" "1" $launchCheckbox.Value
 
 $controls = Get-MsiRows $database 'SELECT `Dialog_`, `Control`, `Type`, `X`, `Y`, `Width`, `Height`, `Attributes`, `Property`, `Text`, `Control_Next` FROM `Control`' @("Dialog", "Control", "Type", "X", "Y", "Width", "Height", "Attributes", "Property", "Text", "Next")
+$welcomeTitleControl = $controls | Where-Object { $_.Dialog -eq "WelcomeDlg" -and $_.Control -eq "Title" } | Select-Object -First 1
+if ($null -eq $welcomeTitleControl) {
+    Fail "welcome title control missing from WelcomeDlg"
+}
+Assert-Equal "welcome title text" $welcomeTitleText $welcomeTitleControl.Text
+
 $launchControl = $controls | Where-Object { $_.Dialog -eq "ShortcutPromptDlg" -and $_.Control -eq "LaunchAfterInstall" } | Select-Object -First 1
 if ($null -eq $launchControl) {
     Fail "launch-after-install control missing from ShortcutPromptDlg"
 }
 Assert-Equal "launch checkbox type" "CheckBox" $launchControl.Type
 Assert-Equal "launch checkbox property" "GEM_LAUNCH_AFTER_INSTALL" $launchControl.Property
-Assert-Equal "launch checkbox text" "Open program after installation" $launchControl.Text
+Assert-Equal "launch checkbox text" $launchAfterInstallText $launchControl.Text
 Assert-Equal "launch checkbox next control" "Next" $launchControl.Next
 $startMenuControl = $controls | Where-Object { $_.Dialog -eq "ShortcutPromptDlg" -and $_.Control -eq "InstallStartMenuShortcut" } | Select-Object -First 1
 Assert-Equal "start menu checkbox next control" "LaunchAfterInstall" $startMenuControl.Next

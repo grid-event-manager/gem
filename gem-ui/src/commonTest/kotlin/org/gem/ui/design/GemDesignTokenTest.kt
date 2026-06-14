@@ -47,6 +47,7 @@ class GemDesignTokenTest {
         assertEquals(72.dp, spacing.secondLifeTimeMinWidth)
         assertEquals(62.dp, spacing.sessionStripMinHeight)
         assertEquals(16.dp, spacing.panelPadding)
+        assertEquals(14.dp, spacing.operationSpinnerSize)
         assertEquals(220.dp, spacing.scrollListMaxHeight)
         assertEquals(112.dp, spacing.modalActionMinWidth)
         assertEquals(112.dp, spacing.noticeBodyMinHeight)

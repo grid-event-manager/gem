@@ -129,7 +129,7 @@ private fun LoginOperationText(
             modifier = Modifier.fillMaxWidth(),
         ) {
             CircularProgressIndicator(
-                modifier = Modifier.size(GemTheme.spacing.statusPillMinHeight),
+                modifier = Modifier.size(GemTheme.spacing.operationSpinnerSize),
                 strokeWidth = GemTheme.spacing.borderWidth,
                 color = GemTheme.colors.primary,
             )

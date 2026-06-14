@@ -37,7 +37,7 @@ fun GemOperationModal(
                 verticalArrangement = Arrangement.spacedBy(GemTheme.spacing.panelPadding),
             ) {
                 CircularProgressIndicator(
-                    modifier = Modifier.size(GemTheme.spacing.statusPillMinHeight),
+                    modifier = Modifier.size(GemTheme.spacing.operationSpinnerSize),
                     strokeWidth = GemTheme.spacing.borderWidth,
                     color = GemTheme.colors.secondary,
                 )

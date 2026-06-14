@@ -1,6 +1,7 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.compose.desktop.application.tasks.AbstractJLinkTask
 import org.jetbrains.compose.desktop.application.tasks.AbstractJPackageTask
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.kotlin.jvm)
@@ -21,16 +22,27 @@ dependencies {
 val desktopPackageName = "gema"
 val desktopCommandName = "gema"
 val debPackageName = "gema"
-val desktopPackageDescription = "Grid Event Manager"
-val desktopPackageVersion = "0.1.28"
-val macPackageVersion = "1.0.28"
-val macApplicationDisplayName = "GEM"
+val desktopPackageVersion = "0.1.29"
+val macPackageVersion = "1.0.29"
+val packagingTextProperties = Properties().apply {
+    project.file("src/main/package/packaging-text.properties").inputStream().use { input ->
+        load(input)
+    }
+}
+fun packagingText(key: String): String =
+    packagingTextProperties.getProperty(key) ?: error("Missing packaging text key: $key")
+fun versionedPackagingText(key: String, version: String = desktopPackageVersion): String =
+    packagingText(key).replace("{version}", version)
+val desktopPackageDescription = packagingText("app.fullName")
+val macApplicationDisplayName = versionedPackagingText("mac.applicationName")
 val nativePackageName = if (System.getProperty("os.name").startsWith("Mac", ignoreCase = true)) {
     macApplicationDisplayName
 } else {
     desktopPackageName
 }
-val windowsDisplayName = "GEM $desktopPackageVersion"
+val windowsDisplayName = versionedPackagingText("windows.displayName")
+val windowsWelcomeTitle = versionedPackagingText("windows.welcomeTitle")
+val windowsLaunchAfterInstallText = packagingText("windows.launchAfterInstall")
 val rawDebArtifact = layout.buildDirectory.file(
     "compose/binaries/main/deb/${desktopPackageName}_${desktopPackageVersion}_amd64.deb",
 )
@@ -47,12 +59,64 @@ val dmgArtifact = layout.buildDirectory.file(
     "compose/binaries/main/dmg/${desktopPackageName}-${macPackageVersion}.dmg",
 )
 
+data class WindowsInstallerBitmapAssets(
+    val dialog: File,
+    val banner: File,
+)
+
 fun runPackageCommand(vararg command: String) {
     val exitCode = ProcessBuilder(*command)
         .inheritIO()
         .start()
         .waitFor()
     require(exitCode == 0) { "Package command failed ($exitCode): ${command.joinToString(" ")}" }
+}
+
+fun javaExecutable(command: String): String {
+    val suffix = if (System.getProperty("os.name").startsWith("Windows", ignoreCase = true)) ".exe" else ""
+    val javaHomeCommand = File(System.getProperty("java.home"))
+        .resolve("bin")
+        .resolve("$command$suffix")
+    return if (javaHomeCommand.isFile) javaHomeCommand.absolutePath else command
+}
+
+fun generateWindowsInstallerBitmapAssets(outputDir: File): WindowsInstallerBitmapAssets {
+    outputDir.mkdirs()
+    val classesDir = layout.buildDirectory.dir("tmp/windowsInstallerBitmapGeneratorClasses").get().asFile
+    delete(classesDir)
+    classesDir.mkdirs()
+    runPackageCommand(
+        javaExecutable("javac"),
+        "-d",
+        classesDir.absolutePath,
+        rootProject.file("tools/packaging/WindowsInstallerBitmapGenerator.java").absolutePath,
+    )
+    runPackageCommand(
+        javaExecutable("java"),
+        "-cp",
+        classesDir.absolutePath,
+        "org.gem.tools.packaging.WindowsInstallerBitmapGenerator",
+        project.file("src/main/package/icons/gem.svg").absolutePath,
+        project.file("src/main/package/packaging-visual.properties").absolutePath,
+        outputDir.absolutePath,
+    )
+    val dialogFile = outputDir.resolve("gem-installer-dialog.bmp")
+    val bannerFile = outputDir.resolve("gem-installer-banner.bmp")
+    require(dialogFile.isFile) { "Installer dialog bitmap was not generated: ${dialogFile.absolutePath}" }
+    require(bannerFile.isFile) { "Installer banner bitmap was not generated: ${bannerFile.absolutePath}" }
+    return WindowsInstallerBitmapAssets(dialog = dialogFile, banner = bannerFile)
+}
+
+tasks.register("generateWindowsInstallerBitmaps") {
+    group = "verification"
+    description = "Generates the Windows MSI dialog and banner bitmaps from the central package mark."
+    doLast {
+        val assets = generateWindowsInstallerBitmapAssets(
+            layout.buildDirectory.dir("generated/windowsInstallerBitmaps").get().asFile,
+        )
+        logger.lifecycle("Generated ${assets.dialog.absolutePath}")
+        logger.lifecycle("Generated ${assets.banner.absolutePath}")
+    }
 }
 
 fun rewriteDebControl(workDir: File) {
@@ -101,6 +165,73 @@ fun normalizeMacDmgArtifact() {
     dmgFile.delete()
     require(rawDmgFile.renameTo(dmgFile)) {
         "Unable to normalize DMG artifact ${rawDmgFile.absolutePath} to ${dmgFile.absolutePath}"
+    }
+}
+
+fun replaceMacDmgVolumeIcon() {
+    if (!System.getProperty("os.name").startsWith("Mac", ignoreCase = true)) {
+        return
+    }
+
+    val sourceDmg = dmgArtifact.get().asFile
+    require(sourceDmg.isFile) { "Expected DMG artifact missing: ${sourceDmg.absolutePath}" }
+
+    val workDir = layout.buildDirectory.dir("tmp/macDmgVolumeIcon").get().asFile
+    delete(workDir)
+    workDir.mkdirs()
+
+    val writableDmg = workDir.resolve("gema-${macPackageVersion}-rw.dmg")
+    val finalDmg = workDir.resolve("gema-${macPackageVersion}-final.dmg")
+    val mountPoint = workDir.resolve("mount")
+    mountPoint.mkdirs()
+
+    runPackageCommand(
+        "hdiutil",
+        "convert",
+        sourceDmg.absolutePath,
+        "-format",
+        "UDRW",
+        "-o",
+        writableDmg.absolutePath,
+    )
+
+    var mounted = false
+    try {
+        runPackageCommand(
+            "hdiutil",
+            "attach",
+            writableDmg.absolutePath,
+            "-mountpoint",
+            mountPoint.absolutePath,
+            "-nobrowse",
+            "-readwrite",
+        )
+        mounted = true
+
+        project.file("src/main/package/icons/gem.icns")
+            .copyTo(mountPoint.resolve(".VolumeIcon.icns"), overwrite = true)
+        runPackageCommand("SetFile", "-a", "V", mountPoint.resolve(".VolumeIcon.icns").absolutePath)
+        runPackageCommand("SetFile", "-a", "C", mountPoint.absolutePath)
+    } finally {
+        if (mounted) {
+            runPackageCommand("hdiutil", "detach", mountPoint.absolutePath)
+        }
+    }
+
+    runPackageCommand(
+        "hdiutil",
+        "convert",
+        writableDmg.absolutePath,
+        "-format",
+        "UDZO",
+        "-imagekey",
+        "zlib-level=9",
+        "-o",
+        finalDmg.absolutePath,
+    )
+    sourceDmg.delete()
+    require(finalDmg.renameTo(sourceDmg)) {
+        "Unable to replace DMG artifact ${sourceDmg.absolutePath} with icon-normalized image"
     }
 }
 
@@ -176,19 +307,25 @@ tasks.configureEach {
             }
             val msiFile = msiArtifact.get().asFile
             require(msiFile.isFile) { "Expected MSI artifact missing: ${msiFile.absolutePath}" }
+            val installerBitmaps = generateWindowsInstallerBitmapAssets(
+                layout.buildDirectory.dir("tmp/windowsInstallerBitmaps").get().asFile,
+            )
             runPackageCommand(
                 "cscript.exe",
                 "//NoLogo",
                 project.file("src/main/package/windows/patch-msi-display.vbs").absolutePath,
                 msiFile.absolutePath,
                 windowsDisplayName,
+                windowsWelcomeTitle,
+                windowsLaunchAfterInstallText,
                 project.file("src/main/package/icons/gem.ico").absolutePath,
-                project.file("src/main/package/windows/assets/gem-installer-dialog.bmp").absolutePath,
-                project.file("src/main/package/windows/assets/gem-installer-banner.bmp").absolutePath,
+                installerBitmaps.dialog.absolutePath,
+                installerBitmaps.banner.absolutePath,
             )
         }
         "packageDmg" -> doLast {
             normalizeMacDmgArtifact()
+            replaceMacDmgVolumeIcon()
         }
     }
 }

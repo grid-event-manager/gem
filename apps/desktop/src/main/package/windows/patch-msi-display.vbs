@@ -2,24 +2,38 @@ Option Explicit
 
 Const MsiOpenDatabaseModeTransact = 1
 
-If WScript.Arguments.Count <> 5 Then
-    WScript.Echo "Usage: patch-msi-display.vbs <msi-path> <display-name> <icon-path> <dialog-bmp-path> <banner-bmp-path>"
+If WScript.Arguments.Count <> 7 Then
+    WScript.Echo "Usage: patch-msi-display.vbs <msi-path> <display-name> <welcome-title> <launch-after-install-text> <icon-path> <dialog-bmp-path> <banner-bmp-path>"
     WScript.Quit 64
 End If
 
 Dim msiPath
 Dim displayName
+Dim welcomeTitle
+Dim launchAfterInstallText
 Dim iconPath
 Dim dialogBitmapPath
 Dim bannerBitmapPath
+Dim welcomeTitleText
 msiPath = WScript.Arguments(0)
 displayName = WScript.Arguments(1)
-iconPath = WScript.Arguments(2)
-dialogBitmapPath = WScript.Arguments(3)
-bannerBitmapPath = WScript.Arguments(4)
+welcomeTitle = WScript.Arguments(2)
+launchAfterInstallText = WScript.Arguments(3)
+iconPath = WScript.Arguments(4)
+dialogBitmapPath = WScript.Arguments(5)
+bannerBitmapPath = WScript.Arguments(6)
+welcomeTitleText = "{\WixUI_Font_Title}" & welcomeTitle
 
 If InStr(displayName, "'") > 0 Then
     WScript.Echo "Display name must not contain a single quote."
+    WScript.Quit 65
+End If
+If InStr(welcomeTitle, "'") > 0 Then
+    WScript.Echo "Welcome title must not contain a single quote."
+    WScript.Quit 65
+End If
+If InStr(launchAfterInstallText, "'") > 0 Then
+    WScript.Echo "Launch-after-install text must not contain a single quote."
     WScript.Quit 65
 End If
 
@@ -47,6 +61,7 @@ UpsertIcon installer, database, "JpARPPRODUCTICON", iconPath
 UpsertBinary installer, database, "WixUI_Bmp_Dialog", dialogBitmapPath
 UpsertBinary installer, database, "WixUI_Bmp_Banner", bannerBitmapPath
 ExecuteSql database, "UPDATE `Property` SET `Value`='" & displayName & "' WHERE `Property`='ProductName'"
+ExecuteSql database, "UPDATE `Control` SET `Text`='" & welcomeTitleText & "' WHERE `Dialog_`='WelcomeDlg' AND `Control`='Title'"
 ExecuteSql database, "UPDATE `Property` SET `Value`='JpARPPRODUCTICON' WHERE `Property`='ARPPRODUCTICON'"
 ExecuteSql database, "DELETE FROM `Property` WHERE `Property`='GEM_LAUNCH_AFTER_INSTALL'"
 ExecuteSql database, "DELETE FROM `Property` WHERE `Property`='WixShellExecTarget'"
@@ -62,7 +77,7 @@ ExecuteSql database, "UPDATE `Shortcut` SET " & _
 ExecuteSql database, "DELETE FROM `CheckBox` WHERE `Property`='GEM_LAUNCH_AFTER_INSTALL'"
 ExecuteSql database, "INSERT INTO `CheckBox` (`Property`, `Value`) VALUES ('GEM_LAUNCH_AFTER_INSTALL', '1')"
 ExecuteSql database, "DELETE FROM `Control` WHERE `Dialog_`='ShortcutPromptDlg' AND `Control`='LaunchAfterInstall'"
-ExecuteSql database, "INSERT INTO `Control` (`Dialog_`, `Control`, `Type`, `X`, `Y`, `Width`, `Height`, `Attributes`, `Property`, `Text`, `Control_Next`) VALUES ('ShortcutPromptDlg', 'LaunchAfterInstall', 'CheckBox', 20, 210, 240, 17, 3, 'GEM_LAUNCH_AFTER_INSTALL', 'Open program after installation', 'Next')"
+ExecuteSql database, "INSERT INTO `Control` (`Dialog_`, `Control`, `Type`, `X`, `Y`, `Width`, `Height`, `Attributes`, `Property`, `Text`, `Control_Next`) VALUES ('ShortcutPromptDlg', 'LaunchAfterInstall', 'CheckBox', 20, 210, 240, 17, 3, 'GEM_LAUNCH_AFTER_INSTALL', '" & launchAfterInstallText & "', 'Next')"
 ExecuteSql database, "UPDATE `Control` SET `Control_Next`='LaunchAfterInstall' WHERE `Dialog_`='ShortcutPromptDlg' AND `Control`='InstallStartMenuShortcut'"
 ExecuteSql database, "DELETE FROM `CustomAction` WHERE `Action`='GemLaunchAfterInstall'"
 ExecuteSql database, "INSERT INTO `CustomAction` (`Action`, `Type`, `Source`, `Target`) VALUES ('GemLaunchAfterInstall', 65, 'WixCA', 'WixShellExec')"
