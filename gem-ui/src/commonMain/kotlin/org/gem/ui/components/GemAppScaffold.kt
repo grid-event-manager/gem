@@ -34,10 +34,12 @@ fun GemAppScaffold(
         contentAlignment = Alignment.TopCenter,
     ) {
         Column(
-            modifier = Modifier
-                .widthIn(max = GemTheme.spacing.shellMaxWidth)
-                .fillMaxHeight()
-                .fillMaxWidth()
+            modifier = GemPlatformInsets(
+                Modifier
+                    .widthIn(max = GemTheme.spacing.shellMaxWidth)
+                    .fillMaxHeight()
+                    .fillMaxWidth(),
+            )
                 .padding(GemTheme.spacing.pagePadding),
             verticalArrangement = Arrangement.spacedBy(GemTheme.spacing.rowGap),
         ) {
