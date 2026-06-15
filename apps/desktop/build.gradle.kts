@@ -28,8 +28,8 @@ sourceSets {
 val desktopPackageName = "gema"
 val desktopCommandName = "gema"
 val debPackageName = "gema"
-val desktopPackageVersion = "0.1.32"
-val macPackageVersion = "1.0.32"
+val desktopPackageVersion = "0.1.33"
+val macPackageVersion = "1.0.33"
 val packagingTextProperties = Properties().apply {
     project.file("src/main/package/packaging-text.properties").inputStream().use { input ->
         load(input)
@@ -40,6 +40,7 @@ fun packagingText(key: String): String =
 fun versionedPackagingText(key: String, version: String = desktopPackageVersion): String =
     packagingText(key).replace("{version}", version)
 val desktopPackageDescription = packagingText("app.fullName")
+val launcherDisplayName = packagingText("launcher.displayName")
 val macApplicationBundleName = packagingText("mac.bundleName")
 val nativePackageName = if (System.getProperty("os.name").startsWith("Mac", ignoreCase = true)) {
     macApplicationBundleName
@@ -153,7 +154,7 @@ fun rewriteLinuxDesktopEntry(workDir: File) {
         ?: return
     val rewritten = desktopFile.readLines().map { line ->
         when {
-            line.startsWith("Name=") -> "Name=$windowsDisplayName"
+            line.startsWith("Name=") -> "Name=$launcherDisplayName"
             line.startsWith("Comment=") -> "Comment=$desktopPackageDescription"
             line.startsWith("Exec=") -> "Exec=/usr/bin/$desktopCommandName"
             line.startsWith("Icon=") -> "Icon=/opt/$desktopPackageName/lib/$desktopPackageName.png"
@@ -378,6 +379,7 @@ tasks.configureEach {
                 project.file("src/main/package/windows/patch-msi-display.vbs").absolutePath,
                 msiFile.absolutePath,
                 windowsDisplayName,
+                launcherDisplayName,
                 windowsWelcomeTitle,
                 windowsLaunchAfterInstallText,
                 project.file("src/main/package/icons/gem.ico").absolutePath,

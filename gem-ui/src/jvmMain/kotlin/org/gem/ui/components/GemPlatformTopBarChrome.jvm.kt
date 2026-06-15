@@ -68,34 +68,39 @@ internal actual fun GemPlatformTopBarChrome(
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            Text(
-                text = secondLifeTimeDisplay.label(textCatalogue),
-                modifier = Modifier
-                    .widthIn(min = GemTheme.spacing.secondLifeTimeMinWidth)
-                    .testTag(GemTestTags.SecondLifeTime),
-                style = GemTheme.typeScale.smallLabel,
-                color = GemTheme.colors.topBarClockInk,
-                textAlign = TextAlign.End,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Box {
-                GemTopBarIconButton(
-                    onClick = onMenuClick,
-                    contentDescription = textCatalogue.text(GemTextKey.Menu),
-                    modifier = Modifier.testTag(GemTestTags.MenuButton),
-                ) {
-                    GemMenuIcon(tint = GemTheme.colors.topBarMenuInk)
-                }
-                GemOverflowMenu(
-                    expanded = menuOpen,
-                    logoutEnabled = activeAccountLabel.isNotBlank(),
-                    textCatalogue = textCatalogue,
-                    onDismiss = onMenuDismiss,
-                    onSettingsClick = onSettingsClick,
-                    onLogoutClick = onLogoutClick,
-                    onExitClick = onExitClick,
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(GemTheme.spacing.secondLifeTimeMenuGap),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = secondLifeTimeDisplay.label(textCatalogue),
+                    modifier = Modifier
+                        .widthIn(min = GemTheme.spacing.secondLifeTimeMinWidth)
+                        .testTag(GemTestTags.SecondLifeTime),
+                    style = GemTheme.typeScale.smallLabel,
+                    color = GemTheme.colors.topBarClockInk,
+                    textAlign = TextAlign.End,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
+                Box {
+                    GemTopBarIconButton(
+                        onClick = onMenuClick,
+                        contentDescription = textCatalogue.text(GemTextKey.Menu),
+                        modifier = Modifier.testTag(GemTestTags.MenuButton),
+                    ) {
+                        GemMenuIcon(tint = GemTheme.colors.topBarMenuInk)
+                    }
+                    GemOverflowMenu(
+                        expanded = menuOpen,
+                        logoutEnabled = activeAccountLabel.isNotBlank(),
+                        textCatalogue = textCatalogue,
+                        onDismiss = onMenuDismiss,
+                        onSettingsClick = onSettingsClick,
+                        onLogoutClick = onLogoutClick,
+                        onExitClick = onExitClick,
+                    )
+                }
             }
         }
     }

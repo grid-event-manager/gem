@@ -44,6 +44,7 @@ class ShellComponentStateTest {
 
         assertEquals(40.dp, spacing.brandLogoSize)
         assertEquals(72.dp, spacing.secondLifeTimeMinWidth)
+        assertEquals(8.dp, spacing.secondLifeTimeMenuGap)
         assertEquals(18.dp, spacing.backIconSize)
         assertEquals(30.dp, spacing.menuItemMinHeight)
         assertEquals(12.dp, spacing.menuItemHorizontalPadding)

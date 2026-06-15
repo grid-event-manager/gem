@@ -79,6 +79,7 @@ function Assert-SequenceRow($Rows, [string]$TableName, [string]$Action, [string]
 
 $resolvedMsi = (Resolve-Path -LiteralPath $MsiPath).Path
 $displayName = Expand-VersionText (Get-PackagingText "windows.displayName")
+$shortcutTitle = Get-PackagingText "launcher.displayName"
 $welcomeTitle = Expand-VersionText (Get-PackagingText "windows.welcomeTitle")
 $welcomeTitleText = "{\WixUI_Font_Title}$welcomeTitle"
 $launchAfterInstallText = Get-PackagingText "windows.launchAfterInstall"
@@ -125,11 +126,11 @@ if (-not ($binaries | Where-Object { $_.Name -eq "GemRunningInstanceCheckScript"
 }
 
 $shortcuts = Get-MsiRows $database 'SELECT `Shortcut`, `Name`, `Target`, `Arguments`, `Icon_`, `WkDir` FROM `Shortcut`' @("Shortcut", "Name", "Target", "Arguments", "Icon", "WorkingDirectory")
-$visibleShortcuts = $shortcuts | Where-Object { $_.Name -eq $displayName }
+$visibleShortcuts = $shortcuts | Where-Object { $_.Name -eq $shortcutTitle }
 if ($visibleShortcuts.Count -lt 1) {
-    Fail "no visible shortcut named '$displayName'"
+    Fail "no visible shortcut named '$shortcutTitle'"
 }
-if ($shortcuts | Where-Object { $_.Name -eq "gem" -or $_.Name -eq "gema" -or $_.Name -eq "GEMA" }) {
+if ($shortcuts | Where-Object { $_.Name -eq "gem" -or $_.Name -eq "gema" -or $_.Name -eq "GEMA" -or $_.Name -eq $displayName }) {
     Fail "visible shortcut still uses raw technical name"
 }
 foreach ($shortcut in $visibleShortcuts) {
@@ -252,4 +253,4 @@ if ($launcherText -notmatch "app\\resources\\gem-windows-launch\.args") {
     Fail "launch wrapper missing argfile route"
 }
 
-Write-Output "MSI proof passed: $displayName"
+Write-Output "MSI proof passed: $displayName / shortcut $shortcutTitle"

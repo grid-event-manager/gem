@@ -1,5 +1,6 @@
 package org.gem.ui.components
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -68,7 +69,10 @@ internal actual fun GemPlatformTopBarChrome(
             }
         },
         actions = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(GemTheme.spacing.secondLifeTimeMenuGap),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 Text(
                     text = secondLifeTimeDisplay.label(textCatalogue),
                     modifier = Modifier

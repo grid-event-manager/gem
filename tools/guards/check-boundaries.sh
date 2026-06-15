@@ -79,7 +79,7 @@ THEME_PROTOTYPE_RUNTIME_PATTERN='WebView|android\.webkit|index-multi|<html|style
 THEME_LOGO_OWNER_PATTERN='fun[[:space:]]+GemBrandLogoIcon'
 THEME_TOGGLE_OWNER_PATTERN='fun[[:space:]]+ThemeModeToggle'
 THEME_PALETTE_OWNER_PATTERN='object[[:space:]]+HaccuGemPaletteProvider'
-THEME_ANDROID_LABEL_PATTERN='manifestPlaceholders\["appLabel"\][[:space:]]*=[[:space:]]*"Grid Event Manager"'
+THEME_ANDROID_LABEL_PATTERN='manifestPlaceholders\["appLabel"\][[:space:]]*=[[:space:]]*"GEM Event Manager"'
 THEME_DESKTOP_VENDOR_PATTERN='vendor[[:space:]]*=[[:space:]]*"ANVLL"'
 THEME_ROOT_PROJECT_LABEL_PATTERN='rootProject\.name\.replaceFirstChar'
 ARCHITECTURE_GENERIC_OWNER_PATTERN='(^|/)(LoginCompliance|NoticeCompliance|.*(Manager|Helper|Utils|Common))\.kt$'
@@ -2388,7 +2388,7 @@ check_pattern_matches \
 check_pattern_matches \
     "self-test theme Android label pattern" \
     "$THEME_ANDROID_LABEL_PATTERN" \
-    'manifestPlaceholders["appLabel"] = "Grid Event Manager"'
+    'manifestPlaceholders["appLabel"] = "GEM Event Manager"'
 
 check_pattern_matches \
     "self-test theme desktop vendor pattern" \

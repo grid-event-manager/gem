@@ -2,13 +2,14 @@ Option Explicit
 
 Const MsiOpenDatabaseModeTransact = 1
 
-If WScript.Arguments.Count <> 9 Then
-    WScript.Echo "Usage: patch-msi-display.vbs <msi-path> <display-name> <welcome-title> <launch-after-install-text> <icon-path> <dialog-bmp-path> <banner-bmp-path> <downgrade-message> <running-instance-message>"
+If WScript.Arguments.Count <> 10 Then
+    WScript.Echo "Usage: patch-msi-display.vbs <msi-path> <display-name> <shortcut-title> <welcome-title> <launch-after-install-text> <icon-path> <dialog-bmp-path> <banner-bmp-path> <downgrade-message> <running-instance-message>"
     WScript.Quit 64
 End If
 
 Dim msiPath
 Dim displayName
+Dim shortcutTitle
 Dim welcomeTitle
 Dim launchAfterInstallText
 Dim iconPath
@@ -19,17 +20,22 @@ Dim runningInstanceMessage
 Dim welcomeTitleText
 msiPath = WScript.Arguments(0)
 displayName = WScript.Arguments(1)
-welcomeTitle = WScript.Arguments(2)
-launchAfterInstallText = WScript.Arguments(3)
-iconPath = WScript.Arguments(4)
-dialogBitmapPath = WScript.Arguments(5)
-bannerBitmapPath = WScript.Arguments(6)
-downgradeMessage = WScript.Arguments(7)
-runningInstanceMessage = WScript.Arguments(8)
+shortcutTitle = WScript.Arguments(2)
+welcomeTitle = WScript.Arguments(3)
+launchAfterInstallText = WScript.Arguments(4)
+iconPath = WScript.Arguments(5)
+dialogBitmapPath = WScript.Arguments(6)
+bannerBitmapPath = WScript.Arguments(7)
+downgradeMessage = WScript.Arguments(8)
+runningInstanceMessage = WScript.Arguments(9)
 welcomeTitleText = "{\WixUI_Font_Title}" & welcomeTitle
 
 If InStr(displayName, "'") > 0 Then
     WScript.Echo "Display name must not contain a single quote."
+    WScript.Quit 65
+End If
+If InStr(shortcutTitle, "'") > 0 Then
+    WScript.Echo "Shortcut title must not contain a single quote."
     WScript.Quit 65
 End If
 If InStr(welcomeTitle, "'") > 0 Then
@@ -88,13 +94,13 @@ ExecuteSql database, "DELETE FROM `Property` WHERE `Property`='GEM_LAUNCH_AFTER_
 ExecuteSql database, "DELETE FROM `Property` WHERE `Property`='WixShellExecTarget'"
 ExecuteSql database, "INSERT INTO `Property` (`Property`, `Value`) VALUES ('WixShellExecTarget', '[INSTALLDIR]app\resources\gem-windows-launch.vbs')"
 ExecuteSql database, "UPDATE `Shortcut` SET " & _
-    "`Name`='" & displayName & "', " & _
+    "`Name`='" & shortcutTitle & "', " & _
     "`Target`='[INSTALLDIR]app\resources\gem-windows-launch.vbs', " & _
     "`Arguments`='', " & _
     "`Icon_`='JpARPPRODUCTICON', " & _
     "`IconIndex`=0, " & _
     "`WkDir`='INSTALLDIR' " & _
-    "WHERE `Name`='gem' OR `Name`='gema' OR `Name`='" & displayName & "'"
+    "WHERE `Name`='gem' OR `Name`='gema' OR `Name`='" & displayName & "' OR `Name`='" & shortcutTitle & "'"
 ExecuteSql database, "DELETE FROM `CheckBox` WHERE `Property`='GEM_LAUNCH_AFTER_INSTALL'"
 ExecuteSql database, "INSERT INTO `CheckBox` (`Property`, `Value`) VALUES ('GEM_LAUNCH_AFTER_INSTALL', '1')"
 ExecuteSql database, "DELETE FROM `Control` WHERE `Dialog_`='ShortcutPromptDlg' AND `Control`='LaunchAfterInstall'"

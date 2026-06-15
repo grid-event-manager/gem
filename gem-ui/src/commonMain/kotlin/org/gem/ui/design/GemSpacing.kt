@@ -18,6 +18,7 @@ data class GemSpacing(
     val topBarMinHeight: Dp = 72.dp,
     val brandLogoSize: Dp = 40.dp,
     val secondLifeTimeMinWidth: Dp = 72.dp,
+    val secondLifeTimeMenuGap: Dp = 8.dp,
     val sessionStripMinHeight: Dp = 62.dp,
     val panelPadding: Dp = 16.dp,
     val fieldGap: Dp = 8.dp,
