@@ -30,7 +30,7 @@ class GemAndroidManifestPolicyTest {
             "UiRoute",
             "GemAppController",
             "runLogoutWorkflow",
-            "backFromSettings",
+            "backFromSection",
             "BackHandler",
             "onBackPressed",
         )

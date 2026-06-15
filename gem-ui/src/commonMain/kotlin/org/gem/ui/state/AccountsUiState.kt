@@ -4,7 +4,7 @@ import org.gem.core.domain.AccountProfileId
 import org.gem.core.services.GemCredentialRuntimeState
 import org.gem.ui.text.GemTextKey
 
-data class SettingsUiState(
+data class AccountsUiState(
     val credentialRuntime: CredentialRuntimeUiState,
     val savedLoginOptions: List<SavedLoginOptionUiState> = emptyList(),
     val selectedProfileId: AccountProfileId? = null,
@@ -30,7 +30,7 @@ data class SettingsUiState(
         get() = passwordEnabled && passwordDraft.isNotBlank()
 
     companion object {
-        fun fromCredentialRuntime(runtimeState: GemCredentialRuntimeState): SettingsUiState =
-            SettingsUiState(credentialRuntime = CredentialRuntimeUiState.from(runtimeState))
+        fun fromCredentialRuntime(runtimeState: GemCredentialRuntimeState): AccountsUiState =
+            AccountsUiState(credentialRuntime = CredentialRuntimeUiState.from(runtimeState))
     }
 }

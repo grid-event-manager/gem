@@ -18,6 +18,9 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import org.gem.ui.design.GemTheme
+import org.gem.ui.navigation.AppMenuCommand
+import org.gem.ui.navigation.AppMenuEntry
+import org.gem.ui.state.UiRoute
 import org.gem.ui.testtags.GemTestTags
 import org.gem.ui.text.GemTextCatalogue
 import org.gem.ui.text.GemTextKey
@@ -28,12 +31,12 @@ internal actual fun GemPlatformTopBarChrome(
     activeAccountLabel: String,
     secondLifeTimeDisplay: SecondLifeTimeDisplay,
     menuOpen: Boolean,
+    menuEntries: List<AppMenuEntry>,
     textCatalogue: GemTextCatalogue,
     onMenuClick: () -> Unit,
     onMenuDismiss: () -> Unit,
-    onSettingsClick: () -> Unit,
-    onLogoutClick: () -> Unit,
-    onExitClick: () -> Unit,
+    onMenuSectionSelected: (UiRoute) -> Unit,
+    onMenuCommandSelected: (AppMenuCommand) -> Unit,
     modifier: Modifier,
 ) {
     Surface(
@@ -93,12 +96,11 @@ internal actual fun GemPlatformTopBarChrome(
                     }
                     GemOverflowMenu(
                         expanded = menuOpen,
-                        logoutEnabled = activeAccountLabel.isNotBlank(),
+                        menuEntries = menuEntries,
                         textCatalogue = textCatalogue,
                         onDismiss = onMenuDismiss,
-                        onSettingsClick = onSettingsClick,
-                        onLogoutClick = onLogoutClick,
-                        onExitClick = onExitClick,
+                        onMenuSectionSelected = onMenuSectionSelected,
+                        onMenuCommandSelected = onMenuCommandSelected,
                     )
                 }
             }

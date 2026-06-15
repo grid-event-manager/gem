@@ -28,17 +28,17 @@ class UiStateInitialShapeTest {
     }
 
     @Test
-    fun loginAndSettingsStateProjectCredentialRuntimeWithoutStoringService() {
+    fun loginAndAccountsStateProjectCredentialRuntimeWithoutStoringService() {
         val runtime = FakeGemUiRuntime.ready()
         val readyState = runtime.credentialRuntimeState as GemCredentialRuntimeReady
 
         val login = LoginUiState.fromCredentialRuntime(readyState)
-        val settings = SettingsUiState.fromCredentialRuntime(readyState)
+        val accounts = AccountsUiState.fromCredentialRuntime(readyState)
 
         assertEquals(CredentialRuntimeUiStatus.READY, login.credentialRuntime.status)
         assertTrue(login.credentialRuntime.ready)
-        assertEquals(CredentialRuntimeUiStatus.READY, settings.credentialRuntime.status)
-        assertTrue(settings.credentialRuntime.ready)
+        assertEquals(CredentialRuntimeUiStatus.READY, accounts.credentialRuntime.status)
+        assertTrue(accounts.credentialRuntime.ready)
     }
 
     @Test
@@ -55,16 +55,16 @@ class UiStateInitialShapeTest {
     fun routeLocalStateStartsUnselectedAndCollapsed() {
         val profileId = AccountProfileId("profile:v1:test")
         val login = LoginUiState.fromCredentialRuntime(FakeGemUiRuntime.ready().credentialRuntimeState)
-        val settings = SettingsUiState.fromCredentialRuntime(FakeGemUiRuntime.ready().credentialRuntimeState)
+        val accounts = AccountsUiState.fromCredentialRuntime(FakeGemUiRuntime.ready().credentialRuntimeState)
 
         assertNull(login.selectedProfileId)
         assertEquals("", login.usernameDraft)
         assertFalse(login.passwordEnabled)
         assertFalse(login.loginEnabled)
         assertFalse(login.operation.inFlight)
-        assertEquals(emptySet(), settings.selectedDeleteProfileIds)
-        assertFalse(settings.confirmDeleteOpen)
-        assertFalse(settings.copy(selectedDeleteProfileIds = setOf(profileId)).confirmDeleteOpen)
+        assertEquals(emptySet(), accounts.selectedDeleteProfileIds)
+        assertFalse(accounts.confirmDeleteOpen)
+        assertFalse(accounts.copy(selectedDeleteProfileIds = setOf(profileId)).confirmDeleteOpen)
     }
 
     @Test

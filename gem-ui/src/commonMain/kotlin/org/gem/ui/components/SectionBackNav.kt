@@ -18,18 +18,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import org.gem.ui.design.GemTheme
-import org.gem.ui.testtags.GemTestTags
 
 @Composable
-fun SettingsBackNav(
+fun SectionBackNav(
     text: String,
     onBack: () -> Unit,
-    themeChecked: Boolean,
-    themeEnabled: Boolean,
-    lightText: String,
-    darkText: String,
-    onThemeCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
+    testTag: String? = null,
 ) {
     val backInteraction = remember { MutableInteractionSource() }
     val backHovered by backInteraction.collectIsHoveredAsState()
@@ -43,9 +38,10 @@ fun SettingsBackNav(
             .fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(GemTheme.spacing.rowGap),
     ) {
+        val testTagModifier = testTag?.let { Modifier.testTag(it) } ?: Modifier
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Row(
@@ -57,7 +53,7 @@ fun SettingsBackNav(
                         role = Role.Button,
                         onClick = onBack,
                     )
-                    .testTag(GemTestTags.SettingsBack),
+                    .then(testTagModifier),
                 horizontalArrangement = Arrangement.spacedBy(GemTheme.spacing.fieldGap),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -68,13 +64,6 @@ fun SettingsBackNav(
                     style = GemTheme.typeScale.smallLabel,
                 )
             }
-            ThemeModeToggle(
-                checked = themeChecked,
-                enabled = themeEnabled,
-                lightLabel = lightText,
-                darkLabel = darkText,
-                onCheckedChange = onThemeCheckedChange,
-            )
         }
         HorizontalDivider(
             color = GemTheme.colors.line,

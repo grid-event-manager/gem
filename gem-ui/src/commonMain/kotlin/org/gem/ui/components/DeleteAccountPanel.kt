@@ -7,14 +7,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import org.gem.core.domain.AccountProfileId
 import org.gem.ui.design.GemTheme
-import org.gem.ui.state.SettingsUiState
+import org.gem.ui.state.AccountsUiState
 import org.gem.ui.testtags.GemTestTags
 import org.gem.ui.text.GemTextCatalogue
 import org.gem.ui.text.GemTextKey
 
 @Composable
 fun DeleteAccountPanel(
-    state: SettingsUiState,
+    state: AccountsUiState,
     textCatalogue: GemTextCatalogue,
     onAction: () -> Unit,
     onAccountSelected: (AccountProfileId, Boolean) -> Unit,

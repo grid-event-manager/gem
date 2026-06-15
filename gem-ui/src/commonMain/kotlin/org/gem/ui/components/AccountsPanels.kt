@@ -7,14 +7,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import org.gem.core.domain.AccountProfileId
 import org.gem.ui.design.GemTheme
-import org.gem.ui.state.SettingsUiState
+import org.gem.ui.state.AccountsUiState
 import org.gem.ui.testtags.GemTestTags
 import org.gem.ui.text.GemTextCatalogue
 import org.gem.ui.text.GemTextKey
 
 @Composable
-fun SettingsEditAccountPanel(
-    state: SettingsUiState,
+fun AccountsEditAccountPanel(
+    state: AccountsUiState,
     textCatalogue: GemTextCatalogue,
     onToggle: () -> Unit,
     onSavedAccountSelected: (AccountProfileId?) -> Unit,
@@ -30,7 +30,7 @@ fun SettingsEditAccountPanel(
             modifier = Modifier.fillMaxWidth(),
         )
         if (state.editAccountExpanded) {
-            SettingsErrorText(state)
+            AccountsErrorText(state)
             SavedLoginDropdown(
                 selectedProfileId = state.selectedProfileId,
                 options = state.savedLoginOptions,
@@ -60,8 +60,8 @@ fun SettingsEditAccountPanel(
 }
 
 @Composable
-fun SettingsAddAccountPanel(
-    state: SettingsUiState,
+fun AccountsAddAccountPanel(
+    state: AccountsUiState,
     textCatalogue: GemTextCatalogue,
     onToggle: () -> Unit,
     onUsernameChanged: (String) -> Unit,
@@ -88,7 +88,7 @@ fun SettingsAddAccountPanel(
             )
         }
         if (state.addAccountExpanded) {
-            SettingsErrorText(state)
+            AccountsErrorText(state)
             GemTextField(
                 label = textCatalogue.text(GemTextKey.Username),
                 value = state.addUsernameDraft,
@@ -115,7 +115,7 @@ fun SettingsAddAccountPanel(
 }
 
 @Composable
-private fun SettingsErrorText(state: SettingsUiState) {
+private fun AccountsErrorText(state: AccountsUiState) {
     val message = state.errorMessage
     if (message != null) {
         Text(

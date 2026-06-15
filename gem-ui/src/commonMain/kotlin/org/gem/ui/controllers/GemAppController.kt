@@ -1,6 +1,7 @@
 package org.gem.ui.controllers
 
 import org.gem.ui.runtime.GemUiRuntime
+import org.gem.ui.navigation.SectionBackPolicy
 import org.gem.ui.state.AppUiState
 import org.gem.ui.state.SendFooterUiState
 import org.gem.ui.state.SessionStripUiState
@@ -17,8 +18,8 @@ class GemAppController(
     fun closeMenu(): GemAppController =
         copy(state.copy(menuOpen = false))
 
-    fun openSettings(): GemAppController =
-        copy(state.copy(route = UiRoute.Settings, menuOpen = false))
+    fun openSection(route: UiRoute): GemAppController =
+        copy(state.copy(route = route, menuOpen = false))
 
     fun beginLogout(): GemAppController =
         copy(
@@ -30,47 +31,37 @@ class GemAppController(
 
     fun logout(): GemAppController {
         state.session?.let(runtime.sessionService::logout)
-        return copy(
-            state.copy(
-                route = UiRoute.Login,
-                menuOpen = false,
-                activeAccountLabel = "",
-                sessionStrip = SessionStripUiState(
-                    visible = false,
-                    statusKey = GemTextKey.Offline,
-                    online = false,
-                    locationLabel = "",
-                ),
-                sendFooter = SendFooterUiState(visible = false, statusTextKey = null),
-                operationMessageKey = GemTextKey.BlankStatus,
-                blockingOperationMessageKey = null,
-                session = null,
-            ),
-        )
+        return copy(clearedLoginState())
     }
 
-    fun backFromSettings(): GemAppController {
-        if (state.session == null) {
-            return copy(
-                state.copy(
-                    route = UiRoute.Login,
-                    menuOpen = false,
-                    activeAccountLabel = "",
-                    sessionStrip = SessionStripUiState(
-                        visible = false,
-                        statusKey = GemTextKey.Offline,
-                        online = false,
-                        locationLabel = "",
-                    ),
-                    sendFooter = SendFooterUiState(visible = false, statusTextKey = null),
-                    operationMessageKey = GemTextKey.BlankStatus,
-                    blockingOperationMessageKey = null,
-                    session = null,
-                ),
-            )
+    fun backFromSection(policy: SectionBackPolicy): GemAppController =
+        when (policy) {
+            SectionBackPolicy.ReturnToSessionOrLogin -> {
+                if (state.session == null) {
+                    copy(clearedLoginState())
+                } else {
+                    copy(state.copy(route = UiRoute.Compose, menuOpen = false))
+                }
+            }
+            SectionBackPolicy.Root -> throw IllegalArgumentException("Root section back is not supported")
         }
-        return copy(state.copy(route = UiRoute.Compose, menuOpen = false))
-    }
+
+    private fun clearedLoginState(): AppUiState =
+        state.copy(
+            route = UiRoute.Login,
+            menuOpen = false,
+            activeAccountLabel = "",
+            sessionStrip = SessionStripUiState(
+                visible = false,
+                statusKey = GemTextKey.Offline,
+                online = false,
+                locationLabel = "",
+            ),
+            sendFooter = SendFooterUiState(visible = false, statusTextKey = null),
+            operationMessageKey = GemTextKey.BlankStatus,
+            blockingOperationMessageKey = null,
+            session = null,
+        )
 
     private fun copy(state: AppUiState): GemAppController =
         GemAppController(runtime, state)

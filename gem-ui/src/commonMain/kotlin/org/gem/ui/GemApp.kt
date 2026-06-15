@@ -20,7 +20,8 @@ import org.gem.ui.components.GemPlatformBackHandler
 import org.gem.ui.components.GemSendFooter
 import org.gem.ui.components.GemTopBar
 import org.gem.ui.components.SessionStrip
-import org.gem.ui.components.SettingsBackNav
+import org.gem.ui.components.SectionBackNav
+import org.gem.ui.controllers.AccountsController
 import org.gem.ui.controllers.GroupTargetController
 import org.gem.ui.controllers.GemAppController
 import org.gem.ui.controllers.GemLogoutWorkflow
@@ -28,18 +29,24 @@ import org.gem.ui.controllers.GemLogoutWorkflowAction
 import org.gem.ui.controllers.InventoryBrowserController
 import org.gem.ui.controllers.LoginController
 import org.gem.ui.controllers.NoticeComposerController
-import org.gem.ui.controllers.SettingsController
 import org.gem.ui.controllers.ThemeController
 import org.gem.ui.design.HaccuGemPaletteProvider
 import org.gem.ui.design.GemDesignTokens
 import org.gem.ui.design.GemTheme
 import org.gem.ui.design.ResolvedThemeMode
+import org.gem.ui.navigation.AppMenuCatalogue
+import org.gem.ui.navigation.AppMenuCommand
+import org.gem.ui.navigation.AppSectionCatalogue
+import org.gem.ui.navigation.SectionBackPolicy
+import org.gem.ui.navigation.SectionSessionStripPolicy
 import org.gem.ui.screens.ComposeScreen
 import org.gem.ui.runtime.GemUiRuntime
 import org.gem.ui.screens.LoginScreen
+import org.gem.ui.screens.AccountsScreen
 import org.gem.ui.screens.SettingsScreen
 import org.gem.ui.state.LoginEntryMode
 import org.gem.ui.state.UiRoute
+import org.gem.ui.testtags.GemTestTags
 import org.gem.ui.text.EnglishGemTextCatalogue
 import org.gem.ui.text.GemTextCatalogue
 import org.gem.ui.text.GemTextKey
@@ -54,7 +61,7 @@ fun GemApp(
 ) {
     var appController by remember(runtime) { mutableStateOf(GemAppController(runtime)) }
     var loginController by remember(runtime) { mutableStateOf(LoginController(runtime).refreshSavedLogins()) }
-    var settingsController by remember(runtime) { mutableStateOf(SettingsController(runtime).refreshSavedAccounts()) }
+    var accountsController by remember(runtime) { mutableStateOf(AccountsController(runtime).refreshSavedAccounts()) }
     var noticeController by remember(runtime) { mutableStateOf(NoticeComposerController(runtime)) }
     var groupTargetController by remember(runtime) { mutableStateOf(GroupTargetController(runtime)) }
     var inventoryController by remember(runtime) { mutableStateOf(InventoryBrowserController(runtime)) }
@@ -83,20 +90,28 @@ fun GemApp(
         loginController = loginController.refreshSavedLogins()
     }
 
-    fun refreshSettingsFromCredentialStore() {
-        settingsController = SettingsController(runtime, appState = appController.state).refreshSavedAccounts()
+    fun refreshAccountsFromCredentialStore() {
+        accountsController = AccountsController(runtime, appState = appController.state).refreshSavedAccounts()
     }
 
-    fun runSettingsBackNavigation() {
-        appController = appController.backFromSettings()
+    fun runSectionBackNavigation(policy: SectionBackPolicy) {
+        appController = appController.backFromSection(policy)
         refreshLoginFromCredentialStore()
-        refreshSettingsFromCredentialStore()
+        refreshAccountsFromCredentialStore()
+    }
+
+    fun openMenuSection(route: UiRoute) {
+        val opened = appController.openSection(route)
+        appController = opened
+        if (route == UiRoute.Accounts) {
+            refreshAccountsFromCredentialStore()
+        }
     }
 
     fun resetControllersAfterLogout(loggedOut: GemAppController) {
         appController = loggedOut
         loginController = loginController.refreshSavedLogins()
-        settingsController = SettingsController(
+        accountsController = AccountsController(
             runtime,
             appState = loggedOut.state,
         ).refreshSavedAccounts()
@@ -144,13 +159,23 @@ fun GemApp(
         }
     }
 
+    fun runMenuCommand(command: AppMenuCommand) {
+        when (command) {
+            AppMenuCommand.LogOut -> runLogoutWorkflow()
+            AppMenuCommand.Exit -> runLogoutWorkflow(exitAfterLogout = true)
+        }
+    }
+
     fun runBackWorkflow() {
         when {
             appController.state.menuOpen -> {
                 appController = appController.closeMenu()
             }
-            appController.state.route == UiRoute.Settings -> {
-                runSettingsBackNavigation()
+            AppSectionCatalogue.sectionFor(appController.state.route).backPolicy ==
+                SectionBackPolicy.ReturnToSessionOrLogin -> {
+                runSectionBackNavigation(
+                    AppSectionCatalogue.sectionFor(appController.state.route).backPolicy,
+                )
             }
             appController.state.route == UiRoute.Compose && appController.state.session != null -> {
                 runLogoutWorkflow(exitAfterLogout = true)
@@ -239,6 +264,8 @@ fun GemApp(
         ),
     ) {
         val route = appController.state.route
+        val activeSection = AppSectionCatalogue.sectionFor(route)
+        val menuEntries = AppMenuCatalogue.entries(activeSession = appController.state.session != null)
         GemPlatformBackHandler(
             enabled = true,
             onBack = { runBackWorkflow() },
@@ -249,46 +276,29 @@ fun GemApp(
                     activeAccountLabel = appController.state.activeAccountLabel,
                     secondLifeTimeDisplay = secondLifeTimeDisplay,
                     menuOpen = appController.state.menuOpen,
+                    menuEntries = menuEntries,
                     textCatalogue = textCatalogue,
                     onMenuClick = { appController = appController.openMenu() },
                     onMenuDismiss = { appController = appController.closeMenu() },
-                    onSettingsClick = {
-                        val opened = appController.openSettings()
-                        appController = opened
-                        refreshSettingsFromCredentialStore()
-                    },
-                    onLogoutClick = {
-                        runLogoutWorkflow()
-                    },
-                    onExitClick = {
-                        runLogoutWorkflow(exitAfterLogout = true)
-                    },
+                    onMenuSectionSelected = ::openMenuSection,
+                    onMenuCommandSelected = ::runMenuCommand,
                 )
             },
-            navigation = if (route == UiRoute.Settings) {
+            navigation = if (activeSection.backPolicy == SectionBackPolicy.ReturnToSessionOrLogin) {
                 {
-                    SettingsBackNav(
+                    SectionBackNav(
                         text = textCatalogue.text(GemTextKey.Back),
                         onBack = {
-                            runSettingsBackNavigation()
+                            runSectionBackNavigation(activeSection.backPolicy)
                         },
-                        themeChecked = themeController.state.toggleChecked,
-                        themeEnabled = true,
-                        lightText = textCatalogue.text(GemTextKey.Light),
-                        darkText = textCatalogue.text(GemTextKey.Dark),
-                        onThemeCheckedChange = { checked ->
-                            themeController = themeController.setManualTheme(
-                                mode = if (checked) ResolvedThemeMode.DARK else ResolvedThemeMode.LIGHT,
-                                osDark = osDark,
-                            )
-                        },
+                        testTag = if (route == UiRoute.Accounts) GemTestTags.AccountsBack else null,
                     )
                 }
             } else {
                 null
             },
             sessionStrip = {
-                if (route != UiRoute.Settings) {
+                if (activeSection.sessionStripPolicy == SectionSessionStripPolicy.UseAppState) {
                     SessionStrip(
                         state = appController.state.sessionStrip,
                         textCatalogue = textCatalogue,
@@ -402,58 +412,68 @@ fun GemApp(
                             },
                         )
                     }
-                    UiRoute.Settings -> SettingsScreen(
-                        state = settingsController.state,
+                    UiRoute.Accounts -> AccountsScreen(
+                        state = accountsController.state,
                         textCatalogue = textCatalogue,
                         onEditAccountToggle = {
-                            settingsController = settingsController.toggleEditAccountPanel()
+                            accountsController = accountsController.toggleEditAccountPanel()
                         },
                         onSavedAccountSelected = { profileId ->
-                            settingsController = settingsController.selectSavedAccount(profileId)
+                            accountsController = accountsController.selectSavedAccount(profileId)
                         },
                         onSavedPasswordVisibilityToggle = {
-                            settingsController = settingsController.toggleSavedPasswordVisibility()
+                            accountsController = accountsController.toggleSavedPasswordVisibility()
                         },
                         onSavedPasswordChanged = { password ->
-                            settingsController = settingsController.updateSavedPasswordDraft(password)
+                            accountsController = accountsController.updateSavedPasswordDraft(password)
                         },
                         onSaveEditedPassword = {
-                            settingsController = settingsController.saveEditedPassword()
+                            accountsController = accountsController.saveEditedPassword()
                             refreshLoginFromCredentialStore()
                         },
                         onAddAccountToggle = {
-                            settingsController = settingsController.toggleAddAccountPanel()
+                            accountsController = accountsController.toggleAddAccountPanel()
                         },
                         onNewUsernameChanged = { username ->
-                            settingsController = settingsController.updateNewUsernameDraft(username)
+                            accountsController = accountsController.updateNewUsernameDraft(username)
                         },
                         onNewPasswordFocus = {
-                            settingsController = settingsController.normalizeNewAccountNameOnPasswordFocus()
+                            accountsController = accountsController.normalizeNewAccountNameOnPasswordFocus()
                         },
                         onNewPasswordChanged = { password ->
-                            settingsController = settingsController.updateNewPasswordDraft(password)
+                            accountsController = accountsController.updateNewPasswordDraft(password)
                         },
                         onNewPasswordVisibilityToggle = {
-                            settingsController = settingsController.toggleNewPasswordVisibility()
+                            accountsController = accountsController.toggleNewPasswordVisibility()
                         },
                         onSaveNewAccount = {
-                            settingsController = settingsController.saveNewAccount()
+                            accountsController = accountsController.saveNewAccount()
                             refreshLoginFromCredentialStore()
                         },
                         onDeleteAccountSelected = { profileId, selected ->
-                            settingsController = settingsController.setDeleteAccountSelected(profileId, selected)
+                            accountsController = accountsController.setDeleteAccountSelected(profileId, selected)
                         },
                         onOpenDeleteModal = {
-                            settingsController = settingsController.openDeleteAccounts()
+                            accountsController = accountsController.openDeleteAccounts()
                         },
                         onConfirmDelete = {
-                            settingsController = settingsController.confirmDeleteAccounts()
-                            appController = GemAppController(runtime, settingsController.appState)
+                            accountsController = accountsController.confirmDeleteAccounts()
+                            appController = GemAppController(runtime, accountsController.appState)
                             refreshLoginFromCredentialStore()
-                            refreshSettingsFromCredentialStore()
+                            refreshAccountsFromCredentialStore()
                         },
                         onCancelDelete = {
-                            settingsController = settingsController.cancelDeleteAccounts()
+                            accountsController = accountsController.cancelDeleteAccounts()
+                        },
+                    )
+                    UiRoute.Settings -> SettingsScreen(
+                        themeState = themeController.state,
+                        textCatalogue = textCatalogue,
+                        onThemeCheckedChange = { checked ->
+                            themeController = themeController.setManualTheme(
+                                mode = if (checked) ResolvedThemeMode.DARK else ResolvedThemeMode.LIGHT,
+                                osDark = osDark,
+                            )
                         },
                     )
                 }

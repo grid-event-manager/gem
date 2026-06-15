@@ -1,6 +1,7 @@
 package org.gem.ui.controllers
 
 import org.gem.ui.state.AppUiState
+import org.gem.ui.navigation.SectionBackPolicy
 import org.gem.ui.state.SendFooterUiState
 import org.gem.ui.state.SessionStripUiState
 import org.gem.ui.state.UiRoute
@@ -11,6 +12,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
+import kotlin.test.assertFailsWith
 
 class GemAppControllerTest {
     private val runtime = FakeGemUiRuntime.ready()
@@ -19,7 +21,7 @@ class GemAppControllerTest {
     fun `logout clears session surfaces and returns to login`() {
         val controller = GemAppController(
             runtime = runtime,
-            state = loggedInSettingsState(),
+            state = loggedInSectionState(UiRoute.Settings),
         )
 
         val loggedOut = controller.logout().state
@@ -34,8 +36,11 @@ class GemAppControllerTest {
     }
 
     @Test
-    fun `settings back returns to compose only with active session`() {
-        val backed = GemAppController(runtime, loggedInSettingsState()).backFromSettings().state
+    fun `section back returns to compose only with active session`() {
+        val backed = GemAppController(
+            runtime,
+            loggedInSectionState(UiRoute.Accounts),
+        ).backFromSection(SectionBackPolicy.ReturnToSessionOrLogin).state
 
         assertEquals(UiRoute.Compose, backed.route)
         assertFalse(backed.menuOpen)
@@ -43,11 +48,11 @@ class GemAppControllerTest {
     }
 
     @Test
-    fun `settings back without active session returns to login`() {
+    fun `section back without active session returns to login`() {
         val backed = GemAppController(
             runtime = runtime,
             state = AppUiState(route = UiRoute.Settings, menuOpen = true),
-        ).backFromSettings().state
+        ).backFromSection(SectionBackPolicy.ReturnToSessionOrLogin).state
 
         assertEquals(UiRoute.Login, backed.route)
         assertFalse(backed.menuOpen)
@@ -56,9 +61,18 @@ class GemAppControllerTest {
         assertFalse(backed.sessionStrip.visible)
     }
 
-    private fun loggedInSettingsState(): AppUiState =
+    @Test
+    fun `root section back is rejected`() {
+        val failure = assertFailsWith<IllegalArgumentException> {
+            GemAppController(runtime).backFromSection(SectionBackPolicy.Root)
+        }
+
+        assertEquals("Root section back is not supported", failure.message)
+    }
+
+    private fun loggedInSectionState(route: UiRoute): AppUiState =
         AppUiState(
-            route = UiRoute.Settings,
+            route = route,
             menuOpen = true,
             activeAccountLabel = "venuehost resident",
             sessionStrip = SessionStripUiState(

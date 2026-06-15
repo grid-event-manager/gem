@@ -18,6 +18,7 @@ sealed interface GemTextKey {
     data object Exit : GemTextKey
     data object AddNewLogin : GemTextKey
     data object SaveAndLogin : GemTextKey
+    data object Accounts : GemTextKey
     data object Settings : GemTextKey
     data object EditAccount : GemTextKey
     data object SavePassword : GemTextKey
@@ -93,6 +94,7 @@ sealed interface GemTextKey {
             Exit,
             AddNewLogin,
             SaveAndLogin,
+            Accounts,
             Settings,
             EditAccount,
             SavePassword,
@@ -173,6 +175,7 @@ object EnglishGemTextCatalogue : GemTextCatalogue {
         GemTextKey.Exit -> "Exit"
         GemTextKey.AddNewLogin -> "Add new login..."
         GemTextKey.SaveAndLogin -> "Save and login"
+        GemTextKey.Accounts -> "Accounts"
         GemTextKey.Settings -> "Settings"
         GemTextKey.EditAccount -> "Edit account"
         GemTextKey.SavePassword -> "Save password"

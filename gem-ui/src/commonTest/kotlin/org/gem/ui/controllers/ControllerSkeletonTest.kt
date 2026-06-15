@@ -8,6 +8,7 @@ import org.gem.ui.state.GroupTargetMode
 import org.gem.ui.state.InventoryAssetRowUiState
 import org.gem.ui.state.InventoryBrowserUiState
 import org.gem.ui.state.InventoryShortcut
+import org.gem.ui.navigation.SectionBackPolicy
 import org.gem.ui.state.UiRoute
 import org.gem.ui.testing.FakeGroupFixtures
 import org.gem.ui.testing.FakeInventoryFixtures
@@ -24,12 +25,14 @@ class ControllerEntrypointShapeTest {
     @Test
     fun appControllerOwnsRouteMenuAndLogoutShape() {
         val opened = GemAppController(runtime).openMenu()
-        val settings = opened.openSettings()
-        val loggedOut = settings.logout()
+        val accounts = opened.openSection(UiRoute.Accounts)
+        val backed = accounts.backFromSection(SectionBackPolicy.ReturnToSessionOrLogin)
+        val loggedOut = accounts.logout()
 
         assertTrue(opened.state.menuOpen)
-        assertEquals(UiRoute.Settings, settings.state.route)
-        assertFalse(settings.state.menuOpen)
+        assertEquals(UiRoute.Accounts, accounts.state.route)
+        assertFalse(accounts.state.menuOpen)
+        assertEquals(UiRoute.Login, backed.state.route)
         assertEquals(UiRoute.Login, loggedOut.state.route)
         assertNull(loggedOut.state.session)
     }
@@ -60,9 +63,9 @@ class ControllerEntrypointShapeTest {
     }
 
     @Test
-    fun settingsControllerOwnsPasswordDeleteAndAccountEntryPoints() {
+    fun accountsControllerOwnsPasswordDeleteAndAccountEntryPoints() {
         val profileId = FakeGemUiRuntime.defaultProfile().profileId
-        val selected = SettingsController(runtime)
+        val selected = AccountsController(runtime)
             .refreshSavedAccounts()
             .selectSavedAccount(profileId)
             .toggleEditAccountPanel()
@@ -71,7 +74,7 @@ class ControllerEntrypointShapeTest {
             .toggleEditAccountPanel()
             .toggleSavedPasswordVisibility()
             .toggleAddAccountPanel()
-            .updateNewUsernameDraft("settingsavatar")
+            .updateNewUsernameDraft("accountsavatar")
             .normalizeNewAccountNameOnPasswordFocus()
             .openDeleteAccounts()
             .setDeleteAccountSelected(profileId, true)
@@ -90,8 +93,8 @@ class ControllerEntrypointShapeTest {
         assertTrue(controller.state.addAccountExpanded)
         assertTrue(controller.state.deleteExpanded)
         assertEquals(setOf(profileId), controller.state.selectedDeleteProfileIds)
-        assertEquals("settingsavatar resident", controller.state.addUsernameDraft)
-        assertTrue(savedNew.state.savedLoginOptions.any { it.loginName == "settingsavatar resident" })
+        assertEquals("accountsavatar resident", controller.state.addUsernameDraft)
+        assertTrue(savedNew.state.savedLoginOptions.any { it.loginName == "accountsavatar resident" })
         assertTrue(modalOpen.state.confirmDeleteOpen)
         assertFalse(controller.state.confirmDeleteOpen)
     }

@@ -12,15 +12,15 @@ import org.gem.core.services.SavedAccountDeleteResult
 import org.gem.ui.runtime.GemUiRuntime
 import org.gem.ui.state.AppUiState
 import org.gem.ui.state.SavedLoginOptionUiState
-import org.gem.ui.state.SettingsUiState
+import org.gem.ui.state.AccountsUiState
 import org.gem.ui.text.GemTextKey
 
-class SettingsController(
+class AccountsController(
     val runtime: GemUiRuntime,
-    val state: SettingsUiState = SettingsUiState.fromCredentialRuntime(runtime.credentialRuntimeState),
+    val state: AccountsUiState = AccountsUiState.fromCredentialRuntime(runtime.credentialRuntimeState),
     val appState: AppUiState = AppUiState(),
 ) {
-    fun refreshSavedAccounts(): SettingsController {
+    fun refreshSavedAccounts(): AccountsController {
         val credentialService = runtime.credentialServiceOrNull()
             ?: return credentialRuntimeUnavailable()
         return when (val listed = credentialService.listProfiles()) {
@@ -54,7 +54,7 @@ class SettingsController(
         }
     }
 
-    fun selectSavedAccount(profileId: AccountProfileId?): SettingsController =
+    fun selectSavedAccount(profileId: AccountProfileId?): AccountsController =
         if (profileId == null) {
             copy(
                 state.copy(
@@ -70,14 +70,14 @@ class SettingsController(
             revealSavedPassword(profileId)
         }
 
-    fun toggleSavedPasswordVisibility(): SettingsController {
+    fun toggleSavedPasswordVisibility(): AccountsController {
         if (!state.passwordEnabled) {
             return copy(state)
         }
         return copy(state.copy(passwordVisible = !state.passwordVisible))
     }
 
-    fun updateSavedPasswordDraft(passwordDraft: String): SettingsController {
+    fun updateSavedPasswordDraft(passwordDraft: String): AccountsController {
         if (state.selectedProfileId == null) {
             return copy(state.copy(passwordDraft = passwordDraft))
         }
@@ -90,7 +90,7 @@ class SettingsController(
         )
     }
 
-    fun saveEditedPassword(): SettingsController {
+    fun saveEditedPassword(): AccountsController {
         val profileId = state.selectedProfileId
             ?: return copy(state)
         val credentialService = runtime.credentialServiceOrNull()
@@ -110,22 +110,22 @@ class SettingsController(
         }
     }
 
-    fun toggleEditAccountPanel(): SettingsController =
+    fun toggleEditAccountPanel(): AccountsController =
         copy(state.copy(editAccountExpanded = !state.editAccountExpanded))
 
-    fun toggleAddAccountPanel(): SettingsController =
+    fun toggleAddAccountPanel(): AccountsController =
         copy(state.copy(addAccountExpanded = !state.addAccountExpanded))
 
-    fun updateNewUsernameDraft(username: String): SettingsController =
+    fun updateNewUsernameDraft(username: String): AccountsController =
         copy(state.withNewAccountDrafts(username = username))
 
-    fun updateNewPasswordDraft(password: String): SettingsController =
+    fun updateNewPasswordDraft(password: String): AccountsController =
         copy(state.withNewAccountDrafts(password = password))
 
-    fun toggleNewPasswordVisibility(): SettingsController =
+    fun toggleNewPasswordVisibility(): AccountsController =
         copy(state.copy(newPasswordVisible = !state.newPasswordVisible))
 
-    fun normalizeNewAccountNameOnPasswordFocus(): SettingsController =
+    fun normalizeNewAccountNameOnPasswordFocus(): AccountsController =
         when (val result = SecondLifeLoginName.fromUserInput(state.addUsernameDraft)) {
             is SecondLifeLoginNameResult.Valid -> copy(state.withNewAccountDrafts(username = result.loginName.value))
             is SecondLifeLoginNameResult.Invalid -> copy(
@@ -137,7 +137,7 @@ class SettingsController(
             )
         }
 
-    fun saveNewAccount(): SettingsController {
+    fun saveNewAccount(): AccountsController {
         val accountManagementService = runtime.savedAccountManagementServiceOrNull()
             ?: return credentialRuntimeUnavailable()
         if (!state.saveNewAccountEnabled) {
@@ -187,7 +187,7 @@ class SettingsController(
         }
     }
 
-    fun openDeleteAccounts(): SettingsController =
+    fun openDeleteAccounts(): AccountsController =
         when {
             !state.deleteExpanded -> copy(state.copy(deleteExpanded = true, confirmDeleteOpen = false))
             state.deleteEnabled -> copy(state.copy(confirmDeleteOpen = true))
@@ -197,7 +197,7 @@ class SettingsController(
     fun setDeleteAccountSelected(
         profileId: AccountProfileId,
         selected: Boolean,
-    ): SettingsController {
+    ): AccountsController {
         val selectedIds = if (selected) {
             state.selectedDeleteProfileIds + profileId
         } else {
@@ -206,7 +206,7 @@ class SettingsController(
         return copy(state.copy(selectedDeleteProfileIds = selectedIds, errorKey = null, errorMessage = null))
     }
 
-    fun confirmDeleteAccounts(): SettingsController {
+    fun confirmDeleteAccounts(): AccountsController {
         val selectedIds = state.selectedDeleteProfileIds
         if (selectedIds.isEmpty()) {
             return copy(state.copy(confirmDeleteOpen = false))
@@ -224,10 +224,10 @@ class SettingsController(
         }
     }
 
-    fun cancelDeleteAccounts(): SettingsController =
+    fun cancelDeleteAccounts(): AccountsController =
         copy(state.copy(confirmDeleteOpen = false))
 
-    private fun revealSavedPassword(profileId: AccountProfileId): SettingsController {
+    private fun revealSavedPassword(profileId: AccountProfileId): AccountsController {
         val credentialService = runtime.credentialServiceOrNull()
             ?: return credentialRuntimeUnavailable()
         return when (val revealed = credentialService.revealPassword(profileId)) {
@@ -247,10 +247,10 @@ class SettingsController(
         }
     }
 
-    private fun SettingsUiState.withNewAccountDrafts(
+    private fun AccountsUiState.withNewAccountDrafts(
         username: String = addUsernameDraft,
         password: String = addPasswordDraft,
-    ): SettingsUiState =
+    ): AccountsUiState =
         copy(
             addUsernameDraft = username,
             addPasswordDraft = password,
@@ -262,7 +262,7 @@ class SettingsController(
     private fun afterDeleteSuccess(
         deletedProfileIds: Set<AccountProfileId>,
         deletedLoginNames: Set<String>,
-    ): SettingsController {
+    ): AccountsController {
         val activeDeleted = appState.activeAccountLabel in deletedLoginNames
         val remainingOptions = refreshedOptions()
             ?: state.savedLoginOptions.filterNot { it.profileId in deletedProfileIds }
@@ -292,7 +292,7 @@ class SettingsController(
             else -> null
         }
 
-    private fun selectPreferredSavedAccount(profiles: List<SavedAccountProfile>): SettingsController {
+    private fun selectPreferredSavedAccount(profiles: List<SavedAccountProfile>): AccountsController {
         if (state.selectedProfileId != null && profiles.any { it.profileId == state.selectedProfileId }) {
             return revealSavedPassword(state.selectedProfileId)
         }
@@ -306,7 +306,7 @@ class SettingsController(
     private fun updateFailure(
         passwordDraft: String,
         message: String? = null,
-    ): SettingsController =
+    ): AccountsController =
         copy(
             state.copy(
                 passwordDraft = passwordDraft,
@@ -318,7 +318,7 @@ class SettingsController(
     private fun revealFailure(
         profileId: AccountProfileId,
         message: String? = null,
-    ): SettingsController =
+    ): AccountsController =
         copy(
             state.copy(
                 selectedProfileId = profileId,
@@ -330,7 +330,7 @@ class SettingsController(
             ),
         )
 
-    private fun deleteFailure(message: String? = null): SettingsController =
+    private fun deleteFailure(message: String? = null): AccountsController =
         copy(
             state.copy(
                 confirmDeleteOpen = true,
@@ -339,7 +339,7 @@ class SettingsController(
             ),
         )
 
-    private fun credentialRuntimeUnavailable(message: String? = state.credentialRuntime.message): SettingsController =
+    private fun credentialRuntimeUnavailable(message: String? = state.credentialRuntime.message): AccountsController =
         copy(
             state.copy(
                 selectedProfileId = null,
@@ -357,8 +357,8 @@ class SettingsController(
         )
 
     private fun copy(
-        state: SettingsUiState = this.state,
+        state: AccountsUiState = this.state,
         appState: AppUiState = this.appState,
-    ): SettingsController =
-        SettingsController(runtime, state, appState)
+    ): AccountsController =
+        AccountsController(runtime, state, appState)
 }

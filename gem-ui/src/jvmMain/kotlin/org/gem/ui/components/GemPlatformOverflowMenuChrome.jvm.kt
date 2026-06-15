@@ -15,19 +15,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import org.gem.ui.design.GemTheme
+import org.gem.ui.navigation.AppMenuCommand
+import org.gem.ui.navigation.AppMenuEntry
+import org.gem.ui.state.UiRoute
 import org.gem.ui.testtags.GemTestTags
 import org.gem.ui.text.GemTextCatalogue
-import org.gem.ui.text.GemTextKey
 
 @Composable
 internal actual fun GemPlatformOverflowMenuChrome(
     expanded: Boolean,
-    logoutEnabled: Boolean,
+    menuEntries: List<AppMenuEntry>,
     textCatalogue: GemTextCatalogue,
     onDismiss: () -> Unit,
-    onSettingsClick: () -> Unit,
-    onLogoutClick: () -> Unit,
-    onExitClick: () -> Unit,
+    onMenuSectionSelected: (UiRoute) -> Unit,
+    onMenuCommandSelected: (AppMenuCommand) -> Unit,
     modifier: Modifier,
 ) {
     DropdownMenu(
@@ -38,26 +39,31 @@ internal actual fun GemPlatformOverflowMenuChrome(
             .background(GemTheme.colors.menuSurface)
             .testTag(GemTestTags.AppMenu),
     ) {
-        GemMenuRow(
-            text = textCatalogue.text(GemTextKey.Settings),
-            onClick = onSettingsClick,
-            modifier = Modifier.testTag(GemTestTags.OpenSettings),
-        )
-        GemMenuRow(
-            text = textCatalogue.text(GemTextKey.LogOut),
-            onClick = onLogoutClick,
-            enabled = logoutEnabled,
-            modifier = Modifier.testTag(GemTestTags.LogOut),
-        )
-        HorizontalDivider(
-            color = GemTheme.colors.lineStrong,
-            thickness = GemTheme.spacing.borderWidth,
-        )
-        GemMenuRow(
-            text = textCatalogue.text(GemTextKey.Exit),
-            onClick = onExitClick,
-            modifier = Modifier.testTag(GemTestTags.Exit),
-        )
+        menuEntries.forEach { entry ->
+            when (entry) {
+                is AppMenuEntry.SectionEntry -> {
+                    GemMenuRow(
+                        text = textCatalogue.text(entry.section.labelKey),
+                        onClick = { onMenuSectionSelected(entry.section.route) },
+                        modifier = Modifier.testTag(entry.testTag),
+                    )
+                }
+                is AppMenuEntry.CommandEntry -> {
+                    if (entry.dividerBefore) {
+                        HorizontalDivider(
+                            color = GemTheme.colors.lineStrong,
+                            thickness = GemTheme.spacing.borderWidth,
+                        )
+                    }
+                    GemMenuRow(
+                        text = textCatalogue.text(entry.labelKey),
+                        onClick = { onMenuCommandSelected(entry.command) },
+                        enabled = entry.enabled,
+                        modifier = Modifier.testTag(entry.testTag),
+                    )
+                }
+            }
+        }
     }
 }
 

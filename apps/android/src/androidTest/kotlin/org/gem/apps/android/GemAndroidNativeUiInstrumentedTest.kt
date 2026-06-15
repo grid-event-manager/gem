@@ -5,7 +5,9 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -14,6 +16,9 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
 import org.gem.ui.GemApp
 import org.gem.ui.testtags.GemTestTags
 import org.gem.ui.text.EnglishGemTextCatalogue
@@ -35,9 +40,23 @@ class GemAndroidNativeUiInstrumentedTest {
         openMenu()
 
         composeRule.onNodeWithTag(GemTestTags.AppMenu).assertIsDisplayed()
+        composeRule.onNodeWithTag(GemTestTags.OpenAccounts).assertIsDisplayed().assertIsEnabled()
         composeRule.onNodeWithTag(GemTestTags.OpenSettings).assertIsDisplayed().assertIsEnabled()
         composeRule.onNodeWithTag(GemTestTags.LogOut).assertIsDisplayed().assertIsNotEnabled()
         composeRule.onNodeWithTag(GemTestTags.Exit).assertIsDisplayed().assertIsEnabled()
+    }
+
+    @Test
+    fun accountsBackReturnsToLoginWithoutFinishingActivity() {
+        waitForNode(GemTestTags.ViewLogin)
+        openMenu()
+        composeRule.onNodeWithTag(GemTestTags.OpenAccounts).performClick()
+        waitForNode(GemTestTags.ViewAccounts)
+
+        composeRule.onNodeWithTag(GemTestTags.AccountsBack).performClick()
+
+        waitForNode(GemTestTags.ViewLogin)
+        assertFalse(composeRule.activity.isFinishing)
     }
 
     @Test
@@ -47,7 +66,7 @@ class GemAndroidNativeUiInstrumentedTest {
         composeRule.onNodeWithTag(GemTestTags.OpenSettings).performClick()
         waitForNode(GemTestTags.ViewSettings)
 
-        pressAndroidBack()
+        settingsBackButton().performClick()
 
         waitForNode(GemTestTags.ViewLogin)
         assertFalse(composeRule.activity.isFinishing)
@@ -120,6 +139,22 @@ class GemAndroidNativeUiInstrumentedTest {
         composeRule.onNodeWithText(text(GemTextKey.Dark)).assertIsDisplayed()
     }
 
+    @Test
+    fun accountsAndSettingsOpenDifferentScreens() {
+        waitForNode(GemTestTags.ViewLogin)
+        openMenu()
+        composeRule.onNodeWithTag(GemTestTags.OpenAccounts).performClick()
+        waitForNode(GemTestTags.ViewAccounts)
+
+        pressAndroidBack()
+        waitForNode(GemTestTags.ViewLogin)
+        openMenu()
+        composeRule.onNodeWithTag(GemTestTags.OpenSettings).performClick()
+
+        waitForNode(GemTestTags.ViewSettings)
+        composeRule.onNodeWithText(text(GemTextKey.Light)).assertIsDisplayed()
+    }
+
     private fun installFakeRuntime() {
         composeRule.activity.runOnUiThread {
             composeRule.activity.setContent {
@@ -146,6 +181,12 @@ class GemAndroidNativeUiInstrumentedTest {
     private fun passwordEditableField() =
         composeRule.onNode(
             hasSetTextAction() and hasAnyAncestor(hasTestTag(GemTestTags.AccountPassword)),
+        )
+
+    private fun settingsBackButton() =
+        composeRule.onNode(
+            hasText(text(GemTextKey.Back)) and hasClickAction() and
+                SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button),
         )
 
     private fun pressAndroidBack() {

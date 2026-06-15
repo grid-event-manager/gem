@@ -11,12 +11,12 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-class SettingsControllerTest {
+class AccountsControllerTest {
     @Test
     fun selectingSavedAccountRevealsMaskedPasswordAndSavesEditsExplicitly() {
         val runtime = FakeGemUiRuntime.ready()
         val profile = FakeGemUiRuntime.defaultProfile()
-        val selected = SettingsController(runtime)
+        val selected = AccountsController(runtime)
             .refreshSavedAccounts()
             .selectSavedAccount(profile.profileId)
 
@@ -42,7 +42,7 @@ class SettingsControllerTest {
         val runtime = FakeGemUiRuntime.ready(
             lastLoginProfilePreferenceStore = FakeLastLoginProfilePreferenceStore(profile.profileId),
         )
-        val refreshed = SettingsController(runtime).refreshSavedAccounts()
+        val refreshed = AccountsController(runtime).refreshSavedAccounts()
 
         assertEquals(profile.profileId, refreshed.state.selectedProfileId)
         assertEquals("test-password", refreshed.state.passwordDraft)
@@ -50,8 +50,8 @@ class SettingsControllerTest {
     }
 
     @Test
-    fun settingsWithNoSavedAccountsExpandsAddAccountAndHidesDeleteState() {
-        val refreshed = SettingsController(FakeGemUiRuntime.ready(profiles = emptyList()))
+    fun accountsWithNoSavedAccountsExpandsAddAccountAndHidesDeleteState() {
+        val refreshed = AccountsController(FakeGemUiRuntime.ready(profiles = emptyList()))
             .refreshSavedAccounts()
 
         assertTrue(refreshed.state.savedLoginOptions.isEmpty())
@@ -65,7 +65,7 @@ class SettingsControllerTest {
     fun placeholderSelectionClearsAndDisablesSavedPassword() {
         val runtime = FakeGemUiRuntime.ready()
         val profile = FakeGemUiRuntime.defaultProfile()
-        val cleared = SettingsController(runtime)
+        val cleared = AccountsController(runtime)
             .refreshSavedAccounts()
             .selectSavedAccount(profile.profileId)
             .selectSavedAccount(null)
@@ -79,9 +79,9 @@ class SettingsControllerTest {
     @Test
     fun addAccountNormalizesThroughCoreAndDoesNotLogIn() {
         val runtime = FakeGemUiRuntime.ready()
-        val saved = SettingsController(
+        val saved = AccountsController(
             runtime = runtime,
-            appState = AppUiState(route = UiRoute.Settings),
+            appState = AppUiState(route = UiRoute.Accounts),
         )
             .refreshSavedAccounts()
             .toggleAddAccountPanel()
@@ -91,7 +91,7 @@ class SettingsControllerTest {
             .updateNewPasswordDraft("new-password")
             .saveNewAccount()
 
-        assertEquals(UiRoute.Settings, saved.appState.route)
+        assertEquals(UiRoute.Accounts, saved.appState.route)
         assertTrue(saved.state.savedLoginOptions.any { it.loginName == "venuehost resident" })
         assertFalse(saved.state.addAccountExpanded)
         assertFalse(saved.state.editAccountExpanded)
@@ -106,10 +106,10 @@ class SettingsControllerTest {
     fun deleteAccountRequiresModalAndClearsDeletedActiveLabelOnConfirmOnly() {
         val runtime = FakeGemUiRuntime.ready()
         val profile = FakeGemUiRuntime.defaultProfile()
-        val selected = SettingsController(
+        val selected = AccountsController(
             runtime = runtime,
             appState = AppUiState(
-                route = UiRoute.Settings,
+                route = UiRoute.Accounts,
                 activeAccountLabel = profile.loginName.value,
             ),
         )
@@ -135,7 +135,7 @@ class SettingsControllerTest {
     @Test
     fun deleteActionExpandsFirstAndDoesNotOpenModalWithoutSelection() {
         val runtime = FakeGemUiRuntime.ready()
-        val controller = SettingsController(runtime)
+        val controller = AccountsController(runtime)
             .refreshSavedAccounts()
             .openDeleteAccounts()
 
@@ -146,7 +146,7 @@ class SettingsControllerTest {
 
     @Test
     fun expandedDeleteActionWithoutSelectionCollapsesPanel() {
-        val collapsed = SettingsController(FakeGemUiRuntime.ready())
+        val collapsed = AccountsController(FakeGemUiRuntime.ready())
             .refreshSavedAccounts()
             .openDeleteAccounts()
             .openDeleteAccounts()
@@ -156,8 +156,8 @@ class SettingsControllerTest {
     }
 
     @Test
-    fun unavailableCredentialRuntimeDisablesSettingsMutations() {
-        val controller = SettingsController(FakeGemUiRuntime.unavailable())
+    fun unavailableCredentialRuntimeDisablesAccountMutations() {
+        val controller = AccountsController(FakeGemUiRuntime.unavailable())
             .refreshSavedAccounts()
             .updateNewUsernameDraft("venuehost")
             .updateNewPasswordDraft("new-password")
