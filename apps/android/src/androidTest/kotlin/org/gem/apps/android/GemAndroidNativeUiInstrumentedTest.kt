@@ -4,12 +4,16 @@ import androidx.activity.compose.setContent
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextInput
 import org.gem.ui.GemApp
 import org.gem.ui.testtags.GemTestTags
 import org.gem.ui.text.EnglishGemTextCatalogue
@@ -61,7 +65,12 @@ class GemAndroidNativeUiInstrumentedTest {
     @Test
     fun fakeRuntimeLoginReachesComposeAndScrollableSurfaces() {
         installFakeRuntime()
-        composeRule.onNodeWithTag(GemTestTags.AccountPassword).performScrollTo().assertIsDisplayed()
+        composeRule.onNodeWithTag(GemTestTags.AccountPassword)
+            .performScrollTo()
+            .assertIsDisplayed()
+        passwordEditableField()
+            .performTextInput("!")
+        composeRule.onNodeWithTag(GemTestTags.AccountPassword).assertIsDisplayed()
 
         loginWithFakeRuntime()
 
@@ -133,6 +142,11 @@ class GemAndroidNativeUiInstrumentedTest {
         composeRule.onNodeWithTag(GemTestTags.MenuButton).performClick()
         waitForNode(GemTestTags.AppMenu)
     }
+
+    private fun passwordEditableField() =
+        composeRule.onNode(
+            hasSetTextAction() and hasAnyAncestor(hasTestTag(GemTestTags.AccountPassword)),
+        )
 
     private fun pressAndroidBack() {
         composeRule.activity.runOnUiThread {
