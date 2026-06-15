@@ -25,6 +25,16 @@ UI_STAGED_PATTERN='STAGED_ENTRYPOINT|TODO|NotImplemented|UnsupportedOperationExc
 UI_TEXT_CATALOGUE_PATTERN='"(User Name|Password|Show|Hide|Login|Add new login|Add new login\.\.\.|Save and login|Settings|Add new account|Save new account|Delete account|Delete|Send notices|Online|Offline|Inventory|Landmarks|Textures|Add all|Select\.\.\.)"'
 UI_STYLE_TOKEN_PATTERN='#[0-9A-Fa-f]{6}|Color\(|[0-9]+\.dp'
 UI_DIRECT_CONTROL_PATTERN='(^|[^[:alnum:]_])(OutlinedTextField|DropdownMenu|DropdownMenuItem|ExposedDropdownMenu|ExposedDropdownMenuBox|Button|OutlinedButton|verticalScroll|rememberScrollState|VerticalScrollbar|rememberScrollbarAdapter)[[:space:]]*\('
+UI_SECTIONS_STALE_ACCOUNT_SETTINGS_PATTERN='SettingsController|SettingsUiState|SettingsPanels|SettingsEditAccountPanel|SettingsAddAccountPanel|SettingsErrorText|SettingsBackNav'
+UI_SECTIONS_FIXED_SETTINGS_CALLBACK_PATTERN='onSettingsClick'
+UI_SECTIONS_PLATFORM_DIRECT_LABEL_PATTERN='GemTextKey\.(Accounts|Settings)'
+UI_SECTIONS_PLATFORM_SECTION_LABEL_FLOW_PATTERN='textCatalogue\.text\([[:space:]]*entry\.section\.labelKey[[:space:]]*\)'
+UI_SECTIONS_PLATFORM_COMMAND_LABEL_FLOW_PATTERN='textCatalogue\.text\([[:space:]]*entry\.labelKey[[:space:]]*\)'
+UI_SECTIONS_PAGE_BUILDER_ROUTE_PATTERN='PageBuilder|SectionManager|WebView|<html|json[[:space:]]+route|string[[:space:]]+route'
+UI_SECTIONS_FEATURE_GATE_PATTERN='featureAvailability|serial|licen[cs]e|pro/free|ProFeature'
+UI_SECTIONS_PUBLIC_WORKSTREAM_LABEL_PATTERN='HS003|TRACK_A|TrackA|track_a'
+UI_SECTIONS_MENU_ENTRY_SIGNATURE_PATTERN='fun[[:space:]]+entries\([[:space:]]*activeSession:[[:space:]]*Boolean[[:space:]]*\)[[:space:]]*:[[:space:]]*List<AppMenuEntry>'
+UI_SECTIONS_SECTION_CATALOGUE_PATTERN='object[[:space:]]+AppSectionCatalogue'
 SESSION_PROTOCOL_DIRECT_RUNTIME_PATTERN='EnvironmentLoginSecretResolver|ProtocolSimulatorCircuitClient|AgentDataUpdateRequestTransport|EventQueueGetClient'
 VAULT_FORBIDDEN_DEPENDENCY_PATTERN='java-keyring|secret-service|multiplatform-settings|KVault|SecureVault|Kassaforte|tink|BouncyCastle|kotlinx\.serialization|protobuf|cbor|EncryptedSharedPreferences|MasterKey|EncryptedFile'
 VAULT_STALE_CREDENTIAL_ROUTE_PATTERN='VaultUnlock|passphrase|TOTP|authenticator|platform_deferred|native-store required|VM fallback|plaintext fallback|CredentialManager|PasswordHelper|LoginUtils|VaultManager|VaultHelper|VaultUtils|CommonVault'
@@ -1168,6 +1178,23 @@ done < <(find \
     "gem-ui/src/androidMain/kotlin/org/gem/ui" \
     -type f -name '*.kt' 2>/dev/null || true)
 
+ui_sections_public_targets=()
+add_existing ui_sections_public_targets \
+    "gem-ui/src/commonMain" \
+    "gem-ui/src/androidMain" \
+    "gem-ui/src/jvmMain" \
+    "apps/android/src/main" \
+    "apps/android/src/androidTest"
+
+ui_sections_navigation_targets=()
+add_existing ui_sections_navigation_targets \
+    "gem-ui/src/commonMain/kotlin/org/gem/ui/navigation"
+
+ui_sections_platform_menu_actual_targets=()
+add_existing ui_sections_platform_menu_actual_targets \
+    "gem-ui/src/androidMain/kotlin/org/gem/ui/components/GemPlatformOverflowMenuChrome.android.kt" \
+    "gem-ui/src/jvmMain/kotlin/org/gem/ui/components/GemPlatformOverflowMenuChrome.jvm.kt"
+
 ui_remediation_split_login_targets=()
 add_existing ui_remediation_split_login_targets \
     "gem-ui/src/commonMain"
@@ -1802,6 +1829,111 @@ check_no_hits \
     "${ui_direct_control_forbidden_targets[@]}"
 
 check_no_hits \
+    "ui sections stale account settings identifiers absent" \
+    "$UI_SECTIONS_STALE_ACCOUNT_SETTINGS_PATTERN" \
+    "${ui_sections_public_targets[@]}"
+
+check_no_hits \
+    "ui sections fixed settings menu callback absent" \
+    "$UI_SECTIONS_FIXED_SETTINGS_CALLBACK_PATTERN" \
+    "${ui_sections_public_targets[@]}"
+
+check_no_hits \
+    "ui sections platform menu direct row labels absent" \
+    "$UI_SECTIONS_PLATFORM_DIRECT_LABEL_PATTERN" \
+    "${ui_sections_platform_menu_actual_targets[@]}"
+
+check_required_hits \
+    "ui sections platform menu direct row labels absent supplied entries present" \
+    'AppMenuEntry' \
+    "${ui_sections_platform_menu_actual_targets[@]}"
+
+check_required_hits \
+    "ui sections platform menu section label flow present android" \
+    "$UI_SECTIONS_PLATFORM_SECTION_LABEL_FLOW_PATTERN" \
+    "gem-ui/src/androidMain/kotlin/org/gem/ui/components/GemPlatformOverflowMenuChrome.android.kt"
+
+check_required_hits \
+    "ui sections platform menu command label flow present android" \
+    "$UI_SECTIONS_PLATFORM_COMMAND_LABEL_FLOW_PATTERN" \
+    "gem-ui/src/androidMain/kotlin/org/gem/ui/components/GemPlatformOverflowMenuChrome.android.kt"
+
+check_required_hits \
+    "ui sections platform menu section label flow present jvm" \
+    "$UI_SECTIONS_PLATFORM_SECTION_LABEL_FLOW_PATTERN" \
+    "gem-ui/src/jvmMain/kotlin/org/gem/ui/components/GemPlatformOverflowMenuChrome.jvm.kt"
+
+check_required_hits \
+    "ui sections platform menu command label flow present jvm" \
+    "$UI_SECTIONS_PLATFORM_COMMAND_LABEL_FLOW_PATTERN" \
+    "gem-ui/src/jvmMain/kotlin/org/gem/ui/components/GemPlatformOverflowMenuChrome.jvm.kt"
+
+check_required_hits \
+    "ui sections menu catalogue owner present entries signature" \
+    "$UI_SECTIONS_MENU_ENTRY_SIGNATURE_PATTERN" \
+    "gem-ui/src/commonMain/kotlin/org/gem/ui/navigation/AppMenuCatalogue.kt"
+
+check_required_hits \
+    "ui sections menu catalogue owner present OpenAccounts" \
+    'GemTestTags\.OpenAccounts' \
+    "gem-ui/src/commonMain/kotlin/org/gem/ui/navigation/AppMenuCatalogue.kt"
+
+check_required_hits \
+    "ui sections menu catalogue owner present OpenSettings" \
+    'GemTestTags\.OpenSettings' \
+    "gem-ui/src/commonMain/kotlin/org/gem/ui/navigation/AppMenuCatalogue.kt"
+
+check_required_hits \
+    "ui sections menu catalogue owner present LogOut" \
+    'GemTestTags\.LogOut' \
+    "gem-ui/src/commonMain/kotlin/org/gem/ui/navigation/AppMenuCatalogue.kt"
+
+check_required_hits \
+    "ui sections menu catalogue owner present Exit" \
+    'GemTestTags\.Exit' \
+    "gem-ui/src/commonMain/kotlin/org/gem/ui/navigation/AppMenuCatalogue.kt"
+
+check_required_hits \
+    "ui sections section catalogue owner present object" \
+    "$UI_SECTIONS_SECTION_CATALOGUE_PATTERN" \
+    "gem-ui/src/commonMain/kotlin/org/gem/ui/navigation/AppSectionCatalogue.kt"
+
+check_required_hits \
+    "ui sections section catalogue owner present Accounts route" \
+    'UiRoute\.Accounts' \
+    "gem-ui/src/commonMain/kotlin/org/gem/ui/navigation/AppSectionCatalogue.kt"
+
+check_required_hits \
+    "ui sections section catalogue owner present Settings route" \
+    'UiRoute\.Settings' \
+    "gem-ui/src/commonMain/kotlin/org/gem/ui/navigation/AppSectionCatalogue.kt"
+
+check_required_hits \
+    "ui sections section catalogue owner present back policy" \
+    'SectionBackPolicy\.ReturnToSessionOrLogin' \
+    "gem-ui/src/commonMain/kotlin/org/gem/ui/navigation/AppSectionCatalogue.kt"
+
+check_required_hits \
+    "ui sections section catalogue owner present session strip policy" \
+    'SectionSessionStripPolicy\.Hidden' \
+    "gem-ui/src/commonMain/kotlin/org/gem/ui/navigation/AppSectionCatalogue.kt"
+
+check_no_hits \
+    "ui sections page builder route absent" \
+    "$UI_SECTIONS_PAGE_BUILDER_ROUTE_PATTERN" \
+    "${ui_sections_public_targets[@]}"
+
+check_no_hits \
+    "ui sections feature gate absent from catalogues" \
+    "$UI_SECTIONS_FEATURE_GATE_PATTERN" \
+    "${ui_sections_navigation_targets[@]}"
+
+check_no_hits \
+    "ui sections public workstream labels absent" \
+    "$UI_SECTIONS_PUBLIC_WORKSTREAM_LABEL_PATTERN" \
+    "${ui_sections_public_targets[@]}"
+
+check_no_hits \
     "session credential direct runtime/transport calls outside protocol module" \
     "$SESSION_PROTOCOL_DIRECT_RUNTIME_PATTERN" \
     "${session_protocol_runtime_forbidden_targets[@]}"
@@ -2304,6 +2436,56 @@ check_pattern_matches \
     "self-test protocol boundary UI raw control pattern" \
     "$UI_DIRECT_CONTROL_PATTERN" \
     'OutlinedTextField(value = name, onValueChange = {})'
+
+check_pattern_matches \
+    "self-test UI sections stale account settings identifiers pattern" \
+    "$UI_SECTIONS_STALE_ACCOUNT_SETTINGS_PATTERN" \
+    'class SettingsController'
+
+check_pattern_matches \
+    "self-test UI sections fixed settings menu callback pattern" \
+    "$UI_SECTIONS_FIXED_SETTINGS_CALLBACK_PATTERN" \
+    'onSettingsClick = {}'
+
+check_pattern_matches \
+    "self-test UI sections platform direct row label pattern" \
+    "$UI_SECTIONS_PLATFORM_DIRECT_LABEL_PATTERN" \
+    'textCatalogue.text(GemTextKey.Accounts)'
+
+check_pattern_matches \
+    "self-test UI sections platform section label flow pattern" \
+    "$UI_SECTIONS_PLATFORM_SECTION_LABEL_FLOW_PATTERN" \
+    'textCatalogue.text(entry.section.labelKey)'
+
+check_pattern_matches \
+    "self-test UI sections platform command label flow pattern" \
+    "$UI_SECTIONS_PLATFORM_COMMAND_LABEL_FLOW_PATTERN" \
+    'textCatalogue.text(entry.labelKey)'
+
+check_pattern_matches \
+    "self-test UI sections page builder route pattern" \
+    "$UI_SECTIONS_PAGE_BUILDER_ROUTE_PATTERN" \
+    'object PageBuilder'
+
+check_pattern_matches \
+    "self-test UI sections feature gate pattern" \
+    "$UI_SECTIONS_FEATURE_GATE_PATTERN" \
+    'val featureAvailability = true'
+
+check_pattern_matches \
+    "self-test UI sections public workstream label pattern" \
+    "$UI_SECTIONS_PUBLIC_WORKSTREAM_LABEL_PATTERN" \
+    'const val HS003_TRACK_A_FLAG = "x"'
+
+check_pattern_matches \
+    "self-test UI sections menu catalogue owner signature pattern" \
+    "$UI_SECTIONS_MENU_ENTRY_SIGNATURE_PATTERN" \
+    'fun entries(activeSession: Boolean): List<AppMenuEntry>'
+
+check_pattern_matches \
+    "self-test UI sections section catalogue owner pattern" \
+    "$UI_SECTIONS_SECTION_CATALOGUE_PATTERN" \
+    'object AppSectionCatalogue { val accounts = AppSection(sectionId = "accounts", route = UiRoute.Accounts, labelKey = GemTextKey.Accounts, backPolicy = SectionBackPolicy.ReturnToSessionOrLogin, sessionStripPolicy = SectionSessionStripPolicy.Hidden) }'
 
 check_pattern_matches \
     "self-test session credential direct runtime pattern" \
