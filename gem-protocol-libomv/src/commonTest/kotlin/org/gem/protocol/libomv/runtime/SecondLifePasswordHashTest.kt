@@ -8,7 +8,7 @@ import kotlin.test.assertNull
 class SecondLifePasswordHashTest {
     @Test
     fun `raw ascii secret hashes to second life md5 wire form`() {
-        val hash = SecondLifePasswordHash.fromSharedSecret("secret12", testDigestPort())
+        val hash = SecondLifePasswordHash.fromSharedSecret(" secret12\n", testDigestPort())
 
         assertEquals("\$1\$8b2fee48cd255fddee9a662b55da4fd4", hash?.wireValue)
     }

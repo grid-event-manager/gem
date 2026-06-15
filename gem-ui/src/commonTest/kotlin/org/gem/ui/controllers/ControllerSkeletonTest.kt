@@ -66,7 +66,7 @@ class ControllerEntrypointShapeTest {
             .refreshSavedAccounts()
             .selectSavedAccount(profileId)
             .toggleEditAccountPanel()
-            .updateSavedPasswordDraft("settings-password")
+            .updateSavedPasswordDraft("setting-pass")
             .saveEditedPassword()
             .toggleEditAccountPanel()
             .toggleSavedPasswordVisibility()
@@ -83,7 +83,7 @@ class ControllerEntrypointShapeTest {
             .saveNewAccount()
 
         assertEquals(profileId, controller.state.selectedProfileId)
-        assertEquals("settings-password", controller.state.passwordDraft)
+        assertEquals("setting-pass", controller.state.passwordDraft)
         assertTrue(controller.state.passwordVisible)
         assertTrue(controller.state.passwordEnabled)
         assertTrue(controller.state.editAccountExpanded)

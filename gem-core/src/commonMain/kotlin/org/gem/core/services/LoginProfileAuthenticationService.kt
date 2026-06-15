@@ -27,7 +27,7 @@ class LoginProfileAuthenticationService(
                 LoginProfileAuthenticationResult.InvalidInput(added.reason.name)
             }
             CredentialServiceAddResult.InvalidSecret -> {
-                LoginProfileAuthenticationResult.InvalidInput("invalid secret")
+                LoginProfileAuthenticationResult.InvalidInput("invalid password")
             }
             is CredentialServiceAddResult.ProfileStoreFailure -> {
                 LoginProfileAuthenticationResult.CredentialStoreFailed(added.message)

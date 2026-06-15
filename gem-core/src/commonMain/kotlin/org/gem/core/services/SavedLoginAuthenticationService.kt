@@ -4,6 +4,7 @@ import org.gem.core.domain.AccountLabel
 import org.gem.core.domain.AccountProfileId
 import org.gem.core.domain.CoreFailure
 import org.gem.core.domain.LoginComplianceRequest
+import org.gem.core.domain.SecondLifeLoginSecretPolicy
 import org.gem.core.ports.LoginRequest
 import org.gem.core.ports.SessionLoginResult
 
@@ -19,6 +20,8 @@ class SavedLoginAuthenticationService(
         if (passwordDraft.isBlank()) {
             return SavedLoginAuthenticationResult.InvalidPasswordDraft
         }
+        val normalizedDraft = SecondLifeLoginSecretPolicy.normalizeForStorage(passwordDraft)
+            ?: return SavedLoginAuthenticationResult.InvalidPasswordDraft
 
         val revealed = when (val result = credentialService.revealPassword(profileId)) {
             is CredentialServiceRevealPasswordResult.Revealed -> result
@@ -33,10 +36,12 @@ class SavedLoginAuthenticationService(
             }
         }
         val previousPassword = revealed.password
-        val passwordChanged = passwordDraft != previousPassword
+        val normalizedPreviousPassword = SecondLifeLoginSecretPolicy.normalizeForStorage(previousPassword)
+        val passwordChanged = normalizedDraft != normalizedPreviousPassword
+        val storedPasswordNeedsRepair = previousPassword != normalizedDraft
 
-        if (passwordChanged) {
-            when (val update = credentialService.updatePassword(profileId, passwordDraft)) {
+        if (passwordChanged || storedPasswordNeedsRepair) {
+            when (val update = credentialService.updatePassword(profileId, normalizedDraft)) {
                 CredentialServiceUpdatePasswordResult.Updated -> Unit
                 is CredentialServiceUpdatePasswordResult.MissingProfile -> {
                     return SavedLoginAuthenticationResult.MissingProfile(update.profileId)

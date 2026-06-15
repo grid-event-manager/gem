@@ -16,7 +16,7 @@ val checkGemBoundaries by tasks.registering(Exec::class) {
 
 subprojects {
     group = "org.gem"
-    version = "0.1.31-SNAPSHOT"
+    version = "0.1.32-SNAPSHOT"
 
     plugins.withId("org.jetbrains.kotlin.jvm") {
         extensions.configure<org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension> {

@@ -34,7 +34,7 @@ class CredentialServiceTest {
         val service = service(store, vault)
 
         val result = assertIs<CredentialServiceAddResult.Saved>(
-            service.addLogin("VenueHost", "venue-password", startLocation = "uri:London City&76&174&23"),
+            service.addLogin("VenueHost", " venue-password\n", startLocation = "uri:London City&76&174&23"),
         )
 
         assertEquals("venuehost resident", result.profile.loginName.value)
@@ -56,6 +56,19 @@ class CredentialServiceTest {
 
         assertEquals(SecondLifeLoginNameInvalidReason.BLANK, invalidName.reason)
         assertEquals(CredentialServiceAddResult.InvalidSecret, invalidSecret)
+        assertTrue(vault.savedMaterials.isEmpty())
+        assertTrue(store.savedProfiles.isEmpty())
+    }
+
+    @Test
+    fun `add login rejects secrets outside second life password shape before storage`() {
+        val store = FakeAccountProfileStore()
+        val vault = FakeCredentialVault()
+        val service = service(store, vault)
+
+        assertEquals(CredentialServiceAddResult.InvalidSecret, service.addLogin("venuehost", "12345678901234567"))
+        assertEquals(CredentialServiceAddResult.InvalidSecret, service.addLogin("venuehost", "secrét"))
+        assertEquals(CredentialServiceAddResult.InvalidSecret, service.addLogin("venuehost", "\$1\$not-md5"))
         assertTrue(vault.savedMaterials.isEmpty())
         assertTrue(store.savedProfiles.isEmpty())
     }
@@ -123,6 +136,10 @@ class CredentialServiceTest {
             service.updatePassword(AccountProfileId("profile:v1:missing"), "new-password"),
         )
         assertEquals(CredentialServiceUpdatePasswordResult.InvalidSecret, service.updatePassword(profile.profileId, " "))
+        assertEquals(
+            CredentialServiceUpdatePasswordResult.InvalidSecret,
+            service.updatePassword(profile.profileId, "12345678901234567"),
+        )
         assertTrue(vault.updatedMaterials.isEmpty())
     }
 

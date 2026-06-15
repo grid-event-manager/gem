@@ -3,6 +3,7 @@ package org.gem.core.services
 import org.gem.core.domain.AccountProfileId
 import org.gem.core.domain.LoginCredentialMaterial
 import org.gem.core.domain.SavedAccountProfile
+import org.gem.core.domain.SecondLifeLoginSecretPolicy
 import org.gem.core.domain.SecondLifeLoginName
 import org.gem.core.domain.SecondLifeLoginNameResult
 import org.gem.core.domain.SecondLifeLoginUri
@@ -36,7 +37,9 @@ class CredentialService(
             is SecondLifeLoginNameResult.Valid -> result.loginName
             is SecondLifeLoginNameResult.Invalid -> return CredentialServiceAddResult.InvalidLoginName(result.reason)
         }
-        val sharedSecret = SharedSecret.fromPlainText(password)
+        val normalizedSecret = SecondLifeLoginSecretPolicy.normalizeForStorage(password)
+            ?: return CredentialServiceAddResult.InvalidSecret
+        val sharedSecret = SharedSecret.fromPlainText(normalizedSecret)
             ?: return CredentialServiceAddResult.InvalidSecret
         val material = LoginCredentialMaterial(loginUri, loginName, sharedSecret, startLocation)
 
@@ -62,7 +65,9 @@ class CredentialService(
                 return CredentialServiceUpdatePasswordResult.ProfileStoreFailure(lookup.message)
             }
         }
-        val newSecret = SharedSecret.fromPlainText(password)
+        val normalizedSecret = SecondLifeLoginSecretPolicy.normalizeForStorage(password)
+            ?: return CredentialServiceUpdatePasswordResult.InvalidSecret
+        val newSecret = SharedSecret.fromPlainText(normalizedSecret)
             ?: return CredentialServiceUpdatePasswordResult.InvalidSecret
 
         val existingMaterial = when (val resolved = credentialVault.resolve(profile.credentialHandle)) {

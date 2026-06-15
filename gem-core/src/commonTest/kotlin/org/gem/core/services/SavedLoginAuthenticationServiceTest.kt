@@ -69,6 +69,22 @@ class SavedLoginAuthenticationServiceTest {
     }
 
     @Test
+    fun `normalizes saved password draft and repairs stored paste whitespace before login`() {
+        val profile = profile("one")
+        val vault = FakeAuthenticationCredentialVault(resolvePassword = "saved-password\n")
+        val sessionPort = FakeSessionPort()
+        val service = service(profile, vault, sessionPort)
+
+        val result = assertIs<SavedLoginAuthenticationResult.Success>(
+            service.loginWithSavedProfile(profile.profileId, " saved-password\n", allowedCompliance()),
+        )
+
+        assertEquals(profile, result.profile)
+        assertEquals(listOf("saved-password"), vault.updatedPasswords)
+        assertEquals(1, sessionPort.loginRequests.size)
+    }
+
+    @Test
     fun `restores prior password when changed draft login fails`() {
         val profile = profile("one")
         val vault = FakeAuthenticationCredentialVault(resolvePassword = "old-password")
@@ -114,15 +130,17 @@ class SavedLoginAuthenticationServiceTest {
     }
 
     @Test
-    fun `blank draft stops before vault mutation or login`() {
+    fun `blank and invalid drafts stop before vault mutation or login`() {
         val profile = profile("one")
         val vault = FakeAuthenticationCredentialVault(resolvePassword = "old-password")
         val sessionPort = FakeSessionPort()
         val service = service(profile, vault, sessionPort)
 
-        val result = service.loginWithSavedProfile(profile.profileId, " ", allowedCompliance())
+        val blank = service.loginWithSavedProfile(profile.profileId, " ", allowedCompliance())
+        val overlong = service.loginWithSavedProfile(profile.profileId, "12345678901234567", allowedCompliance())
 
-        assertEquals(SavedLoginAuthenticationResult.InvalidPasswordDraft, result)
+        assertEquals(SavedLoginAuthenticationResult.InvalidPasswordDraft, blank)
+        assertEquals(SavedLoginAuthenticationResult.InvalidPasswordDraft, overlong)
         assertEquals(0, vault.resolveCalls)
         assertTrue(vault.updatedPasswords.isEmpty())
         assertTrue(sessionPort.loginRequests.isEmpty())

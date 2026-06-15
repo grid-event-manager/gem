@@ -220,14 +220,14 @@ class LoginControllerTest {
         val accountService = runtime.savedAccountManagementServiceOrNull() ?: error("missing account service")
 
         accountService.deleteAccounts(setOf(profile.profileId))
-        val added = accountService.addAccount("venuehost", "replacement-password")
+        val added = accountService.addAccount("venuehost", "replace-pass")
         require(added is SavedAccountAddResult.Saved)
 
         val refreshed = stale.refreshSavedLogins()
 
         assertEquals(added.profile.profileId, refreshed.state.selectedProfileId)
         assertEquals("venuehost resident", refreshed.state.usernameDraft)
-        assertEquals("replacement-password", refreshed.state.passwordDraft)
+        assertEquals("replace-pass", refreshed.state.passwordDraft)
         assertTrue(refreshed.state.passwordEnabled)
         assertTrue(refreshed.state.loginEnabled)
     }
