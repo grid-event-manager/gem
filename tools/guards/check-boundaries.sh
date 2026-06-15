@@ -53,6 +53,16 @@ SIMULATOR_SESSION_FORBIDDEN_FACADE_RECEIVE_PATTERN='(^|[^[:alnum:]_])(packetExch
 SIMULATOR_SESSION_DEAD_CIRCUIT_CLIENT_PATTERN='presentCircuit|pendingNoticeArchiveReplies|drainPreNoticeTraffic|waitForOutgoingAck|waitForPacket'
 SIMULATOR_SESSION_DUPLICATE_GATEWAY_PATTERN='(^|[^[:alnum:]_])(NoticeSender2|ArchiveReader2|SimulatorSessionManager|SessionHelper|UdpHelper|GroupNoticeProofHelper)([^[:alnum:]_]|$)'
 SIMULATOR_SESSION_FORBIDDEN_FAKE_LIVE_PATTERN='fake.*simulator.*passed|simulator.*fake.*passed|fake.*live.*passed|CommandMode\.FAKE[^;]*ProofReportStatus\.PASSED|ProofReportStatus\.PASSED[^;]*CommandMode\.FAKE|local proof bypass'
+ANDROID_SCREEN_FORK_PATTERN='(^|[^[:alnum:]_])Android[A-Za-z0-9_]*(Login|Settings|Compose)?Screen([^[:alnum:]_]|$)'
+ANDROID_CONTROLLER_FORK_PATTERN='(^|[^[:alnum:]_])Android[A-Za-z0-9_]*(Login|Settings|NoticeComposer|InventoryBrowser|GroupTarget|App)?Controller([^[:alnum:]_]|$)'
+ANDROID_SERVICE_FORK_PATTERN='(^|[^[:alnum:]_])Android[A-Za-z0-9_]*(NoticeDispatch|Credential|InventoryBrowser|GroupDirectory|Session|Protocol)?Service([^[:alnum:]_]|$)'
+ANDROID_DIRECT_PROTOCOL_OR_VAULT_PATTERN='Protocol[A-Za-z]+Runtime|Libomv|CredentialVault|VaultAccessService|NoticePort|sendGroupNotice'
+ANDROID_VIEW_XML_WEBVIEW_UI_PATTERN='WebView|android\.webkit|<layout|androidx\.webview|loadDataWithBaseURL|\.html'
+ANDROID_LEGACY_ACTIONBAR_PATTERN='<item[[:space:]]+name="android:windowActionBar">true</item>|windowActionBar[[:space:]]*=[[:space:]]*"true"'
+ANDROID_ACTIVITY_ROUTE_BACK_PATTERN='UiRoute|GemAppController|runLogoutWorkflow|backFromSettings|BackHandler|onBackPressed'
+ANDROID_ACTIVITY_COMPOSE_DEPENDENCY_PATTERN='activity\.compose|androidx-activity-compose'
+ANDROID_BACKHANDLER_SOURCE_PATTERN='androidx\.activity\.compose\.BackHandler|\bBackHandler\('
+ANDROID_SET_CONTENT_SOURCE_PATTERN='androidx\.activity\.compose\.setContent|\bsetContent\b'
 PUBLIC_SOURCE_BRIEFING_LABEL_IDENTIFIER_PATTERN='(^|[^[:alnum:]_])(TRACK_[A-Z][A-Z0-9_]*|HS[0-9]{3}_TRACK_[A-Z][A-Z0-9_]*|HS[0-9]{3}-[A-Z][A-Z]?(-[0-9][0-9])?|Track[[:space:]]+[A-Z][A-Z]?|Track([A-Z]|[A-Z][A-Z])|track[A-Z][A-Za-z0-9_]*|track_[a-z][a-z0-9_]*|track-[a-z][a-z0-9_-]*|[A-Z]-[0-9][0-9]-T[0-9]+)([^[:alnum:]_]|$)'
 CREDENTIAL_ENV_READ_PATTERN='System(::|\.)getenv'
 CREDENTIAL_FILE_ROUTE_PATTERN='credential-file'
@@ -145,6 +155,79 @@ check_no_hits() {
             echo "FAIL: $label"
             echo "$output"
             failures=1
+            ;;
+        1)
+            echo "PASS: $label"
+            ;;
+        *)
+            echo "ERROR: $label scan failed"
+            echo "$output"
+            failures=1
+            ;;
+    esac
+}
+
+check_hits_only_from_paths() {
+    local label="$1"
+    local pattern="$2"
+    shift 2
+
+    local allowed_paths=()
+    while [[ "$#" -gt 0 && "$1" != "--" ]]; do
+        allowed_paths+=("$1")
+        shift
+    done
+
+    if [[ "$#" -eq 0 || "$1" != "--" ]]; then
+        echo "ERROR: $label missing allowed-path separator"
+        failures=1
+        return
+    fi
+    shift
+
+    if [[ "$#" -eq 0 ]]; then
+        echo "ERROR: $label has no scan targets"
+        failures=1
+        return
+    fi
+
+    local output
+    local status
+    set +e
+    output="$(rg -n \
+        --glob '!**/build/**' \
+        --glob '!**/.gradle/**' \
+        --glob '!**/.kotlin/**' \
+        -- "$pattern" "$@" 2>&1)"
+    status="$?"
+    set -e
+
+    case "$status" in
+        0)
+            local unexpected=""
+            local line path allowed
+            while IFS= read -r line; do
+                [[ -n "$line" ]] || continue
+                path="${line%%:*}"
+                allowed=0
+                for allowed_path in "${allowed_paths[@]}"; do
+                    if [[ "$path" == "$allowed_path" ]]; then
+                        allowed=1
+                        break
+                    fi
+                done
+                if [[ "$allowed" -eq 0 ]]; then
+                    unexpected+="$line"$'\n'
+                fi
+            done <<< "$output"
+
+            if [[ -z "$unexpected" ]]; then
+                echo "PASS: $label"
+            else
+                echo "FAIL: $label"
+                printf '%s' "$unexpected"
+                failures=1
+            fi
             ;;
         1)
             echo "PASS: $label"
@@ -709,6 +792,144 @@ check_simulator_session_boundaries() {
         "simulator session briefing-label persisted identifiers absent" \
         "$PUBLIC_SOURCE_BRIEFING_LABEL_IDENTIFIER_PATTERN" \
         "${raw_identifier_targets[@]}"
+}
+
+check_android_platform_presentation_boundaries() {
+    local owner_files=(
+        "gem-ui/src/commonMain/kotlin/org/gem/ui/components/GemPlatformBackHandler.kt"
+        "gem-ui/src/androidMain/kotlin/org/gem/ui/components/GemPlatformBackHandler.android.kt"
+        "gem-ui/src/jvmMain/kotlin/org/gem/ui/components/GemPlatformBackHandler.jvm.kt"
+        "gem-ui/src/commonMain/kotlin/org/gem/ui/components/GemPlatformTopBarChrome.kt"
+        "gem-ui/src/androidMain/kotlin/org/gem/ui/components/GemPlatformTopBarChrome.android.kt"
+        "gem-ui/src/jvmMain/kotlin/org/gem/ui/components/GemPlatformTopBarChrome.jvm.kt"
+        "gem-ui/src/commonMain/kotlin/org/gem/ui/components/GemPlatformOverflowMenuChrome.kt"
+        "gem-ui/src/androidMain/kotlin/org/gem/ui/components/GemPlatformOverflowMenuChrome.android.kt"
+        "gem-ui/src/jvmMain/kotlin/org/gem/ui/components/GemPlatformOverflowMenuChrome.jvm.kt"
+        "gem-ui/src/commonMain/kotlin/org/gem/ui/components/GemPlatformInsets.kt"
+        "gem-ui/src/androidMain/kotlin/org/gem/ui/components/GemPlatformInsets.android.kt"
+        "gem-ui/src/jvmMain/kotlin/org/gem/ui/components/GemPlatformInsets.jvm.kt"
+    )
+
+    local owner_file
+    for owner_file in "${owner_files[@]}"; do
+        check_path_exists "ANDROID_PLATFORM_OWNER_FILES_PRESENT $owner_file" "$owner_file"
+    done
+
+    local android_ui_production_targets=()
+    add_existing android_ui_production_targets \
+        "apps/android/src/main" \
+        "gem-ui/src/androidMain" \
+        "gem-ui/src/commonMain/kotlin/org/gem/ui"
+
+    check_no_hits \
+        "ANDROID_NO_SCREEN_FORK" \
+        "$ANDROID_SCREEN_FORK_PATTERN" \
+        "${android_ui_production_targets[@]}"
+
+    check_no_hits \
+        "ANDROID_NO_CONTROLLER_FORK" \
+        "$ANDROID_CONTROLLER_FORK_PATTERN" \
+        "${android_ui_production_targets[@]}"
+
+    check_no_hits \
+        "ANDROID_NO_SERVICE_FORK" \
+        "$ANDROID_SERVICE_FORK_PATTERN" \
+        "${android_ui_production_targets[@]}"
+
+    local android_direct_route_targets=()
+    while IFS= read -r path; do
+        case "$path" in
+            "gem-ui/src/commonMain/kotlin/org/gem/ui/runtime/GemUiRuntime.kt") ;;
+            *) android_direct_route_targets+=("$path") ;;
+        esac
+    done < <(find \
+        "gem-ui/src/androidMain" \
+        "gem-ui/src/commonMain/kotlin/org/gem/ui" \
+        -type f -name '*.kt' 2>/dev/null || true)
+    add_existing android_direct_route_targets \
+        "apps/android/src/main/kotlin/org/gem/apps/android/GemAndroidActivity.kt"
+
+    check_no_hits \
+        "ANDROID_NO_DIRECT_PROTOCOL_OR_VAULT_ROUTE" \
+        "$ANDROID_DIRECT_PROTOCOL_OR_VAULT_PATTERN" \
+        "${android_direct_route_targets[@]}"
+
+    check_no_hits \
+        "ANDROID_NO_VIEW_XML_WEBVIEW_UI" \
+        "$ANDROID_VIEW_XML_WEBVIEW_UI_PATTERN" \
+        "${android_ui_production_targets[@]}"
+
+    local android_style_targets=()
+    add_existing android_style_targets \
+        "apps/android/src/main/res/values/styles.xml"
+
+    check_required_hits \
+        "ANDROID_NO_LEGACY_ACTIONBAR NoActionBar theme" \
+        'Theme\.Material\.Light\.NoActionBar' \
+        "${android_style_targets[@]}"
+
+    check_required_hits \
+        "ANDROID_NO_LEGACY_ACTIONBAR windowActionBar false" \
+        '<item[[:space:]]+name="android:windowActionBar">false</item>' \
+        "${android_style_targets[@]}"
+
+    check_no_hits \
+        "ANDROID_NO_LEGACY_ACTIONBAR no true ActionBar route" \
+        "$ANDROID_LEGACY_ACTIONBAR_PATTERN" \
+        "apps/android/src/main"
+
+    local android_activity_targets=()
+    add_existing android_activity_targets \
+        "apps/android/src/main/kotlin/org/gem/apps/android/GemAndroidActivity.kt"
+
+    check_no_hits \
+        "ANDROID_ACTIVITY_NO_ROUTE_BACK_DECISIONS" \
+        "$ANDROID_ACTIVITY_ROUTE_BACK_PATTERN" \
+        "${android_activity_targets[@]}"
+
+    local compose_dependency_targets=()
+    while IFS= read -r path; do
+        path="${path#./}"
+        compose_dependency_targets+=("$path")
+    done < <(find . \
+        -path './build' -prune -o \
+        -path './.gradle' -prune -o \
+        -path './.kotlin' -prune -o \
+        -name build.gradle.kts -print)
+    add_existing compose_dependency_targets \
+        "gradle/libs.versions.toml"
+
+    check_hits_only_from_paths \
+        "ANDROID_ACTIVITY_COMPOSE_DEPENDENCY_LIMIT" \
+        "$ANDROID_ACTIVITY_COMPOSE_DEPENDENCY_PATTERN" \
+        "gradle/libs.versions.toml" \
+        "apps/android/build.gradle.kts" \
+        "gem-ui/build.gradle.kts" \
+        -- \
+        "${compose_dependency_targets[@]}"
+
+    check_hits_only_from_paths \
+        "ANDROID_ACTIVITY_COMPOSE_DEPENDENCY_LIMIT BackHandler source owner" \
+        "$ANDROID_BACKHANDLER_SOURCE_PATTERN" \
+        "gem-ui/src/androidMain/kotlin/org/gem/ui/components/GemPlatformBackHandler.android.kt" \
+        -- \
+        "apps/android/src/main" \
+        "gem-ui/src"
+
+    check_hits_only_from_paths \
+        "ANDROID_ACTIVITY_COMPOSE_DEPENDENCY_LIMIT production setContent owner" \
+        "$ANDROID_SET_CONTENT_SOURCE_PATTERN" \
+        "apps/android/src/main/kotlin/org/gem/apps/android/GemAndroidActivity.kt" \
+        -- \
+        "apps/android/src/main" \
+        "gem-ui/src"
+
+    check_hits_only_from_paths \
+        "ANDROID_ACTIVITY_COMPOSE_DEPENDENCY_LIMIT androidTest setContent owner" \
+        "$ANDROID_SET_CONTENT_SOURCE_PATTERN" \
+        "apps/android/src/androidTest/kotlin/org/gem/apps/android/GemAndroidNativeUiInstrumentedTest.kt" \
+        -- \
+        "apps/android/src/androidTest"
 }
 
 core_targets=()
@@ -1950,6 +2171,7 @@ check_no_hits \
     "${avatar_simulator_exchange_impl_targets[@]}"
 
 check_simulator_session_boundaries
+check_android_platform_presentation_boundaries
 
 check_exact_owner_count "inventory capability single InventoryPort owner" "InventoryPort" 1 "${inventory_capability_main_targets[@]}"
 check_exact_owner_count "inventory capability single InventoryDirectoryService owner" "InventoryDirectoryService" 1 "${inventory_capability_main_targets[@]}"
@@ -2487,6 +2709,61 @@ check_pattern_matches \
     "self-test simulator session fake live route pattern" \
     "$SIMULATOR_SESSION_FORBIDDEN_FAKE_LIVE_PATTERN" \
     'CommandMode.FAKE returns ProofReportStatus.PASSED'
+
+check_pattern_matches \
+    "self-test ANDROID_PLATFORM_OWNER_FILES_PRESENT owner fixture" \
+    'GemPlatformBackHandler' \
+    'GemPlatformBackHandler'
+
+check_pattern_matches \
+    "self-test ANDROID_NO_SCREEN_FORK pattern" \
+    "$ANDROID_SCREEN_FORK_PATTERN" \
+    'class AndroidLoginScreen'
+
+check_pattern_matches \
+    "self-test ANDROID_NO_CONTROLLER_FORK pattern" \
+    "$ANDROID_CONTROLLER_FORK_PATTERN" \
+    'class AndroidLoginController'
+
+check_pattern_matches \
+    "self-test ANDROID_NO_SERVICE_FORK pattern" \
+    "$ANDROID_SERVICE_FORK_PATTERN" \
+    'class AndroidSessionService'
+
+check_pattern_matches \
+    "self-test ANDROID_NO_DIRECT_PROTOCOL_OR_VAULT_ROUTE pattern" \
+    "$ANDROID_DIRECT_PROTOCOL_OR_VAULT_PATTERN" \
+    'ProtocolNoticeRuntime().sendGroupNotice(session, group, draft, null)'
+
+check_pattern_matches \
+    "self-test ANDROID_NO_VIEW_XML_WEBVIEW_UI pattern" \
+    "$ANDROID_VIEW_XML_WEBVIEW_UI_PATTERN" \
+    'android.webkit.WebView(context).loadDataWithBaseURL("file.html", html, "text/html", "utf-8", null)'
+
+check_pattern_matches \
+    "self-test ANDROID_NO_LEGACY_ACTIONBAR pattern" \
+    "$ANDROID_LEGACY_ACTIONBAR_PATTERN" \
+    '<item name="android:windowActionBar">true</item>'
+
+check_pattern_matches \
+    "self-test ANDROID_ACTIVITY_NO_ROUTE_BACK_DECISIONS pattern" \
+    "$ANDROID_ACTIVITY_ROUTE_BACK_PATTERN" \
+    'GemAppController(runtime).backFromSettings()'
+
+check_pattern_matches \
+    "self-test ANDROID_ACTIVITY_COMPOSE_DEPENDENCY_LIMIT dependency pattern" \
+    "$ANDROID_ACTIVITY_COMPOSE_DEPENDENCY_PATTERN" \
+    'implementation(libs.androidx.activity.compose)'
+
+check_pattern_matches \
+    "self-test ANDROID_ACTIVITY_COMPOSE_DEPENDENCY_LIMIT BackHandler pattern" \
+    "$ANDROID_BACKHANDLER_SOURCE_PATTERN" \
+    'BackHandler(enabled = true) { }'
+
+check_pattern_matches \
+    "self-test ANDROID_ACTIVITY_COMPOSE_DEPENDENCY_LIMIT setContent pattern" \
+    "$ANDROID_SET_CONTENT_SOURCE_PATTERN" \
+    'activity.setContent { GemApp(runtime) }'
 
 if [[ "$failures" -ne 0 ]]; then
     exit 1

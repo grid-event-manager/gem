@@ -35,7 +35,10 @@ dependencies {
     implementation(project(":gem-protocol-libomv"))
     implementation(libs.androidx.activity.compose)
     androidTestImplementation(project(":gem-credential-vault"))
+    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    androidTestImplementation(libs.androidx.test.espresso.core)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.runner)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
     testImplementation(kotlin("test-junit"))
 }
