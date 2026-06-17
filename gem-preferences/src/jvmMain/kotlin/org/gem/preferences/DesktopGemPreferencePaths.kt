@@ -15,6 +15,13 @@ object DesktopGemPreferencePaths {
     ): String =
         joinPath(defaultPreferenceDirectory(osName, env, userHome), "last-login-profile.txt")
 
+    fun defaultAppearanceProfileFile(
+        osName: String,
+        env: Map<String, String>,
+        userHome: String,
+    ): String =
+        joinPath(defaultPreferenceDirectory(osName, env, userHome), "appearance-profiles.properties")
+
     fun defaultPreferenceDirectory(
         osName: String,
         env: Map<String, String>,

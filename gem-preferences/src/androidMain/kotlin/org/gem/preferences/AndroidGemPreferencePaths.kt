@@ -7,6 +7,9 @@ object AndroidGemPreferencePaths {
     fun defaultLastLoginProfileFile(appFilesDir: String): String =
         joinPath(defaultPreferenceDirectory(appFilesDir), "last-login-profile.txt")
 
+    fun defaultAppearanceProfileFile(appFilesDir: String): String =
+        joinPath(defaultPreferenceDirectory(appFilesDir), "appearance-profiles.properties")
+
     private fun defaultPreferenceDirectory(appFilesDir: String): String =
         joinPath(appFilesDir, "gem", "preferences")
 
