@@ -92,6 +92,11 @@ THEME_PALETTE_OWNER_PATTERN='object[[:space:]]+HaccuGemPaletteProvider'
 THEME_ANDROID_LABEL_PATTERN='manifestPlaceholders\["appLabel"\][[:space:]]*=[[:space:]]*"GEM Event Manager"'
 THEME_DESKTOP_VENDOR_PATTERN='vendor[[:space:]]*=[[:space:]]*"ANVLL"'
 THEME_ROOT_PROJECT_LABEL_PATTERN='rootProject\.name\.replaceFirstChar'
+APPEARANCE_STALE_ROUTE_PATTERN='ThemeController|ThemeUiState|ThemeSettingsPanel|ResolvedThemeMode'
+APPEARANCE_PROTOTYPE_LEAKAGE_PATTERN='appearance-customizer|WebView|<script|color-picker\.js|tokens\.js'
+APPEARANCE_STALE_MODE_CONTROL_PATTERN='Text style|Area colour|RadioButton|GemSegmentButton|SegmentButton'
+APPEARANCE_LOCAL_STYLE_PATTERN='Color\(|#[0-9A-Fa-f]{6}|\.dp|FontWeight|fontSize|RoundedCornerShape'
+APPEARANCE_DIRECT_STORAGE_PLATFORM_PATTERN='ThemePreferenceService|AppearanceProfileStore|FileAppearanceProfileStore|PreferenceFileStorage|PlatformFontCatalogue|PlatformFontFamilyResolver|GraphicsEnvironment|SystemFonts'
 ARCHITECTURE_GENERIC_OWNER_PATTERN='(^|/)(LoginCompliance|NoticeCompliance|.*(Manager|Helper|Utils|Common))\.kt$'
 SESSION_LOGIN_OVERLOAD_PATTERN='fun[[:space:]]+login\([[:space:]]*request:[[:space:]]*LoginRequest[[:space:]]*\)'
 SESSION_LOGIN_ONE_ARG_PATTERN='sessionService\.login\([^,\n)]*\)'
@@ -1271,6 +1276,48 @@ add_existing theme_root_project_label_targets \
     "apps/desktop/build.gradle.kts" \
     "apps/android/build.gradle.kts"
 
+appearance_stale_route_targets=()
+add_existing appearance_stale_route_targets \
+    "gem-ui/src/commonMain" \
+    "apps/desktop/src/main" \
+    "apps/android/src/main"
+
+appearance_prototype_leakage_targets=()
+add_existing appearance_prototype_leakage_targets \
+    "gem-core/src/commonMain" \
+    "gem-preferences/src/commonMain" \
+    "gem-ui/src/commonMain" \
+    "gem-ui/src/jvmMain" \
+    "gem-ui/src/androidMain" \
+    "apps/desktop/src/main" \
+    "apps/android/src/main"
+
+appearance_settings_targets=()
+while IFS= read -r path; do
+    appearance_settings_targets+=("$path")
+done < <(find \
+    "gem-ui/src/commonMain/kotlin/org/gem/ui/components" \
+    -maxdepth 1 -type f -name 'Appearance*.kt' 2>/dev/null || true)
+add_existing appearance_settings_targets \
+    "gem-ui/src/commonMain/kotlin/org/gem/ui/screens/SettingsScreen.kt" \
+    "gem-ui/src/commonMain/kotlin/org/gem/ui/components/GemColorPicker.kt" \
+    "gem-ui/src/commonMain/kotlin/org/gem/ui/components/GemRgbSliderRow.kt" \
+    "gem-ui/src/commonMain/kotlin/org/gem/ui/components/GemSwatchGrid.kt"
+
+appearance_local_style_targets=()
+while IFS= read -r path; do
+    appearance_local_style_targets+=("$path")
+done < <(find \
+    "gem-ui/src/commonMain/kotlin/org/gem/ui/components" \
+    -maxdepth 1 -type f -name 'Appearance*.kt' 2>/dev/null || true)
+add_existing appearance_local_style_targets \
+    "gem-ui/src/commonMain/kotlin/org/gem/ui/screens/SettingsScreen.kt"
+
+appearance_storage_platform_targets=()
+add_existing appearance_storage_platform_targets \
+    "gem-ui/src/commonMain/kotlin/org/gem/ui/screens" \
+    "gem-ui/src/commonMain/kotlin/org/gem/ui/components"
+
 session_protocol_runtime_forbidden_targets=()
 while IFS= read -r path; do
     case "$path" in
@@ -2032,6 +2079,31 @@ check_no_hits \
     "${theme_root_project_label_targets[@]}"
 
 check_no_hits \
+    "appearance old theme route absent" \
+    "$APPEARANCE_STALE_ROUTE_PATTERN" \
+    "${appearance_stale_route_targets[@]}"
+
+check_no_hits \
+    "appearance prototype leakage absent" \
+    "$APPEARANCE_PROTOTYPE_LEAKAGE_PATTERN" \
+    "${appearance_prototype_leakage_targets[@]}"
+
+check_no_hits \
+    "appearance stale mode controls absent" \
+    "$APPEARANCE_STALE_MODE_CONTROL_PATTERN" \
+    "${appearance_settings_targets[@]}"
+
+check_no_hits \
+    "appearance local style constants absent" \
+    "$APPEARANCE_LOCAL_STYLE_PATTERN" \
+    "${appearance_local_style_targets[@]}"
+
+check_no_hits \
+    "appearance direct storage platform calls absent" \
+    "$APPEARANCE_DIRECT_STORAGE_PLATFORM_PATTERN" \
+    "${appearance_storage_platform_targets[@]}"
+
+check_no_hits \
     "vault forbidden vault dependency acquisition" \
     "$VAULT_FORBIDDEN_DEPENDENCY_PATTERN" \
     "${vault_dependency_targets[@]}"
@@ -2589,6 +2661,31 @@ check_pattern_matches \
     "self-test theme root project label pattern" \
     "$THEME_ROOT_PROJECT_LABEL_PATTERN" \
     'manifestPlaceholders["appLabel"] = rootProject.name.replaceFirstChar { it.titlecase() }'
+
+check_pattern_matches \
+    "self-test appearance stale route pattern" \
+    "$APPEARANCE_STALE_ROUTE_PATTERN" \
+    'val stale = ThemeController.initial(runtime, osDark)'
+
+check_pattern_matches \
+    "self-test appearance prototype leakage pattern" \
+    "$APPEARANCE_PROTOTYPE_LEAKAGE_PATTERN" \
+    'val url = "docs/ui-prototype/appearance-customizer/js/tokens.js"'
+
+check_pattern_matches \
+    "self-test appearance stale mode controls pattern" \
+    "$APPEARANCE_STALE_MODE_CONTROL_PATTERN" \
+    'RadioButton(selected = true, onClick = {})'
+
+check_pattern_matches \
+    "self-test appearance local style pattern" \
+    "$APPEARANCE_LOCAL_STYLE_PATTERN" \
+    'val shape = RoundedCornerShape(8.dp)'
+
+check_pattern_matches \
+    "self-test appearance direct storage platform pattern" \
+    "$APPEARANCE_DIRECT_STORAGE_PLATFORM_PATTERN" \
+    'PlatformFontCatalogue { emptyList() }'
 
 check_pattern_matches \
     "self-test vault forbidden vault dependency pattern" \
