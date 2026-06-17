@@ -196,7 +196,7 @@ fun GemTopBarIconButton(
         contentPadding = PaddingValues(spacing.none),
         colors = ButtonDefaults.outlinedButtonColors(
             containerColor = colors.topBarButtonSurface,
-            contentColor = colors.topBarMenuInk,
+            contentColor = colors.topBarButtonInk,
             disabledContainerColor = colors.disabledBackground,
             disabledContentColor = colors.disabledInk,
         ),

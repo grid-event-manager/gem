@@ -32,6 +32,7 @@ data class GemColors(
     val topBarClockInk: Color = topBarMenuInk,
     val topBarButtonSurface: Color = surfaceStrong,
     val topBarButtonBorder: Color = lineStrong,
+    val topBarButtonInk: Color = topBarMenuInk,
     val brandMarkInk: Color = Color(0xFF172033),
     val statusBackground: Color = Color(0xFFF4F7FB),
     val focusRing: Color = Color(0x291F766E),

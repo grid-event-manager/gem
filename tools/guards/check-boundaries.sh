@@ -23,7 +23,7 @@ UI_FORBIDDEN_OWNER_PATTERN='(^|[^[:alnum:]_])(UiManager|StyleUtils|CommonUi|Scre
 UI_WEBVIEW_PATTERN='WebView|android\.webkit|<html|styles\.css|prototype\.js'
 UI_STAGED_PATTERN='STAGED_ENTRYPOINT|TODO|NotImplemented|UnsupportedOperationException|error\("not implemented"\)'
 UI_TEXT_CATALOGUE_PATTERN='"(User Name|Password|Show|Hide|Login|Add new login|Add new login\.\.\.|Save and login|Settings|Add new account|Save new account|Delete account|Delete|Send notices|Online|Offline|Inventory|Landmarks|Textures|Add all|Select\.\.\.)"'
-UI_STYLE_TOKEN_PATTERN='#[0-9A-Fa-f]{6}|Color\(|[0-9]+\.dp'
+UI_STYLE_TOKEN_PATTERN='#[0-9A-Fa-f]{6}|(^|[^[:alnum:]_])Color\(|[0-9]+\.dp'
 UI_DIRECT_CONTROL_PATTERN='(^|[^[:alnum:]_])(OutlinedTextField|DropdownMenu|DropdownMenuItem|ExposedDropdownMenu|ExposedDropdownMenuBox|Button|OutlinedButton|verticalScroll|rememberScrollState|VerticalScrollbar|rememberScrollbarAdapter)[[:space:]]*\('
 UI_SECTIONS_STALE_ACCOUNT_SETTINGS_PATTERN='SettingsController|SettingsUiState|SettingsPanels|SettingsEditAccountPanel|SettingsAddAccountPanel|SettingsErrorText|SettingsBackNav'
 UI_SECTIONS_FIXED_SETTINGS_CALLBACK_PATTERN='onSettingsClick'
@@ -2433,6 +2433,11 @@ check_pattern_matches \
     "self-test protocol boundary UI style constant pattern" \
     "$UI_STYLE_TOKEN_PATTERN" \
     'val gap = 12.dp'
+
+check_pattern_matches \
+    "self-test protocol boundary UI color constructor pattern" \
+    "$UI_STYLE_TOKEN_PATTERN" \
+    'val fill = Color(0xFFFFFFFF)'
 
 check_pattern_matches \
     "self-test protocol boundary UI raw control pattern" \

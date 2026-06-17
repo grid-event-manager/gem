@@ -102,6 +102,9 @@ object FakeGemUiRuntime {
         noticeArchiveEntriesByGroupId: Map<GroupId, List<GroupNoticeArchiveEntry>>? = null,
         noticeArchiveFailuresByGroupId: Map<GroupId, CoreFailure> = emptyMap(),
         themePreferenceStore: FakeThemePreferenceStore = FakeThemePreferenceStore(),
+        appearanceProfileStore: AppearanceProfileStore = InMemoryAppearanceProfileStore(),
+        availableFontFamilies: List<AppearanceFontFamily> = listOf(AppearanceFontFamily("Inter")),
+        platformFontFamilyResolver: PlatformFontFamilyResolver = PlatformFontFamilyResolver { FontFamily.Default },
         lastLoginProfilePreferenceStore: FakeLastLoginProfilePreferenceStore = FakeLastLoginProfilePreferenceStore(),
     ): GemUiRuntime {
         val profileStore = InMemoryAccountProfileStore(profiles)
@@ -128,6 +131,9 @@ object FakeGemUiRuntime {
             noticeArchiveEntriesByGroupId = noticeArchiveEntriesByGroupId,
             noticeArchiveFailuresByGroupId = noticeArchiveFailuresByGroupId,
             themePreferenceStore = themePreferenceStore,
+            appearanceProfileStore = appearanceProfileStore,
+            availableFontFamilies = availableFontFamilies,
+            platformFontFamilyResolver = platformFontFamilyResolver,
             lastLoginProfilePreferenceStore = lastLoginProfilePreferenceStore,
         )
     }
@@ -163,6 +169,9 @@ object FakeGemUiRuntime {
         noticeArchiveEntriesByGroupId: Map<GroupId, List<GroupNoticeArchiveEntry>>? = null,
         noticeArchiveFailuresByGroupId: Map<GroupId, CoreFailure> = emptyMap(),
         themePreferenceStore: FakeThemePreferenceStore = FakeThemePreferenceStore(),
+        appearanceProfileStore: AppearanceProfileStore = InMemoryAppearanceProfileStore(),
+        availableFontFamilies: List<AppearanceFontFamily> = listOf(AppearanceFontFamily("Inter")),
+        platformFontFamilyResolver: PlatformFontFamilyResolver = PlatformFontFamilyResolver { FontFamily.Default },
         lastLoginProfilePreferenceStore: FakeLastLoginProfilePreferenceStore = FakeLastLoginProfilePreferenceStore(),
     ): GemUiRuntime {
         val sessionPort = FakeSessionPort(loginSucceeds)
@@ -204,13 +213,11 @@ object FakeGemUiRuntime {
                 )
             },
             themePreferenceService = ThemePreferenceService(themePreferenceStore),
-            appearanceProfileService = AppearanceProfileService(InMemoryAppearanceProfileStore()),
+            appearanceProfileService = AppearanceProfileService(appearanceProfileStore),
             platformFontCatalogue = PlatformFontCatalogue {
-                listOf(AppearanceFontFamily("Inter"))
+                availableFontFamilies
             },
-            platformFontFamilyResolver = PlatformFontFamilyResolver {
-                FontFamily.Default
-            },
+            platformFontFamilyResolver = platformFontFamilyResolver,
             lastLoginProfilePreferenceService = LastLoginProfilePreferenceService(lastLoginProfilePreferenceStore),
         )
     }
