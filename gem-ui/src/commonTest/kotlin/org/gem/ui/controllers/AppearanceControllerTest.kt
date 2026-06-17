@@ -113,8 +113,11 @@ class AppearanceControllerTest {
         val store = FakeThemePreferenceStore(ThemePreferenceLoadResult.Missing)
         val runtime = FakeGemUiRuntime.ready(themePreferenceStore = store)
         val opened = AppearanceController.initial(runtime, osDark = false).openSaveThemeDialog()
+        val darkSaveMode = opened.updateSaveThemeMode(AppearanceMode.DARK)
 
-        val rejected = opened.saveTheme("   ", AppearanceMode.LIGHT)
+        assertEquals(AppearanceMode.DARK, darkSaveMode.state.saveThemeMode)
+
+        val rejected = darkSaveMode.saveTheme("   ", AppearanceMode.LIGHT)
 
         assertTrue(rejected.state.saveThemeDialogOpen)
         assertTrue(rejected.state.saveThemeNameFocusRequested)

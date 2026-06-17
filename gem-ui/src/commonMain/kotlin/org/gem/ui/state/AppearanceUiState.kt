@@ -1,5 +1,6 @@
 package org.gem.ui.state
 
+import org.gem.core.appearance.AppearanceColor
 import org.gem.core.appearance.AppearanceDraft
 import org.gem.core.appearance.AppearanceElementTarget
 import org.gem.core.appearance.AppearanceFontFamily
@@ -36,6 +37,15 @@ data class AppearanceUiState(
 ) {
     val profiles: List<AppearanceProfile>
         get() = stockProfiles + customProfiles
+
+    val activeColor: AppearanceColor
+        get() = when (activeEditMode) {
+            AppearanceEditMode.TEXT -> currentDraft.textColors.getValue(activeTextTarget)
+            AppearanceEditMode.ELEMENT -> currentDraft.elementColors.getValue(activeElementTarget)
+        }
+
+    val activeFont: AppearanceFontFamily
+        get() = currentDraft.textFonts.getValue(activeTextTarget)
 
     val toggleChecked: Boolean
         get() = mode == AppearanceMode.DARK

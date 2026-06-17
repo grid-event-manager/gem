@@ -73,6 +73,7 @@ sealed interface GemTextKey {
     data object ResetToDefault : GemTextKey
     data object EnterNewThemeName : GemTextKey
     data object Save : GemTextKey
+    data object ChooseTheme : GemTextKey
     data object Text : GemTextKey
     data object Fonts : GemTextKey
     data object Element : GemTextKey
@@ -189,6 +190,7 @@ sealed interface GemTextKey {
             ResetToDefault,
             EnterNewThemeName,
             Save,
+            ChooseTheme,
             Text,
             Fonts,
             Element,
@@ -312,6 +314,7 @@ object EnglishGemTextCatalogue : GemTextCatalogue {
         GemTextKey.ResetToDefault -> "Reset to default"
         GemTextKey.EnterNewThemeName -> "Enter a new theme name"
         GemTextKey.Save -> "Save"
+        GemTextKey.ChooseTheme -> "\u2014 choose theme \u2014"
         GemTextKey.Text -> "Text"
         GemTextKey.Fonts -> "Fonts"
         GemTextKey.Element -> "Element"

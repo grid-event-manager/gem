@@ -162,7 +162,7 @@ class AppearanceController(
             return copy(state = state.copy(invalidRgbChannels = state.invalidRgbChannels + channel))
         }
 
-        val color = state.activeColor().withChannel(channel, parsed)
+        val color = state.activeColor.withChannel(channel, parsed)
         return copy(
             state = state
                 .withDraft(state.currentDraft.withActiveColor(state, color))
@@ -223,6 +223,9 @@ class AppearanceController(
 
     fun updateSaveThemeName(name: String): AppearanceController =
         copy(state = state.copy(saveThemeName = name))
+
+    fun updateSaveThemeMode(mode: AppearanceMode): AppearanceController =
+        copy(state = state.copy(saveThemeMode = mode))
 
     fun saveTheme(
         name: String,
@@ -370,12 +373,6 @@ private fun AppearanceDraft.withTextFont(
         selectedProfileId = null,
         dirty = true,
     )
-
-private fun AppearanceUiState.activeColor(): AppearanceColor =
-    when (activeEditMode) {
-        AppearanceEditMode.TEXT -> currentDraft.textColors.getValue(activeTextTarget)
-        AppearanceEditMode.ELEMENT -> currentDraft.elementColors.getValue(activeElementTarget)
-    }
 
 private fun AppearanceDraft.withActiveColor(
     state: AppearanceUiState,

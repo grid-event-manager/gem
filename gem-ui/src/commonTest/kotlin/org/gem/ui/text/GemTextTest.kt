@@ -7,7 +7,7 @@ import kotlin.test.assertTrue
 class GemTextTest {
     @Test
     fun fixedKeysCoverPrototypeCopy() {
-        assertEquals(112, GemTextKey.fixedKeys.size)
+        assertEquals(113, GemTextKey.fixedKeys.size)
         assertTrue(GemTextKey.AppName in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.BrandInitials in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.BrandSubtitle in GemTextKey.fixedKeys)
@@ -40,6 +40,7 @@ class GemTextTest {
         assertTrue(GemTextKey.Customise in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.Themes in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.EnterNewThemeName in GemTextKey.fixedKeys)
+        assertTrue(GemTextKey.ChooseTheme in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.AppearanceTextTitleBar in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.AppearanceTextThemeToggleLabels in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.AppearanceElementPageBackground in GemTextKey.fixedKeys)
@@ -106,6 +107,7 @@ class GemTextTest {
         assertEquals("Reset to default", catalogue.text(GemTextKey.ResetToDefault))
         assertEquals("Enter a new theme name", catalogue.text(GemTextKey.EnterNewThemeName))
         assertEquals("Save", catalogue.text(GemTextKey.Save))
+        assertEquals("\u2014 choose theme \u2014", catalogue.text(GemTextKey.ChooseTheme))
         assertEquals("Text", catalogue.text(GemTextKey.Text))
         assertEquals("Fonts", catalogue.text(GemTextKey.Fonts))
         assertEquals("Element", catalogue.text(GemTextKey.Element))

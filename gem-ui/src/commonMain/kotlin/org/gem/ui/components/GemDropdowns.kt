@@ -30,12 +30,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import org.gem.ui.design.GemTheme
 
 data class GemDropdownOption<T>(
     val value: T?,
     val label: String,
+    val enabled: Boolean = true,
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -51,43 +53,20 @@ fun <T> GemDropdownField(
     fieldModifier: Modifier = Modifier,
 ) {
     var expanded by remember { mutableStateOf(false) }
-    val colors = GemTheme.colors
     val spacing = GemTheme.spacing
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(spacing.fieldGap),
     ) {
         GemFieldLabel(label)
-        Surface(
-            modifier = fieldModifier
-                .fillMaxWidth()
-                .height(spacing.controlHeight)
-                .clickable(enabled = enabled, role = Role.Button) { expanded = true }
-                .pointerHoverIcon(PointerIcon.Hand, overrideDescendants = true),
-            shape = GemTheme.shapes.control,
-            color = colors.fieldSurface,
-            contentColor = if (enabled) colors.ink else colors.disabledInk,
-            border = BorderStroke(spacing.borderWidth, colors.lineStrong),
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(spacing.controlHeight)
-                    .padding(horizontal = spacing.fieldHorizontalPadding),
-                horizontalArrangement = Arrangement.spacedBy(spacing.fieldGap),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = selectedLabel ?: placeholderLabel,
-                    style = GemTheme.typeScale.body,
-                    color = if (selectedLabel == null) colors.muted else colors.ink,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f),
-                )
-                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
-            }
-        }
+        GemDropdownSelector(
+            selectedLabel = selectedLabel,
+            placeholderLabel = placeholderLabel,
+            expanded = expanded,
+            onOpen = { expanded = true },
+            enabled = enabled,
+            modifier = fieldModifier,
+        )
         GemDropdownMenu(
             expanded = expanded,
             options = options,
@@ -97,6 +76,93 @@ fun <T> GemDropdownField(
                 onSelected(it)
             },
         )
+    }
+}
+
+@Composable
+fun <T> GemUnlabelledDropdownField(
+    selectedLabel: String?,
+    placeholderLabel: String,
+    options: List<GemDropdownOption<T>>,
+    onSelected: (T?) -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    fieldModifier: Modifier = Modifier,
+    onOpen: () -> Unit = {},
+    textAlign: TextAlign = TextAlign.Start,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(GemTheme.spacing.fieldGap),
+    ) {
+        GemDropdownSelector(
+            selectedLabel = selectedLabel,
+            placeholderLabel = placeholderLabel,
+            expanded = expanded,
+            onOpen = {
+                onOpen()
+                expanded = true
+            },
+            enabled = enabled,
+            modifier = fieldModifier,
+            textAlign = textAlign,
+        )
+        GemDropdownMenu(
+            expanded = expanded,
+            options = options,
+            onDismiss = { expanded = false },
+            onSelected = {
+                expanded = false
+                onSelected(it)
+            },
+        )
+    }
+}
+
+@Composable
+@OptIn(ExperimentalMaterial3Api::class)
+private fun GemDropdownSelector(
+    selectedLabel: String?,
+    placeholderLabel: String,
+    expanded: Boolean,
+    onOpen: () -> Unit,
+    enabled: Boolean,
+    modifier: Modifier = Modifier,
+    textAlign: TextAlign = TextAlign.Start,
+) {
+    val colors = GemTheme.colors
+    val spacing = GemTheme.spacing
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(spacing.controlHeight)
+            .clickable(enabled = enabled, role = Role.Button, onClick = onOpen)
+            .pointerHoverIcon(PointerIcon.Hand, overrideDescendants = true),
+        shape = GemTheme.shapes.control,
+        color = colors.fieldSurface,
+        contentColor = if (enabled) colors.ink else colors.disabledInk,
+        border = BorderStroke(spacing.borderWidth, colors.lineStrong),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(spacing.controlHeight)
+                .padding(horizontal = spacing.fieldHorizontalPadding),
+            horizontalArrangement = Arrangement.spacedBy(spacing.fieldGap),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = selectedLabel ?: placeholderLabel,
+                style = GemTheme.typeScale.body,
+                color = if (selectedLabel == null) colors.muted else colors.ink,
+                textAlign = textAlign,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
+            ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+        }
     }
 }
 
@@ -191,13 +257,18 @@ private fun <T> GemDropdownMenuItems(
     onSelected: (T?) -> Unit,
 ) {
     options.forEach { option ->
-        GemDropdownMenuItem(label = option.label, onClick = { onSelected(option.value) })
+        GemDropdownMenuItem(
+            label = option.label,
+            enabled = option.enabled,
+            onClick = { onSelected(option.value) },
+        )
     }
 }
 
 @Composable
 private fun GemDropdownMenuItem(
     label: String,
+    enabled: Boolean,
     onClick: () -> Unit,
 ) {
     val colors = GemTheme.colors
@@ -207,10 +278,11 @@ private fun GemDropdownMenuItem(
             Text(
                 text = label,
                 style = GemTheme.typeScale.body,
-                color = colors.secondary,
+                color = if (enabled) colors.secondary else colors.disabledInk,
             )
         },
         onClick = onClick,
+        enabled = enabled,
         contentPadding = PaddingValues(
             horizontal = spacing.menuItemHorizontalPadding,
             vertical = spacing.menuItemVerticalPadding,
