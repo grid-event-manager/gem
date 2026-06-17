@@ -11,8 +11,8 @@ android {
         applicationId = "org.gem.apps.android"
         minSdk = 26
         targetSdk = 36
-        versionCode = 34
-        versionName = "0.1.33"
+        versionCode = 35
+        versionName = "0.1.34"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         manifestPlaceholders["appLabel"] = "GEM Event Manager"
     }

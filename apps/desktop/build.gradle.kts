@@ -28,8 +28,8 @@ sourceSets {
 val desktopPackageName = "gema"
 val desktopCommandName = "gema"
 val debPackageName = "gema"
-val desktopPackageVersion = "0.1.33"
-val macPackageVersion = "1.0.33"
+val desktopPackageVersion = "0.1.34"
+val macPackageVersion = "1.0.34"
 val packagingTextProperties = Properties().apply {
     project.file("src/main/package/packaging-text.properties").inputStream().use { input ->
         load(input)
