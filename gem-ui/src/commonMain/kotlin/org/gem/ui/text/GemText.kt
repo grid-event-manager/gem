@@ -67,6 +67,47 @@ sealed interface GemTextKey {
     data object Dark : GemTextKey
     data object ThemePreferenceUnavailable : GemTextKey
     data object ThemePreferenceSaveFailed : GemTextKey
+    data object Customise : GemTextKey
+    data object Themes : GemTextKey
+    data object SaveTheme : GemTextKey
+    data object ResetToDefault : GemTextKey
+    data object EnterNewThemeName : GemTextKey
+    data object Save : GemTextKey
+    data object Text : GemTextKey
+    data object Fonts : GemTextKey
+    data object Element : GemTextKey
+    data object AppearanceTextTitleBar : GemTextKey
+    data object AppearanceTextTitleSubtitle : GemTextKey
+    data object AppearanceTextLogo : GemTextKey
+    data object AppearanceTextSectionHeadings : GemTextKey
+    data object AppearanceTextMainBody : GemTextKey
+    data object AppearanceTextFieldText : GemTextKey
+    data object AppearanceTextSmallLabels : GemTextKey
+    data object AppearanceTextButtonLabels : GemTextKey
+    data object AppearanceTextMenuLabels : GemTextKey
+    data object AppearanceTextSltClock : GemTextKey
+    data object AppearanceTextBackButton : GemTextKey
+    data object AppearanceTextThemeToggleLabels : GemTextKey
+    data object AppearanceElementPageBackground : GemTextKey
+    data object AppearanceElementCardBackground : GemTextKey
+    data object AppearanceElementPanelBackground : GemTextKey
+    data object AppearanceElementFieldBackground : GemTextKey
+    data object AppearanceElementFieldControlBorders : GemTextKey
+    data object AppearanceElementTitleBar : GemTextKey
+    data object AppearanceElementTitleButton : GemTextKey
+    data object AppearanceElementTitleButtonBorder : GemTextKey
+    data object AppearanceElementHamburgerBackground : GemTextKey
+    data object AppearanceElementHamburgerBorder : GemTextKey
+    data object AppearanceElementHamburgerBars : GemTextKey
+    data object AppearanceElementThemeToggleTrack : GemTextKey
+    data object AppearanceElementThemeToggleSelectedTrack : GemTextKey
+    data object AppearanceElementThemeToggleKnob : GemTextKey
+    data object AppearanceElementPrimaryButtonFill : GemTextKey
+    data object AppearanceElementSelectedItemFill : GemTextKey
+    data object AppearanceElementMenuBackground : GemTextKey
+    data object AppearanceElementMenuHover : GemTextKey
+    data object AppearanceElementStatusPill : GemTextKey
+    data object AppearanceElementRulesAndSeparators : GemTextKey
     data object NoAttachmentsAdded : GemTextKey
     data object ClearAttachment : GemTextKey
     data object SendingNotices : GemTextKey
@@ -142,6 +183,47 @@ sealed interface GemTextKey {
             Dark,
             ThemePreferenceUnavailable,
             ThemePreferenceSaveFailed,
+            Customise,
+            Themes,
+            SaveTheme,
+            ResetToDefault,
+            EnterNewThemeName,
+            Save,
+            Text,
+            Fonts,
+            Element,
+            AppearanceTextTitleBar,
+            AppearanceTextTitleSubtitle,
+            AppearanceTextLogo,
+            AppearanceTextSectionHeadings,
+            AppearanceTextMainBody,
+            AppearanceTextFieldText,
+            AppearanceTextSmallLabels,
+            AppearanceTextButtonLabels,
+            AppearanceTextMenuLabels,
+            AppearanceTextSltClock,
+            AppearanceTextBackButton,
+            AppearanceTextThemeToggleLabels,
+            AppearanceElementPageBackground,
+            AppearanceElementCardBackground,
+            AppearanceElementPanelBackground,
+            AppearanceElementFieldBackground,
+            AppearanceElementFieldControlBorders,
+            AppearanceElementTitleBar,
+            AppearanceElementTitleButton,
+            AppearanceElementTitleButtonBorder,
+            AppearanceElementHamburgerBackground,
+            AppearanceElementHamburgerBorder,
+            AppearanceElementHamburgerBars,
+            AppearanceElementThemeToggleTrack,
+            AppearanceElementThemeToggleSelectedTrack,
+            AppearanceElementThemeToggleKnob,
+            AppearanceElementPrimaryButtonFill,
+            AppearanceElementSelectedItemFill,
+            AppearanceElementMenuBackground,
+            AppearanceElementMenuHover,
+            AppearanceElementStatusPill,
+            AppearanceElementRulesAndSeparators,
             NoAttachmentsAdded,
             ClearAttachment,
             SendingNotices,
@@ -224,6 +306,47 @@ object EnglishGemTextCatalogue : GemTextCatalogue {
         GemTextKey.Dark -> "Dark"
         GemTextKey.ThemePreferenceUnavailable -> "Theme preference unavailable"
         GemTextKey.ThemePreferenceSaveFailed -> "Theme preference could not be saved"
+        GemTextKey.Customise -> "Customise"
+        GemTextKey.Themes -> "Themes"
+        GemTextKey.SaveTheme -> "Save theme"
+        GemTextKey.ResetToDefault -> "Reset to default"
+        GemTextKey.EnterNewThemeName -> "Enter a new theme name"
+        GemTextKey.Save -> "Save"
+        GemTextKey.Text -> "Text"
+        GemTextKey.Fonts -> "Fonts"
+        GemTextKey.Element -> "Element"
+        GemTextKey.AppearanceTextTitleBar -> "Title bar"
+        GemTextKey.AppearanceTextTitleSubtitle -> "Title subtitle"
+        GemTextKey.AppearanceTextLogo -> "Logo"
+        GemTextKey.AppearanceTextSectionHeadings -> "Section headings"
+        GemTextKey.AppearanceTextMainBody -> "Main body"
+        GemTextKey.AppearanceTextFieldText -> "Field text"
+        GemTextKey.AppearanceTextSmallLabels -> "Small labels"
+        GemTextKey.AppearanceTextButtonLabels -> "Button labels"
+        GemTextKey.AppearanceTextMenuLabels -> "Menu labels"
+        GemTextKey.AppearanceTextSltClock -> "SLT clock"
+        GemTextKey.AppearanceTextBackButton -> "Back button"
+        GemTextKey.AppearanceTextThemeToggleLabels -> "Theme toggle labels"
+        GemTextKey.AppearanceElementPageBackground -> "Page background"
+        GemTextKey.AppearanceElementCardBackground -> "Card background"
+        GemTextKey.AppearanceElementPanelBackground -> "Panel background"
+        GemTextKey.AppearanceElementFieldBackground -> "Field background"
+        GemTextKey.AppearanceElementFieldControlBorders -> "Field/control borders"
+        GemTextKey.AppearanceElementTitleBar -> "Title bar"
+        GemTextKey.AppearanceElementTitleButton -> "Title button"
+        GemTextKey.AppearanceElementTitleButtonBorder -> "Title button border"
+        GemTextKey.AppearanceElementHamburgerBackground -> "Hamburger background"
+        GemTextKey.AppearanceElementHamburgerBorder -> "Hamburger border"
+        GemTextKey.AppearanceElementHamburgerBars -> "Hamburger bars"
+        GemTextKey.AppearanceElementThemeToggleTrack -> "Theme toggle track"
+        GemTextKey.AppearanceElementThemeToggleSelectedTrack -> "Theme toggle selected track"
+        GemTextKey.AppearanceElementThemeToggleKnob -> "Theme toggle knob"
+        GemTextKey.AppearanceElementPrimaryButtonFill -> "Primary button fill"
+        GemTextKey.AppearanceElementSelectedItemFill -> "Selected item fill"
+        GemTextKey.AppearanceElementMenuBackground -> "Menu background"
+        GemTextKey.AppearanceElementMenuHover -> "Menu hover"
+        GemTextKey.AppearanceElementStatusPill -> "Status pill"
+        GemTextKey.AppearanceElementRulesAndSeparators -> "Rules and separators"
         GemTextKey.NoAttachmentsAdded -> "No attachments added"
         GemTextKey.ClearAttachment -> "Clear attachment"
         GemTextKey.SendingNotices -> "Sending notices"
