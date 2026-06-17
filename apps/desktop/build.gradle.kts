@@ -376,6 +376,10 @@ tasks.named("compileKotlin") {
     dependsOn(generateGemDesktopBuildVersion)
 }
 
+tasks.matching { it.name == "prepareAppResources" }.configureEach {
+    dependsOn(prepareDesktopPackageAppResources)
+}
+
 tasks.configureEach {
     when (name) {
         "packageDeb" -> doLast {
