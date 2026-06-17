@@ -4,7 +4,6 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -12,10 +11,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.toggleable
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -23,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import org.gem.ui.design.GemTheme
 
@@ -152,37 +150,41 @@ fun GemCheckboxCard(
 }
 
 @Composable
-fun GemSegmentButton(
+fun GemExpandablePanelHeader(
     text: String,
-    selected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    expanded: Boolean = false,
     enabled: Boolean = true,
 ) {
     val colors = GemTheme.colors
     val spacing = GemTheme.spacing
-    OutlinedButton(
-        onClick = onClick,
-        enabled = enabled,
-        modifier = modifier.height(spacing.controlHeight),
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(spacing.appearanceExpandableHeaderHeight)
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick),
         shape = GemTheme.shapes.control,
-        border = BorderStroke(
-            width = spacing.borderWidth,
-            color = if (selected) colors.primary else colors.lineStrong,
-        ),
-        contentPadding = PaddingValues(horizontal = spacing.fieldGap),
-        colors = ButtonDefaults.outlinedButtonColors(
-            containerColor = if (selected) colors.selectedBackground else colors.surfaceStrong,
-            contentColor = if (selected) colors.selectedInk else colors.buttonLabelInk,
-            disabledContainerColor = colors.disabledBackground,
-            disabledContentColor = colors.disabledInk,
-        ),
+        color = if (expanded) colors.selectedBackground else colors.fieldSurface,
+        contentColor = if (enabled) colors.buttonLabelInk else colors.disabledInk,
+        border = BorderStroke(spacing.borderWidth, colors.lineStrong),
     ) {
-        Text(
-            text = text,
-            style = GemTheme.typeScale.button,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = spacing.fieldHorizontalPadding),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = text,
+                color = if (enabled) colors.buttonLabelInk else colors.disabledInk,
+                style = GemTheme.typeScale.button,
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f, fill = false),
+            )
+        }
     }
 }

@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import org.gem.ui.design.GemTheme
 
@@ -124,6 +125,41 @@ fun GemFieldLabel(label: String) {
 }
 
 @Composable
+fun GemCompactTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    invalid: Boolean = false,
+    textAlign: TextAlign = TextAlign.Center,
+    placeholder: String? = null,
+    onFocusedChange: (Boolean) -> Unit = {},
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        enabled = enabled,
+        singleLine = true,
+        isError = invalid,
+        textStyle = GemTheme.typeScale.smallLabel.copy(textAlign = textAlign),
+        placeholder = placeholder?.let {
+            {
+                Text(
+                    text = it,
+                    style = GemTheme.typeScale.smallLabel.copy(textAlign = textAlign),
+                    color = GemTheme.colors.muted,
+                )
+            }
+        },
+        shape = GemTheme.shapes.compactControl,
+        colors = gemTextFieldColors(),
+        modifier = modifier
+            .height(GemTheme.spacing.appearanceCompactFieldHeight)
+            .onFocusChanged { focusState -> onFocusedChange(focusState.isFocused) },
+    )
+}
+
+@Composable
 fun gemTextFieldColors() = OutlinedTextFieldDefaults.colors(
     focusedTextColor = GemTheme.colors.ink,
     unfocusedTextColor = GemTheme.colors.ink,
@@ -138,5 +174,8 @@ fun gemTextFieldColors() = OutlinedTextFieldDefaults.colors(
     focusedBorderColor = GemTheme.colors.fieldBorder,
     unfocusedBorderColor = GemTheme.colors.fieldBorder,
     disabledBorderColor = GemTheme.colors.line,
+    errorTextColor = GemTheme.colors.danger,
+    errorBorderColor = GemTheme.colors.danger,
+    errorCursorColor = GemTheme.colors.danger,
     cursorColor = GemTheme.colors.primary,
 )

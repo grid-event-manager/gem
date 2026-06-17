@@ -1167,6 +1167,7 @@ while IFS= read -r path; do
         *"/GemPlatformTopBarChrome.android.kt") ;;
         *"/GemPlatformTopBarChrome.jvm.kt") ;;
         *"/GemRows.kt") ;;
+        *"/GemSegmentButton.kt") ;;
         *"/GemScrollablePane.kt") ;;
         *"/GemScrollablePane.jvm.kt") ;;
         *"/GemScrollablePane.android.kt") ;;
