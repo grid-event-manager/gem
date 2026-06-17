@@ -18,7 +18,6 @@ import org.gem.core.theme.ThemePreference
 import org.gem.core.theme.ThemePreferenceSaveResult
 import org.gem.ui.design.AppearanceFontResolver
 import org.gem.ui.design.AppearanceTargetCatalogue
-import org.gem.ui.design.ResolvedThemeMode
 import org.gem.ui.runtime.GemUiRuntime
 import org.gem.ui.state.AppearanceEditMode
 import org.gem.ui.state.AppearanceExpandedPanel
@@ -53,14 +52,13 @@ class AppearanceController(
     }
 
     fun setManualTheme(
-        mode: ResolvedThemeMode,
+        mode: AppearanceMode,
         osDark: Boolean,
     ): AppearanceController {
         val preference = mode.toPreference()
-        val appearanceMode = mode.toAppearanceMode()
         return when (runtime.themePreferenceService.savePreference(preference)) {
             ThemePreferenceSaveResult.Saved -> {
-                when (val reset = runtime.appearanceProfileService.resetMode(appearanceMode)) {
+                when (val reset = runtime.appearanceProfileService.resetMode(mode)) {
                     is AppearanceProfileResetResult.Reset -> copy(
                         state = stateFrom(
                             mode = resolve(preference, osDark),
@@ -73,10 +71,10 @@ class AppearanceController(
                     )
                     is AppearanceProfileResetResult.StorageFailed -> copy(
                         state = state.copy(
-                            mode = appearanceMode,
+                            mode = mode,
                             themePreference = preference,
                             selectedProfileId = null,
-                            currentDraft = runtime.appearanceProfileService.defaultDraft(appearanceMode),
+                            currentDraft = runtime.appearanceProfileService.defaultDraft(mode),
                             errorKey = GemTextKey.ThemePreferenceSaveFailed,
                         ),
                     )
@@ -337,18 +335,6 @@ private fun AppearanceProfileLoadResult.state(): AppearanceProfileState =
     when (this) {
         is AppearanceProfileLoadResult.Loaded -> state
         is AppearanceProfileLoadResult.StorageFailed -> state
-    }
-
-private fun ResolvedThemeMode.toPreference(): ThemePreference =
-    when (this) {
-        ResolvedThemeMode.LIGHT -> ThemePreference.LIGHT
-        ResolvedThemeMode.DARK -> ThemePreference.DARK
-    }
-
-private fun ResolvedThemeMode.toAppearanceMode(): AppearanceMode =
-    when (this) {
-        ResolvedThemeMode.LIGHT -> AppearanceMode.LIGHT
-        ResolvedThemeMode.DARK -> AppearanceMode.DARK
     }
 
 private fun AppearanceMode.toPreference(): ThemePreference =

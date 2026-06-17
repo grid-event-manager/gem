@@ -1,7 +1,8 @@
 package org.gem.ui.screens
 
-import org.gem.ui.design.ResolvedThemeMode
-import org.gem.ui.state.ThemeUiState
+import org.gem.core.appearance.AppearanceMode
+import org.gem.ui.state.AppearanceExpandedPanel
+import org.gem.ui.state.AppearanceUiState
 import org.gem.ui.testtags.GemTestTags
 import org.gem.ui.text.EnglishGemTextCatalogue
 import org.gem.ui.text.GemTextKey
@@ -22,8 +23,15 @@ class SettingsScreenStateTest {
     }
 
     @Test
-    fun themeToggleStateComesFromResolvedThemeMode() {
-        assertFalse(ThemeUiState(resolvedMode = ResolvedThemeMode.LIGHT).toggleChecked)
-        assertTrue(ThemeUiState(resolvedMode = ResolvedThemeMode.DARK).toggleChecked)
+    fun appearanceStateSuppliesCollapsedSettingsDefaultsAndThemeToggleState() {
+        val light = AppearanceUiState.default(osDark = false)
+        val dark = AppearanceUiState.default(osDark = true)
+
+        assertEquals(AppearanceMode.LIGHT, light.mode)
+        assertEquals(AppearanceExpandedPanel.NONE, light.expandedPanel)
+        assertFalse(light.toggleChecked)
+        assertEquals(AppearanceMode.DARK, dark.mode)
+        assertEquals(AppearanceExpandedPanel.NONE, dark.expandedPanel)
+        assertTrue(dark.toggleChecked)
     }
 }

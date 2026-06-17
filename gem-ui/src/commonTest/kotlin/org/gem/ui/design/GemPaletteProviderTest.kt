@@ -1,6 +1,7 @@
 package org.gem.ui.design
 
 import androidx.compose.ui.graphics.Color
+import org.gem.core.appearance.AppearanceMode
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
@@ -8,7 +9,7 @@ import kotlin.test.assertNotEquals
 class GemPaletteProviderTest {
     @Test
     fun lightPaletteMatchesHaccuSourceColors() {
-        val colors = HaccuGemPaletteProvider.colors(ResolvedThemeMode.LIGHT)
+        val colors = HaccuGemPaletteProvider.colors(AppearanceMode.LIGHT)
 
         assertEquals(Color(0xFFFFFFFF), colors.page)
         assertEquals(Color(0xFFFAFAF8), colors.surface)
@@ -41,7 +42,7 @@ class GemPaletteProviderTest {
 
     @Test
     fun darkPaletteMatchesHaccuSourceColors() {
-        val colors = HaccuGemPaletteProvider.colors(ResolvedThemeMode.DARK)
+        val colors = HaccuGemPaletteProvider.colors(AppearanceMode.DARK)
 
         assertEquals(Color(0xFF2A3441), colors.page)
         assertEquals(Color(0xFF243039), colors.surface)
@@ -75,7 +76,7 @@ class GemPaletteProviderTest {
 
     @Test
     fun darkPaletteTextTokensAvoidBrightWhiteExceptClock() {
-        val colors = HaccuGemPaletteProvider.colors(ResolvedThemeMode.DARK)
+        val colors = HaccuGemPaletteProvider.colors(AppearanceMode.DARK)
         val brightWhite = Color(0xFFFFFFFF)
 
         assertNotEquals(brightWhite, colors.ink)

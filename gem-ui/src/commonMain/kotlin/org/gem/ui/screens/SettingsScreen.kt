@@ -6,17 +6,20 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import org.gem.ui.components.ThemeSettingsPanel
+import org.gem.ui.components.AppearancePanelCallbacks
+import org.gem.ui.components.AppearanceSettingsPanel
+import org.gem.ui.components.ThemeModeToggle
 import org.gem.ui.design.GemTheme
-import org.gem.ui.state.ThemeUiState
+import org.gem.ui.state.AppearanceUiState
 import org.gem.ui.testtags.GemTestTags
 import org.gem.ui.text.GemTextCatalogue
 import org.gem.ui.text.GemTextKey
 
 @Composable
 fun SettingsScreen(
-    themeState: ThemeUiState,
+    appearanceState: AppearanceUiState,
     textCatalogue: GemTextCatalogue,
+    callbacks: AppearancePanelCallbacks,
     onThemeCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -31,10 +34,16 @@ fun SettingsScreen(
             style = GemTheme.typeScale.sectionTitle,
             color = GemTheme.colors.secondary,
         )
-        ThemeSettingsPanel(
-            state = themeState,
-            textCatalogue = textCatalogue,
+        ThemeModeToggle(
+            checked = appearanceState.toggleChecked,
+            lightLabel = textCatalogue.text(GemTextKey.Light),
+            darkLabel = textCatalogue.text(GemTextKey.Dark),
             onCheckedChange = onThemeCheckedChange,
+        )
+        AppearanceSettingsPanel(
+            state = appearanceState,
+            textCatalogue = textCatalogue,
+            callbacks = callbacks,
         )
     }
 }

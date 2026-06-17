@@ -13,7 +13,6 @@ import org.gem.core.appearance.AppearanceTextTarget
 import org.gem.core.theme.ThemePreference
 import org.gem.core.theme.ThemePreferenceLoadResult
 import org.gem.core.theme.ThemePreferenceSaveResult
-import org.gem.ui.design.ResolvedThemeMode
 import org.gem.ui.state.AppearanceEditMode
 import org.gem.ui.state.AppearanceExpandedPanel
 import org.gem.ui.state.AppearanceRgbChannel
@@ -51,7 +50,7 @@ class AppearanceControllerTest {
         val selected = AppearanceController.initial(runtime, osDark = false)
             .selectProfile(AppearanceProfileId("stock-goth-dark"))
 
-        val controller = selected.setManualTheme(ResolvedThemeMode.LIGHT, osDark = true)
+        val controller = selected.setManualTheme(AppearanceMode.LIGHT, osDark = true)
 
         assertEquals(ThemePreference.LIGHT, store.lastSavedPreference)
         assertEquals(AppearanceMode.LIGHT, controller.state.mode)
@@ -141,7 +140,7 @@ class AppearanceControllerTest {
         val themeFailure = AppearanceController.initial(
             FakeGemUiRuntime.ready(themePreferenceStore = saveFailingThemeStore),
             osDark = false,
-        ).setManualTheme(ResolvedThemeMode.DARK, osDark = false)
+        ).setManualTheme(AppearanceMode.DARK, osDark = false)
 
         assertEquals(GemTextKey.ThemePreferenceSaveFailed, themeFailure.state.errorKey)
 

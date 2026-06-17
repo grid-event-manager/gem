@@ -14,6 +14,8 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
+import org.gem.core.appearance.AppearanceMode
+import org.gem.ui.components.AppearancePanelCallbacks
 import org.gem.ui.components.GemAppScaffold
 import org.gem.ui.components.GemOperationModal
 import org.gem.ui.components.GemPlatformBackHandler
@@ -22,6 +24,7 @@ import org.gem.ui.components.GemTopBar
 import org.gem.ui.components.SessionStrip
 import org.gem.ui.components.SectionBackNav
 import org.gem.ui.controllers.AccountsController
+import org.gem.ui.controllers.AppearanceController
 import org.gem.ui.controllers.GroupTargetController
 import org.gem.ui.controllers.GemAppController
 import org.gem.ui.controllers.GemLogoutWorkflow
@@ -29,11 +32,8 @@ import org.gem.ui.controllers.GemLogoutWorkflowAction
 import org.gem.ui.controllers.InventoryBrowserController
 import org.gem.ui.controllers.LoginController
 import org.gem.ui.controllers.NoticeComposerController
-import org.gem.ui.controllers.ThemeController
-import org.gem.ui.design.HaccuGemPaletteProvider
-import org.gem.ui.design.GemDesignTokens
+import org.gem.ui.design.AppearanceDesignTokenMapper
 import org.gem.ui.design.GemTheme
-import org.gem.ui.design.ResolvedThemeMode
 import org.gem.ui.navigation.AppMenuCatalogue
 import org.gem.ui.navigation.AppMenuCommand
 import org.gem.ui.navigation.AppSectionCatalogue
@@ -74,9 +74,9 @@ fun GemApp(
     }
     val coroutineScope = rememberCoroutineScope()
     val osDark = isSystemInDarkTheme()
-    var themeController by remember(runtime) { mutableStateOf(ThemeController.initial(runtime, osDark)) }
+    var appearanceController by remember(runtime) { mutableStateOf(AppearanceController.initial(runtime, osDark)) }
     LaunchedEffect(runtime, osDark) {
-        themeController = themeController.refresh(osDark)
+        appearanceController = appearanceController.refresh(osDark)
     }
     LaunchedEffect(runtime) {
         while (true) {
@@ -259,8 +259,10 @@ fun GemApp(
     }
 
     GemTheme.Provide(
-        tokens = GemDesignTokens(
-            colors = HaccuGemPaletteProvider.colors(themeController.state.resolvedMode),
+        tokens = AppearanceDesignTokenMapper.tokens(
+            draft = appearanceController.state.currentDraft,
+            availableFonts = appearanceController.state.availableFontFamilies,
+            platformFontFamilyResolver = runtime.platformFontFamilyResolver,
         ),
     ) {
         val route = appController.state.route
@@ -467,11 +469,58 @@ fun GemApp(
                         },
                     )
                     UiRoute.Settings -> SettingsScreen(
-                        themeState = themeController.state,
+                        appearanceState = appearanceController.state,
                         textCatalogue = textCatalogue,
+                        callbacks = AppearancePanelCallbacks(
+                            onExpandedPanelChanged = { panel ->
+                                appearanceController = appearanceController.setExpandedPanel(panel)
+                            },
+                            onTextTargetSelected = { target ->
+                                appearanceController = appearanceController.updateTextTarget(target)
+                            },
+                            onElementTargetSelected = { target ->
+                                appearanceController = appearanceController.updateElementTarget(target)
+                            },
+                            onFontSelected = { family ->
+                                appearanceController = appearanceController.updateFont(family)
+                            },
+                            onColorSelected = { color ->
+                                appearanceController = appearanceController.updateColor(color)
+                            },
+                            onRgbValueChanged = { channel, value ->
+                                appearanceController = appearanceController.updateRgb(channel, value)
+                            },
+                            onRgbInputInvalid = { channel ->
+                                appearanceController = appearanceController.updateRgb(channel, -1)
+                            },
+                            onHexChanged = { value ->
+                                appearanceController = appearanceController.updateHex(value)
+                            },
+                            onOpenSaveThemeDialog = {
+                                appearanceController = appearanceController.openSaveThemeDialog()
+                            },
+                            onCloseSaveThemeDialog = {
+                                appearanceController = appearanceController.closeSaveThemeDialog()
+                            },
+                            onSaveThemeNameChanged = { name ->
+                                appearanceController = appearanceController.updateSaveThemeName(name)
+                            },
+                            onSaveThemeModeChanged = { mode ->
+                                appearanceController = appearanceController.updateSaveThemeMode(mode)
+                            },
+                            onSaveTheme = { name, mode ->
+                                appearanceController = appearanceController.saveTheme(name, mode)
+                            },
+                            onResetCurrentMode = {
+                                appearanceController = appearanceController.resetCurrentMode()
+                            },
+                            onProfileSelected = { profileId ->
+                                appearanceController = appearanceController.selectProfile(profileId)
+                            },
+                        ),
                         onThemeCheckedChange = { checked ->
-                            themeController = themeController.setManualTheme(
-                                mode = if (checked) ResolvedThemeMode.DARK else ResolvedThemeMode.LIGHT,
+                            appearanceController = appearanceController.setManualTheme(
+                                mode = if (checked) AppearanceMode.DARK else AppearanceMode.LIGHT,
                                 osDark = osDark,
                             )
                         },

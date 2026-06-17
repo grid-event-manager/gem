@@ -15,7 +15,7 @@ object AppearanceDesignTokenMapper {
         platformFontFamilyResolver: PlatformFontFamilyResolver,
     ): GemDesignTokens {
         val baseline = GemDesignTokens(
-            colors = HaccuGemPaletteProvider.colors(draft.mode.toResolvedThemeMode()),
+            colors = HaccuGemPaletteProvider.colors(draft.mode),
         )
         val fontResolver = AppearanceFontResolver(availableFonts)
         val resolvedFonts = AppearanceTargetCatalogue.textTargets.associate { spec ->
@@ -135,11 +135,5 @@ object AppearanceDesignTokenMapper {
             AppearanceElementColorSlot.MENU_HOVER -> copy(menuHover = color)
             AppearanceElementColorSlot.STATUS -> copy(statusBackground = color, successBackground = color)
             AppearanceElementColorSlot.SEPARATOR -> copy(line = color, shellBorder = color)
-        }
-
-    private fun AppearanceMode.toResolvedThemeMode(): ResolvedThemeMode =
-        when (this) {
-            AppearanceMode.LIGHT -> ResolvedThemeMode.LIGHT
-            AppearanceMode.DARK -> ResolvedThemeMode.DARK
         }
 }

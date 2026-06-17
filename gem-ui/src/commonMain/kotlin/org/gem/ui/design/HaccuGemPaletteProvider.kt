@@ -1,12 +1,13 @@
 package org.gem.ui.design
 
 import androidx.compose.ui.graphics.Color
+import org.gem.core.appearance.AppearanceMode
 
 object HaccuGemPaletteProvider : GemPaletteProvider {
-    override fun colors(mode: ResolvedThemeMode): GemColors =
+    override fun colors(mode: AppearanceMode): GemColors =
         when (mode) {
-            ResolvedThemeMode.LIGHT -> lightColors()
-            ResolvedThemeMode.DARK -> darkColors()
+            AppearanceMode.LIGHT -> lightColors()
+            AppearanceMode.DARK -> darkColors()
         }
 
     private fun lightColors(): GemColors =
