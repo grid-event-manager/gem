@@ -2,6 +2,9 @@ package org.gem.apps.android
 
 import java.nio.file.Files
 import java.nio.file.Path
+import org.gem.core.appearance.AppearanceMode
+import org.gem.core.appearance.AppearanceProfileName
+import org.gem.core.appearance.AppearanceProfileSaveResult
 import org.gem.core.domain.AccountProfileId
 import org.gem.core.domain.SavedAccountProfile
 import org.gem.core.domain.SecondLifeLoginName
@@ -29,6 +32,8 @@ class GemAndroidCompositionRootTest {
             assertNotNull(runtime.groupDirectoryService)
             assertNotNull(runtime.inventoryDirectoryService)
             assertNotNull(runtime.noticeDispatchService)
+            assertNotNull(runtime.platformFontCatalogue)
+            assertNotNull(runtime.platformFontFamilyResolver)
             assertEquals(ThemePreferenceSaveResult.Saved, runtime.themePreferenceService.savePreference(ThemePreference.DARK))
             assertTrue(Files.exists(Path.of(preferenceFile(appFilesDir))))
             assertEquals(
@@ -36,6 +41,13 @@ class GemAndroidCompositionRootTest {
                 runtime.lastLoginProfilePreferenceService.saveProfileId(AccountProfileId("profile:v1:last")),
             )
             assertTrue(Files.exists(Path.of(lastLoginProfileFile(appFilesDir))))
+            val appearanceSave = runtime.appearanceProfileService.saveProfile(
+                name = AppearanceProfileName("Android Proof"),
+                mode = AppearanceMode.DARK,
+                draft = runtime.appearanceProfileService.defaultDraft(AppearanceMode.DARK),
+            )
+            assertTrue(appearanceSave is AppearanceProfileSaveResult.Saved)
+            assertTrue(Files.exists(Path.of(appearanceProfileFile(appFilesDir))))
             val compliance = runtime.loginComplianceProvider.requestFor(fakeProfile())
             assertTrue(compliance.proofAccountAttested)
             assertTrue(compliance.automatedUse)
@@ -59,6 +71,9 @@ class GemAndroidCompositionRootTest {
 
     private fun lastLoginProfileFile(appFilesDir: Path): String =
         AndroidGemPreferencePaths.defaultLastLoginProfileFile(appFilesDir.toString())
+
+    private fun appearanceProfileFile(appFilesDir: Path): String =
+        AndroidGemPreferencePaths.defaultAppearanceProfileFile(appFilesDir.toString())
 
     private fun loginName(): SecondLifeLoginName =
         when (val result = SecondLifeLoginName.fromUserInput("android proof")) {

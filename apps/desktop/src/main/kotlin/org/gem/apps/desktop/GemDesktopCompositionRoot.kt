@@ -7,6 +7,7 @@ import org.gem.core.domain.OperatorLabel
 import org.gem.core.domain.SavedAccountProfile
 import org.gem.core.domain.ScriptedAgentEvidenceSource
 import java.nio.file.Path
+import org.gem.core.appearance.AppearanceProfileService
 import org.gem.core.ports.ClockPort
 import org.gem.core.preferences.LastLoginProfilePreferenceService
 import org.gem.core.services.AttachmentService
@@ -26,6 +27,8 @@ import org.gem.credential.vault.GemVaultRuntimeAccess
 import org.gem.protocol.libomv.ProtocolLibomvModule
 import org.gem.protocol.libomv.runtime.CredentialVaultLoginSecretResolver
 import org.gem.protocol.libomv.runtime.LoginSecretResolver
+import org.gem.ui.design.JvmPlatformFontCatalogue
+import org.gem.ui.design.JvmPlatformFontFamilyResolver
 import org.gem.ui.runtime.GemLoginComplianceProvider
 import org.gem.ui.runtime.GemUiRuntime
 
@@ -35,6 +38,7 @@ object GemDesktopCompositionRoot {
         return GemRuntimeComposition.create(
             vaultAccess = DesktopVaultComposition.open(),
             themePreferenceService = DesktopPreferenceComposition.open(),
+            appearanceProfileService = DesktopPreferenceComposition.openAppearanceProfiles(),
             lastLoginProfilePreferenceService = DesktopPreferenceComposition.openLastLoginProfile(),
             inventorySnapshotCacheDirectory = DesktopPreferenceComposition.inventorySnapshotCacheDirectory(),
         )
@@ -49,6 +53,7 @@ object GemDesktopCompositionRoot {
         return GemRuntimeComposition.create(
             vaultAccess = DesktopVaultComposition.open(osName, env, userHome),
             themePreferenceService = DesktopPreferenceComposition.open(osName, env, userHome),
+            appearanceProfileService = DesktopPreferenceComposition.openAppearanceProfiles(osName, env, userHome),
             lastLoginProfilePreferenceService = DesktopPreferenceComposition.openLastLoginProfile(osName, env, userHome),
             inventorySnapshotCacheDirectory = DesktopPreferenceComposition.inventorySnapshotCacheDirectory(osName, env, userHome),
         )
@@ -58,6 +63,7 @@ object GemDesktopCompositionRoot {
         fun create(
             vaultAccess: GemVaultRuntimeAccess,
             themePreferenceService: ThemePreferenceService,
+            appearanceProfileService: AppearanceProfileService,
             lastLoginProfilePreferenceService: LastLoginProfilePreferenceService,
             inventorySnapshotCacheDirectory: Path,
         ): GemUiRuntime {
@@ -88,6 +94,9 @@ object GemDesktopCompositionRoot {
                 noticeConfirmationService = NoticeConfirmationService(groupDirectoryService),
                 loginComplianceProvider = GemUiLoginComplianceProvider,
                 themePreferenceService = themePreferenceService,
+                appearanceProfileService = appearanceProfileService,
+                platformFontCatalogue = JvmPlatformFontCatalogue(),
+                platformFontFamilyResolver = JvmPlatformFontFamilyResolver(),
                 lastLoginProfilePreferenceService = lastLoginProfilePreferenceService,
             )
         }

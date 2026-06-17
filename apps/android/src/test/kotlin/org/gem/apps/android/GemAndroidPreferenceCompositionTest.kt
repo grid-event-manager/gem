@@ -2,6 +2,9 @@ package org.gem.apps.android
 
 import java.nio.file.Files
 import java.nio.file.Path
+import org.gem.core.appearance.AppearanceMode
+import org.gem.core.appearance.AppearanceProfileName
+import org.gem.core.appearance.AppearanceProfileSaveResult
 import org.gem.core.theme.ThemePreference
 import org.gem.core.theme.ThemePreferenceSaveResult
 import org.gem.preferences.AndroidGemPreferencePaths
@@ -24,7 +27,29 @@ class GemAndroidPreferenceCompositionTest {
         }
     }
 
+    @Test
+    fun `opens android appearance profile service at app files appearance path`() {
+        val appFilesDir = Files.createTempDirectory("gem-android-appearance-composition-test")
+        try {
+            val service = GemAndroidPreferenceComposition.openAppearanceProfiles(appFilesDir.toFile())
+
+            val result = service.saveProfile(
+                name = AppearanceProfileName("Proof"),
+                mode = AppearanceMode.DARK,
+                draft = service.defaultDraft(AppearanceMode.DARK),
+            )
+
+            assertTrue(result is AppearanceProfileSaveResult.Saved)
+            assertTrue(Files.exists(Path.of(appearanceProfileFile(appFilesDir))))
+        } finally {
+            GemAndroidTestDirectoryCleaner.deleteRecursively(appFilesDir)
+        }
+    }
+
     private fun preferenceFile(appFilesDir: Path): String =
         AndroidGemPreferencePaths.defaultPreferenceFile(appFilesDir.toString())
+
+    private fun appearanceProfileFile(appFilesDir: Path): String =
+        AndroidGemPreferencePaths.defaultAppearanceProfileFile(appFilesDir.toString())
 
 }

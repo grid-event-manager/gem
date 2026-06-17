@@ -2,6 +2,9 @@ package org.gem.apps.desktop
 
 import java.nio.file.Files
 import java.nio.file.Path
+import org.gem.core.appearance.AppearanceMode
+import org.gem.core.appearance.AppearanceProfileName
+import org.gem.core.appearance.AppearanceProfileSaveResult
 import org.gem.core.theme.ThemePreference
 import org.gem.core.theme.ThemePreferenceSaveResult
 import org.gem.preferences.DesktopGemPreferencePaths
@@ -28,8 +31,38 @@ class DesktopPreferenceCompositionTest {
         }
     }
 
+    @Test
+    fun `opens desktop appearance profile service at desktop appearance path`() {
+        val tempDataHome = Files.createTempDirectory("gem-desktop-appearance-composition-test")
+        try {
+            val service = DesktopPreferenceComposition.openAppearanceProfiles(
+                osName = "Linux",
+                env = mapOf("XDG_DATA_HOME" to tempDataHome.toString()),
+                userHome = tempDataHome.resolve("home").toString(),
+            )
+
+            val result = service.saveProfile(
+                name = AppearanceProfileName("Proof"),
+                mode = AppearanceMode.LIGHT,
+                draft = service.defaultDraft(AppearanceMode.LIGHT),
+            )
+
+            assertTrue(result is AppearanceProfileSaveResult.Saved)
+            assertTrue(Files.exists(Path.of(appearanceProfileFile(tempDataHome))))
+        } finally {
+            DesktopTestDirectoryCleaner.deleteRecursively(tempDataHome)
+        }
+    }
+
     private fun preferenceFile(tempDataHome: Path): String =
         DesktopGemPreferencePaths.defaultPreferenceFile(
+            osName = "Linux",
+            env = mapOf("XDG_DATA_HOME" to tempDataHome.toString()),
+            userHome = tempDataHome.resolve("home").toString(),
+        )
+
+    private fun appearanceProfileFile(tempDataHome: Path): String =
+        DesktopGemPreferencePaths.defaultAppearanceProfileFile(
             osName = "Linux",
             env = mapOf("XDG_DATA_HOME" to tempDataHome.toString()),
             userHome = tempDataHome.resolve("home").toString(),

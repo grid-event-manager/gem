@@ -2,6 +2,10 @@ package org.gem.apps.desktop
 
 import java.nio.file.Files
 import java.nio.file.Path
+import org.gem.core.appearance.AppearanceFontFamily
+import org.gem.core.appearance.AppearanceMode
+import org.gem.core.appearance.AppearanceProfileName
+import org.gem.core.appearance.AppearanceProfileSaveResult
 import org.gem.core.domain.AccountProfileId
 import org.gem.core.domain.SavedAccountProfile
 import org.gem.core.domain.SecondLifeLoginName
@@ -38,6 +42,8 @@ class GemDesktopCompositionRootTest {
             assertNotNull(runtime.groupDirectoryService)
             assertNotNull(runtime.inventoryDirectoryService)
             assertNotNull(runtime.noticeDispatchService)
+            assertTrue(runtime.platformFontCatalogue.availableFamilies().isNotEmpty())
+            assertNotNull(runtime.platformFontFamilyResolver.resolve(AppearanceFontFamily("Inter")))
             val initialThemePreference = runtime.themePreferenceService.loadPreference()
             assertEquals(ThemePreference.SYSTEM, initialThemePreference.preference)
             assertNull(initialThemePreference.warning)
@@ -48,6 +54,13 @@ class GemDesktopCompositionRootTest {
                 runtime.lastLoginProfilePreferenceService.saveProfileId(AccountProfileId("profile:v1:last")),
             )
             assertTrue(Files.exists(Path.of(lastLoginProfileFile(tempDataHome))))
+            val appearanceSave = runtime.appearanceProfileService.saveProfile(
+                name = AppearanceProfileName("Desktop Proof"),
+                mode = AppearanceMode.LIGHT,
+                draft = runtime.appearanceProfileService.defaultDraft(AppearanceMode.LIGHT),
+            )
+            assertTrue(appearanceSave is AppearanceProfileSaveResult.Saved)
+            assertTrue(Files.exists(Path.of(appearanceProfileFile(tempDataHome))))
             val compliance = runtime.loginComplianceProvider.requestFor(fakeProfile())
             assertTrue(compliance.proofAccountAttested)
             assertTrue(compliance.automatedUse)
@@ -104,6 +117,13 @@ class GemDesktopCompositionRootTest {
 
     private fun lastLoginProfileFile(tempDataHome: Path): String =
         DesktopGemPreferencePaths.defaultLastLoginProfileFile(
+            osName = "Linux",
+            env = mapOf("XDG_DATA_HOME" to tempDataHome.toString()),
+            userHome = tempDataHome.resolve("home").toString(),
+        )
+
+    private fun appearanceProfileFile(tempDataHome: Path): String =
+        DesktopGemPreferencePaths.defaultAppearanceProfileFile(
             osName = "Linux",
             env = mapOf("XDG_DATA_HOME" to tempDataHome.toString()),
             userHome = tempDataHome.resolve("home").toString(),

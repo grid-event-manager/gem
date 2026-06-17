@@ -1757,9 +1757,11 @@ check_no_hits \
     "$PRIVATE_REFERENCE_PATTERN" \
     "${production_targets[@]}"
 
-check_no_hits \
+check_hits_only_from_paths \
     "forbidden platform/security/logging calls" \
     "$FORBIDDEN_PLATFORM_PATTERN" \
+    "gem-ui/src/jvmMain/kotlin/org/gem/ui/design/JvmPlatformFontCatalogue.kt" \
+    -- \
     "${production_targets[@]}"
 
 check_no_hits \

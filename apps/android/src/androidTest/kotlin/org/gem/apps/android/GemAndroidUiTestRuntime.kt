@@ -1,5 +1,12 @@
 package org.gem.apps.android
 
+import androidx.compose.ui.text.font.FontFamily
+import org.gem.core.appearance.AppearanceFontFamily
+import org.gem.core.appearance.AppearanceProfileService
+import org.gem.core.appearance.AppearanceProfileStore
+import org.gem.core.appearance.AppearanceProfileStoreLoadResult
+import org.gem.core.appearance.AppearanceProfileStoreSaveResult
+import org.gem.core.appearance.AppearanceProfileStoreSnapshot
 import org.gem.core.domain.AccountProfileId
 import org.gem.core.domain.AttachmentRef
 import org.gem.core.domain.AttachmentOwnerId
@@ -81,6 +88,8 @@ import org.gem.core.theme.ThemePreferenceLoadResult
 import org.gem.core.theme.ThemePreferenceSaveResult
 import org.gem.core.theme.ThemePreferenceService
 import org.gem.core.theme.ThemePreferenceStore
+import org.gem.ui.design.PlatformFontCatalogue
+import org.gem.ui.design.PlatformFontFamilyResolver
 import org.gem.ui.runtime.GemLoginComplianceProvider
 import org.gem.ui.runtime.GemUiRuntime
 
@@ -128,6 +137,13 @@ internal object GemAndroidUiTestRuntime {
             noticeConfirmationService = NoticeConfirmationService(groupDirectoryService),
             loginComplianceProvider = AndroidUiLoginComplianceProvider,
             themePreferenceService = ThemePreferenceService(AndroidUiThemePreferenceStore()),
+            appearanceProfileService = AppearanceProfileService(AndroidUiAppearanceProfileStore()),
+            platformFontCatalogue = PlatformFontCatalogue {
+                listOf(AppearanceFontFamily("sans-serif"))
+            },
+            platformFontFamilyResolver = PlatformFontFamilyResolver {
+                FontFamily.Default
+            },
             lastLoginProfilePreferenceService = LastLoginProfilePreferenceService(
                 AndroidUiLastLoginProfilePreferenceStore(profile.profileId),
             ),
@@ -338,5 +354,19 @@ private class AndroidUiLastLoginProfilePreferenceStore(
     override fun save(profileId: AccountProfileId): LastLoginProfilePreferenceSaveResult {
         this.profileId = profileId
         return LastLoginProfilePreferenceSaveResult.Saved
+    }
+}
+
+private class AndroidUiAppearanceProfileStore : AppearanceProfileStore {
+    private var snapshot: AppearanceProfileStoreSnapshot? = null
+
+    override fun load(): AppearanceProfileStoreLoadResult =
+        snapshot
+            ?.let(AppearanceProfileStoreLoadResult::Loaded)
+            ?: AppearanceProfileStoreLoadResult.Missing
+
+    override fun save(snapshot: AppearanceProfileStoreSnapshot): AppearanceProfileStoreSaveResult {
+        this.snapshot = snapshot
+        return AppearanceProfileStoreSaveResult.Saved
     }
 }

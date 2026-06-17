@@ -1,5 +1,6 @@
 package org.gem.ui.runtime
 
+import org.gem.core.appearance.AppearanceProfileService
 import org.gem.core.services.AttachmentService
 import org.gem.core.services.AvatarReadinessService
 import org.gem.core.services.CredentialService
@@ -19,6 +20,8 @@ import org.gem.core.services.TargetSelectionService
 import org.gem.core.ports.ClockPort
 import org.gem.core.preferences.LastLoginProfilePreferenceService
 import org.gem.core.theme.ThemePreferenceService
+import org.gem.ui.design.PlatformFontCatalogue
+import org.gem.ui.design.PlatformFontFamilyResolver
 
 data class GemUiRuntime(
     val credentialRuntimeState: GemCredentialRuntimeState,
@@ -35,6 +38,9 @@ data class GemUiRuntime(
     val noticeConfirmationService: NoticeConfirmationService,
     val loginComplianceProvider: GemLoginComplianceProvider,
     val themePreferenceService: ThemePreferenceService,
+    val appearanceProfileService: AppearanceProfileService,
+    val platformFontCatalogue: PlatformFontCatalogue,
+    val platformFontFamilyResolver: PlatformFontFamilyResolver,
     val lastLoginProfilePreferenceService: LastLoginProfilePreferenceService,
 ) {
     fun credentialServiceOrNull(): CredentialService? =

@@ -1,8 +1,10 @@
 package org.gem.ui.runtime
 
+import org.gem.core.appearance.AppearanceProfileLoadResult
 import org.gem.core.services.GemCredentialRuntimeReady
 import org.gem.ui.testing.FakeGemUiRuntime
 import kotlin.test.Test
+import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -18,6 +20,11 @@ class GemUiRuntimeTest {
         assertNotNull(runtime.loginProfileAuthenticationServiceOrNull())
         assertNotNull(runtime.savedAccountManagementServiceOrNull())
         assertTrue(runtime.themePreferenceService.loadPreference().preference.name.isNotBlank())
+        val appearanceState = assertIs<AppearanceProfileLoadResult.Loaded>(
+            runtime.appearanceProfileService.loadState(),
+        )
+        assertTrue(appearanceState.state.profiles.isNotEmpty())
+        assertTrue(runtime.platformFontCatalogue.availableFamilies().isNotEmpty())
     }
 
     @Test

@@ -3,6 +3,7 @@ package org.gem.apps.android
 import android.content.Context
 import java.io.File
 import java.nio.file.Path
+import org.gem.core.appearance.AppearanceProfileService
 import org.gem.core.domain.GemDelay
 import org.gem.core.domain.GemInstant
 import org.gem.core.domain.LoginComplianceRequest
@@ -29,6 +30,8 @@ import org.gem.protocol.libomv.ProtocolLibomvModule
 import org.gem.protocol.libomv.liveRuntimeForAndroid
 import org.gem.protocol.libomv.runtime.CredentialVaultLoginSecretResolver
 import org.gem.protocol.libomv.runtime.LoginSecretResolver
+import org.gem.ui.design.AndroidPlatformFontCatalogue
+import org.gem.ui.design.AndroidPlatformFontFamilyResolver
 import org.gem.ui.runtime.GemLoginComplianceProvider
 import org.gem.ui.runtime.GemUiRuntime
 
@@ -53,6 +56,7 @@ object GemAndroidCompositionRoot {
             androidContext = androidContext,
             vaultAccess = GemAndroidVaultComposition.open(appFilesDir),
             themePreferenceService = GemAndroidPreferenceComposition.open(appFilesDir),
+            appearanceProfileService = GemAndroidPreferenceComposition.openAppearanceProfiles(appFilesDir),
             lastLoginProfilePreferenceService = GemAndroidPreferenceComposition.openLastLoginProfile(appFilesDir),
             inventorySnapshotCacheDirectory = GemAndroidPreferenceComposition.inventorySnapshotCacheDirectory(appFilesDir),
         )
@@ -62,6 +66,7 @@ object GemAndroidCompositionRoot {
             androidContext: Context?,
             vaultAccess: GemVaultRuntimeAccess,
             themePreferenceService: ThemePreferenceService,
+            appearanceProfileService: AppearanceProfileService,
             lastLoginProfilePreferenceService: LastLoginProfilePreferenceService,
             inventorySnapshotCacheDirectory: Path,
         ): GemUiRuntime {
@@ -101,6 +106,9 @@ object GemAndroidCompositionRoot {
                 noticeConfirmationService = NoticeConfirmationService(groupDirectoryService),
                 loginComplianceProvider = GemUiLoginComplianceProvider,
                 themePreferenceService = themePreferenceService,
+                appearanceProfileService = appearanceProfileService,
+                platformFontCatalogue = AndroidPlatformFontCatalogue(),
+                platformFontFamilyResolver = AndroidPlatformFontFamilyResolver(),
                 lastLoginProfilePreferenceService = lastLoginProfilePreferenceService,
             )
         }

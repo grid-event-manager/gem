@@ -23,6 +23,12 @@ import org.gem.core.domain.SecondLifeLoginNameResult
 import org.gem.core.domain.SecondLifeLoginUri
 import org.gem.core.domain.SessionId
 import org.gem.core.domain.SharedSecret
+import org.gem.core.appearance.AppearanceFontFamily
+import org.gem.core.appearance.AppearanceProfileService
+import org.gem.core.appearance.AppearanceProfileStore
+import org.gem.core.appearance.AppearanceProfileStoreLoadResult
+import org.gem.core.appearance.AppearanceProfileStoreSaveResult
+import org.gem.core.appearance.AppearanceProfileStoreSnapshot
 import org.gem.core.services.AttachmentService
 import org.gem.core.services.AvatarReadinessService
 import org.gem.core.services.CredentialService
@@ -75,8 +81,11 @@ import org.gem.core.preferences.LastLoginProfilePreferenceLoadResult
 import org.gem.core.preferences.LastLoginProfilePreferenceSaveResult
 import org.gem.core.preferences.LastLoginProfilePreferenceService
 import org.gem.core.preferences.LastLoginProfilePreferenceStore
+import org.gem.ui.design.PlatformFontCatalogue
+import org.gem.ui.design.PlatformFontFamilyResolver
 import org.gem.ui.runtime.GemLoginComplianceProvider
 import org.gem.ui.runtime.GemUiRuntime
+import androidx.compose.ui.text.font.FontFamily
 
 object FakeGemUiRuntime {
     fun ready(
@@ -195,6 +204,13 @@ object FakeGemUiRuntime {
                 )
             },
             themePreferenceService = ThemePreferenceService(themePreferenceStore),
+            appearanceProfileService = AppearanceProfileService(InMemoryAppearanceProfileStore()),
+            platformFontCatalogue = PlatformFontCatalogue {
+                listOf(AppearanceFontFamily("Inter"))
+            },
+            platformFontFamilyResolver = PlatformFontFamilyResolver {
+                FontFamily.Default
+            },
             lastLoginProfilePreferenceService = LastLoginProfilePreferenceService(lastLoginProfilePreferenceStore),
         )
     }
@@ -254,6 +270,20 @@ class FakeLastLoginProfilePreferenceStore(
         this.profileId = profileId
         savedProfileIds += profileId
         return LastLoginProfilePreferenceSaveResult.Saved
+    }
+}
+
+private class InMemoryAppearanceProfileStore : AppearanceProfileStore {
+    private var snapshot: AppearanceProfileStoreSnapshot? = null
+
+    override fun load(): AppearanceProfileStoreLoadResult =
+        snapshot
+            ?.let(AppearanceProfileStoreLoadResult::Loaded)
+            ?: AppearanceProfileStoreLoadResult.Missing
+
+    override fun save(snapshot: AppearanceProfileStoreSnapshot): AppearanceProfileStoreSaveResult {
+        this.snapshot = snapshot
+        return AppearanceProfileStoreSaveResult.Saved
     }
 }
 

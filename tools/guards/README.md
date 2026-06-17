@@ -25,6 +25,7 @@ Protocol and shared UI boundary rules:
 - `:gem-ui` must exist and remains shared Compose UI over `gem-core`; it must not import protocol runtime/transport, vault/native credential, `NoticePort`, `sendGroupNotice`, or UI-side selected-group send loops.
 - Shared UI visible labels live in `GemText.kt`; style constants live under `org/gem/ui/design`; production WebView/HTML/CSS/JS prototype routes and staged placeholder code are forbidden.
 - Android and desktop app shells may compose services, but must not add platform-specific screen trees or duplicate product behaviour.
+- `JvmPlatformFontCatalogue.kt` is the only approved `java.awt.GraphicsEnvironment` caller; it owns desktop system-font enumeration behind the shared `PlatformFontCatalogue` interface.
 
 Credential and session owner rules:
 
