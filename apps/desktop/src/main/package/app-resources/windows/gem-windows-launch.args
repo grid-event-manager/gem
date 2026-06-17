@@ -1,4 +1,4 @@
--Djpackage.app-version=0.1.34
+-Djpackage.app-version={version}
 -Dcompose.application.resources.dir=app\resources
 -Dcompose.application.configure.swing.globals=true
 -Dskiko.library.path=app

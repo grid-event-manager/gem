@@ -92,6 +92,7 @@ THEME_PALETTE_OWNER_PATTERN='object[[:space:]]+HaccuGemPaletteProvider'
 THEME_ANDROID_LABEL_PATTERN='manifestPlaceholders\["appLabel"\][[:space:]]*=[[:space:]]*"GEM Event Manager"'
 THEME_DESKTOP_VENDOR_PATTERN='vendor[[:space:]]*=[[:space:]]*"ANVLL"'
 THEME_ROOT_PROJECT_LABEL_PATTERN='rootProject\.name\.replaceFirstChar'
+PACKAGE_VERSION_LITERAL_OWNER_PATTERN='version = "0\.1\.[0-9]+-SNAPSHOT"|desktopPackageVersion = "0\.1\.[0-9]+"|macPackageVersion = "1\.0\.[0-9]+"|versionName = "0\.1\.[0-9]+"|versionCode = [0-9]+|-Djpackage\.app-version=0\.1\.[0-9]+'
 APPEARANCE_STALE_ROUTE_PATTERN='ThemeController|ThemeUiState|ThemeSettingsPanel|ResolvedThemeMode'
 APPEARANCE_PROTOTYPE_LEAKAGE_PATTERN='appearance-customizer|WebView|<script|color-picker\.js|tokens\.js'
 APPEARANCE_STALE_MODE_CONTROL_PATTERN='Text style|Area colour|RadioButton|GemSegmentButton|SegmentButton'
@@ -1276,6 +1277,13 @@ add_existing theme_root_project_label_targets \
     "apps/desktop/build.gradle.kts" \
     "apps/android/build.gradle.kts"
 
+package_version_literal_targets=()
+add_existing package_version_literal_targets \
+    "build.gradle.kts" \
+    "apps/desktop/build.gradle.kts" \
+    "apps/android/build.gradle.kts" \
+    "apps/desktop/src/main/package/app-resources/windows/gem-windows-launch.args"
+
 appearance_stale_route_targets=()
 add_existing appearance_stale_route_targets \
     "gem-ui/src/commonMain" \
@@ -2079,6 +2087,11 @@ check_no_hits \
     "${theme_root_project_label_targets[@]}"
 
 check_no_hits \
+    "package versions centralized in gradle/gem-version.properties" \
+    "$PACKAGE_VERSION_LITERAL_OWNER_PATTERN" \
+    "${package_version_literal_targets[@]}"
+
+check_no_hits \
     "appearance old theme route absent" \
     "$APPEARANCE_STALE_ROUTE_PATTERN" \
     "${appearance_stale_route_targets[@]}"
@@ -2661,6 +2674,11 @@ check_pattern_matches \
     "self-test theme root project label pattern" \
     "$THEME_ROOT_PROJECT_LABEL_PATTERN" \
     'manifestPlaceholders["appLabel"] = rootProject.name.replaceFirstChar { it.titlecase() }'
+
+check_pattern_matches \
+    "self-test package version literal owner pattern" \
+    "$PACKAGE_VERSION_LITERAL_OWNER_PATTERN" \
+    'versionName = "0.1.34"; versionCode = 35; -Djpackage.app-version=0.1.34'
 
 check_pattern_matches \
     "self-test appearance stale route pattern" \

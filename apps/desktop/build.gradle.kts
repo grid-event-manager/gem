@@ -19,17 +19,13 @@ dependencies {
     testImplementation(kotlin("test-junit"))
 }
 
-sourceSets {
-    main {
-        resources.srcDir("src/main/package/icons")
-    }
-}
-
 val desktopPackageName = "gema"
 val desktopCommandName = "gema"
 val debPackageName = "gema"
-val desktopPackageVersion = "0.1.34"
-val macPackageVersion = "1.0.34"
+val desktopPackageVersion = rootProject.extra["gemVisibleVersion"] as String
+val macPackageVersion = rootProject.extra["gemMacPackageVersion"] as String
+val generatedGemDesktopVersionDir = layout.buildDirectory.dir("generated/sources/gemVersion/kotlin")
+val generatedPackageAppResourcesDir = layout.buildDirectory.dir("generated/packageAppResources")
 val packagingTextProperties = Properties().apply {
     project.file("src/main/package/packaging-text.properties").inputStream().use { input ->
         load(input)
@@ -70,6 +66,45 @@ val rawDmgArtifact = layout.buildDirectory.file(
 val dmgArtifact = layout.buildDirectory.file(
     "compose/binaries/main/dmg/${desktopPackageName}-${macPackageVersion}.dmg",
 )
+
+sourceSets {
+    main {
+        kotlin.srcDir(generatedGemDesktopVersionDir)
+        resources.srcDir("src/main/package/icons")
+    }
+}
+
+val generateGemDesktopBuildVersion by tasks.registering {
+    outputs.dir(generatedGemDesktopVersionDir)
+    doLast {
+        val versionFile = generatedGemDesktopVersionDir.get().asFile
+            .resolve("org/gem/apps/desktop/GemDesktopBuildVersion.kt")
+        versionFile.parentFile.mkdirs()
+        versionFile.writeText(
+            """
+            package org.gem.apps.desktop
+
+            internal object GemDesktopBuildVersion {
+                const val VisibleVersion = "$desktopPackageVersion"
+            }
+            """.trimIndent() + "\n",
+        )
+    }
+}
+
+val prepareDesktopPackageAppResources by tasks.registering(Copy::class) {
+    from(project.file("src/main/package/app-resources"))
+    into(generatedPackageAppResourcesDir)
+    filesMatching("windows/gem-windows-launch.args") {
+        filter { line: String ->
+            if (line.startsWith("-Djpackage.app-version=")) {
+                "-Djpackage.app-version=$desktopPackageVersion"
+            } else {
+                line.replace("{version}", desktopPackageVersion)
+            }
+        }
+    }
+}
 
 data class WindowsInstallerBitmapAssets(
     val dialog: File,
@@ -300,6 +335,7 @@ fun replaceMacDmgVolumeIcon() {
 compose.desktop {
     application {
         mainClass = "org.gem.apps.desktop.GemDesktopAppKt"
+        jvmArgs("-Djpackage.app-version=$desktopPackageVersion")
         if (providers.gradleProperty("gemDiagnosticUdp").orNull == "true") {
             jvmArgs("-Dgem.simulator.udp.diagnostics=true")
         }
@@ -310,7 +346,7 @@ compose.desktop {
             packageVersion = desktopPackageVersion
             description = desktopPackageDescription
             vendor = "ANVLL"
-            appResourcesRootDir.set(project.layout.projectDirectory.dir("src/main/package/app-resources"))
+            appResourcesRootDir.set(generatedPackageAppResourcesDir)
 
             linux {
                 iconFile.set(project.file("src/main/package/icons/gem.png"))
@@ -334,6 +370,10 @@ compose.desktop {
             }
         }
     }
+}
+
+tasks.named("compileKotlin") {
+    dependsOn(generateGemDesktopBuildVersion)
 }
 
 tasks.configureEach {
@@ -397,6 +437,7 @@ tasks.configureEach {
 }
 
 tasks.withType<AbstractJPackageTask>().configureEach {
+    dependsOn(prepareDesktopPackageAppResources)
     if (targetFormat == TargetFormat.Msi) {
         freeArgs.add("--win-shortcut-prompt")
     }
