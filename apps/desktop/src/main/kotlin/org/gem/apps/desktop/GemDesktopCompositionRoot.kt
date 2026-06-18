@@ -29,6 +29,8 @@ import org.gem.protocol.libomv.runtime.CredentialVaultLoginSecretResolver
 import org.gem.protocol.libomv.runtime.LoginSecretResolver
 import org.gem.ui.design.JvmPlatformFontCatalogue
 import org.gem.ui.design.JvmPlatformFontFamilyResolver
+import org.gem.ui.design.JvmPlatformSystemFontFamilyProvider
+import org.gem.ui.design.PlatformSystemFontFamilyProvider
 import org.gem.ui.runtime.GemLoginComplianceProvider
 import org.gem.ui.runtime.GemUiRuntime
 
@@ -41,6 +43,7 @@ object GemDesktopCompositionRoot {
             appearanceProfileService = DesktopPreferenceComposition.openAppearanceProfiles(),
             lastLoginProfilePreferenceService = DesktopPreferenceComposition.openLastLoginProfile(),
             inventorySnapshotCacheDirectory = DesktopPreferenceComposition.inventorySnapshotCacheDirectory(),
+            platformSystemFontFamilyProvider = JvmPlatformSystemFontFamilyProvider(),
         )
     }
 
@@ -56,6 +59,7 @@ object GemDesktopCompositionRoot {
             appearanceProfileService = DesktopPreferenceComposition.openAppearanceProfiles(osName, env, userHome),
             lastLoginProfilePreferenceService = DesktopPreferenceComposition.openLastLoginProfile(osName, env, userHome),
             inventorySnapshotCacheDirectory = DesktopPreferenceComposition.inventorySnapshotCacheDirectory(osName, env, userHome),
+            platformSystemFontFamilyProvider = JvmPlatformSystemFontFamilyProvider(osName),
         )
     }
 
@@ -66,6 +70,7 @@ object GemDesktopCompositionRoot {
             appearanceProfileService: AppearanceProfileService,
             lastLoginProfilePreferenceService: LastLoginProfilePreferenceService,
             inventorySnapshotCacheDirectory: Path,
+            platformSystemFontFamilyProvider: PlatformSystemFontFamilyProvider,
         ): GemUiRuntime {
             val protocolRuntime = ProtocolLibomvModule.liveRuntime(
                 secretResolver = vaultAccess.loginSecretResolver(),
@@ -97,6 +102,7 @@ object GemDesktopCompositionRoot {
                 appearanceProfileService = appearanceProfileService,
                 platformFontCatalogue = JvmPlatformFontCatalogue(),
                 platformFontFamilyResolver = JvmPlatformFontFamilyResolver(),
+                platformSystemFontFamilyProvider = platformSystemFontFamilyProvider,
                 lastLoginProfilePreferenceService = lastLoginProfilePreferenceService,
             )
         }

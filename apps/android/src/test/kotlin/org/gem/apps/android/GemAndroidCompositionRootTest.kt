@@ -14,9 +14,11 @@ import org.gem.core.preferences.LastLoginProfilePreferenceSaveResult
 import org.gem.core.theme.ThemePreference
 import org.gem.core.theme.ThemePreferenceSaveResult
 import org.gem.preferences.AndroidGemPreferencePaths
+import org.gem.ui.design.AndroidPlatformSystemFontFamilyProvider
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 class GemAndroidCompositionRootTest {
@@ -34,6 +36,7 @@ class GemAndroidCompositionRootTest {
             assertNotNull(runtime.noticeDispatchService)
             assertNotNull(runtime.platformFontCatalogue)
             assertNotNull(runtime.platformFontFamilyResolver)
+            assertSame(AndroidPlatformSystemFontFamilyProvider, runtime.platformSystemFontFamilyProvider)
             assertEquals(ThemePreferenceSaveResult.Saved, runtime.themePreferenceService.savePreference(ThemePreference.DARK))
             assertTrue(Files.exists(Path.of(preferenceFile(appFilesDir))))
             assertEquals(

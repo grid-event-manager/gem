@@ -16,6 +16,7 @@ import org.gem.core.services.GemCredentialRuntimeReady
 import org.gem.core.theme.ThemePreference
 import org.gem.core.theme.ThemePreferenceSaveResult
 import org.gem.preferences.DesktopGemPreferencePaths
+import org.gem.ui.design.JvmPlatformSystemFontFamilyProvider
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -43,7 +44,8 @@ class GemDesktopCompositionRootTest {
             assertNotNull(runtime.inventoryDirectoryService)
             assertNotNull(runtime.noticeDispatchService)
             assertTrue(runtime.platformFontCatalogue.availableFamilies().isNotEmpty())
-            assertNotNull(runtime.platformFontFamilyResolver.resolve(AppearanceFontFamily("Inter")))
+            assertNotNull(runtime.platformFontFamilyResolver.resolve(AppearanceFontFamily("sans-serif")))
+            assertIs<JvmPlatformSystemFontFamilyProvider>(runtime.platformSystemFontFamilyProvider)
             val initialThemePreference = runtime.themePreferenceService.loadPreference()
             assertEquals(ThemePreference.SYSTEM, initialThemePreference.preference)
             assertNull(initialThemePreference.warning)

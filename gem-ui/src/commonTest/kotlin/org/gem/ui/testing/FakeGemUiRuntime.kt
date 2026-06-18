@@ -83,6 +83,7 @@ import org.gem.core.preferences.LastLoginProfilePreferenceService
 import org.gem.core.preferences.LastLoginProfilePreferenceStore
 import org.gem.ui.design.PlatformFontCatalogue
 import org.gem.ui.design.PlatformFontFamilyResolver
+import org.gem.ui.design.PlatformSystemFontFamilyProvider
 import org.gem.ui.runtime.GemLoginComplianceProvider
 import org.gem.ui.runtime.GemUiRuntime
 import androidx.compose.ui.text.font.FontFamily
@@ -103,8 +104,11 @@ object FakeGemUiRuntime {
         noticeArchiveFailuresByGroupId: Map<GroupId, CoreFailure> = emptyMap(),
         themePreferenceStore: FakeThemePreferenceStore = FakeThemePreferenceStore(),
         appearanceProfileStore: AppearanceProfileStore = InMemoryAppearanceProfileStore(),
-        availableFontFamilies: List<AppearanceFontFamily> = listOf(AppearanceFontFamily("Inter")),
+        availableFontFamilies: List<AppearanceFontFamily> = listOf(AppearanceFontFamily("sans-serif")),
         platformFontFamilyResolver: PlatformFontFamilyResolver = PlatformFontFamilyResolver { FontFamily.Default },
+        platformSystemFontFamilyProvider: PlatformSystemFontFamilyProvider = PlatformSystemFontFamilyProvider {
+            AppearanceFontFamily("sans-serif")
+        },
         lastLoginProfilePreferenceStore: FakeLastLoginProfilePreferenceStore = FakeLastLoginProfilePreferenceStore(),
     ): GemUiRuntime {
         val profileStore = InMemoryAccountProfileStore(profiles)
@@ -134,6 +138,7 @@ object FakeGemUiRuntime {
             appearanceProfileStore = appearanceProfileStore,
             availableFontFamilies = availableFontFamilies,
             platformFontFamilyResolver = platformFontFamilyResolver,
+            platformSystemFontFamilyProvider = platformSystemFontFamilyProvider,
             lastLoginProfilePreferenceStore = lastLoginProfilePreferenceStore,
         )
     }
@@ -170,8 +175,11 @@ object FakeGemUiRuntime {
         noticeArchiveFailuresByGroupId: Map<GroupId, CoreFailure> = emptyMap(),
         themePreferenceStore: FakeThemePreferenceStore = FakeThemePreferenceStore(),
         appearanceProfileStore: AppearanceProfileStore = InMemoryAppearanceProfileStore(),
-        availableFontFamilies: List<AppearanceFontFamily> = listOf(AppearanceFontFamily("Inter")),
+        availableFontFamilies: List<AppearanceFontFamily> = listOf(AppearanceFontFamily("sans-serif")),
         platformFontFamilyResolver: PlatformFontFamilyResolver = PlatformFontFamilyResolver { FontFamily.Default },
+        platformSystemFontFamilyProvider: PlatformSystemFontFamilyProvider = PlatformSystemFontFamilyProvider {
+            AppearanceFontFamily("sans-serif")
+        },
         lastLoginProfilePreferenceStore: FakeLastLoginProfilePreferenceStore = FakeLastLoginProfilePreferenceStore(),
     ): GemUiRuntime {
         val sessionPort = FakeSessionPort(loginSucceeds)
@@ -218,6 +226,7 @@ object FakeGemUiRuntime {
                 availableFontFamilies
             },
             platformFontFamilyResolver = platformFontFamilyResolver,
+            platformSystemFontFamilyProvider = platformSystemFontFamilyProvider,
             lastLoginProfilePreferenceService = LastLoginProfilePreferenceService(lastLoginProfilePreferenceStore),
         )
     }

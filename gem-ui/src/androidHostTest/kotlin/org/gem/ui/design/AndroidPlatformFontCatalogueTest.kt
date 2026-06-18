@@ -17,13 +17,13 @@ class AndroidPlatformFontCatalogueTest {
                 "cursive",
                 "monospace",
                 "sans",
-                "sans-serif",
                 "sans-serif-black",
                 "sans-serif-condensed",
                 "sans-serif-light",
                 "sans-serif-medium",
                 "serif",
                 "serif-monospace",
+                "sans-serif",
             ),
             catalogue.availableFamilies().map { it.value },
         )
@@ -37,7 +37,20 @@ class AndroidPlatformFontCatalogueTest {
         )
 
         assertEquals(
-            listOf("NotoSans-Bold", "Roboto"),
+            listOf("NotoSans-Bold", "Roboto", "sans-serif"),
+            catalogue.availableFamilies().map { it.value },
+        )
+    }
+
+    @Test
+    fun `appends one canonical sans serif alias`() {
+        val catalogue = AndroidPlatformFontCatalogue(
+            sdkInt = { 29 },
+            availableFontNames = { listOf("Sans-Serif", "Roboto") },
+        )
+
+        assertEquals(
+            listOf("Roboto", "sans-serif"),
             catalogue.availableFamilies().map { it.value },
         )
     }

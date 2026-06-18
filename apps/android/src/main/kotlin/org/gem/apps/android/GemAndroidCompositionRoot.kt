@@ -32,6 +32,7 @@ import org.gem.protocol.libomv.runtime.CredentialVaultLoginSecretResolver
 import org.gem.protocol.libomv.runtime.LoginSecretResolver
 import org.gem.ui.design.AndroidPlatformFontCatalogue
 import org.gem.ui.design.AndroidPlatformFontFamilyResolver
+import org.gem.ui.design.AndroidPlatformSystemFontFamilyProvider
 import org.gem.ui.runtime.GemLoginComplianceProvider
 import org.gem.ui.runtime.GemUiRuntime
 
@@ -109,6 +110,7 @@ object GemAndroidCompositionRoot {
                 appearanceProfileService = appearanceProfileService,
                 platformFontCatalogue = AndroidPlatformFontCatalogue(),
                 platformFontFamilyResolver = AndroidPlatformFontFamilyResolver(),
+                platformSystemFontFamilyProvider = AndroidPlatformSystemFontFamilyProvider,
                 lastLoginProfilePreferenceService = lastLoginProfilePreferenceService,
             )
         }

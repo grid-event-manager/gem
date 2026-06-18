@@ -1,7 +1,7 @@
 package org.gem.ui.design
 
-import org.gem.core.appearance.AppearanceMode
 import org.gem.core.appearance.AppearanceFontFamily
+import org.gem.core.appearance.AppearanceMode
 import org.gem.core.appearance.AppearanceProfile
 import org.gem.core.appearance.AppearanceProfileCatalogue
 import org.gem.core.appearance.AppearanceTextTarget

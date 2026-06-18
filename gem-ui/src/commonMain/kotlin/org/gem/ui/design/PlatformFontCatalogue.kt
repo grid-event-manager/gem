@@ -14,4 +14,11 @@ internal object PlatformFontFamilyNames {
             .distinctBy { it.lowercase() }
             .sortedWith(compareBy<String> { it.lowercase() }.thenBy { it })
             .map { AppearanceFontFamily(it) }
+
+    fun normalizeWithSansSerifAlias(names: Iterable<String>): List<AppearanceFontFamily> =
+        normalize(names)
+            .filterNot { it.value.equals(SANS_SERIF_ALIAS, ignoreCase = true) } +
+            AppearanceFontFamily(SANS_SERIF_ALIAS)
+
+    private const val SANS_SERIF_ALIAS = "sans-serif"
 }

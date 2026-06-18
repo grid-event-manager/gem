@@ -22,6 +22,7 @@ import org.gem.core.preferences.LastLoginProfilePreferenceService
 import org.gem.core.theme.ThemePreferenceService
 import org.gem.ui.design.PlatformFontCatalogue
 import org.gem.ui.design.PlatformFontFamilyResolver
+import org.gem.ui.design.PlatformSystemFontFamilyProvider
 
 data class GemUiRuntime(
     val credentialRuntimeState: GemCredentialRuntimeState,
@@ -41,6 +42,7 @@ data class GemUiRuntime(
     val appearanceProfileService: AppearanceProfileService,
     val platformFontCatalogue: PlatformFontCatalogue,
     val platformFontFamilyResolver: PlatformFontFamilyResolver,
+    val platformSystemFontFamilyProvider: PlatformSystemFontFamilyProvider,
     val lastLoginProfilePreferenceService: LastLoginProfilePreferenceService,
 ) {
     fun credentialServiceOrNull(): CredentialService? =

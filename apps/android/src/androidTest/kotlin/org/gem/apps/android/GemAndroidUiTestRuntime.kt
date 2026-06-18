@@ -90,6 +90,7 @@ import org.gem.core.theme.ThemePreferenceService
 import org.gem.core.theme.ThemePreferenceStore
 import org.gem.ui.design.PlatformFontCatalogue
 import org.gem.ui.design.PlatformFontFamilyResolver
+import org.gem.ui.design.AndroidPlatformSystemFontFamilyProvider
 import org.gem.ui.runtime.GemLoginComplianceProvider
 import org.gem.ui.runtime.GemUiRuntime
 
@@ -144,6 +145,7 @@ internal object GemAndroidUiTestRuntime {
             platformFontFamilyResolver = PlatformFontFamilyResolver {
                 FontFamily.Default
             },
+            platformSystemFontFamilyProvider = AndroidPlatformSystemFontFamilyProvider,
             lastLoginProfilePreferenceService = LastLoginProfilePreferenceService(
                 AndroidUiLastLoginProfilePreferenceStore(profile.profileId),
             ),

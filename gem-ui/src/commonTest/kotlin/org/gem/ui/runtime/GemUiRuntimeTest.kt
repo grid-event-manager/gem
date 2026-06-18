@@ -1,9 +1,11 @@
 package org.gem.ui.runtime
 
+import org.gem.core.appearance.AppearanceFontFamily
 import org.gem.core.appearance.AppearanceProfileLoadResult
 import org.gem.core.services.GemCredentialRuntimeReady
 import org.gem.ui.testing.FakeGemUiRuntime
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -24,7 +26,14 @@ class GemUiRuntimeTest {
             runtime.appearanceProfileService.loadState(),
         )
         assertTrue(appearanceState.state.profiles.isNotEmpty())
-        assertTrue(runtime.platformFontCatalogue.availableFamilies().isNotEmpty())
+        assertEquals(
+            listOf(AppearanceFontFamily("sans-serif")),
+            runtime.platformFontCatalogue.availableFamilies(),
+        )
+        assertEquals(
+            AppearanceFontFamily("sans-serif"),
+            runtime.platformSystemFontFamilyProvider.defaultFamily(emptyList()),
+        )
     }
 
     @Test

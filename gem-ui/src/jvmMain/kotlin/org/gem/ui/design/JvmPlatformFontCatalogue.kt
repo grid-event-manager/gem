@@ -9,5 +9,5 @@ class JvmPlatformFontCatalogue(
     },
 ) : PlatformFontCatalogue {
     override fun availableFamilies(): List<AppearanceFontFamily> =
-        PlatformFontFamilyNames.normalize(fontFamilyNames().asIterable())
+        PlatformFontFamilyNames.normalizeWithSansSerifAlias(fontFamilyNames().asIterable())
 }

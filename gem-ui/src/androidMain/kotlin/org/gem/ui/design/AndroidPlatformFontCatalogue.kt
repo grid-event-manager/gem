@@ -12,9 +12,9 @@ class AndroidPlatformFontCatalogue(
 ) : PlatformFontCatalogue {
     override fun availableFamilies(): List<AppearanceFontFamily> =
         if (sdkInt() >= SYSTEM_FONT_API_LEVEL) {
-            PlatformFontFamilyNames.normalize(availableFontNames())
+            PlatformFontFamilyNames.normalizeWithSansSerifAlias(availableFontNames())
         } else {
-            PlatformFontFamilyNames.normalize(FIXED_API_26_TO_28_FAMILIES)
+            PlatformFontFamilyNames.normalizeWithSansSerifAlias(FIXED_API_26_TO_28_FAMILIES)
         }
 
     private companion object {
