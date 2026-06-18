@@ -1,16 +1,19 @@
 package org.gem.ui.components
 
+import org.gem.core.appearance.AppearanceFontFamily
 import org.gem.core.appearance.AppearanceMode
 import org.gem.core.appearance.AppearanceProfile
 import org.gem.core.appearance.AppearanceProfileCatalogue
 import org.gem.core.appearance.AppearanceProfileId
 import org.gem.core.appearance.AppearanceProfileName
 import org.gem.core.appearance.AppearanceProfileSource
+import org.gem.core.appearance.AppearanceTextTarget
 import org.gem.ui.state.AppearanceUiState
 import org.gem.ui.text.EnglishGemTextCatalogue
 import org.gem.ui.text.GemTextKey
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 
 class AppearanceThemesPanelTest {
@@ -48,6 +51,18 @@ class AppearanceThemesPanelTest {
         assertEquals("My Theme (${text.text(GemTextKey.Dark)})", AppearanceThemesPanelInteraction.profileLabel(custom, text))
     }
 
+    @Test
+    fun systemProfileLabelIsNonRenderingGuard() {
+        val system = AppearanceProfileCatalogue.systemProfile(
+            mode = AppearanceMode.LIGHT,
+            textFonts = completeFonts("Noto Sans"),
+        )
+
+        assertFailsWith<IllegalStateException> {
+            AppearanceThemesPanelInteraction.profileLabel(system, text)
+        }
+    }
+
     private fun customProfile(): AppearanceProfile {
         val base = AppearanceProfileCatalogue.stockProfiles().first { it.mode == AppearanceMode.DARK }
         return base.copy(
@@ -56,4 +71,7 @@ class AppearanceThemesPanelTest {
             source = AppearanceProfileSource.CUSTOM,
         )
     }
+
+    private fun completeFonts(value: String): Map<AppearanceTextTarget, AppearanceFontFamily> =
+        AppearanceTextTarget.entries.associateWith { AppearanceFontFamily(value) }
 }

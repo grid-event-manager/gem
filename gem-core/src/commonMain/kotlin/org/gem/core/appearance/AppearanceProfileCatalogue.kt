@@ -21,12 +21,53 @@ object AppearanceProfileCatalogue {
             stockCyberDark(),
         )
 
+    fun systemProfile(
+        mode: AppearanceMode,
+        textFonts: Map<AppearanceTextTarget, AppearanceFontFamily>,
+    ): AppearanceProfile {
+        require(textFonts.keys == AppearanceTextTarget.entries.toSet()) {
+            "System profile textFonts must cover every text target."
+        }
+
+        return AppearanceProfile(
+            id = AppearanceProfileId(
+                when (mode) {
+                    AppearanceMode.LIGHT -> "system:light:gem-default"
+                    AppearanceMode.DARK -> "system:dark:gem-default"
+                },
+            ),
+            name = AppearanceProfileName("GEM Default"),
+            mode = mode,
+            source = AppearanceProfileSource.SYSTEM,
+            textFonts = textFonts,
+            textColors = signedOffTextColors(mode),
+            elementColors = signedOffElementColors(mode),
+        )
+    }
+
     internal fun defaultTextFonts(): Map<AppearanceTextTarget, AppearanceFontFamily> =
         textTargetMap {
             AppearanceFontFamily("Inter")
         }
 
     private fun defaultTextColors(mode: AppearanceMode): Map<AppearanceTextTarget, AppearanceColor> =
+        signedOffTextColors(mode)
+
+    private fun defaultElementColors(mode: AppearanceMode): Map<AppearanceElementTarget, AppearanceColor> =
+        signedOffElementColors(mode)
+
+    private fun stockFallbackTextFonts(): Map<AppearanceTextTarget, AppearanceFontFamily> =
+        textTargetMap {
+            AppearanceFontFamily("Inter")
+        }
+
+    private fun stockFallbackTextColors(mode: AppearanceMode): Map<AppearanceTextTarget, AppearanceColor> =
+        signedOffTextColors(mode)
+
+    private fun stockFallbackElementColors(mode: AppearanceMode): Map<AppearanceElementTarget, AppearanceColor> =
+        signedOffElementColors(mode)
+
+    private fun signedOffTextColors(mode: AppearanceMode): Map<AppearanceTextTarget, AppearanceColor> =
         mapOf(
             AppearanceTextTarget.TITLE_BAR to color("#ffffff"),
             AppearanceTextTarget.TITLE_SUBTITLE to color("#a9d6e6"),
@@ -42,7 +83,7 @@ object AppearanceProfileCatalogue {
             AppearanceTextTarget.THEME_TOGGLE_LABELS to color("#8ab4c4"),
         )
 
-    private fun defaultElementColors(mode: AppearanceMode): Map<AppearanceElementTarget, AppearanceColor> =
+    private fun signedOffElementColors(mode: AppearanceMode): Map<AppearanceElementTarget, AppearanceColor> =
         mapOf(
             AppearanceElementTarget.PAGE_BACKGROUND to color(mode.pick(light = "#ffffff", dark = "#2a3441")),
             AppearanceElementTarget.CARD_BACKGROUND to color(mode.pick(light = "#ffffff", dark = "#2f3d4a")),
@@ -401,7 +442,6 @@ object AppearanceProfileCatalogue {
         textColors: Map<String, String>,
         areaColors: Map<String, String>,
     ): AppearanceProfile {
-        val defaultDraft = defaultDraft(mode)
         val fontOverrides = fonts.mapKeys { (key, _) -> textTargetFor(key) }
             .mapValues { (_, value) -> AppearanceFontFamily(value) }
         val textColorOverrides = textColors.mapKeys { (key, _) -> textTargetFor(key) }
@@ -417,10 +457,10 @@ object AppearanceProfileCatalogue {
             name = AppearanceProfileName(name),
             mode = mode,
             source = AppearanceProfileSource.STOCK,
-            textFonts = defaultDraft.textFonts + fontOverrides,
-            textColors = defaultDraft.textColors + textColorOverrides +
+            textFonts = stockFallbackTextFonts() + fontOverrides,
+            textColors = stockFallbackTextColors(mode) + textColorOverrides +
                 listOfNotNull(logoColor?.let { AppearanceTextTarget.LOGO to it }).toMap(),
-            elementColors = defaultDraft.elementColors + elementOverrides,
+            elementColors = stockFallbackElementColors(mode) + elementOverrides,
         )
     }
 

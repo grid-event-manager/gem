@@ -65,6 +65,7 @@ internal object AppearanceThemesPanelInteraction {
         return when (profile.source) {
             AppearanceProfileSource.STOCK -> "${profile.name.value} $mode"
             AppearanceProfileSource.CUSTOM -> "${profile.name.value} ($mode)"
+            AppearanceProfileSource.SYSTEM -> error("System profiles are hidden and are not renderable options.")
         }
     }
 
