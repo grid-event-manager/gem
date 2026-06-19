@@ -29,6 +29,7 @@ import org.gem.ui.time.SecondLifeTimeDisplay
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal actual fun GemPlatformTopBarChrome(
+    title: GemTopBarTitle,
     activeAccountLabel: String,
     secondLifeTimeDisplay: SecondLifeTimeDisplay,
     menuOpen: Boolean,
@@ -56,19 +57,21 @@ internal actual fun GemPlatformTopBarChrome(
         title = {
             Column {
                 Text(
-                    text = textCatalogue.text(GemTextKey.BrandInitials),
+                    text = textCatalogue.text(title.titleKey),
                     style = GemTheme.typeScale.brandTitle,
                     color = GemTheme.colors.brandInitialsInk,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                Text(
-                    text = textCatalogue.text(GemTextKey.BrandSubtitle),
-                    style = GemTheme.typeScale.brandSubtitle,
-                    color = GemTheme.colors.brandWordmark,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                title.subtitleKey?.let { subtitleKey ->
+                    Text(
+                        text = textCatalogue.text(subtitleKey),
+                        style = GemTheme.typeScale.brandSubtitle,
+                        color = GemTheme.colors.brandWordmark,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
         },
         actions = {

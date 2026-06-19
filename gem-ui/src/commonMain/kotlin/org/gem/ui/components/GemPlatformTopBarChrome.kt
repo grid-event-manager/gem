@@ -10,6 +10,7 @@ import org.gem.ui.time.SecondLifeTimeDisplay
 
 @Composable
 internal expect fun GemPlatformTopBarChrome(
+    title: GemTopBarTitle,
     activeAccountLabel: String,
     secondLifeTimeDisplay: SecondLifeTimeDisplay,
     menuOpen: Boolean,

@@ -21,8 +21,10 @@ import org.gem.ui.components.GemOperationModal
 import org.gem.ui.components.GemPlatformBackHandler
 import org.gem.ui.components.GemSendFooter
 import org.gem.ui.components.GemTopBar
+import org.gem.ui.components.GemTopBarTitle
 import org.gem.ui.components.SessionStrip
 import org.gem.ui.components.SectionBackNav
+import org.gem.ui.components.ThemeModeToggle
 import org.gem.ui.controllers.AccountsController
 import org.gem.ui.controllers.AppearanceController
 import org.gem.ui.controllers.GroupTargetController
@@ -275,6 +277,7 @@ fun GemApp(
         GemAppScaffold(
             topBar = {
                 GemTopBar(
+                    title = topBarTitleForRoute(route),
                     activeAccountLabel = appController.state.activeAccountLabel,
                     secondLifeTimeDisplay = secondLifeTimeDisplay,
                     menuOpen = appController.state.menuOpen,
@@ -294,6 +297,24 @@ fun GemApp(
                             runSectionBackNavigation(activeSection.backPolicy)
                         },
                         testTag = if (route == UiRoute.Accounts) GemTestTags.AccountsBack else null,
+                        trailingContent = if (sectionNavigationShowsThemeToggle(route)) {
+                            {
+                                ThemeModeToggle(
+                                    checked = appearanceController.state.toggleChecked,
+                                    lightLabel = textCatalogue.text(GemTextKey.Light),
+                                    darkLabel = textCatalogue.text(GemTextKey.Dark),
+                                    onCheckedChange = { checked ->
+                                        appearanceController = applyNavigationThemeToggle(
+                                            controller = appearanceController,
+                                            checked = checked,
+                                            osDark = osDark,
+                                        )
+                                    },
+                                )
+                            }
+                        } else {
+                            null
+                        },
                     )
                 }
             } else {
@@ -518,12 +539,6 @@ fun GemApp(
                                 appearanceController = appearanceController.selectProfile(profileId)
                             },
                         ),
-                        onThemeCheckedChange = { checked ->
-                            appearanceController = appearanceController.setManualTheme(
-                                mode = if (checked) AppearanceMode.DARK else AppearanceMode.LIGHT,
-                                osDark = osDark,
-                            )
-                        },
                     )
                 }
             },
@@ -541,6 +556,33 @@ private const val LogoutSpinnerMinimumMillis: Long = 650L
 private const val SendValidationFeedbackMillis: Long = 3_000L
 private const val AvatarProgressDetailMillis: Long = 5_000L
 private const val ClockMinuteMillis: Long = 60_000L
+
+internal fun topBarTitleForRoute(route: UiRoute): GemTopBarTitle =
+    when (route) {
+        UiRoute.Settings,
+        UiRoute.Accounts -> GemTopBarTitle(
+            titleKey = AppSectionCatalogue.sectionFor(route).labelKey,
+            subtitleKey = null,
+        )
+        UiRoute.Login,
+        UiRoute.Compose -> GemTopBarTitle.brand()
+    }
+
+internal fun sectionNavigationShowsThemeToggle(route: UiRoute): Boolean =
+    route == UiRoute.Settings
+
+internal fun appearanceModeForNavigationToggleChecked(checked: Boolean): AppearanceMode =
+    if (checked) AppearanceMode.DARK else AppearanceMode.LIGHT
+
+internal fun applyNavigationThemeToggle(
+    controller: AppearanceController,
+    checked: Boolean,
+    osDark: Boolean,
+): AppearanceController =
+    controller.setManualTheme(
+        mode = appearanceModeForNavigationToggleChecked(checked),
+        osDark = osDark,
+    )
 
 private fun millisUntilNextMinute(epochMilliseconds: Long): Long {
     val elapsedInMinute = ((epochMilliseconds % ClockMinuteMillis) + ClockMinuteMillis) % ClockMinuteMillis

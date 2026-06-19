@@ -25,6 +25,7 @@ fun SectionBackNav(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     testTag: String? = null,
+    trailingContent: (@Composable () -> Unit)? = null,
 ) {
     val backInteraction = remember { MutableInteractionSource() }
     val backHovered by backInteraction.collectIsHoveredAsState()
@@ -41,7 +42,11 @@ fun SectionBackNav(
         val testTagModifier = testTag?.let { Modifier.testTag(it) } ?: Modifier
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Start,
+            horizontalArrangement = if (trailingContent == null) {
+                Arrangement.Start
+            } else {
+                Arrangement.SpaceBetween
+            },
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Row(
@@ -64,6 +69,7 @@ fun SectionBackNav(
                     style = GemTheme.typeScale.smallLabel,
                 )
             }
+            trailingContent?.invoke()
         }
         HorizontalDivider(
             color = GemTheme.colors.line,

@@ -2,7 +2,6 @@ package org.gem.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -45,11 +44,6 @@ fun AccountsScreen(
         verticalArrangement = Arrangement.spacedBy(GemTheme.spacing.rowGap),
     ) {
         val hasSavedAccounts = state.savedLoginOptions.isNotEmpty()
-        Text(
-            text = textCatalogue.text(GemTextKey.Accounts),
-            style = GemTheme.typeScale.sectionTitle,
-            color = GemTheme.colors.secondary,
-        )
         if (hasSavedAccounts) {
             AccountsEditAccountPanel(
                 state = state,

@@ -6,10 +6,25 @@ import org.gem.ui.navigation.AppMenuCommand
 import org.gem.ui.navigation.AppMenuEntry
 import org.gem.ui.state.UiRoute
 import org.gem.ui.text.GemTextCatalogue
+import org.gem.ui.text.GemTextKey
 import org.gem.ui.time.SecondLifeTimeDisplay
+
+data class GemTopBarTitle(
+    val titleKey: GemTextKey,
+    val subtitleKey: GemTextKey?,
+) {
+    companion object {
+        fun brand(): GemTopBarTitle =
+            GemTopBarTitle(
+                titleKey = GemTextKey.BrandInitials,
+                subtitleKey = GemTextKey.BrandSubtitle,
+            )
+    }
+}
 
 @Composable
 fun GemTopBar(
+    title: GemTopBarTitle,
     activeAccountLabel: String,
     secondLifeTimeDisplay: SecondLifeTimeDisplay,
     menuOpen: Boolean,
@@ -22,6 +37,7 @@ fun GemTopBar(
     modifier: Modifier = Modifier,
 ) {
     GemPlatformTopBarChrome(
+        title = title,
         activeAccountLabel = activeAccountLabel,
         secondLifeTimeDisplay = secondLifeTimeDisplay,
         menuOpen = menuOpen,
