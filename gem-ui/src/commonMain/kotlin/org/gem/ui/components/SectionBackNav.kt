@@ -15,9 +15,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.TextStyle
+import org.gem.ui.design.GemColors
 import org.gem.ui.design.GemTheme
+import org.gem.ui.design.GemTypeScale
 
 @Composable
 fun SectionBackNav(
@@ -29,11 +33,8 @@ fun SectionBackNav(
 ) {
     val backInteraction = remember { MutableInteractionSource() }
     val backHovered by backInteraction.collectIsHoveredAsState()
-    val backColor = if (backHovered) {
-        GemTheme.colors.interactiveHoverInk
-    } else {
-        GemTheme.colors.navigationInk
-    }
+    val colors = GemTheme.colors
+    val backColor = SectionBackNavTokens.backColor(colors, backHovered)
     Column(
         modifier = modifier
             .fillMaxWidth(),
@@ -66,7 +67,7 @@ fun SectionBackNav(
                 Text(
                     text = text,
                     color = backColor,
-                    style = GemTheme.typeScale.smallLabel,
+                    style = SectionBackNavTokens.backLabelStyle(GemTheme.typeScale),
                 )
             }
             trailingContent?.invoke()
@@ -76,4 +77,15 @@ fun SectionBackNav(
             thickness = GemTheme.spacing.borderWidth,
         )
     }
+}
+
+internal object SectionBackNavTokens {
+    fun backColor(
+        colors: GemColors,
+        hovered: Boolean,
+    ): Color =
+        if (hovered) colors.interactiveHoverInk else colors.navigationInk
+
+    fun backLabelStyle(typeScale: GemTypeScale): TextStyle =
+        typeScale.backLabel
 }

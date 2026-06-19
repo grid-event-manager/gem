@@ -13,8 +13,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
+import org.gem.ui.design.GemColors
 import org.gem.ui.design.GemTheme
+import org.gem.ui.design.GemTypeScale
 import org.gem.ui.state.AppearanceRgbChannel
 import kotlin.math.roundToInt
 
@@ -36,8 +40,8 @@ fun GemRgbSliderRow(
     ) {
         Text(
             text = channel.name,
-            color = GemTheme.colors.secondary,
-            style = GemTheme.typeScale.smallLabel,
+            color = GemRgbSliderRowInteraction.labelColor(GemTheme.colors),
+            style = GemRgbSliderRowInteraction.labelStyle(GemTheme.typeScale),
             textAlign = TextAlign.Center,
             modifier = Modifier.width(spacing.appearanceRgbLabelWidth),
         )
@@ -85,6 +89,12 @@ sealed interface GemRgbNumericUpdate {
 internal object GemRgbSliderRowInteraction {
     val Range: IntRange = 0..255
     const val Steps: Int = 254
+
+    fun labelColor(colors: GemColors): Color =
+        colors.muted
+
+    fun labelStyle(typeScale: GemTypeScale): TextStyle =
+        typeScale.smallLabel
 
     fun numericUpdate(
         previousValidValue: Int,

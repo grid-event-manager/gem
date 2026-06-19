@@ -78,8 +78,17 @@ object AppearanceDesignTokenMapper {
                 body = baseline.body.copy(
                     fontFamily = fontFamilies.getValue(AppearanceTextTarget.MAIN_BODY),
                 ),
+                fieldText = baseline.fieldText.copy(
+                    fontFamily = fontFamilies.getValue(AppearanceTextTarget.FIELD_TEXT),
+                ),
                 smallLabel = baseline.smallLabel.copy(
                     fontFamily = fontFamilies.getValue(AppearanceTextTarget.SMALL_LABELS),
+                ),
+                backLabel = baseline.backLabel.copy(
+                    fontFamily = fontFamilies.getValue(AppearanceTextTarget.BACK_BUTTON),
+                ),
+                themeToggleLabel = baseline.themeToggleLabel.copy(
+                    fontFamily = fontFamilies.getValue(AppearanceTextTarget.THEME_TOGGLE_LABELS),
                 ),
                 button = baseline.button.copy(
                     fontFamily = fontFamilies.getValue(AppearanceTextTarget.BUTTON_LABELS),
@@ -109,7 +118,7 @@ object AppearanceDesignTokenMapper {
             AppearanceTextColorSlot.MENU_LABEL -> copy(topBarMenuInk = color)
             AppearanceTextColorSlot.CLOCK -> copy(topBarClockInk = color)
             AppearanceTextColorSlot.BACK -> copy(navigationInk = color)
-            AppearanceTextColorSlot.THEME_TOGGLE -> this
+            AppearanceTextColorSlot.THEME_TOGGLE -> copy(themeToggleLabelInk = color)
         }
 
     private fun GemColors.withElementColor(

@@ -30,6 +30,7 @@ data class GemColors(
     val topBarInk: Color = Color(0xFFF8FAFC),
     val topBarMenuInk: Color = secondary,
     val topBarClockInk: Color = topBarMenuInk,
+    val themeToggleLabelInk: Color = secondary,
     val topBarButtonSurface: Color = surfaceStrong,
     val topBarButtonBorder: Color = lineStrong,
     val topBarButtonInk: Color = topBarMenuInk,

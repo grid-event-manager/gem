@@ -90,8 +90,8 @@ private fun GemMenuRow(
     ) {
         Text(
             text = text,
-            style = GemTheme.typeScale.menuItem,
-            color = if (enabled) colors.secondary else colors.menuDisabledInk,
+            style = GemMenuTextTokens.textStyle(GemTheme.typeScale),
+            color = GemMenuTextTokens.textColor(colors, enabled),
         )
     }
 }

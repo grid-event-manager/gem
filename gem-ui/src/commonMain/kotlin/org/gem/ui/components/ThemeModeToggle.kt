@@ -12,9 +12,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.TextStyle
+import org.gem.ui.design.GemColors
 import org.gem.ui.design.GemTheme
+import org.gem.ui.design.GemTypeScale
 
 @Composable
 fun ThemeModeToggle(
@@ -27,7 +31,8 @@ fun ThemeModeToggle(
 ) {
     val spacing = GemTheme.spacing
     val colors = GemTheme.colors
-    val labelColor = if (enabled) colors.secondary else colors.disabledInk
+    val labelColor = ThemeModeToggleInteraction.labelColor(colors, enabled)
+    val labelStyle = ThemeModeToggleInteraction.labelStyle(GemTheme.typeScale)
     Row(
         modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(spacing.fieldGap),
@@ -36,7 +41,7 @@ fun ThemeModeToggle(
         Text(
             text = lightLabel,
             color = labelColor,
-            style = GemTheme.typeScale.smallLabel,
+            style = labelStyle,
         )
         Box(
             modifier = Modifier
@@ -71,7 +76,7 @@ fun ThemeModeToggle(
         Text(
             text = darkLabel,
             color = labelColor,
-            style = GemTheme.typeScale.smallLabel,
+            style = labelStyle,
         )
     }
 }
@@ -79,4 +84,13 @@ fun ThemeModeToggle(
 internal object ThemeModeToggleInteraction {
     fun toggledValue(checked: Boolean): Boolean =
         !checked
+
+    fun labelColor(
+        colors: GemColors,
+        enabled: Boolean,
+    ): Color =
+        if (enabled) colors.themeToggleLabelInk else colors.disabledInk
+
+    fun labelStyle(typeScale: GemTypeScale): TextStyle =
+        typeScale.themeToggleLabel
 }

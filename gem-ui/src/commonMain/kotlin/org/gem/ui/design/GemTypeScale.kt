@@ -28,10 +28,13 @@ data class GemTypeScale(
         fontSize = 14.sp,
         lineHeight = 20.sp,
     ),
+    val fieldText: TextStyle = body,
     val smallLabel: TextStyle = TextStyle(
         fontSize = 12.sp,
         lineHeight = 15.sp,
     ),
+    val backLabel: TextStyle = smallLabel,
+    val themeToggleLabel: TextStyle = smallLabel,
     val button: TextStyle = TextStyle(
         fontSize = 14.sp,
         lineHeight = 18.sp,

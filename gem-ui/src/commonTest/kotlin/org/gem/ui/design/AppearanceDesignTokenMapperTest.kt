@@ -21,7 +21,8 @@ class AppearanceDesignTokenMapperTest {
                 (AppearanceTextTarget.TITLE_BAR to AppearanceFontFamily("Display")),
             textColors = base.textColors +
                 (AppearanceTextTarget.MAIN_BODY to AppearanceColor.require("#112233")) +
-                (AppearanceTextTarget.MENU_LABELS to AppearanceColor.require("#445566")),
+                (AppearanceTextTarget.MENU_LABELS to AppearanceColor.require("#445566")) +
+                (AppearanceTextTarget.THEME_TOGGLE_LABELS to AppearanceColor.require("#556677")),
             elementColors = base.elementColors +
                 (AppearanceElementTarget.PAGE_BACKGROUND to AppearanceColor.require("#223344")) +
                 (AppearanceElementTarget.HAMBURGER_BARS to AppearanceColor.require("#778899")),
@@ -36,6 +37,7 @@ class AppearanceDesignTokenMapperTest {
         assertEquals(Color(0xFF223344), tokens.colors.page)
         assertEquals(Color(0xFF112233), tokens.colors.body)
         assertEquals(Color(0xFF445566), tokens.colors.topBarMenuInk)
+        assertEquals(Color(0xFF556677), tokens.colors.themeToggleLabelInk)
         assertEquals(Color(0xFF778899), tokens.colors.topBarButtonInk)
         assertEquals(FontFamily.Serif, tokens.typeScale.textTargetFontFamilies[AppearanceTextTarget.TITLE_BAR])
     }
@@ -50,6 +52,7 @@ class AppearanceDesignTokenMapperTest {
         assertEquals(Color(0xFF4A7A8A), light.successInk)
         assertEquals(Color(0xFFB8B8B8), light.menuDisabledInk)
         assertEquals(Color(0xFF8B0101), light.interactiveHoverInk)
+        assertEquals(Color(0xFF8AB4C4), light.themeToggleLabelInk)
         assertEquals(Color(0xFFE0E0E0), light.disabledBackground)
         assertEquals(Color(0xFF777777), light.disabledInk)
         assertEquals(Color(0xFF4A7A8A), light.selectedInk)
@@ -60,6 +63,7 @@ class AppearanceDesignTokenMapperTest {
         assertEquals(Color(0xFF8AB4C4), dark.successInk)
         assertEquals(Color(0xFFA0B0BC), dark.menuDisabledInk)
         assertEquals(Color(0xFFC0C8D0), dark.interactiveHoverInk)
+        assertEquals(Color(0xFF8AB4C4), dark.themeToggleLabelInk)
         assertEquals(Color(0xFF2E3F4E), dark.disabledBackground)
         assertEquals(Color(0xFFA0B0BC), dark.disabledInk)
         assertEquals(Color(0xFF8AB4C4), dark.selectedInk)
@@ -89,7 +93,9 @@ class AppearanceDesignTokenMapperTest {
         val draft = base.copy(
             textColors = base.textColors +
                 (AppearanceTextTarget.MAIN_BODY to AppearanceColor.require("#111111")) +
+                (AppearanceTextTarget.FIELD_TEXT to AppearanceColor.require("#101010")) +
                 (AppearanceTextTarget.BACK_BUTTON to AppearanceColor.require("#222222")) +
+                (AppearanceTextTarget.THEME_TOGGLE_LABELS to AppearanceColor.require("#333333")) +
                 (AppearanceTextTarget.SMALL_LABELS to AppearanceColor.require("#444444")),
             elementColors = base.elementColors +
                 (AppearanceElementTarget.ACCENT_TEXT to AppearanceColor.require("#EEEEEE")) +
@@ -105,7 +111,9 @@ class AppearanceDesignTokenMapperTest {
         val colors = tokensFor(draft).colors
 
         assertEquals(Color(0xFF111111), colors.body)
+        assertEquals(Color(0xFF101010), colors.ink)
         assertEquals(Color(0xFF222222), colors.navigationInk)
+        assertEquals(Color(0xFF333333), colors.themeToggleLabelInk)
         assertEquals(Color(0xFFEEEEEE), colors.secondary)
         assertEquals(Color(0xFF661111), colors.danger)
         assertEquals(Color(0xFF116622), colors.successInk)
@@ -114,6 +122,72 @@ class AppearanceDesignTokenMapperTest {
         assertEquals(Color(0xFF333333), colors.disabledBackground)
         assertEquals(Color(0xFF444444), colors.disabledInk)
         assertEquals(Color(0xFF000000), colors.selectedInk)
+    }
+
+    @Test
+    fun themeToggleLabelColourDoesNotAliasButtonLabels() {
+        val base = systemDraft(AppearanceMode.LIGHT)
+        val baseline = tokensFor(base).colors
+        val buttonOnly = base.copy(
+            textColors = base.textColors +
+                (AppearanceTextTarget.BUTTON_LABELS to AppearanceColor.require("#AA0000")),
+        )
+        val toggleOnly = base.copy(
+            textColors = base.textColors +
+                (AppearanceTextTarget.THEME_TOGGLE_LABELS to AppearanceColor.require("#00AA00")),
+        )
+
+        val buttonColors = tokensFor(buttonOnly).colors
+        val toggleColors = tokensFor(toggleOnly).colors
+
+        assertEquals(Color(0xFFAA0000), buttonColors.buttonLabelInk)
+        assertEquals(Color(0xFFAA0000), buttonColors.primaryInk)
+        assertEquals(baseline.themeToggleLabelInk, buttonColors.themeToggleLabelInk)
+        assertEquals(Color(0xFF00AA00), toggleColors.themeToggleLabelInk)
+        assertEquals(baseline.buttonLabelInk, toggleColors.buttonLabelInk)
+    }
+
+    @Test
+    fun renderedTextTargetsMapToIndependentTypeScaleSlots() {
+        val base = systemDraft(AppearanceMode.LIGHT)
+        val default = AppearanceFontFamily("sans-serif")
+        val field = AppearanceFontFamily("FieldFont")
+        val back = AppearanceFontFamily("BackFont")
+        val toggle = AppearanceFontFamily("ToggleFont")
+        val small = AppearanceFontFamily("SmallFont")
+        val menu = AppearanceFontFamily("MenuFont")
+        val draft = base.copy(
+            textFonts = base.textFonts +
+                (AppearanceTextTarget.FIELD_TEXT to field) +
+                (AppearanceTextTarget.BACK_BUTTON to back) +
+                (AppearanceTextTarget.THEME_TOGGLE_LABELS to toggle) +
+                (AppearanceTextTarget.SMALL_LABELS to small) +
+                (AppearanceTextTarget.MENU_LABELS to menu),
+        )
+
+        val tokens = AppearanceDesignTokenMapper.tokens(
+            draft = draft,
+            availableFonts = listOf(default, field, back, toggle, small, menu),
+            platformFontFamilyResolver = PlatformFontFamilyResolver { family ->
+                when (family) {
+                    default -> FontFamily.SansSerif
+                    field -> FontFamily.Serif
+                    back -> FontFamily.Default
+                    toggle -> FontFamily.Monospace
+                    small -> FontFamily.Cursive
+                    menu -> FontFamily.SansSerif
+                    else -> FontFamily.SansSerif
+                }
+            },
+        )
+
+        assertEquals(FontFamily.SansSerif, tokens.typeScale.body.fontFamily)
+        assertEquals(FontFamily.Serif, tokens.typeScale.fieldText.fontFamily)
+        assertEquals(FontFamily.Default, tokens.typeScale.backLabel.fontFamily)
+        assertEquals(FontFamily.Monospace, tokens.typeScale.themeToggleLabel.fontFamily)
+        assertEquals(FontFamily.Cursive, tokens.typeScale.smallLabel.fontFamily)
+        assertEquals(FontFamily.Cursive, tokens.typeScale.statusPill.fontFamily)
+        assertEquals(FontFamily.SansSerif, tokens.typeScale.menuItem.fontFamily)
     }
 
     @Test

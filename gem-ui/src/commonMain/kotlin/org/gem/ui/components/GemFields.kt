@@ -13,11 +13,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
+import org.gem.ui.design.GemColors
 import org.gem.ui.design.GemTheme
+import org.gem.ui.design.GemTypeScale
 
 @Composable
 fun GemTextField(
@@ -55,7 +59,7 @@ fun GemTextField(
             singleLine = singleLine,
             minLines = if (singleLine) 1 else 5,
             maxLines = if (singleLine) 1 else Int.MAX_VALUE,
-            textStyle = GemTheme.typeScale.body,
+            textStyle = GemFieldTokens.inputTextStyle(GemTheme.typeScale),
             shape = GemTheme.shapes.control,
             colors = gemTextFieldColors(),
             modifier = textFieldModifier,
@@ -88,7 +92,7 @@ fun GemPasswordField(
                 onValueChange = onValueChange,
                 enabled = enabled,
                 singleLine = true,
-                textStyle = GemTheme.typeScale.body,
+                textStyle = GemFieldTokens.inputTextStyle(GemTheme.typeScale),
                 shape = GemTheme.shapes.control,
                 visualTransformation = if (revealed) {
                     VisualTransformation.None
@@ -119,9 +123,20 @@ fun GemPasswordField(
 fun GemFieldLabel(label: String) {
     Text(
         text = label,
-        color = GemTheme.colors.secondary,
-        style = GemTheme.typeScale.smallLabel,
+        color = GemFieldTokens.labelColor(GemTheme.colors),
+        style = GemFieldTokens.labelStyle(GemTheme.typeScale),
     )
+}
+
+internal object GemFieldTokens {
+    fun labelColor(colors: GemColors): Color =
+        colors.muted
+
+    fun labelStyle(typeScale: GemTypeScale): TextStyle =
+        typeScale.smallLabel
+
+    fun inputTextStyle(typeScale: GemTypeScale): TextStyle =
+        typeScale.fieldText
 }
 
 @Composable

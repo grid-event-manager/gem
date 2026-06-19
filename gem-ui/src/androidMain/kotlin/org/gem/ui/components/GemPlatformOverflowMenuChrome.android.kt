@@ -76,7 +76,8 @@ private fun GemPlatformMenuItem(
         text = {
             Text(
                 text = text,
-                style = GemTheme.typeScale.menuItem,
+                style = GemMenuTextTokens.textStyle(GemTheme.typeScale),
+                color = GemMenuTextTokens.textColor(colors, enabled),
             )
         },
         onClick = onClick,
@@ -87,8 +88,8 @@ private fun GemPlatformMenuItem(
             vertical = spacing.menuItemVerticalPadding,
         ),
         colors = MenuDefaults.itemColors(
-            textColor = colors.secondary,
-            disabledTextColor = colors.menuDisabledInk,
+            textColor = GemMenuTextTokens.textColor(colors, enabled = true),
+            disabledTextColor = GemMenuTextTokens.textColor(colors, enabled = false),
         ),
     )
 }

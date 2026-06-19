@@ -30,9 +30,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import org.gem.ui.design.GemColors
 import org.gem.ui.design.GemTheme
+import org.gem.ui.design.GemTypeScale
 
 data class GemDropdownOption<T>(
     val value: T?,
@@ -154,8 +158,8 @@ private fun GemDropdownSelector(
         ) {
             Text(
                 text = selectedLabel ?: placeholderLabel,
-                style = GemTheme.typeScale.body,
-                color = if (selectedLabel == null) colors.muted else colors.ink,
+                style = GemDropdownTokens.selectorTextStyle(GemTheme.typeScale),
+                color = GemDropdownTokens.selectorTextColor(colors, selectedLabel != null),
                 textAlign = textAlign,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -199,7 +203,7 @@ fun <T> GemDropdownTextField(
                 onValueChange = onValueChange,
                 enabled = enabled,
                 singleLine = true,
-                textStyle = GemTheme.typeScale.body,
+                textStyle = GemDropdownTokens.selectorTextStyle(GemTheme.typeScale),
                 shape = GemTheme.shapes.control,
                 colors = gemTextFieldColors(),
                 trailingIcon = {
@@ -277,8 +281,8 @@ private fun GemDropdownMenuItem(
         text = {
             Text(
                 text = label,
-                style = GemTheme.typeScale.body,
-                color = if (enabled) colors.secondary else colors.disabledInk,
+                style = GemMenuTextTokens.textStyle(GemTheme.typeScale),
+                color = GemMenuTextTokens.textColor(colors, enabled),
             )
         },
         onClick = onClick,
@@ -287,6 +291,20 @@ private fun GemDropdownMenuItem(
             horizontal = spacing.menuItemHorizontalPadding,
             vertical = spacing.menuItemVerticalPadding,
         ),
-        colors = MenuDefaults.itemColors(textColor = colors.secondary),
+        colors = MenuDefaults.itemColors(
+            textColor = GemMenuTextTokens.textColor(colors, enabled = true),
+            disabledTextColor = GemMenuTextTokens.textColor(colors, enabled = false),
+        ),
     )
+}
+
+internal object GemDropdownTokens {
+    fun selectorTextColor(
+        colors: GemColors,
+        hasSelection: Boolean,
+    ): Color =
+        if (hasSelection) colors.ink else colors.muted
+
+    fun selectorTextStyle(typeScale: GemTypeScale): TextStyle =
+        typeScale.fieldText
 }
