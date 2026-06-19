@@ -8,7 +8,7 @@ import org.gem.core.appearance.AppearanceProfileId
 import org.gem.core.appearance.AppearanceProfileName
 import org.gem.core.appearance.AppearanceProfileSource
 import org.gem.core.appearance.AppearanceTextTarget
-import org.gem.ui.state.AppearanceUiState
+import org.gem.ui.testing.controllerBackedAppearanceState
 import org.gem.ui.text.EnglishGemTextCatalogue
 import org.gem.ui.text.GemTextKey
 import kotlin.test.Test
@@ -29,7 +29,7 @@ class AppearanceThemesPanelTest {
     fun profileDropdownStartsWithChooseThemeAndListsAllProfiles() {
         val stock = AppearanceProfileCatalogue.stockProfiles()
         val custom = customProfile()
-        val state = AppearanceUiState.default(osDark = false).copy(
+        val state = controllerBackedAppearanceState(osDark = false).copy(
             stockProfiles = stock,
             customProfiles = listOf(custom),
         )

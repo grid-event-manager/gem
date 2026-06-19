@@ -30,5 +30,24 @@ data class AppearanceDraft(
                 selectedProfileId = profile.id,
                 dirty = false,
             )
+
+        fun loadingPlaceholder(mode: AppearanceMode): AppearanceDraft =
+            AppearanceDraft(
+                mode = mode,
+                textFonts = AppearanceTextTarget.entries.associateWith {
+                    AppearanceFontFamily(SANS_SERIF)
+                },
+                textColors = AppearanceTextTarget.entries.associateWith {
+                    AppearanceColor.require(BLACK)
+                },
+                elementColors = AppearanceElementTarget.entries.associateWith {
+                    AppearanceColor.require(BLACK)
+                },
+                selectedProfileId = null,
+                dirty = false,
+            )
+
+        private const val SANS_SERIF = "sans-serif"
+        private const val BLACK = "#000000"
     }
 }

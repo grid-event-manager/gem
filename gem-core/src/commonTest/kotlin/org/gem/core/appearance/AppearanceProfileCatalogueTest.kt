@@ -3,7 +3,6 @@ package org.gem.core.appearance
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
-import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class AppearanceProfileCatalogueTest {
@@ -45,19 +44,6 @@ class AppearanceProfileCatalogueTest {
         assertEquals("Courier New", cyberDark.textFonts.getValue(AppearanceTextTarget.SLT_CLOCK).value)
         assertEquals("#00E5FF", cyberDark.textColors.getValue(AppearanceTextTarget.LOGO).value)
         assertEquals("#071720", cyberDark.elementColors.getValue(AppearanceElementTarget.PAGE_BACKGROUND).value)
-    }
-
-    @Test
-    fun `default draft covers every target without selected profile`() {
-        val draft = AppearanceProfileCatalogue.defaultDraft(AppearanceMode.DARK)
-
-        assertEquals(AppearanceMode.DARK, draft.mode)
-        assertEquals(AppearanceTextTarget.entries.toSet(), draft.textFonts.keys)
-        assertEquals(AppearanceTextTarget.entries.toSet(), draft.textColors.keys)
-        assertEquals(AppearanceElementTarget.entries.toSet(), draft.elementColors.keys)
-        assertNull(draft.selectedProfileId)
-        assertEquals(false, draft.dirty)
-        assertEquals("#C0C8D0", draft.textColors.getValue(AppearanceTextTarget.MAIN_BODY).value)
     }
 
     @Test

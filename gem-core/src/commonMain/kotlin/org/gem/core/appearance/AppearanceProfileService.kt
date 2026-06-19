@@ -32,9 +32,6 @@ class AppearanceProfileService(
             )
         }
 
-    fun defaultDraft(mode: AppearanceMode): AppearanceDraft =
-        AppearanceProfileCatalogue.defaultDraft(mode)
-
     fun selectProfile(profileId: AppearanceProfileId): AppearanceProfileSelectionResult {
         val snapshot = loadMutableSnapshotOrReturnStorageFailure {
             return AppearanceProfileSelectionResult.StorageFailed(it)
@@ -110,7 +107,6 @@ class AppearanceProfileService(
                 val state = stateFrom(nextSnapshot, warning = null)
                 AppearanceProfileResetResult.Reset(
                     state = state,
-                    draft = state.draftFor(mode),
                 )
             }
             is AppearanceProfileStoreSaveResult.StorageFailed -> AppearanceProfileResetResult.StorageFailed(
@@ -141,12 +137,12 @@ class AppearanceProfileService(
             customProfiles = snapshot.customProfiles,
             activeLightProfileId = snapshot.activeLightProfileId,
             activeDarkProfileId = snapshot.activeDarkProfileId,
-            lightDraft = draftFor(
+            selectedLightDraft = selectedDraftFor(
                 mode = AppearanceMode.LIGHT,
                 profileId = snapshot.activeLightProfileId,
                 profiles = profiles,
             ),
-            darkDraft = draftFor(
+            selectedDarkDraft = selectedDraftFor(
                 mode = AppearanceMode.DARK,
                 profileId = snapshot.activeDarkProfileId,
                 profiles = profiles,
@@ -155,13 +151,13 @@ class AppearanceProfileService(
         )
     }
 
-    private fun draftFor(
+    private fun selectedDraftFor(
         mode: AppearanceMode,
         profileId: AppearanceProfileId?,
         profiles: List<AppearanceProfile>,
-    ): AppearanceDraft {
+    ): AppearanceDraft? {
         val profile = profiles.firstOrNull { it.id == profileId && it.mode == mode }
-        return profile?.let(AppearanceDraft::fromProfile) ?: AppearanceProfileCatalogue.defaultDraft(mode)
+        return profile?.let(AppearanceDraft::fromProfile)
     }
 
     private fun AppearanceProfileStoreSnapshot.withActiveProfile(

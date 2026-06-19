@@ -18,6 +18,7 @@ import org.gem.core.theme.ThemePreference
 import org.gem.core.theme.ThemePreferenceSaveResult
 import org.gem.ui.design.AppearanceFontResolver
 import org.gem.ui.design.AppearanceTargetCatalogue
+import org.gem.ui.design.GemSystemThemeProfileFactory
 import org.gem.ui.runtime.GemUiRuntime
 import org.gem.ui.state.AppearanceEditMode
 import org.gem.ui.state.AppearanceExpandedPanel
@@ -65,7 +66,6 @@ class AppearanceController(
                             themePreference = preference,
                             profileState = reset.state,
                             availableFontFamilies = state.availableFontFamilies,
-                            currentDraft = reset.draft,
                             errorKey = null,
                         ),
                     )
@@ -74,7 +74,7 @@ class AppearanceController(
                             mode = mode,
                             themePreference = preference,
                             selectedProfileId = null,
-                            currentDraft = runtime.appearanceProfileService.defaultDraft(mode),
+                            currentDraft = systemDraft(mode, state.availableFontFamilies),
                             errorKey = GemTextKey.ThemePreferenceSaveFailed,
                         ),
                     )
@@ -186,7 +186,6 @@ class AppearanceController(
                     themePreference = state.themePreference,
                     profileState = reset.state,
                     availableFontFamilies = state.availableFontFamilies,
-                    currentDraft = reset.draft,
                     errorKey = null,
                 ).copy(
                     expandedPanel = state.expandedPanel,
@@ -286,7 +285,7 @@ class AppearanceController(
         themePreference: ThemePreference,
         profileState: AppearanceProfileState,
         availableFontFamilies: List<AppearanceFontFamily>,
-        currentDraft: AppearanceDraft = profileState.draftFor(mode),
+        currentDraft: AppearanceDraft = profileState.selectedDraftFor(mode) ?: systemDraft(mode, availableFontFamilies),
         errorKey: GemTextKey?,
     ): AppearanceUiState =
         state.copy(
@@ -304,6 +303,18 @@ class AppearanceController(
             errorKey = errorKey,
         )
 
+    private fun systemDraft(
+        mode: AppearanceMode,
+        availableFontFamilies: List<AppearanceFontFamily>,
+    ): AppearanceDraft =
+        AppearanceDraft.fromProfile(
+            GemSystemThemeProfileFactory.profile(
+                mode = mode,
+                availableFontFamilies = availableFontFamilies,
+                platformSystemFontFamilyProvider = runtime.platformSystemFontFamilyProvider,
+            ),
+        ).copy(selectedProfileId = null)
+
     private fun copy(state: AppearanceUiState): AppearanceController =
         AppearanceController(runtime, state)
 
@@ -314,7 +325,7 @@ class AppearanceController(
         ): AppearanceController =
             AppearanceController(
                 runtime = runtime,
-                state = AppearanceUiState.default(osDark),
+                state = AppearanceUiState.loading(osDark),
             ).refresh(osDark)
 
         private val RGB_RANGE = 0..255

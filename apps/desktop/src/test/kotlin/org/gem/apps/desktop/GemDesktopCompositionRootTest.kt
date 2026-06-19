@@ -2,8 +2,10 @@ package org.gem.apps.desktop
 
 import java.nio.file.Files
 import java.nio.file.Path
+import org.gem.core.appearance.AppearanceDraft
 import org.gem.core.appearance.AppearanceFontFamily
 import org.gem.core.appearance.AppearanceMode
+import org.gem.core.appearance.AppearanceProfileCatalogue
 import org.gem.core.appearance.AppearanceProfileName
 import org.gem.core.appearance.AppearanceProfileSaveResult
 import org.gem.core.domain.AccountProfileId
@@ -59,7 +61,7 @@ class GemDesktopCompositionRootTest {
             val appearanceSave = runtime.appearanceProfileService.saveProfile(
                 name = AppearanceProfileName("Desktop Proof"),
                 mode = AppearanceMode.LIGHT,
-                draft = runtime.appearanceProfileService.defaultDraft(AppearanceMode.LIGHT),
+                draft = stockDraft(AppearanceMode.LIGHT),
             )
             assertTrue(appearanceSave is AppearanceProfileSaveResult.Saved)
             assertTrue(Files.exists(Path.of(appearanceProfileFile(tempDataHome))))
@@ -136,5 +138,8 @@ class GemDesktopCompositionRootTest {
             is SecondLifeLoginNameResult.Valid -> result.loginName
             is SecondLifeLoginNameResult.Invalid -> error("invalid test login name")
         }
+
+    private fun stockDraft(mode: AppearanceMode): AppearanceDraft =
+        AppearanceDraft.fromProfile(AppearanceProfileCatalogue.stockProfiles().first { it.mode == mode })
 
 }

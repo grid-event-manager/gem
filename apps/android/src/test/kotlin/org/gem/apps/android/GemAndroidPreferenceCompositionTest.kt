@@ -2,7 +2,9 @@ package org.gem.apps.android
 
 import java.nio.file.Files
 import java.nio.file.Path
+import org.gem.core.appearance.AppearanceDraft
 import org.gem.core.appearance.AppearanceMode
+import org.gem.core.appearance.AppearanceProfileCatalogue
 import org.gem.core.appearance.AppearanceProfileName
 import org.gem.core.appearance.AppearanceProfileSaveResult
 import org.gem.core.theme.ThemePreference
@@ -36,7 +38,7 @@ class GemAndroidPreferenceCompositionTest {
             val result = service.saveProfile(
                 name = AppearanceProfileName("Proof"),
                 mode = AppearanceMode.DARK,
-                draft = service.defaultDraft(AppearanceMode.DARK),
+                draft = stockDraft(AppearanceMode.DARK),
             )
 
             assertTrue(result is AppearanceProfileSaveResult.Saved)
@@ -51,5 +53,8 @@ class GemAndroidPreferenceCompositionTest {
 
     private fun appearanceProfileFile(appFilesDir: Path): String =
         AndroidGemPreferencePaths.defaultAppearanceProfileFile(appFilesDir.toString())
+
+    private fun stockDraft(mode: AppearanceMode): AppearanceDraft =
+        AppearanceDraft.fromProfile(AppearanceProfileCatalogue.stockProfiles().first { it.mode == mode })
 
 }

@@ -7,15 +7,15 @@ import kotlin.test.assertNull
 
 class AppearanceProfileServiceTest {
     @Test
-    fun `missing store data returns stock profiles and default drafts`() {
+    fun `missing store data returns stock profiles and null selected drafts`() {
         val result = service(LoadStore()).loadState()
         val state = assertIs<AppearanceProfileLoadResult.Loaded>(result).state
 
         assertEquals(6, state.stockProfiles.size)
         assertEquals(emptyList(), state.customProfiles)
         assertNull(state.warning)
-        assertNull(state.lightDraft.selectedProfileId)
-        assertNull(state.darkDraft.selectedProfileId)
+        assertNull(state.selectedDraftFor(AppearanceMode.LIGHT))
+        assertNull(state.selectedDraftFor(AppearanceMode.DARK))
     }
 
     @Test
@@ -35,7 +35,7 @@ class AppearanceProfileServiceTest {
     }
 
     @Test
-    fun `storage failure returns typed failure and caller visible default state`() {
+    fun `storage failure returns typed failure and caller visible null selected state`() {
         val result = service(
             LoadStore(
                 loadResult = AppearanceProfileStoreLoadResult.StorageFailed("[redacted-read]"),
@@ -45,7 +45,7 @@ class AppearanceProfileServiceTest {
 
         assertEquals("[redacted-read]", failure.message)
         assertEquals(6, failure.state.stockProfiles.size)
-        assertNull(failure.state.lightDraft.selectedProfileId)
+        assertNull(failure.state.selectedDraftFor(AppearanceMode.LIGHT))
     }
 
     @Test
@@ -56,8 +56,28 @@ class AppearanceProfileServiceTest {
 
         assertEquals("stock-cyber-dark", selected.profile.id.value)
         assertEquals("stock-cyber-dark", selected.state.activeDarkProfileId?.value)
+        assertEquals("stock-cyber-dark", selected.state.selectedDraftFor(AppearanceMode.DARK)?.selectedProfileId?.value)
+        assertNull(selected.state.selectedDraftFor(AppearanceMode.LIGHT))
         assertNull(selected.state.activeLightProfileId)
         assertEquals("stock-cyber-dark", store.savedSnapshots.single().activeDarkProfileId?.value)
+    }
+
+    @Test
+    fun `invalid active profile ids produce null selected drafts`() {
+        val store = LoadStore(
+            loadResult = AppearanceProfileStoreLoadResult.Loaded(
+                AppearanceProfileStoreSnapshot(
+                    customProfiles = emptyList(),
+                    activeLightProfileId = AppearanceProfileId("missing-light"),
+                    activeDarkProfileId = AppearanceProfileId("stock-cyber-light"),
+                ),
+            ),
+        )
+
+        val state = assertIs<AppearanceProfileLoadResult.Loaded>(service(store).loadState()).state
+
+        assertNull(state.selectedDraftFor(AppearanceMode.LIGHT))
+        assertNull(state.selectedDraftFor(AppearanceMode.DARK))
     }
 
     @Test
@@ -75,7 +95,7 @@ class AppearanceProfileServiceTest {
     @Test
     fun `save profile creates custom profile and sets active mode`() {
         val store = LoadStore()
-        val draft = AppearanceProfileCatalogue.defaultDraft(AppearanceMode.LIGHT)
+        val draft = stockDraft(AppearanceMode.LIGHT)
         val result = service(store).saveProfile(
             name = AppearanceProfileName("  My Theme  "),
             mode = AppearanceMode.LIGHT,
@@ -106,8 +126,8 @@ class AppearanceProfileServiceTest {
                 ),
             ),
         )
-        val draft = AppearanceProfileCatalogue.defaultDraft(AppearanceMode.DARK).copy(
-            textColors = AppearanceProfileCatalogue.defaultDraft(AppearanceMode.DARK).textColors +
+        val draft = stockDraft(AppearanceMode.DARK).copy(
+            textColors = stockDraft(AppearanceMode.DARK).textColors +
                 (AppearanceTextTarget.MAIN_BODY to AppearanceColor.require("#123456")),
         )
         val result = service(store).saveProfile(
@@ -128,7 +148,7 @@ class AppearanceProfileServiceTest {
         val result = service(store).saveProfile(
             name = AppearanceProfileName("Wrong Mode"),
             mode = AppearanceMode.LIGHT,
-            draft = AppearanceProfileCatalogue.defaultDraft(AppearanceMode.DARK),
+            draft = stockDraft(AppearanceMode.DARK),
         )
 
         assertIs<AppearanceProfileSaveResult.Rejected>(result)
@@ -156,6 +176,7 @@ class AppearanceProfileServiceTest {
 
         assertNull(reset.state.activeLightProfileId)
         assertEquals("stock-goth-dark", reset.state.activeDarkProfileId?.value)
+        assertNull(reset.state.selectedDraftFor(AppearanceMode.LIGHT))
         assertEquals(listOf(existing), reset.state.customProfiles)
         assertEquals(listOf(existing), store.savedSnapshots.single().customProfiles)
     }
@@ -163,7 +184,7 @@ class AppearanceProfileServiceTest {
     @Test
     fun `save and reset return storage failures without pretending to save`() {
         val store = LoadStore(saveResult = AppearanceProfileStoreSaveResult.StorageFailed("[redacted-write]"))
-        val draft = AppearanceProfileCatalogue.defaultDraft(AppearanceMode.LIGHT)
+        val draft = stockDraft(AppearanceMode.LIGHT)
 
         assertEquals(
             AppearanceProfileSaveResult.StorageFailed("[redacted-write]"),
@@ -178,12 +199,15 @@ class AppearanceProfileServiceTest {
     private fun service(store: LoadStore): AppearanceProfileService =
         AppearanceProfileService(store)
 
+    private fun stockDraft(mode: AppearanceMode): AppearanceDraft =
+        AppearanceDraft.fromProfile(AppearanceProfileCatalogue.stockProfiles().first { it.mode == mode })
+
     private fun customProfile(
         id: String,
         name: String,
         mode: AppearanceMode,
     ): AppearanceProfile {
-        val draft = AppearanceProfileCatalogue.defaultDraft(mode)
+        val draft = stockDraft(mode)
         return AppearanceProfile(
             id = AppearanceProfileId(id),
             name = AppearanceProfileName(name),

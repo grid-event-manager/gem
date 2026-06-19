@@ -2,7 +2,7 @@ package org.gem.ui.components
 
 import org.gem.core.appearance.AppearanceFontFamily
 import org.gem.core.appearance.AppearanceTextTarget
-import org.gem.ui.state.AppearanceUiState
+import org.gem.ui.testing.controllerBackedAppearanceState
 import org.gem.ui.text.EnglishGemTextCatalogue
 import org.gem.ui.text.GemTextKey
 import kotlin.test.Test
@@ -14,7 +14,7 @@ class AppearanceCustomisePanelTest {
 
     @Test
     fun layoutOrderMatchesPrototypeWithFontsHiddenAndVisible() {
-        val hidden = AppearanceUiState.default(osDark = false)
+        val hidden = controllerBackedAppearanceState(osDark = false)
         val visible = hidden.copy(fontsVisible = true)
 
         assertEquals(
@@ -42,7 +42,8 @@ class AppearanceCustomisePanelTest {
 
     @Test
     fun fontsDropdownStartsWithDisabledPlaceholderAndKeepsStateOrder() {
-        val state = AppearanceUiState.default(osDark = false).copy(
+        val state = controllerBackedAppearanceState(
+            osDark = false,
             availableFontFamilies = listOf(AppearanceFontFamily("Inter"), AppearanceFontFamily("Atkinson")),
         )
         val options = AppearanceCustomisePanelInteraction.fontOptions(state, text)

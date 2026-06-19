@@ -1,7 +1,7 @@
 package org.gem.ui.components
 
 import org.gem.ui.state.AppearanceExpandedPanel
-import org.gem.ui.state.AppearanceUiState
+import org.gem.ui.testing.controllerBackedAppearanceState
 import org.gem.ui.text.GemTextKey
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -9,7 +9,7 @@ import kotlin.test.assertEquals
 class AppearanceSettingsPanelTest {
     @Test
     fun defaultStateHasBothCardsCollapsed() {
-        val state = AppearanceUiState.default(osDark = false)
+        val state = controllerBackedAppearanceState(osDark = false)
 
         assertEquals(AppearanceExpandedPanel.NONE, state.expandedPanel)
         assertEquals(
@@ -45,7 +45,7 @@ class AppearanceSettingsPanelTest {
 
     @Test
     fun warningUsesCentralErrorCopy() {
-        val state = AppearanceUiState.default(osDark = false)
+        val state = controllerBackedAppearanceState(osDark = false)
 
         assertEquals(null, AppearanceSettingsPanelInteraction.errorKey(state))
         assertEquals(GemTextKey.ThemePreferenceSaveFailed, AppearanceSettingsPanelInteraction.errorKey(

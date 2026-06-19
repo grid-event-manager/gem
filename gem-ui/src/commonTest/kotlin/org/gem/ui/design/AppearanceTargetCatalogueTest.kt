@@ -47,7 +47,7 @@ class AppearanceTargetCatalogueTest {
             ),
             targets.map { it.colorSlot },
         )
-        assertEquals(listOf("Inter"), targets.map { it.defaultFontFamily.value }.distinct())
+        assertEquals(listOf("sans-serif"), targets.map { it.defaultFontFamily.value }.distinct())
     }
 
     @Test

@@ -1,16 +1,6 @@
 package org.gem.core.appearance
 
 object AppearanceProfileCatalogue {
-    fun defaultDraft(mode: AppearanceMode): AppearanceDraft =
-        AppearanceDraft(
-            mode = mode,
-            textFonts = defaultTextFonts(),
-            textColors = defaultTextColors(mode),
-            elementColors = defaultElementColors(mode),
-            selectedProfileId = null,
-            dirty = false,
-        )
-
     fun stockProfiles(): List<AppearanceProfile> =
         listOf(
             stockPrincessLight(),
@@ -44,17 +34,6 @@ object AppearanceProfileCatalogue {
             elementColors = signedOffElementColors(mode),
         )
     }
-
-    internal fun defaultTextFonts(): Map<AppearanceTextTarget, AppearanceFontFamily> =
-        textTargetMap {
-            AppearanceFontFamily("Inter")
-        }
-
-    private fun defaultTextColors(mode: AppearanceMode): Map<AppearanceTextTarget, AppearanceColor> =
-        signedOffTextColors(mode)
-
-    private fun defaultElementColors(mode: AppearanceMode): Map<AppearanceElementTarget, AppearanceColor> =
-        signedOffElementColors(mode)
 
     private fun stockFallbackTextFonts(): Map<AppearanceTextTarget, AppearanceFontFamily> =
         textTargetMap {

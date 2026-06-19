@@ -70,7 +70,7 @@ enum class AppearanceTypeSlot {
 }
 
 object AppearanceTargetCatalogue {
-    private val defaultFontFamily = AppearanceFontFamily("Inter")
+    private val defaultFontFamily = AppearanceFontFamily("sans-serif")
 
     val textTargets: List<AppearanceTextTargetSpec> = listOf(
         text(

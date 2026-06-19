@@ -21,16 +21,16 @@ data class AppearanceProfileState(
     val customProfiles: List<AppearanceProfile>,
     val activeLightProfileId: AppearanceProfileId?,
     val activeDarkProfileId: AppearanceProfileId?,
-    val lightDraft: AppearanceDraft,
-    val darkDraft: AppearanceDraft,
+    val selectedLightDraft: AppearanceDraft?,
+    val selectedDarkDraft: AppearanceDraft?,
     val warning: AppearanceProfileWarning? = null,
 ) {
     val profiles: List<AppearanceProfile> = stockProfiles + customProfiles
 
-    fun draftFor(mode: AppearanceMode): AppearanceDraft =
+    fun selectedDraftFor(mode: AppearanceMode): AppearanceDraft? =
         when (mode) {
-            AppearanceMode.LIGHT -> lightDraft
-            AppearanceMode.DARK -> darkDraft
+            AppearanceMode.LIGHT -> selectedLightDraft
+            AppearanceMode.DARK -> selectedDarkDraft
         }
 }
 
@@ -65,7 +65,6 @@ sealed interface AppearanceProfileSelectionResult {
 sealed interface AppearanceProfileResetResult {
     data class Reset(
         val state: AppearanceProfileState,
-        val draft: AppearanceDraft,
     ) : AppearanceProfileResetResult
 
     data class StorageFailed(val message: String? = null) : AppearanceProfileResetResult

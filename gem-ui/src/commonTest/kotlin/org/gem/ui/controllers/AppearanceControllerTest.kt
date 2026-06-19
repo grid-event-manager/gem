@@ -31,7 +31,10 @@ class AppearanceControllerTest {
     fun initialLoadsThemeProfilesAndPlatformFonts() {
         val runtime = FakeGemUiRuntime.ready(
             themePreferenceStore = FakeThemePreferenceStore(ThemePreferenceLoadResult.Loaded(ThemePreference.DARK)),
-            availableFontFamilies = listOf(AppearanceFontFamily("Inter"), AppearanceFontFamily("Display")),
+            availableFontFamilies = listOf(AppearanceFontFamily("Noto Sans"), AppearanceFontFamily("sans-serif")),
+            platformSystemFontFamilyProvider = { families ->
+                families.first { it.value == "Noto Sans" }
+            },
         )
 
         val controller = AppearanceController.initial(runtime, osDark = false)
@@ -39,7 +42,9 @@ class AppearanceControllerTest {
         assertEquals(AppearanceMode.DARK, controller.state.mode)
         assertEquals(ThemePreference.DARK, controller.state.themePreference)
         assertEquals(6, controller.state.stockProfiles.size)
-        assertEquals(listOf("Inter", "Display"), controller.state.availableFontFamilies.map { it.value })
+        assertEquals(listOf("Noto Sans", "sans-serif"), controller.state.availableFontFamilies.map { it.value })
+        assertNull(controller.state.selectedProfileId)
+        assertTrue(controller.state.currentDraft.textFonts.values.all { it == AppearanceFontFamily("Noto Sans") })
         assertNull(controller.state.errorKey)
     }
 
@@ -55,6 +60,7 @@ class AppearanceControllerTest {
         assertEquals(ThemePreference.LIGHT, store.lastSavedPreference)
         assertEquals(AppearanceMode.LIGHT, controller.state.mode)
         assertNull(controller.state.selectedProfileId)
+        assertTrue(controller.state.currentDraft.textFonts.values.all { it == AppearanceFontFamily("sans-serif") })
         assertFalse(controller.state.currentDraft.dirty)
     }
 
@@ -71,6 +77,7 @@ class AppearanceControllerTest {
         assertEquals(ThemePreference.DARK, controller.state.themePreference)
         assertEquals(ThemePreference.DARK, store.lastSavedPreference)
         assertEquals(AppearanceProfileId("stock-goth-dark"), controller.state.selectedProfileId)
+        assertEquals("Georgia", controller.state.currentDraft.textFonts.getValue(AppearanceTextTarget.TITLE_BAR).value)
         assertFalse(controller.state.saveThemeDialogOpen)
     }
 
@@ -153,6 +160,54 @@ class AppearanceControllerTest {
     }
 
     @Test
+    fun resetCurrentModeClearsActiveProfileAndUsesHiddenSystemDraft() {
+        val controller = AppearanceController.initial(FakeGemUiRuntime.ready(), osDark = false)
+            .selectProfile(AppearanceProfileId("stock-princess-light"))
+            .setExpandedPanel(AppearanceExpandedPanel.CUSTOMISE)
+            .resetCurrentMode()
+
+        assertNull(controller.state.selectedProfileId)
+        assertEquals(AppearanceMode.LIGHT, controller.state.mode)
+        assertTrue(controller.state.currentDraft.textFonts.values.all { it == AppearanceFontFamily("sans-serif") })
+        assertEquals(AppearanceExpandedPanel.CUSTOMISE, controller.state.expandedPanel)
+    }
+
+    @Test
+    fun manualThemeResetStorageFailureShowsRequestedSystemDraftAndError() {
+        val controller = AppearanceController.initial(
+            FakeGemUiRuntime.ready(
+                appearanceProfileStore = ResetStorageFailingAppearanceProfileStore(),
+            ),
+            osDark = false,
+        ).setManualTheme(AppearanceMode.DARK, osDark = false)
+
+        assertEquals(AppearanceMode.DARK, controller.state.mode)
+        assertEquals(ThemePreference.DARK, controller.state.themePreference)
+        assertNull(controller.state.selectedProfileId)
+        assertTrue(controller.state.currentDraft.textFonts.values.all { it == AppearanceFontFamily("sans-serif") })
+        assertEquals(GemTextKey.ThemePreferenceSaveFailed, controller.state.errorKey)
+    }
+
+    @Test
+    fun invalidActiveProfileIdFallsBackToHiddenSystemDraft() {
+        val controller = AppearanceController.initial(
+            FakeGemUiRuntime.ready(
+                appearanceProfileStore = SnapshotAppearanceProfileStore(
+                    AppearanceProfileStoreSnapshot(
+                        customProfiles = emptyList(),
+                        activeLightProfileId = AppearanceProfileId("missing-profile"),
+                        activeDarkProfileId = null,
+                    ),
+                ),
+            ),
+            osDark = false,
+        )
+
+        assertNull(controller.state.selectedProfileId)
+        assertTrue(controller.state.currentDraft.textFonts.values.all { it == AppearanceFontFamily("sans-serif") })
+    }
+
+    @Test
     fun expandedPanelIsStateOnly() {
         val controller = AppearanceController.initial(FakeGemUiRuntime.ready(), osDark = false)
             .setExpandedPanel(AppearanceExpandedPanel.CUSTOMISE)
@@ -167,4 +222,22 @@ private class StorageFailingAppearanceProfileStore : AppearanceProfileStore {
 
     override fun save(snapshot: AppearanceProfileStoreSnapshot): AppearanceProfileStoreSaveResult =
         AppearanceProfileStoreSaveResult.StorageFailed("no-write")
+}
+
+private class ResetStorageFailingAppearanceProfileStore : AppearanceProfileStore {
+    override fun load(): AppearanceProfileStoreLoadResult =
+        AppearanceProfileStoreLoadResult.Missing
+
+    override fun save(snapshot: AppearanceProfileStoreSnapshot): AppearanceProfileStoreSaveResult =
+        AppearanceProfileStoreSaveResult.StorageFailed("no-write")
+}
+
+private class SnapshotAppearanceProfileStore(
+    private val snapshot: AppearanceProfileStoreSnapshot,
+) : AppearanceProfileStore {
+    override fun load(): AppearanceProfileStoreLoadResult =
+        AppearanceProfileStoreLoadResult.Loaded(snapshot)
+
+    override fun save(snapshot: AppearanceProfileStoreSnapshot): AppearanceProfileStoreSaveResult =
+        AppearanceProfileStoreSaveResult.Saved
 }

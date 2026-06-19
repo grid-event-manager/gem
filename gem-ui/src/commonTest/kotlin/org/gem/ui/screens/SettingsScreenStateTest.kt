@@ -2,8 +2,8 @@ package org.gem.ui.screens
 
 import org.gem.core.appearance.AppearanceMode
 import org.gem.ui.state.AppearanceExpandedPanel
-import org.gem.ui.state.AppearanceUiState
 import org.gem.ui.testtags.GemTestTags
+import org.gem.ui.testing.controllerBackedAppearanceState
 import org.gem.ui.text.EnglishGemTextCatalogue
 import org.gem.ui.text.GemTextKey
 import kotlin.test.Test
@@ -24,8 +24,8 @@ class SettingsScreenStateTest {
 
     @Test
     fun appearanceStateSuppliesCollapsedSettingsDefaultsAndThemeToggleState() {
-        val light = AppearanceUiState.default(osDark = false)
-        val dark = AppearanceUiState.default(osDark = true)
+        val light = controllerBackedAppearanceState(osDark = false)
+        val dark = controllerBackedAppearanceState(osDark = true)
 
         assertEquals(AppearanceMode.LIGHT, light.mode)
         assertEquals(AppearanceExpandedPanel.NONE, light.expandedPanel)

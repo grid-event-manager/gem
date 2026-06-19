@@ -2,7 +2,9 @@ package org.gem.apps.desktop
 
 import java.nio.file.Files
 import java.nio.file.Path
+import org.gem.core.appearance.AppearanceDraft
 import org.gem.core.appearance.AppearanceMode
+import org.gem.core.appearance.AppearanceProfileCatalogue
 import org.gem.core.appearance.AppearanceProfileName
 import org.gem.core.appearance.AppearanceProfileSaveResult
 import org.gem.core.theme.ThemePreference
@@ -44,7 +46,7 @@ class DesktopPreferenceCompositionTest {
             val result = service.saveProfile(
                 name = AppearanceProfileName("Proof"),
                 mode = AppearanceMode.LIGHT,
-                draft = service.defaultDraft(AppearanceMode.LIGHT),
+                draft = stockDraft(AppearanceMode.LIGHT),
             )
 
             assertTrue(result is AppearanceProfileSaveResult.Saved)
@@ -67,5 +69,8 @@ class DesktopPreferenceCompositionTest {
             env = mapOf("XDG_DATA_HOME" to tempDataHome.toString()),
             userHome = tempDataHome.resolve("home").toString(),
         )
+
+    private fun stockDraft(mode: AppearanceMode): AppearanceDraft =
+        AppearanceDraft.fromProfile(AppearanceProfileCatalogue.stockProfiles().first { it.mode == mode })
 
 }

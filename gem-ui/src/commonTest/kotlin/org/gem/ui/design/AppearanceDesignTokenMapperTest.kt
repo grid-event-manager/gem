@@ -3,6 +3,7 @@ package org.gem.ui.design
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import org.gem.core.appearance.AppearanceColor
+import org.gem.core.appearance.AppearanceDraft
 import org.gem.core.appearance.AppearanceFontFamily
 import org.gem.core.appearance.AppearanceMode
 import org.gem.core.appearance.AppearanceProfileCatalogue
@@ -14,13 +15,14 @@ import kotlin.test.assertEquals
 class AppearanceDesignTokenMapperTest {
     @Test
     fun mapsDraftColoursAndFontsIntoDesignTokens() {
-        val draft = AppearanceProfileCatalogue.defaultDraft(AppearanceMode.LIGHT).copy(
-            textFonts = AppearanceProfileCatalogue.defaultDraft(AppearanceMode.LIGHT).textFonts +
+        val base = systemDraft(AppearanceMode.LIGHT)
+        val draft = base.copy(
+            textFonts = base.textFonts +
                 (AppearanceTextTarget.TITLE_BAR to AppearanceFontFamily("Display")),
-            textColors = AppearanceProfileCatalogue.defaultDraft(AppearanceMode.LIGHT).textColors +
+            textColors = base.textColors +
                 (AppearanceTextTarget.MAIN_BODY to AppearanceColor.require("#112233")) +
                 (AppearanceTextTarget.MENU_LABELS to AppearanceColor.require("#445566")),
-            elementColors = AppearanceProfileCatalogue.defaultDraft(AppearanceMode.LIGHT).elementColors +
+            elementColors = base.elementColors +
                 (AppearanceElementTarget.PAGE_BACKGROUND to AppearanceColor.require("#223344")) +
                 (AppearanceElementTarget.HAMBURGER_BARS to AppearanceColor.require("#778899")),
         )
@@ -42,7 +44,7 @@ class AppearanceDesignTokenMapperTest {
     fun keepsBaselineTypeSizesAndWeightsStable() {
         val baseline = GemTypeScale()
         val tokens = AppearanceDesignTokenMapper.tokens(
-            draft = AppearanceProfileCatalogue.defaultDraft(AppearanceMode.DARK),
+            draft = systemDraft(AppearanceMode.DARK),
             availableFonts = emptyList(),
             platformFontFamilyResolver = PlatformFontFamilyResolver { FontFamily.Monospace },
         )
@@ -51,4 +53,14 @@ class AppearanceDesignTokenMapperTest {
         assertEquals(baseline.button.lineHeight, tokens.typeScale.button.lineHeight)
         assertEquals(baseline.brandTitle.fontWeight, tokens.typeScale.brandTitle.fontWeight)
     }
+
+    private fun systemDraft(mode: AppearanceMode): AppearanceDraft =
+        AppearanceDraft.fromProfile(
+            AppearanceProfileCatalogue.systemProfile(
+                mode = mode,
+                textFonts = AppearanceTextTarget.entries.associateWith {
+                    AppearanceFontFamily("sans-serif")
+                },
+            ),
+        ).copy(selectedProfileId = null)
 }

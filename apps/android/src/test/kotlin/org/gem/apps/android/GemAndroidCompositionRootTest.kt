@@ -2,7 +2,9 @@ package org.gem.apps.android
 
 import java.nio.file.Files
 import java.nio.file.Path
+import org.gem.core.appearance.AppearanceDraft
 import org.gem.core.appearance.AppearanceMode
+import org.gem.core.appearance.AppearanceProfileCatalogue
 import org.gem.core.appearance.AppearanceProfileName
 import org.gem.core.appearance.AppearanceProfileSaveResult
 import org.gem.core.domain.AccountProfileId
@@ -47,7 +49,7 @@ class GemAndroidCompositionRootTest {
             val appearanceSave = runtime.appearanceProfileService.saveProfile(
                 name = AppearanceProfileName("Android Proof"),
                 mode = AppearanceMode.DARK,
-                draft = runtime.appearanceProfileService.defaultDraft(AppearanceMode.DARK),
+                draft = stockDraft(AppearanceMode.DARK),
             )
             assertTrue(appearanceSave is AppearanceProfileSaveResult.Saved)
             assertTrue(Files.exists(Path.of(appearanceProfileFile(appFilesDir))))
@@ -83,5 +85,8 @@ class GemAndroidCompositionRootTest {
             is SecondLifeLoginNameResult.Valid -> result.loginName
             is SecondLifeLoginNameResult.Invalid -> error("invalid test login name")
         }
+
+    private fun stockDraft(mode: AppearanceMode): AppearanceDraft =
+        AppearanceDraft.fromProfile(AppearanceProfileCatalogue.stockProfiles().first { it.mode == mode })
 
 }

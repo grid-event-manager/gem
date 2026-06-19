@@ -6,7 +6,6 @@ import org.gem.core.appearance.AppearanceElementTarget
 import org.gem.core.appearance.AppearanceFontFamily
 import org.gem.core.appearance.AppearanceMode
 import org.gem.core.appearance.AppearanceProfile
-import org.gem.core.appearance.AppearanceProfileCatalogue
 import org.gem.core.appearance.AppearanceProfileId
 import org.gem.core.appearance.AppearanceProfileWarning
 import org.gem.core.appearance.AppearanceTextTarget
@@ -51,17 +50,16 @@ data class AppearanceUiState(
         get() = mode == AppearanceMode.DARK
 
     companion object {
-        fun default(osDark: Boolean): AppearanceUiState {
+        fun loading(osDark: Boolean): AppearanceUiState {
             val mode = if (osDark) AppearanceMode.DARK else AppearanceMode.LIGHT
-            val draft = AppearanceProfileCatalogue.defaultDraft(mode)
             return AppearanceUiState(
                 mode = mode,
                 themePreference = ThemePreference.SYSTEM,
                 selectedProfileId = null,
-                stockProfiles = AppearanceProfileCatalogue.stockProfiles(),
+                stockProfiles = emptyList(),
                 customProfiles = emptyList(),
                 availableFontFamilies = emptyList(),
-                currentDraft = draft,
+                currentDraft = AppearanceDraft.loadingPlaceholder(mode),
             )
         }
     }
