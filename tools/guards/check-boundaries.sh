@@ -94,6 +94,14 @@ THEME_DESKTOP_VENDOR_PATTERN='vendor[[:space:]]*=[[:space:]]*"ANVLL"'
 THEME_ROOT_PROJECT_LABEL_PATTERN='rootProject\.name\.replaceFirstChar'
 PACKAGE_VERSION_LITERAL_OWNER_PATTERN='version = "0\.1\.[0-9]+-SNAPSHOT"|desktopPackageVersion = "0\.1\.[0-9]+"|macPackageVersion = "1\.0\.[0-9]+"|versionName = "0\.1\.[0-9]+"|versionCode = [0-9]+|-Djpackage\.app-version=0\.1\.[0-9]+'
 APPEARANCE_STALE_ROUTE_PATTERN='ThemeController|ThemeUiState|ThemeSettingsPanel|ResolvedThemeMode'
+APPEARANCE_SYSTEM_THEME_STALE_DEFAULT_PATTERN='defaultDraft|defaultTextFonts|defaultTextColors|defaultElementColors|AppearanceUiState\.default|AppearanceProfileService\.defaultDraft|val draft: AppearanceDraft|draft = state\.draftFor|reset\.draft|\.draftFor\('
+APPEARANCE_STALE_PALETTE_OR_SENTINEL_PATTERN='(^|[^[:alnum:]_])(HaccuGemPaletteProvider|GemPaletteProvider|system-default)([^[:alnum:]_]|$)'
+APPEARANCE_STALE_INTER_DEFAULT_PATTERN='defaultFontFamily = AppearanceFontFamily\("Inter"\)|AppearanceFontFamily\("Inter"\)'
+APPEARANCE_HIDDEN_SYSTEM_VISIBLE_PATTERN='GEM Default|system:light:gem-default|system:dark:gem-default'
+APPEARANCE_SYSTEM_SOURCE_PATTERN='AppearanceProfileSource\.SYSTEM'
+APPEARANCE_PROFILE_COMPLETION_CALL_PATTERN='AppearanceProfileCompletion\.(completeTextColors|completeElementColors|completeTextFonts)'
+APPEARANCE_NEW_ELEMENT_LABEL_PATTERN='"(Accent text|Error text|Status text|Menu disabled text|Interactive hover text)"'
+APPEARANCE_NEW_ELEMENT_TARGET_KEY_PATTERN='AppearanceElement(AccentText|ErrorText|StatusText|MenuDisabledText|InteractiveHoverText)'
 APPEARANCE_PROTOTYPE_LEAKAGE_PATTERN='appearance-customizer|WebView|<script|color-picker\.js|tokens\.js'
 APPEARANCE_STALE_MODE_CONTROL_PATTERN='Text style|Area colour|RadioButton|GemSegmentButton|SegmentButton'
 APPEARANCE_LOCAL_STYLE_PATTERN='Color\(|#[0-9A-Fa-f]{6}|\.dp|FontWeight|fontSize|RoundedCornerShape'
@@ -1343,6 +1351,39 @@ add_existing appearance_stale_route_targets \
     "apps/desktop/src/main" \
     "apps/android/src/main"
 
+appearance_system_theme_production_targets=()
+add_existing appearance_system_theme_production_targets \
+    "gem-core/src/commonMain" \
+    "gem-preferences/src/commonMain" \
+    "gem-ui/src/commonMain" \
+    "gem-ui/src/jvmMain" \
+    "gem-ui/src/androidMain" \
+    "apps/desktop/src/main" \
+    "apps/android/src/main"
+
+appearance_system_theme_inter_default_targets=()
+add_existing appearance_system_theme_inter_default_targets \
+    "gem-ui/src/commonMain/kotlin/org/gem/ui/design/AppearanceTargetCatalogue.kt" \
+    "gem-ui/src/commonTest/kotlin/org/gem/ui/testing/FakeGemUiRuntime.kt" \
+    "apps/desktop/src/test" \
+    "apps/android/src/test" \
+    "apps/android/src/androidTest"
+
+appearance_visible_component_targets=()
+add_existing appearance_visible_component_targets \
+    "gem-ui/src/commonMain/kotlin/org/gem/ui/components" \
+    "gem-ui/src/commonMain/kotlin/org/gem/ui/screens"
+
+appearance_new_element_label_forbidden_targets=()
+while IFS= read -r path; do
+    case "$path" in
+        *"/GemText.kt") ;;
+        *) appearance_new_element_label_forbidden_targets+=("$path") ;;
+    esac
+done < <(find \
+    "gem-ui/src/commonMain/kotlin/org/gem/ui" \
+    -type f -name '*.kt' 2>/dev/null || true)
+
 appearance_prototype_leakage_targets=()
 add_existing appearance_prototype_leakage_targets \
     "gem-core/src/commonMain" \
@@ -2162,6 +2203,70 @@ check_no_hits \
     "${appearance_stale_route_targets[@]}"
 
 check_no_hits \
+    "appearance system theme old default route absent" \
+    "$APPEARANCE_SYSTEM_THEME_STALE_DEFAULT_PATTERN" \
+    "${appearance_system_theme_production_targets[@]}"
+
+check_no_hits \
+    "appearance system theme stale palette or sentinel absent" \
+    "$APPEARANCE_STALE_PALETTE_OR_SENTINEL_PATTERN" \
+    "${appearance_system_theme_production_targets[@]}"
+
+check_no_hits \
+    "appearance system theme stale Inter default absent" \
+    "$APPEARANCE_STALE_INTER_DEFAULT_PATTERN" \
+    "${appearance_system_theme_inter_default_targets[@]}"
+
+check_no_hits \
+    "appearance hidden system profile visible ids absent" \
+    "$APPEARANCE_HIDDEN_SYSTEM_VISIBLE_PATTERN" \
+    "${appearance_visible_component_targets[@]}"
+
+check_hits_only_from_paths \
+    "appearance system source visible use confined to non-rendering guard" \
+    "$APPEARANCE_SYSTEM_SOURCE_PATTERN" \
+    "gem-ui/src/commonMain/kotlin/org/gem/ui/components/AppearanceThemesPanel.kt" \
+    -- \
+    "${appearance_visible_component_targets[@]}"
+
+check_hits_only_from_paths \
+    "appearance profile completion calls confined to catalogue and codec" \
+    "$APPEARANCE_PROFILE_COMPLETION_CALL_PATTERN" \
+    "gem-core/src/commonMain/kotlin/org/gem/core/appearance/AppearanceProfileCatalogue.kt" \
+    "gem-preferences/src/commonMain/kotlin/org/gem/preferences/AppearanceProfileFileCodec.kt" \
+    -- \
+    "${appearance_system_theme_production_targets[@]}"
+
+check_no_hits \
+    "appearance new element labels centralized" \
+    "$APPEARANCE_NEW_ELEMENT_LABEL_PATTERN" \
+    "${appearance_new_element_label_forbidden_targets[@]}"
+
+for appearance_element_label in \
+    "Accent text" \
+    "Error text" \
+    "Status text" \
+    "Menu disabled text" \
+    "Interactive hover text"; do
+    check_required_hits \
+        "appearance element label present in text catalogue: $appearance_element_label" \
+        "\"$appearance_element_label\"" \
+        "gem-ui/src/commonMain/kotlin/org/gem/ui/text/GemText.kt"
+done
+
+for appearance_element_key in \
+    "AppearanceElementAccentText" \
+    "AppearanceElementErrorText" \
+    "AppearanceElementStatusText" \
+    "AppearanceElementMenuDisabledText" \
+    "AppearanceElementInteractiveHoverText"; do
+    check_required_hits \
+        "appearance element key present in target catalogue: $appearance_element_key" \
+        "$appearance_element_key" \
+        "gem-ui/src/commonMain/kotlin/org/gem/ui/design/AppearanceTargetCatalogue.kt"
+done
+
+check_no_hits \
     "appearance prototype leakage absent" \
     "$APPEARANCE_PROTOTYPE_LEAKAGE_PATTERN" \
     "${appearance_prototype_leakage_targets[@]}"
@@ -2724,6 +2829,46 @@ check_pattern_matches \
     "self-test appearance retired palette provider pattern" \
     "$APPEARANCE_RETIRED_PALETTE_PROVIDER_PATTERN" \
     'val stale = HaccuGemPaletteProvider.colors(mode)'
+
+check_pattern_matches \
+    "self-test appearance system theme stale default pattern" \
+    "$APPEARANCE_SYSTEM_THEME_STALE_DEFAULT_PATTERN" \
+    'AppearanceProfileCatalogue.defaultDraft(mode)'
+
+check_pattern_matches \
+    "self-test appearance stale palette or sentinel pattern" \
+    "$APPEARANCE_STALE_PALETTE_OR_SENTINEL_PATTERN" \
+    'val family = "system-default"'
+
+check_pattern_matches \
+    "self-test appearance stale Inter default pattern" \
+    "$APPEARANCE_STALE_INTER_DEFAULT_PATTERN" \
+    'private val defaultFontFamily = AppearanceFontFamily("Inter")'
+
+check_pattern_matches \
+    "self-test appearance hidden system visible pattern" \
+    "$APPEARANCE_HIDDEN_SYSTEM_VISIBLE_PATTERN" \
+    'Text("GEM Default")'
+
+check_pattern_matches \
+    "self-test appearance system source pattern" \
+    "$APPEARANCE_SYSTEM_SOURCE_PATTERN" \
+    'AppearanceProfileSource.SYSTEM'
+
+check_pattern_matches \
+    "self-test appearance profile completion pattern" \
+    "$APPEARANCE_PROFILE_COMPLETION_CALL_PATTERN" \
+    'AppearanceProfileCompletion.completeElementColors(mode, partial)'
+
+check_pattern_matches \
+    "self-test appearance new element label pattern" \
+    "$APPEARANCE_NEW_ELEMENT_LABEL_PATTERN" \
+    '"Interactive hover text"'
+
+check_pattern_matches \
+    "self-test appearance new element target key pattern" \
+    "$APPEARANCE_NEW_ELEMENT_TARGET_KEY_PATTERN" \
+    'GemTextKey.AppearanceElementInteractiveHoverText'
 
 check_pattern_matches \
     "self-test theme Android label pattern" \
