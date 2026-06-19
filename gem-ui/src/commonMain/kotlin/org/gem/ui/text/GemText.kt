@@ -103,6 +103,11 @@ sealed interface GemTextKey {
     data object AppearanceElementThemeToggleTrack : GemTextKey
     data object AppearanceElementThemeToggleSelectedTrack : GemTextKey
     data object AppearanceElementThemeToggleKnob : GemTextKey
+    data object AppearanceElementAccentText : GemTextKey
+    data object AppearanceElementErrorText : GemTextKey
+    data object AppearanceElementStatusText : GemTextKey
+    data object AppearanceElementMenuDisabledText : GemTextKey
+    data object AppearanceElementInteractiveHoverText : GemTextKey
     data object AppearanceElementPrimaryButtonFill : GemTextKey
     data object AppearanceElementSelectedItemFill : GemTextKey
     data object AppearanceElementMenuBackground : GemTextKey
@@ -220,6 +225,11 @@ sealed interface GemTextKey {
             AppearanceElementThemeToggleTrack,
             AppearanceElementThemeToggleSelectedTrack,
             AppearanceElementThemeToggleKnob,
+            AppearanceElementAccentText,
+            AppearanceElementErrorText,
+            AppearanceElementStatusText,
+            AppearanceElementMenuDisabledText,
+            AppearanceElementInteractiveHoverText,
             AppearanceElementPrimaryButtonFill,
             AppearanceElementSelectedItemFill,
             AppearanceElementMenuBackground,
@@ -344,6 +354,11 @@ object EnglishGemTextCatalogue : GemTextCatalogue {
         GemTextKey.AppearanceElementThemeToggleTrack -> "Theme toggle track"
         GemTextKey.AppearanceElementThemeToggleSelectedTrack -> "Theme toggle selected track"
         GemTextKey.AppearanceElementThemeToggleKnob -> "Theme toggle knob"
+        GemTextKey.AppearanceElementAccentText -> "Accent text"
+        GemTextKey.AppearanceElementErrorText -> "Error text"
+        GemTextKey.AppearanceElementStatusText -> "Status text"
+        GemTextKey.AppearanceElementMenuDisabledText -> "Menu disabled text"
+        GemTextKey.AppearanceElementInteractiveHoverText -> "Interactive hover text"
         GemTextKey.AppearanceElementPrimaryButtonFill -> "Primary button fill"
         GemTextKey.AppearanceElementSelectedItemFill -> "Selected item fill"
         GemTextKey.AppearanceElementMenuBackground -> "Menu background"

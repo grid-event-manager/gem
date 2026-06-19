@@ -1,6 +1,7 @@
 package org.gem.preferences
 
 import org.gem.core.appearance.AppearanceColor
+import org.gem.core.appearance.AppearanceDraft
 import org.gem.core.appearance.AppearanceElementTarget
 import org.gem.core.appearance.AppearanceFontFamily
 import org.gem.core.appearance.AppearanceMode
@@ -101,6 +102,45 @@ class AppearanceProfileFileCodecTest {
     }
 
     @Test
+    fun `decode completes older custom profiles missing only new element targets`() {
+        val encoded = codec.encode(
+            AppearanceProfileStoreSnapshot(
+                customProfiles = listOf(customProfile(id = "custom:dark:old", mode = AppearanceMode.DARK)),
+                activeLightProfileId = null,
+                activeDarkProfileId = null,
+            ),
+        )
+        val older = COMPATIBLE_NEW_ELEMENT_TARGETS.fold(encoded) { text, target ->
+            text.withoutLine("profile.0.element.${target.storageKey}.color=")
+        }
+
+        val loaded = assertIs<AppearanceProfileStoreLoadResult.Loaded>(codec.decode(older))
+        val profile = loaded.snapshot.customProfiles.single()
+
+        assertEquals("#8AB4C4", profile.elementColors.getValue(AppearanceElementTarget.ACCENT_TEXT).value)
+        assertEquals("#B5544D", profile.elementColors.getValue(AppearanceElementTarget.ERROR_TEXT).value)
+        assertEquals("#8AB4C4", profile.elementColors.getValue(AppearanceElementTarget.STATUS_TEXT).value)
+        assertEquals("#A0B0BC", profile.elementColors.getValue(AppearanceElementTarget.MENU_DISABLED_TEXT).value)
+        assertEquals("#C0C8D0", profile.elementColors.getValue(AppearanceElementTarget.INTERACTIVE_HOVER_TEXT).value)
+    }
+
+    @Test
+    fun `decode rejects profiles missing pre-existing element targets`() {
+        val encoded = codec.encode(
+            AppearanceProfileStoreSnapshot(
+                customProfiles = listOf(customProfile(id = "custom:light:bad")),
+                activeLightProfileId = null,
+                activeDarkProfileId = null,
+            ),
+        )
+
+        assertInvalid(
+            "missing_key:profile.0.element.${AppearanceElementTarget.PAGE_BACKGROUND.storageKey}.color",
+            encoded.withoutLine("profile.0.element.${AppearanceElementTarget.PAGE_BACKGROUND.storageKey}.color="),
+        )
+    }
+
+    @Test
     fun `snapshot and encode reject stock profiles`() {
         assertFailsWith<IllegalArgumentException> {
             AppearanceProfileStoreSnapshot(
@@ -131,7 +171,9 @@ class AppearanceProfileFileCodecTest {
         bodyColor: String = "#444444",
         font: String = "Inter",
     ): AppearanceProfile {
-        val draft = AppearanceProfileCatalogue.defaultDraft(mode)
+        val draft = AppearanceDraft.fromProfile(
+            AppearanceProfileCatalogue.stockProfiles().first { it.mode == mode },
+        )
         return AppearanceProfile(
             id = AppearanceProfileId(id),
             name = AppearanceProfileName(name),
@@ -143,7 +185,17 @@ class AppearanceProfileFileCodecTest {
                 AppearanceElementTarget.PAGE_BACKGROUND to AppearanceColor.require(
                     if (mode == AppearanceMode.LIGHT) "#fefefe" else "#010101",
                 )
-                ),
+            ),
+        )
+    }
+
+    private companion object {
+        val COMPATIBLE_NEW_ELEMENT_TARGETS: List<AppearanceElementTarget> = listOf(
+            AppearanceElementTarget.ACCENT_TEXT,
+            AppearanceElementTarget.ERROR_TEXT,
+            AppearanceElementTarget.STATUS_TEXT,
+            AppearanceElementTarget.MENU_DISABLED_TEXT,
+            AppearanceElementTarget.INTERACTIVE_HOVER_TEXT,
         )
     }
 }

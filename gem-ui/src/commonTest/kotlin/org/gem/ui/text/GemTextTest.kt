@@ -7,7 +7,7 @@ import kotlin.test.assertTrue
 class GemTextTest {
     @Test
     fun fixedKeysCoverPrototypeCopy() {
-        assertEquals(113, GemTextKey.fixedKeys.size)
+        assertEquals(118, GemTextKey.fixedKeys.size)
         assertTrue(GemTextKey.AppName in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.BrandInitials in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.BrandSubtitle in GemTextKey.fixedKeys)
@@ -44,6 +44,11 @@ class GemTextTest {
         assertTrue(GemTextKey.AppearanceTextTitleBar in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.AppearanceTextThemeToggleLabels in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.AppearanceElementPageBackground in GemTextKey.fixedKeys)
+        assertTrue(GemTextKey.AppearanceElementAccentText in GemTextKey.fixedKeys)
+        assertTrue(GemTextKey.AppearanceElementErrorText in GemTextKey.fixedKeys)
+        assertTrue(GemTextKey.AppearanceElementStatusText in GemTextKey.fixedKeys)
+        assertTrue(GemTextKey.AppearanceElementMenuDisabledText in GemTextKey.fixedKeys)
+        assertTrue(GemTextKey.AppearanceElementInteractiveHoverText in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.AppearanceElementRulesAndSeparators in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.NoAttachmentsAdded in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.ClearAttachment in GemTextKey.fixedKeys)
@@ -111,6 +116,11 @@ class GemTextTest {
         assertEquals("Text", catalogue.text(GemTextKey.Text))
         assertEquals("Fonts", catalogue.text(GemTextKey.Fonts))
         assertEquals("Element", catalogue.text(GemTextKey.Element))
+        assertEquals("Accent text", catalogue.text(GemTextKey.AppearanceElementAccentText))
+        assertEquals("Error text", catalogue.text(GemTextKey.AppearanceElementErrorText))
+        assertEquals("Status text", catalogue.text(GemTextKey.AppearanceElementStatusText))
+        assertEquals("Menu disabled text", catalogue.text(GemTextKey.AppearanceElementMenuDisabledText))
+        assertEquals("Interactive hover text", catalogue.text(GemTextKey.AppearanceElementInteractiveHoverText))
         assertEquals("No attachments added", catalogue.text(GemTextKey.NoAttachmentsAdded))
         assertEquals("Clear attachment", catalogue.text(GemTextKey.ClearAttachment))
         assertEquals("Sending notices", catalogue.text(GemTextKey.SendingNotices))

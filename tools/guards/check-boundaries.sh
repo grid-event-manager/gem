@@ -88,7 +88,7 @@ THEME_VISIBLE_LABEL_PATTERN='"(Grid Event Manager|GEM|GRID EVENT MANAGER|Light|D
 THEME_PROTOTYPE_RUNTIME_PATTERN='WebView|android\.webkit|index-multi|<html|styles\.css|loadDataWithBaseURL'
 THEME_LOGO_OWNER_PATTERN='fun[[:space:]]+GemBrandLogoIcon'
 THEME_TOGGLE_OWNER_PATTERN='fun[[:space:]]+ThemeModeToggle'
-THEME_PALETTE_OWNER_PATTERN='object[[:space:]]+HaccuGemPaletteProvider'
+APPEARANCE_RETIRED_PALETTE_PROVIDER_PATTERN='(^|[^[:alnum:]_])(HaccuGemPaletteProvider|GemPaletteProvider)([^[:alnum:]_]|$)'
 THEME_ANDROID_LABEL_PATTERN='manifestPlaceholders\["appLabel"\][[:space:]]*=[[:space:]]*"GEM Event Manager"'
 THEME_DESKTOP_VENDOR_PATTERN='vendor[[:space:]]*=[[:space:]]*"ANVLL"'
 THEME_ROOT_PROJECT_LABEL_PATTERN='rootProject\.name\.replaceFirstChar'
@@ -289,6 +289,59 @@ check_required_hits() {
             failures=1
             ;;
     esac
+}
+
+check_matching_name_sets() {
+    local label="$1"
+    local expected="$2"
+    local actual="$3"
+
+    local missing
+    local extra
+    missing="$(comm -23 <(printf '%s\n' "$expected" | sort -u) <(printf '%s\n' "$actual" | sort -u))"
+    extra="$(comm -13 <(printf '%s\n' "$expected" | sort -u) <(printf '%s\n' "$actual" | sort -u))"
+
+    if [[ -n "$missing" || -n "$extra" ]]; then
+        echo "FAIL: $label"
+        if [[ -n "$missing" ]]; then
+            echo "missing:"
+            echo "$missing"
+        fi
+        if [[ -n "$extra" ]]; then
+            echo "extra:"
+            echo "$extra"
+        fi
+        failures=1
+    else
+        echo "PASS: $label"
+    fi
+}
+
+check_gem_colors_palette_coverage() {
+    local colors_file="gem-ui/src/commonMain/kotlin/org/gem/ui/design/GemColors.kt"
+    local coverage_file="gem-ui/src/commonTest/kotlin/org/gem/ui/design/AppearancePaletteCoverageTest.kt"
+
+    local constructor_names
+    local coverage_names
+    constructor_names="$(sed -n '/data class GemColors(/,/^)/p' "$colors_file" |
+        sed -n 's/^[[:space:]]*val \([A-Za-z0-9_]*\):.*/\1/p')"
+    coverage_names="$(
+        while IFS= read -r line; do
+            if [[ "$line" =~ PaletteCoverage\(\"([A-Za-z0-9_]+)\" ]]; then
+                printf '%s\n' "${BASH_REMATCH[1]}"
+            elif [[ "$line" =~ PaletteCoverage\( ]]; then
+                if IFS= read -r line; then
+                    if [[ "$line" =~ ^[[:space:]]*\"([A-Za-z0-9_]+)\" ]]; then
+                        printf '%s\n' "${BASH_REMATCH[1]}"
+                    fi
+                fi
+            fi
+        done < "$coverage_file"
+    )"
+
+    check_matching_name_sets "appearance palette coverage matches GemColors constructor" \
+        "$constructor_names" \
+        "$coverage_names"
 }
 
 is_allowed_stale_gem_identity_hit() {
@@ -2066,10 +2119,22 @@ check_required_hits \
     "$THEME_TOGGLE_OWNER_PATTERN" \
     "gem-ui/src/commonMain/kotlin/org/gem/ui/components/ThemeModeToggle.kt"
 
-check_required_hits \
-    "theme palette provider present" \
-    "$THEME_PALETTE_OWNER_PATTERN" \
-    "gem-ui/src/commonMain/kotlin/org/gem/ui/design/HaccuGemPaletteProvider.kt"
+check_no_hits \
+    "appearance retired palette provider absent" \
+    "$APPEARANCE_RETIRED_PALETTE_PROVIDER_PATTERN" \
+    "gem-ui/src" \
+    "apps"
+
+check_gem_colors_palette_coverage
+
+for non_visible_palette_property in dangerFill brandMarkInk focusRing; do
+    check_no_hits \
+        "appearance non-visible palette property has no production UI source read: $non_visible_palette_property" \
+        "(^|[^[:alnum:]_])${non_visible_palette_property}([^[:alnum:]_]|$)" \
+        "gem-ui/src/commonMain/kotlin/org/gem/ui/components" \
+        "gem-ui/src/commonMain/kotlin/org/gem/ui/screens" \
+        "gem-ui/src/commonMain/kotlin/org/gem/ui/GemApp.kt"
+done
 
 check_required_hits \
     "theme Android app label explicit" \
@@ -2656,9 +2721,9 @@ check_pattern_matches \
     'fun ThemeModeToggle(checked: Boolean, onCheckedChange: (Boolean) -> Unit)'
 
 check_pattern_matches \
-    "self-test theme palette provider pattern" \
-    "$THEME_PALETTE_OWNER_PATTERN" \
-    'object HaccuGemPaletteProvider : GemPaletteProvider'
+    "self-test appearance retired palette provider pattern" \
+    "$APPEARANCE_RETIRED_PALETTE_PROVIDER_PATTERN" \
+    'val stale = HaccuGemPaletteProvider.colors(mode)'
 
 check_pattern_matches \
     "self-test theme Android label pattern" \

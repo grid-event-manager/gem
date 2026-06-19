@@ -70,6 +70,16 @@ class AppearanceProfileCatalogueTest {
         assertEquals("#C0C8D0", dark.textColors.getValue(AppearanceTextTarget.MAIN_BODY).value)
         assertEquals("#FFFFFF", light.elementColors.getValue(AppearanceElementTarget.PAGE_BACKGROUND).value)
         assertEquals("#2A3441", dark.elementColors.getValue(AppearanceElementTarget.PAGE_BACKGROUND).value)
+        assertEquals("#8AB4C4", light.elementColors.getValue(AppearanceElementTarget.ACCENT_TEXT).value)
+        assertEquals("#B5544D", light.elementColors.getValue(AppearanceElementTarget.ERROR_TEXT).value)
+        assertEquals("#4A7A8A", light.elementColors.getValue(AppearanceElementTarget.STATUS_TEXT).value)
+        assertEquals("#B8B8B8", light.elementColors.getValue(AppearanceElementTarget.MENU_DISABLED_TEXT).value)
+        assertEquals("#8B0101", light.elementColors.getValue(AppearanceElementTarget.INTERACTIVE_HOVER_TEXT).value)
+        assertEquals("#8AB4C4", dark.elementColors.getValue(AppearanceElementTarget.ACCENT_TEXT).value)
+        assertEquals("#B5544D", dark.elementColors.getValue(AppearanceElementTarget.ERROR_TEXT).value)
+        assertEquals("#8AB4C4", dark.elementColors.getValue(AppearanceElementTarget.STATUS_TEXT).value)
+        assertEquals("#A0B0BC", dark.elementColors.getValue(AppearanceElementTarget.MENU_DISABLED_TEXT).value)
+        assertEquals("#C0C8D0", dark.elementColors.getValue(AppearanceElementTarget.INTERACTIVE_HOVER_TEXT).value)
     }
 
     @Test
@@ -94,6 +104,27 @@ class AppearanceProfileCatalogueTest {
 
         assertEquals("Inter", princessLight.textFonts.getValue(AppearanceTextTarget.BACK_BUTTON).value)
         assertEquals("#8AB4C4", princessLight.textColors.getValue(AppearanceTextTarget.BACK_BUTTON).value)
+        assertEquals("#8AB4C4", princessLight.elementColors.getValue(AppearanceElementTarget.ACCENT_TEXT).value)
+        assertEquals("#B5544D", princessLight.elementColors.getValue(AppearanceElementTarget.ERROR_TEXT).value)
+        assertEquals("#4A7A8A", princessLight.elementColors.getValue(AppearanceElementTarget.STATUS_TEXT).value)
+        assertEquals("#B8B8B8", princessLight.elementColors.getValue(AppearanceElementTarget.MENU_DISABLED_TEXT).value)
+        assertEquals("#8B0101", princessLight.elementColors.getValue(AppearanceElementTarget.INTERACTIVE_HOVER_TEXT).value)
+    }
+
+    @Test
+    fun `profile completion fills only stock and saved custom compatibility gaps`() {
+        val completedFonts = AppearanceProfileCompletion.completeTextFonts(
+            mapOf(AppearanceTextTarget.TITLE_BAR to AppearanceFontFamily("Display")),
+        )
+        val completedElements = AppearanceProfileCompletion.completeElementColors(
+            AppearanceMode.DARK,
+            mapOf(AppearanceElementTarget.PAGE_BACKGROUND to AppearanceColor.require("#123456")),
+        )
+
+        assertEquals("Display", completedFonts.getValue(AppearanceTextTarget.TITLE_BAR).value)
+        assertEquals("Inter", completedFonts.getValue(AppearanceTextTarget.MAIN_BODY).value)
+        assertEquals("#123456", completedElements.getValue(AppearanceElementTarget.PAGE_BACKGROUND).value)
+        assertEquals("#C0C8D0", completedElements.getValue(AppearanceElementTarget.INTERACTIVE_HOVER_TEXT).value)
     }
 
     private fun completeFonts(value: String): Map<AppearanceTextTarget, AppearanceFontFamily> =

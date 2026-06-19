@@ -51,6 +51,11 @@ enum class AppearanceElementColorSlot {
     TOGGLE_TRACK,
     TOGGLE_TRACK_SELECTED,
     TOGGLE_KNOB,
+    ACCENT_TEXT,
+    ERROR_TEXT,
+    STATUS_TEXT,
+    MENU_DISABLED_TEXT,
+    INTERACTIVE_HOVER_TEXT,
     PRIMARY,
     SELECTED,
     MENU,
@@ -217,6 +222,31 @@ object AppearanceTargetCatalogue {
             target = AppearanceElementTarget.THEME_TOGGLE_KNOB,
             labelKey = GemTextKey.AppearanceElementThemeToggleKnob,
             colorSlot = AppearanceElementColorSlot.TOGGLE_KNOB,
+        ),
+        element(
+            target = AppearanceElementTarget.ACCENT_TEXT,
+            labelKey = GemTextKey.AppearanceElementAccentText,
+            colorSlot = AppearanceElementColorSlot.ACCENT_TEXT,
+        ),
+        element(
+            target = AppearanceElementTarget.ERROR_TEXT,
+            labelKey = GemTextKey.AppearanceElementErrorText,
+            colorSlot = AppearanceElementColorSlot.ERROR_TEXT,
+        ),
+        element(
+            target = AppearanceElementTarget.STATUS_TEXT,
+            labelKey = GemTextKey.AppearanceElementStatusText,
+            colorSlot = AppearanceElementColorSlot.STATUS_TEXT,
+        ),
+        element(
+            target = AppearanceElementTarget.MENU_DISABLED_TEXT,
+            labelKey = GemTextKey.AppearanceElementMenuDisabledText,
+            colorSlot = AppearanceElementColorSlot.MENU_DISABLED_TEXT,
+        ),
+        element(
+            target = AppearanceElementTarget.INTERACTIVE_HOVER_TEXT,
+            labelKey = GemTextKey.AppearanceElementInteractiveHoverText,
+            colorSlot = AppearanceElementColorSlot.INTERACTIVE_HOVER_TEXT,
         ),
         element(
             target = AppearanceElementTarget.PRIMARY_BUTTON_FILL,

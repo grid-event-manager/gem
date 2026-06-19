@@ -5,6 +5,7 @@ import org.gem.core.appearance.AppearanceElementTarget
 import org.gem.core.appearance.AppearanceFontFamily
 import org.gem.core.appearance.AppearanceMode
 import org.gem.core.appearance.AppearanceProfile
+import org.gem.core.appearance.AppearanceProfileCompletion
 import org.gem.core.appearance.AppearanceProfileId
 import org.gem.core.appearance.AppearanceProfileName
 import org.gem.core.appearance.AppearanceProfileSource
@@ -157,10 +158,19 @@ class AppearanceProfileFileCodec {
         for (target in AppearanceElementTarget.entries) {
             val key = "$profilePrefix.element.${target.storageKey}.color"
             expectedFields += key
-            elementColors[target] = requiredDecoded(values, key)
-                .getOrElse { return Result.failure(it) }
-                .toColor()
-                .getOrElse { return Result.failure(it) }
+            val decoded = values[key]?.decodeValue()
+                ?.getOrElse { return Result.failure(it) }
+                ?: run {
+                    if (target in COMPATIBLE_MISSING_ELEMENT_TARGETS) {
+                        null
+                    } else {
+                        return Result.failure(InvalidProfile("missing_key:$key"))
+                    }
+                }
+            if (decoded != null) {
+                elementColors[target] = decoded.toColor()
+                    .getOrElse { return Result.failure(it) }
+            }
         }
         val unexpected = values.keys - expectedFields
         if (unexpected.isNotEmpty()) {
@@ -175,7 +185,7 @@ class AppearanceProfileFileCodec {
                 source = AppearanceProfileSource.CUSTOM,
                 textFonts = textFonts,
                 textColors = textColors,
-                elementColors = elementColors,
+                elementColors = AppearanceProfileCompletion.completeElementColors(mode, elementColors),
             ),
         )
     }
@@ -340,5 +350,12 @@ class AppearanceProfileFileCodec {
             compareBy<AppearanceProfile> { it.mode.ordinal }
                 .thenBy { it.name.value.lowercase() }
                 .thenBy { it.id.value }
+        val COMPATIBLE_MISSING_ELEMENT_TARGETS: Set<AppearanceElementTarget> = setOf(
+            AppearanceElementTarget.ACCENT_TEXT,
+            AppearanceElementTarget.ERROR_TEXT,
+            AppearanceElementTarget.STATUS_TEXT,
+            AppearanceElementTarget.MENU_DISABLED_TEXT,
+            AppearanceElementTarget.INTERACTIVE_HOVER_TEXT,
+        )
     }
 }

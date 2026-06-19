@@ -5,6 +5,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import kotlin.io.path.listDirectoryEntries
+import org.gem.core.appearance.AppearanceDraft
 import org.gem.core.appearance.AppearanceMode
 import org.gem.core.appearance.AppearanceProfile
 import org.gem.core.appearance.AppearanceProfileCatalogue
@@ -106,7 +107,9 @@ class FileAppearanceProfileStoreTest {
         )
 
     private fun customProfile(): AppearanceProfile {
-        val draft = AppearanceProfileCatalogue.defaultDraft(AppearanceMode.LIGHT)
+        val draft = AppearanceDraft.fromProfile(
+            AppearanceProfileCatalogue.stockProfiles().first { it.mode == AppearanceMode.LIGHT },
+        )
         return AppearanceProfile(
             id = AppearanceProfileId("custom:light:venue"),
             name = AppearanceProfileName("Venue"),
