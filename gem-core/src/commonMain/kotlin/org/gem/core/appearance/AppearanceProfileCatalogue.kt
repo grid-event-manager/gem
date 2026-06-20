@@ -388,10 +388,23 @@ object AppearanceProfileCatalogue {
             textFonts = AppearanceProfileCompletion.completeTextFonts(fontOverrides),
             textColors = AppearanceProfileCompletion.completeTextColors(
                 mode = mode,
-                partial = textColorOverrides + listOfNotNull(logoColor?.let { AppearanceTextTarget.LOGO to it }).toMap(),
+                partial = withStockBackFallback(textColorOverrides) +
+                    listOfNotNull(logoColor?.let { AppearanceTextTarget.LOGO to it }).toMap(),
             ),
             elementColors = AppearanceProfileCompletion.completeElementColors(mode, elementOverrides),
         )
+    }
+
+    private fun withStockBackFallback(
+        textColors: Map<AppearanceTextTarget, AppearanceColor>,
+    ): Map<AppearanceTextTarget, AppearanceColor> {
+        if (AppearanceTextTarget.BACK_BUTTON in textColors) {
+            return textColors
+        }
+        require(AppearanceTextTarget.THEME_TOGGLE_LABELS in textColors) {
+            "Stock profile text colours must define Back or Theme toggle."
+        }
+        return textColors + (AppearanceTextTarget.BACK_BUTTON to textColors.getValue(AppearanceTextTarget.THEME_TOGGLE_LABELS))
     }
 
     private fun textTargetFor(storageKey: String): AppearanceTextTarget =

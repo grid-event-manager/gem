@@ -103,12 +103,41 @@ class AppearanceProfileCatalogueTest {
             .first { it.id == AppearanceProfileId("stock-princess-light") }
 
         assertEquals("Inter", princessLight.textFonts.getValue(AppearanceTextTarget.BACK_BUTTON).value)
-        assertEquals("#8AB4C4", princessLight.textColors.getValue(AppearanceTextTarget.BACK_BUTTON).value)
+        assertEquals("#B85699", princessLight.textColors.getValue(AppearanceTextTarget.BACK_BUTTON).value)
         assertEquals("#8AB4C4", princessLight.elementColors.getValue(AppearanceElementTarget.ACCENT_TEXT).value)
         assertEquals("#B5544D", princessLight.elementColors.getValue(AppearanceElementTarget.ERROR_TEXT).value)
         assertEquals("#4A7A8A", princessLight.elementColors.getValue(AppearanceElementTarget.STATUS_TEXT).value)
         assertEquals("#B8B8B8", princessLight.elementColors.getValue(AppearanceElementTarget.MENU_DISABLED_TEXT).value)
         assertEquals("#8B0101", princessLight.elementColors.getValue(AppearanceElementTarget.INTERACTIVE_HOVER_TEXT).value)
+    }
+
+    @Test
+    fun `stock profiles copy theme toggle colour to omitted back colour`() {
+        val profiles = AppearanceProfileCatalogue.stockProfiles().associateBy { it.id.value }
+        val omittedBackProfileIds = listOf(
+            "stock-princess-light",
+            "stock-goth-light",
+            "stock-goth-dark",
+            "stock-cyber-light",
+            "stock-cyber-dark",
+        )
+
+        for (profileId in omittedBackProfileIds) {
+            val profile = profiles.getValue(profileId)
+
+            assertEquals(
+                profile.textColors.getValue(AppearanceTextTarget.THEME_TOGGLE_LABELS),
+                profile.textColors.getValue(AppearanceTextTarget.BACK_BUTTON),
+            )
+        }
+
+        assertEquals(
+            "#BFE9FF",
+            profiles.getValue("stock-princess-dark")
+                .textColors
+                .getValue(AppearanceTextTarget.BACK_BUTTON)
+                .value,
+        )
     }
 
     @Test

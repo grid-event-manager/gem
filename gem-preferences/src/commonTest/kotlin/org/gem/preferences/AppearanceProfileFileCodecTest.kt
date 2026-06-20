@@ -141,6 +141,59 @@ class AppearanceProfileFileCodecTest {
     }
 
     @Test
+    fun `decode preserves explicit saved custom back colour`() {
+        val encoded = codec.encode(
+            AppearanceProfileStoreSnapshot(
+                customProfiles = listOf(customProfile(id = "custom:light:back", backColor = "#102030")),
+                activeLightProfileId = null,
+                activeDarkProfileId = null,
+            ),
+        )
+
+        val loaded = assertIs<AppearanceProfileStoreLoadResult.Loaded>(codec.decode(encoded))
+
+        assertEquals(
+            "#102030",
+            loaded.snapshot.customProfiles.single()
+                .textColors
+                .getValue(AppearanceTextTarget.BACK_BUTTON)
+                .value,
+        )
+    }
+
+    @Test
+    fun `decode rejects saved custom profiles missing back colour`() {
+        val encoded = codec.encode(
+            AppearanceProfileStoreSnapshot(
+                customProfiles = listOf(customProfile(id = "custom:light:missing-back", backColor = "#102030")),
+                activeLightProfileId = null,
+                activeDarkProfileId = null,
+            ),
+        )
+
+        assertInvalid(
+            "missing_key:profile.0.text.back.color",
+            encoded.withoutLine("profile.0.text.back.color="),
+        )
+    }
+
+    @Test
+    fun `decode rejects saved custom profiles with malformed back colour`() {
+        val encoded = codec.encode(
+            AppearanceProfileStoreSnapshot(
+                customProfiles = listOf(customProfile(id = "custom:light:bad-back", backColor = "#102030")),
+                activeLightProfileId = null,
+                activeDarkProfileId = null,
+            ),
+        )
+
+        assertInvalid(
+            "invalid_colour",
+            encoded.replace("profile.0.text.back.color=#102030", "profile.0.text.back.color=#not-a-colour"),
+        )
+    }
+
+    @Test
     fun `snapshot and encode reject stock profiles`() {
         assertFailsWith<IllegalArgumentException> {
             AppearanceProfileStoreSnapshot(
@@ -170,17 +223,23 @@ class AppearanceProfileFileCodecTest {
         mode: AppearanceMode = AppearanceMode.LIGHT,
         bodyColor: String = "#444444",
         font: String = "Inter",
+        backColor: String? = null,
     ): AppearanceProfile {
         val draft = AppearanceDraft.fromProfile(
             AppearanceProfileCatalogue.stockProfiles().first { it.mode == mode },
         )
+        val backOverride = backColor?.let {
+            AppearanceTextTarget.BACK_BUTTON to AppearanceColor.require(it)
+        }
         return AppearanceProfile(
             id = AppearanceProfileId(id),
             name = AppearanceProfileName(name),
             mode = mode,
             source = AppearanceProfileSource.CUSTOM,
             textFonts = draft.textFonts + (AppearanceTextTarget.MAIN_BODY to AppearanceFontFamily(font)),
-            textColors = draft.textColors + (AppearanceTextTarget.MAIN_BODY to AppearanceColor.require(bodyColor)),
+            textColors = draft.textColors +
+                (AppearanceTextTarget.MAIN_BODY to AppearanceColor.require(bodyColor)) +
+                listOfNotNull(backOverride),
             elementColors = draft.elementColors + (
                 AppearanceElementTarget.PAGE_BACKGROUND to AppearanceColor.require(
                     if (mode == AppearanceMode.LIGHT) "#fefefe" else "#010101",
