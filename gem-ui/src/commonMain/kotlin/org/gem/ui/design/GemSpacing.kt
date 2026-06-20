@@ -26,6 +26,7 @@ data class GemSpacing(
     val controlHeight: Dp = 56.dp,
     val appearanceExpandableHeaderHeight: Dp = 56.dp,
     val appearanceCompactFieldHeight: Dp = 28.dp,
+    val appearanceCompactFieldHorizontalPadding: Dp = 4.dp,
     val appearanceSwatchMinHeight: Dp = 28.dp,
     val appearanceSwatchGap: Dp = 3.dp,
     val appearanceColorPickerGap: Dp = 12.dp,

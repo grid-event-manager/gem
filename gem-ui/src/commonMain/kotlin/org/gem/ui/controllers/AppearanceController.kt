@@ -114,9 +114,12 @@ class AppearanceController(
             -> copy(state = state.copy(errorKey = GemTextKey.ThemePreferenceUnavailable))
         }
 
-    fun updateTextTarget(target: AppearanceTextTarget): AppearanceController =
-        copy(
-            state = state.copy(
+    fun updateTextTarget(target: AppearanceTextTarget): AppearanceController {
+        val carriedColor = state.activeColor
+        val nextState = state.withDraftIfChanged(state.currentDraft.withTextColor(target, carriedColor))
+
+        return copy(
+            state = nextState.copy(
                 activeEditMode = AppearanceEditMode.TEXT,
                 activeTextTarget = target,
                 fontsVisible = true,
@@ -124,10 +127,14 @@ class AppearanceController(
                 hexInputInvalid = false,
             ),
         )
+    }
 
-    fun updateElementTarget(target: AppearanceElementTarget): AppearanceController =
-        copy(
-            state = state.copy(
+    fun updateElementTarget(target: AppearanceElementTarget): AppearanceController {
+        val carriedColor = state.activeColor
+        val nextState = state.withDraftIfChanged(state.currentDraft.withElementColor(target, carriedColor))
+
+        return copy(
+            state = nextState.copy(
                 activeEditMode = AppearanceEditMode.ELEMENT,
                 activeElementTarget = target,
                 fontsVisible = false,
@@ -135,6 +142,7 @@ class AppearanceController(
                 hexInputInvalid = false,
             ),
         )
+    }
 
     fun updateFont(fontFamily: AppearanceFontFamily): AppearanceController {
         val spec = AppearanceTargetCatalogue.textTargets.first { it.target == state.activeTextTarget }
@@ -361,6 +369,13 @@ private fun AppearanceUiState.withDraft(draft: AppearanceDraft): AppearanceUiSta
         errorKey = null,
     )
 
+private fun AppearanceUiState.withDraftIfChanged(draft: AppearanceDraft): AppearanceUiState =
+    if (draft == currentDraft) {
+        this
+    } else {
+        withDraft(draft)
+    }
+
 private fun AppearanceDraft.withTextFont(
     target: AppearanceTextTarget,
     family: AppearanceFontFamily,
@@ -370,6 +385,26 @@ private fun AppearanceDraft.withTextFont(
         selectedProfileId = null,
         dirty = true,
     )
+
+private fun AppearanceDraft.withTextColor(
+    target: AppearanceTextTarget,
+    color: AppearanceColor,
+): AppearanceDraft =
+    if (textColors.getValue(target) == color) {
+        this
+    } else {
+        copy(textColors = textColors + (target to color))
+    }
+
+private fun AppearanceDraft.withElementColor(
+    target: AppearanceElementTarget,
+    color: AppearanceColor,
+): AppearanceDraft =
+    if (elementColors.getValue(target) == color) {
+        this
+    } else {
+        copy(elementColors = elementColors + (target to color))
+    }
 
 private fun AppearanceDraft.withActiveColor(
     state: AppearanceUiState,

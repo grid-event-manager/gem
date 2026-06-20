@@ -38,14 +38,14 @@ internal object AppearanceThemesPanelInteraction {
     ): List<GemDropdownOption<AppearanceProfileId>> =
         listOf<GemDropdownOption<AppearanceProfileId>>(
             GemDropdownOption(
-                value = null,
-                label = textCatalogue.text(GemTextKey.ChooseTheme),
+                null,
+                textCatalogue.text(GemTextKey.ChooseTheme),
                 enabled = false,
             ),
         ) + state.profiles.map { profile ->
             GemDropdownOption(
-                value = profile.id,
-                label = profileLabel(profile, textCatalogue),
+                profile.id,
+                profileLabel(profile, textCatalogue),
             )
         }
 

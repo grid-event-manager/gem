@@ -149,28 +149,28 @@ internal object AppearanceCustomisePanelInteraction {
     fun textTargetOptions(textCatalogue: GemTextCatalogue): List<GemDropdownOption<AppearanceTextTarget>> =
         listOf<GemDropdownOption<AppearanceTextTarget>>(
             GemDropdownOption(
-                value = null,
-                label = textCatalogue.text(GemTextKey.Text),
+                null,
+                textCatalogue.text(GemTextKey.Text),
                 enabled = false,
             ),
         ) + AppearanceTargetCatalogue.textTargets.map { spec ->
             GemDropdownOption(
-                value = spec.target,
-                label = textCatalogue.text(spec.labelKey),
+                spec.target,
+                textCatalogue.text(spec.labelKey),
             )
         }
 
     fun elementTargetOptions(textCatalogue: GemTextCatalogue): List<GemDropdownOption<AppearanceElementTarget>> =
         listOf<GemDropdownOption<AppearanceElementTarget>>(
             GemDropdownOption(
-                value = null,
-                label = textCatalogue.text(GemTextKey.Element),
+                null,
+                textCatalogue.text(GemTextKey.Element),
                 enabled = false,
             ),
         ) + AppearanceTargetCatalogue.elementTargets.map { spec ->
             GemDropdownOption(
-                value = spec.target,
-                label = textCatalogue.text(spec.labelKey),
+                spec.target,
+                textCatalogue.text(spec.labelKey),
             )
         }
 
@@ -180,14 +180,14 @@ internal object AppearanceCustomisePanelInteraction {
     ): List<GemDropdownOption<AppearanceFontFamily>> =
         listOf<GemDropdownOption<AppearanceFontFamily>>(
             GemDropdownOption(
-                value = null,
-                label = textCatalogue.text(GemTextKey.Fonts),
+                null,
+                textCatalogue.text(GemTextKey.Fonts),
                 enabled = false,
             ),
         ) + state.availableFontFamilies.map { family ->
             GemDropdownOption(
-                value = family,
-                label = family.value,
+                family,
+                family.value,
             )
         }
 

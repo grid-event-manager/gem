@@ -1,19 +1,27 @@
 package org.gem.ui.components
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.TextStyle
@@ -150,28 +158,108 @@ fun GemCompactTextField(
     placeholder: String? = null,
     onFocusedChange: (Boolean) -> Unit = {},
 ) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        enabled = enabled,
-        singleLine = true,
-        isError = invalid,
-        textStyle = GemTheme.typeScale.smallLabel.copy(textAlign = textAlign),
-        placeholder = placeholder?.let {
-            {
-                Text(
-                    text = it,
-                    style = GemTheme.typeScale.smallLabel.copy(textAlign = textAlign),
-                    color = GemTheme.colors.muted,
-                )
-            }
-        },
-        shape = GemTheme.shapes.compactControl,
-        colors = gemTextFieldColors(),
+    val colors = GemTheme.colors
+    val typeScale = GemTheme.typeScale
+    Surface(
         modifier = modifier
             .height(GemTheme.spacing.appearanceCompactFieldHeight)
             .onFocusChanged { focusState -> onFocusedChange(focusState.isFocused) },
-    )
+        shape = GemTheme.shapes.compactControl,
+        color = colors.fieldSurface,
+        contentColor = GemCompactFieldTokens.textColor(colors, enabled, invalid),
+        border = BorderStroke(
+            GemTheme.spacing.borderWidth,
+            GemCompactFieldTokens.borderColor(colors, enabled, invalid),
+        ),
+    ) {
+        BasicTextField(
+            value = value,
+            onValueChange = onValueChange,
+            enabled = enabled,
+            singleLine = true,
+            textStyle = GemCompactFieldTokens.textStyle(
+                typeScale = typeScale,
+                color = GemCompactFieldTokens.textColor(colors, enabled, invalid),
+                textAlign = textAlign,
+            ),
+            cursorBrush = SolidColor(GemCompactFieldTokens.cursorColor(colors, invalid)),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = GemTheme.spacing.appearanceCompactFieldHorizontalPadding),
+            decorationBox = { innerTextField ->
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = GemCompactFieldTokens.contentAlignment(textAlign),
+                ) {
+                    if (value.isEmpty() && placeholder != null) {
+                        Text(
+                            text = placeholder,
+                            style = GemCompactFieldTokens.textStyle(
+                                typeScale = typeScale,
+                                color = GemCompactFieldTokens.placeholderColor(colors),
+                                textAlign = textAlign,
+                            ),
+                        )
+                    }
+                    innerTextField()
+                }
+            },
+        )
+    }
+}
+
+internal object GemCompactFieldTokens {
+    fun textColor(
+        colors: GemColors,
+        enabled: Boolean,
+        invalid: Boolean,
+    ): Color =
+        when {
+            invalid -> colors.danger
+            enabled -> colors.ink
+            else -> colors.disabledInk
+        }
+
+    fun placeholderColor(colors: GemColors): Color =
+        colors.muted
+
+    fun borderColor(
+        colors: GemColors,
+        enabled: Boolean,
+        invalid: Boolean,
+    ): Color =
+        when {
+            invalid -> colors.danger
+            enabled -> colors.fieldBorder
+            else -> colors.line
+        }
+
+    fun cursorColor(
+        colors: GemColors,
+        invalid: Boolean,
+    ): Color =
+        if (invalid) colors.danger else colors.primary
+
+    fun textStyle(
+        typeScale: GemTypeScale,
+        color: Color,
+        textAlign: TextAlign,
+    ): TextStyle =
+        typeScale.smallLabel.copy(
+            color = color,
+            textAlign = textAlign,
+        )
+
+    fun contentAlignment(textAlign: TextAlign): Alignment =
+        when (textAlign) {
+            TextAlign.Start,
+            TextAlign.Left,
+            -> Alignment.CenterStart
+            TextAlign.End,
+            TextAlign.Right,
+            -> Alignment.CenterEnd
+            else -> Alignment.Center
+        }
 }
 
 @Composable

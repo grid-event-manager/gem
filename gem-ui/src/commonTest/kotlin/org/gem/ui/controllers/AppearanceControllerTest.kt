@@ -88,6 +88,7 @@ class AppearanceControllerTest {
         )
         val initial = AppearanceController.initial(runtime, osDark = false)
             .updateTextTarget(AppearanceTextTarget.FIELD_TEXT)
+            .updateColor(AppearanceColor.require("#444444"))
             .updateFont(AppearanceFontFamily("display"))
 
         assertEquals(AppearanceEditMode.TEXT, initial.state.activeEditMode)
@@ -112,6 +113,85 @@ class AppearanceControllerTest {
         val badHex = element.updateHex("not-a-colour")
         assertTrue(badHex.state.hexInputInvalid)
         assertEquals(element.state.currentDraft.elementColors, badHex.state.currentDraft.elementColors)
+    }
+
+    @Test
+    fun targetOpenPreservesVisiblePickerColourAndTogglesFonts() {
+        val textColour = AppearanceColor.require("#224466")
+        val elementActive = AppearanceController.initial(FakeGemUiRuntime.ready(), osDark = false)
+            .updateColor(textColour)
+            .updateElementTarget(AppearanceElementTarget.PAGE_BACKGROUND)
+
+        assertEquals(AppearanceEditMode.ELEMENT, elementActive.state.activeEditMode)
+        assertFalse(elementActive.state.fontsVisible)
+        assertEquals(textColour, elementActive.state.activeColor)
+
+        val elementColour = AppearanceColor.require("#AA5500")
+        val textOpened = elementActive
+            .updateColor(elementColour)
+            .updateTextTarget(elementActive.state.activeTextTarget)
+
+        assertEquals(AppearanceEditMode.TEXT, textOpened.state.activeEditMode)
+        assertTrue(textOpened.state.fontsVisible)
+        assertEquals(elementColour, textOpened.state.activeColor)
+        assertEquals(elementColour, textOpened.state.currentDraft.textColors.getValue(AppearanceTextTarget.TITLE_BAR))
+
+        val elementOpened = textOpened.updateElementTarget(textOpened.state.activeElementTarget)
+
+        assertEquals(AppearanceEditMode.ELEMENT, elementOpened.state.activeEditMode)
+        assertFalse(elementOpened.state.fontsVisible)
+        assertEquals(elementColour, elementOpened.state.activeColor)
+        assertEquals(elementColour, elementOpened.state.currentDraft.elementColors.getValue(AppearanceElementTarget.PAGE_BACKGROUND))
+    }
+
+    @Test
+    fun targetChangesCarryCurrentPickerColourIntoSelectedTarget() {
+        val carriedTextColour = AppearanceColor.require("#123456")
+        val textChanged = AppearanceController.initial(FakeGemUiRuntime.ready(), osDark = false)
+            .updateColor(carriedTextColour)
+            .updateTextTarget(AppearanceTextTarget.BACK_BUTTON)
+
+        assertEquals(AppearanceEditMode.TEXT, textChanged.state.activeEditMode)
+        assertTrue(textChanged.state.fontsVisible)
+        assertEquals(carriedTextColour, textChanged.state.activeColor)
+        assertEquals(carriedTextColour, textChanged.state.currentDraft.textColors.getValue(AppearanceTextTarget.BACK_BUTTON))
+
+        val carriedElementColour = AppearanceColor.require("#654321")
+        val elementChanged = textChanged
+            .updateColor(carriedElementColour)
+            .updateElementTarget(AppearanceElementTarget.FIELD_BACKGROUND)
+
+        assertEquals(AppearanceEditMode.ELEMENT, elementChanged.state.activeEditMode)
+        assertFalse(elementChanged.state.fontsVisible)
+        assertEquals(carriedElementColour, elementChanged.state.activeColor)
+        assertEquals(
+            carriedElementColour,
+            elementChanged.state.currentDraft.elementColors.getValue(AppearanceElementTarget.FIELD_BACKGROUND),
+        )
+    }
+
+    @Test
+    fun fontUpdatesApplyImmediatelyToBackAndThemeToggleTargets() {
+        val runtime = FakeGemUiRuntime.ready(
+            availableFontFamilies = listOf(AppearanceFontFamily("Display"), AppearanceFontFamily("sans-serif")),
+        )
+        val back = AppearanceController.initial(runtime, osDark = false)
+            .updateTextTarget(AppearanceTextTarget.BACK_BUTTON)
+            .updateFont(AppearanceFontFamily("display"))
+
+        assertEquals(
+            AppearanceFontFamily("Display"),
+            back.state.currentDraft.textFonts.getValue(AppearanceTextTarget.BACK_BUTTON),
+        )
+
+        val themeToggle = back
+            .updateTextTarget(AppearanceTextTarget.THEME_TOGGLE_LABELS)
+            .updateFont(AppearanceFontFamily("display"))
+
+        assertEquals(
+            AppearanceFontFamily("Display"),
+            themeToggle.state.currentDraft.textFonts.getValue(AppearanceTextTarget.THEME_TOGGLE_LABELS),
+        )
     }
 
     @Test

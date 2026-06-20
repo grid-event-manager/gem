@@ -22,7 +22,15 @@ class GemRgbSliderRowTest {
     @Test
     fun numericUpdateKeepsValuesInsideRgbRange() {
         assertEquals(GemRgbNumericUpdate.Valid(value = 255, displayValue = "255"), GemRgbSliderRowInteraction.numericUpdate(10, "255"))
+        assertEquals(GemRgbNumericUpdate.Valid(value = 138, displayValue = "138"), GemRgbSliderRowInteraction.numericUpdate(10, "138"))
         assertEquals(GemRgbNumericUpdate.Valid(value = 0, displayValue = "0"), GemRgbSliderRowInteraction.numericUpdate(10, "0"))
         assertEquals(GemRgbNumericUpdate.Invalid(restoredDisplayValue = "10"), GemRgbSliderRowInteraction.numericUpdate(10, "256"))
+    }
+
+    @Test
+    fun displayValueShowsPrototypeRgbExtremesAndMiddleValue() {
+        assertEquals("0", GemRgbSliderRowInteraction.displayValue(0))
+        assertEquals("138", GemRgbSliderRowInteraction.displayValue(138))
+        assertEquals("255", GemRgbSliderRowInteraction.displayValue(255))
     }
 }

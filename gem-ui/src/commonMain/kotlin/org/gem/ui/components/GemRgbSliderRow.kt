@@ -32,7 +32,7 @@ fun GemRgbSliderRow(
     onInvalidInput: (AppearanceRgbChannel) -> Unit = {},
 ) {
     val spacing = GemTheme.spacing
-    var fieldValue by remember(value) { mutableStateOf(value.coerceIn(GemRgbSliderRowInteraction.Range).toString()) }
+    var fieldValue by remember(value) { mutableStateOf(GemRgbSliderRowInteraction.displayValue(value)) }
     Row(
         modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(spacing.appearanceRgbRowGap),
@@ -90,6 +90,9 @@ internal object GemRgbSliderRowInteraction {
     val Range: IntRange = 0..255
     const val Steps: Int = 254
 
+    fun displayValue(value: Int): String =
+        value.coerceIn(Range).toString()
+
     fun labelColor(colors: GemColors): Color =
         colors.muted
 
@@ -104,7 +107,7 @@ internal object GemRgbSliderRowInteraction {
         return if (parsed != null && parsed in Range) {
             GemRgbNumericUpdate.Valid(parsed, parsed.toString())
         } else {
-            GemRgbNumericUpdate.Invalid(previousValidValue.coerceIn(Range).toString())
+            GemRgbNumericUpdate.Invalid(displayValue(previousValidValue))
         }
     }
 }

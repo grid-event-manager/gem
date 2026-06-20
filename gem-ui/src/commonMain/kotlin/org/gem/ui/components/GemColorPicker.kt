@@ -66,7 +66,7 @@ fun GemColorPicker(
                 ) {
                 }
                 GemCompactTextField(
-                    value = selectedColor.value,
+                    value = GemColorPickerInteraction.hexDisplay(selectedColor),
                     onValueChange = onHexChanged,
                     invalid = hexInputInvalid,
                     modifier = Modifier.fillMaxWidth(),
@@ -77,6 +77,9 @@ fun GemColorPicker(
 }
 
 internal object GemColorPickerInteraction {
+    fun hexDisplay(color: AppearanceColor): String =
+        color.value.uppercase()
+
     fun channels(color: AppearanceColor): Map<AppearanceRgbChannel, Int> {
         val rgb = color.value.removePrefix("#")
         return mapOf(
