@@ -83,8 +83,28 @@ class AppearanceDesignTokenMapperTest {
         val stockTokens = tokensFor(stock)
         val customTokens = tokensFor(custom)
 
-        assertEquals(Color(0xFF8AB4C4), stockTokens.colors.secondary)
+        assertEquals(Color(0xFFFF9EDB), stockTokens.colors.secondary)
         assertEquals(Color(0xFFABCDEF), customTokens.colors.secondary)
+    }
+
+    @Test
+    fun stockDraftSemanticColoursReachVisibleConsumerTokens() {
+        val stock = AppearanceDraft.fromProfile(
+            AppearanceProfileCatalogue.stockProfiles().first { it.id.value == "stock-princess-dark" },
+        )
+
+        val colors = tokensFor(stock).colors
+
+        assertEquals(Color(0xFFBFE9FF), colors.navigationInk)
+        assertEquals(Color(0xFFBFE9FF), colors.interactiveHoverInk)
+        assertEquals(Color(0xFFBFE9FF), colors.themeToggleLabelInk)
+        assertEquals(Color(0xFFACC3D8), colors.muted)
+        assertEquals(Color(0xFFFF9EDB), colors.secondary)
+        assertEquals(Color(0xFFB5544D), colors.danger)
+        assertEquals(Color(0xFFFF9EDB), colors.successInk)
+        assertEquals(Color(0xFFACC3D8), colors.menuDisabledInk)
+        assertEquals(Color(0xFFFF9EDB), colors.topBarMenuInk)
+        assertEquals(Color(0xFFFF9EDB), colors.buttonLabelInk)
     }
 
     @Test

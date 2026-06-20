@@ -8,7 +8,9 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
+import org.gem.ui.design.GemColors
 import org.gem.ui.design.GemTheme
 
 @Composable
@@ -28,12 +30,12 @@ fun GemSegmentButton(
         shape = GemTheme.shapes.control,
         border = BorderStroke(
             width = spacing.borderWidth,
-            color = if (selected) colors.primary else colors.lineStrong,
+            color = GemSegmentButtonTokens.borderInk(colors, selected),
         ),
         contentPadding = PaddingValues(horizontal = spacing.fieldGap),
         colors = ButtonDefaults.outlinedButtonColors(
-            containerColor = if (selected) colors.selectedBackground else colors.surfaceStrong,
-            contentColor = if (selected) colors.selectedInk else colors.buttonLabelInk,
+            containerColor = GemSegmentButtonTokens.containerFill(colors, selected),
+            contentColor = GemSegmentButtonTokens.contentInk(colors),
             disabledContainerColor = colors.disabledBackground,
             disabledContentColor = colors.disabledInk,
         ),
@@ -45,4 +47,21 @@ fun GemSegmentButton(
             overflow = TextOverflow.Ellipsis,
         )
     }
+}
+
+internal object GemSegmentButtonTokens {
+    fun borderInk(
+        colors: GemColors,
+        selected: Boolean,
+    ): Color =
+        if (selected) colors.primary else colors.lineStrong
+
+    fun containerFill(
+        colors: GemColors,
+        selected: Boolean,
+    ): Color =
+        if (selected) colors.selectedBackground else colors.surfaceStrong
+
+    fun contentInk(colors: GemColors): Color =
+        colors.buttonLabelInk
 }

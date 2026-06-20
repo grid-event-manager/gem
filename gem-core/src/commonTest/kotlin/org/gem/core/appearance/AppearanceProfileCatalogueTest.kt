@@ -104,11 +104,41 @@ class AppearanceProfileCatalogueTest {
 
         assertEquals("Inter", princessLight.textFonts.getValue(AppearanceTextTarget.BACK_BUTTON).value)
         assertEquals("#B85699", princessLight.textColors.getValue(AppearanceTextTarget.BACK_BUTTON).value)
-        assertEquals("#8AB4C4", princessLight.elementColors.getValue(AppearanceElementTarget.ACCENT_TEXT).value)
+        assertEquals("#B85699", princessLight.elementColors.getValue(AppearanceElementTarget.ACCENT_TEXT).value)
         assertEquals("#B5544D", princessLight.elementColors.getValue(AppearanceElementTarget.ERROR_TEXT).value)
-        assertEquals("#4A7A8A", princessLight.elementColors.getValue(AppearanceElementTarget.STATUS_TEXT).value)
-        assertEquals("#B8B8B8", princessLight.elementColors.getValue(AppearanceElementTarget.MENU_DISABLED_TEXT).value)
-        assertEquals("#8B0101", princessLight.elementColors.getValue(AppearanceElementTarget.INTERACTIVE_HOVER_TEXT).value)
+        assertEquals("#B85699", princessLight.elementColors.getValue(AppearanceElementTarget.STATUS_TEXT).value)
+        assertEquals("#8A6B82", princessLight.elementColors.getValue(AppearanceElementTarget.MENU_DISABLED_TEXT).value)
+        assertEquals("#B85699", princessLight.elementColors.getValue(AppearanceElementTarget.INTERACTIVE_HOVER_TEXT).value)
+    }
+
+    @Test
+    fun `stock profiles own semantic element colours`() {
+        val expected = mapOf(
+            "stock-princess-light" to StockSemanticColours("#B85699", "#B85699", "#8A6B82", "#B85699", "#B5544D"),
+            "stock-princess-dark" to StockSemanticColours("#FF9EDB", "#FF9EDB", "#ACC3D8", "#BFE9FF", "#B5544D"),
+            "stock-goth-light" to StockSemanticColours("#6C284F", "#6C284F", "#745B70", "#6C284F", "#B5544D"),
+            "stock-goth-dark" to StockSemanticColours("#D94F8C", "#D94F8C", "#A991A8", "#D94F8C", "#B5544D"),
+            "stock-cyber-light" to StockSemanticColours("#006F86", "#006F86", "#53717A", "#006F86", "#B5544D"),
+            "stock-cyber-dark" to StockSemanticColours("#00E5FF", "#00E5FF", "#83B5BF", "#00E5FF", "#B5544D"),
+        )
+
+        val profiles = AppearanceProfileCatalogue.stockProfiles().associateBy { it.id.value }
+
+        expected.forEach { (profileId, colours) ->
+            val profile = profiles.getValue(profileId)
+
+            assertEquals(colours.accent, profile.elementColors.getValue(AppearanceElementTarget.ACCENT_TEXT).value)
+            assertEquals(colours.status, profile.elementColors.getValue(AppearanceElementTarget.STATUS_TEXT).value)
+            assertEquals(
+                colours.menuDisabled,
+                profile.elementColors.getValue(AppearanceElementTarget.MENU_DISABLED_TEXT).value,
+            )
+            assertEquals(
+                colours.hover,
+                profile.elementColors.getValue(AppearanceElementTarget.INTERACTIVE_HOVER_TEXT).value,
+            )
+            assertEquals(colours.error, profile.elementColors.getValue(AppearanceElementTarget.ERROR_TEXT).value)
+        }
     }
 
     @Test
@@ -158,4 +188,12 @@ class AppearanceProfileCatalogueTest {
 
     private fun completeFonts(value: String): Map<AppearanceTextTarget, AppearanceFontFamily> =
         AppearanceTextTarget.entries.associateWith { AppearanceFontFamily(value) }
+
+    private data class StockSemanticColours(
+        val accent: String,
+        val status: String,
+        val menuDisabled: String,
+        val hover: String,
+        val error: String,
+    )
 }

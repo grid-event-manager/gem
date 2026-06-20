@@ -11,6 +11,21 @@ object AppearanceProfileCatalogue {
             stockCyberDark(),
         )
 
+    private fun withStockSemanticElementColors(
+        textColorOverrides: Map<AppearanceTextTarget, AppearanceColor>,
+        elementOverrides: Map<AppearanceElementTarget, AppearanceColor>,
+    ): Map<AppearanceElementTarget, AppearanceColor> {
+        val accentColor = textColorOverrides.getValue(AppearanceTextTarget.BUTTON_LABELS)
+        val menuDisabledColor = textColorOverrides.getValue(AppearanceTextTarget.SMALL_LABELS)
+        val hoverColor = textColorOverrides.getValue(AppearanceTextTarget.THEME_TOGGLE_LABELS)
+        return elementOverrides +
+            (AppearanceElementTarget.ACCENT_TEXT to accentColor) +
+            (AppearanceElementTarget.STATUS_TEXT to accentColor) +
+            (AppearanceElementTarget.MENU_DISABLED_TEXT to menuDisabledColor) +
+            (AppearanceElementTarget.INTERACTIVE_HOVER_TEXT to hoverColor) +
+            (AppearanceElementTarget.ERROR_TEXT to color("#b5544d"))
+    }
+
     fun systemProfile(
         mode: AppearanceMode,
         textFonts: Map<AppearanceTextTarget, AppearanceFontFamily>,
@@ -391,7 +406,10 @@ object AppearanceProfileCatalogue {
                 partial = withStockBackFallback(textColorOverrides) +
                     listOfNotNull(logoColor?.let { AppearanceTextTarget.LOGO to it }).toMap(),
             ),
-            elementColors = AppearanceProfileCompletion.completeElementColors(mode, elementOverrides),
+            elementColors = AppearanceProfileCompletion.completeElementColors(
+                mode = mode,
+                partial = withStockSemanticElementColors(textColorOverrides, elementOverrides),
+            ),
         )
     }
 
@@ -415,5 +433,4 @@ object AppearanceProfileCatalogue {
 
     private fun color(value: String): AppearanceColor =
         AppearanceColor.require(value)
-
 }
