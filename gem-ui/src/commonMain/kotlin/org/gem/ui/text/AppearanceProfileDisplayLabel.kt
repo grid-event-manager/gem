@@ -22,8 +22,8 @@ object AppearanceProfileDisplayLabel {
     ): String {
         val mode = textCatalogue.text(profile.mode.labelKey())
         return when (profile.source) {
-            AppearanceProfileSource.STOCK -> "${profile.name.value} $mode"
-            AppearanceProfileSource.CUSTOM -> "${profile.name.value} ($mode)"
+            AppearanceProfileSource.STOCK,
+            AppearanceProfileSource.CUSTOM -> withMode(profile.name.value, mode)
             AppearanceProfileSource.SYSTEM -> error("System profiles are hidden and are not renderable options.")
         }
     }
@@ -32,7 +32,12 @@ object AppearanceProfileDisplayLabel {
         mode: AppearanceMode,
         textCatalogue: GemTextCatalogue,
     ): String =
-        "${textCatalogue.text(GemTextKey.GemDefault)} ${textCatalogue.text(mode.labelKey())}"
+        withMode(textCatalogue.text(GemTextKey.GemDefault), textCatalogue.text(mode.labelKey()))
+
+    private fun withMode(
+        name: String,
+        mode: String,
+    ): String = "$name ($mode)"
 
     private fun AppearanceMode.labelKey(): GemTextKey =
         when (this) {

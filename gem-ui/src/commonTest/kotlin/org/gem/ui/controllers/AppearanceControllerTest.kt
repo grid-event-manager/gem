@@ -49,6 +49,20 @@ class AppearanceControllerTest {
     }
 
     @Test
+    fun initialUsesSystemDarkModeWhenPreferenceIsMissing() {
+        val controller = AppearanceController.initial(
+            FakeGemUiRuntime.ready(
+                themePreferenceStore = FakeThemePreferenceStore(ThemePreferenceLoadResult.Missing),
+            ),
+            osDark = true,
+        )
+
+        assertEquals(AppearanceMode.DARK, controller.state.mode)
+        assertEquals(ThemePreference.SYSTEM, controller.state.themePreference)
+        assertNull(controller.state.selectedProfileId)
+    }
+
+    @Test
     fun setManualThemeSavesPreferenceAndPreservesStockProfileFamily() {
         val store = FakeThemePreferenceStore(ThemePreferenceLoadResult.Missing)
         val runtime = FakeGemUiRuntime.ready(themePreferenceStore = store)
@@ -323,6 +337,43 @@ class AppearanceControllerTest {
         assertEquals(AppearanceMode.LIGHT, controller.state.mode)
         assertTrue(controller.state.currentDraft.textFonts.values.all { it == AppearanceFontFamily("sans-serif") })
         assertEquals(AppearanceExpandedPanel.CUSTOMISE, controller.state.expandedPanel)
+    }
+
+    @Test
+    fun resetToSystemDefaultClearsBothProfileSlotsAndSavesSystemPreference() {
+        val store = FakeThemePreferenceStore(ThemePreferenceLoadResult.Loaded(ThemePreference.LIGHT))
+        val controller = AppearanceController.initial(
+            FakeGemUiRuntime.ready(themePreferenceStore = store),
+            osDark = false,
+        )
+            .selectProfile(AppearanceProfileId("stock-princess-light"))
+            .setManualTheme(AppearanceMode.DARK, osDark = false)
+            .selectProfile(AppearanceProfileId("stock-goth-dark"))
+            .setExpandedPanel(AppearanceExpandedPanel.CUSTOMISE)
+            .resetToSystemDefault(osDark = true)
+
+        assertEquals(ThemePreference.SYSTEM, store.lastSavedPreference)
+        assertEquals(ThemePreference.SYSTEM, controller.state.themePreference)
+        assertEquals(AppearanceMode.DARK, controller.state.mode)
+        assertNull(controller.state.selectedProfileId)
+        assertTrue(controller.state.currentDraft.textFonts.values.all { it == AppearanceFontFamily("sans-serif") })
+        assertEquals(AppearanceExpandedPanel.CUSTOMISE, controller.state.expandedPanel)
+    }
+
+    @Test
+    fun resetToSystemDefaultDoesNotSaveSystemPreferenceWhenProfileResetFails() {
+        val store = FakeThemePreferenceStore(ThemePreferenceLoadResult.Loaded(ThemePreference.DARK))
+        val controller = AppearanceController.initial(
+            FakeGemUiRuntime.ready(
+                themePreferenceStore = store,
+                appearanceProfileStore = ResetStorageFailingAppearanceProfileStore(),
+            ),
+            osDark = false,
+        ).resetToSystemDefault(osDark = false)
+
+        assertEquals(ThemePreference.DARK, controller.state.themePreference)
+        assertEquals(GemTextKey.ThemePreferenceSaveFailed, controller.state.errorKey)
+        assertNull(store.lastSavedPreference)
     }
 
     @Test

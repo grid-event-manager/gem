@@ -70,7 +70,6 @@ data class AppearanceUiState(
 enum class AppearanceExpandedPanel {
     NONE,
     CUSTOMISE,
-    THEMES,
 }
 
 enum class AppearanceEditMode {

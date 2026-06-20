@@ -48,7 +48,7 @@ class AppearanceThemesPanelTest {
         val stock = AppearanceProfileCatalogue.stockProfiles().first { it.mode == AppearanceMode.LIGHT }
         val custom = customProfile()
 
-        assertEquals("${stock.name.value} ${text.text(GemTextKey.Light)}", AppearanceProfileDisplayLabel.profile(stock, text))
+        assertEquals("${stock.name.value} (${text.text(GemTextKey.Light)})", AppearanceProfileDisplayLabel.profile(stock, text))
         assertEquals("My Theme (${text.text(GemTextKey.Dark)})", AppearanceProfileDisplayLabel.profile(custom, text))
     }
 

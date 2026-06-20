@@ -23,10 +23,10 @@ class AppearanceProfileDisplayLabelTest {
             stockProfiles = AppearanceProfileCatalogue.stockProfiles(),
         )
 
-        assertEquals("Goth Dark", AppearanceProfileDisplayLabel.current(state, text))
-        assertEquals("GEM Default Dark", AppearanceProfileDisplayLabel.current(state.copy(selectedProfileId = null), text))
+        assertEquals("Goth (Dark)", AppearanceProfileDisplayLabel.current(state, text))
+        assertEquals("GEM Default (Dark)", AppearanceProfileDisplayLabel.current(state.copy(selectedProfileId = null), text))
         assertEquals(
-            "GEM Default Dark",
+            "GEM Default (Dark)",
             AppearanceProfileDisplayLabel.current(state.copy(selectedProfileId = AppearanceProfileId("missing")), text),
         )
     }

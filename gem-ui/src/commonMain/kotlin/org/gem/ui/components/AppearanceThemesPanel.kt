@@ -19,7 +19,7 @@ fun AppearanceThemesPanel(
 ) {
     GemUnlabelledDropdownField(
         selectedLabel = AppearanceThemesPanelInteraction.selectedProfileLabel(state, textCatalogue),
-        placeholderLabel = textCatalogue.text(GemTextKey.ChooseTheme),
+        placeholderLabel = textCatalogue.text(GemTextKey.Themes),
         options = AppearanceThemesPanelInteraction.profileOptions(state, textCatalogue),
         onSelected = { selected -> selected?.let(onProfileSelected) },
         enabled = enabled,

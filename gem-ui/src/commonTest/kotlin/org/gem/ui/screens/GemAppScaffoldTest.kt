@@ -72,7 +72,7 @@ class GemAppScaffoldTest {
         val accounts = topBarTitleForRoute(UiRoute.Accounts, appearanceState, EnglishGemTextCatalogue)
 
         assertEquals(GemTextKey.Settings, settings.titleKey)
-        assertEquals(GemTopBarSubtitle.Data("Goth Dark"), settings.subtitle)
+        assertEquals(GemTopBarSubtitle.Data("Goth (Dark)"), settings.subtitle)
         assertEquals(GemTextKey.Accounts, accounts.titleKey)
         assertEquals(GemTopBarSubtitle.None, accounts.subtitle)
     }

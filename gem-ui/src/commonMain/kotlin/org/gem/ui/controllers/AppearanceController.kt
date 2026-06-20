@@ -75,6 +75,37 @@ class AppearanceController(
             )
         }
 
+    fun resetToSystemDefault(osDark: Boolean): AppearanceController {
+        val mode = resolve(ThemePreference.SYSTEM, osDark)
+        return when (val reset = runtime.appearanceProfileService.resetAllModes()) {
+            is AppearanceProfileResetResult.Reset -> {
+                val preferenceSave = runtime.themePreferenceService.savePreference(ThemePreference.SYSTEM)
+                copy(
+                    state = stateFrom(
+                        mode = mode,
+                        themePreference = ThemePreference.SYSTEM,
+                        profileState = reset.state,
+                        availableFontFamilies = state.availableFontFamilies,
+                        errorKey = if (preferenceSave is ThemePreferenceSaveResult.StorageFailed) {
+                            GemTextKey.ThemePreferenceSaveFailed
+                        } else {
+                            null
+                        },
+                    ).copy(
+                        expandedPanel = state.expandedPanel,
+                        activeEditMode = state.activeEditMode,
+                        activeTextTarget = state.activeTextTarget,
+                        activeElementTarget = state.activeElementTarget,
+                        fontsVisible = state.fontsVisible,
+                    ),
+                )
+            }
+            is AppearanceProfileResetResult.StorageFailed -> copy(
+                state = state.copy(errorKey = GemTextKey.ThemePreferenceSaveFailed),
+            )
+        }
+    }
+
     fun setManualTheme(
         mode: AppearanceMode,
         osDark: Boolean,

@@ -51,21 +51,21 @@ fun AppearanceSettingsPanel(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(GemTheme.spacing.rowGap),
     ) {
-        GemExpandablePanelHeader(
-            text = textCatalogue.text(GemTextKey.Customise),
-            expanded = state.expandedPanel == AppearanceExpandedPanel.CUSTOMISE,
-            enabled = enabled,
-            onClick = {
-                callbacks.onExpandedPanelChanged(
-                    AppearanceSettingsPanelInteraction.nextExpandedPanel(
-                        current = state.expandedPanel,
-                        selected = AppearanceExpandedPanel.CUSTOMISE,
-                    ),
-                )
-            },
-        )
-        if (state.expandedPanel == AppearanceExpandedPanel.CUSTOMISE) {
-            GemPanel {
+        GemPanel {
+            GemExpandablePanelHeader(
+                text = textCatalogue.text(GemTextKey.Customise),
+                expanded = state.expandedPanel == AppearanceExpandedPanel.CUSTOMISE,
+                enabled = enabled,
+                onClick = {
+                    callbacks.onExpandedPanelChanged(
+                        AppearanceSettingsPanelInteraction.nextExpandedPanel(
+                            current = state.expandedPanel,
+                            selected = AppearanceExpandedPanel.CUSTOMISE,
+                        ),
+                    )
+                },
+            )
+            if (state.expandedPanel == AppearanceExpandedPanel.CUSTOMISE) {
                 AppearanceCustomisePanel(
                     state = state,
                     textCatalogue = textCatalogue,
@@ -75,28 +75,13 @@ fun AppearanceSettingsPanel(
             }
         }
 
-        GemExpandablePanelHeader(
-            text = textCatalogue.text(GemTextKey.Themes),
-            expanded = state.expandedPanel == AppearanceExpandedPanel.THEMES,
-            enabled = enabled,
-            onClick = {
-                callbacks.onExpandedPanelChanged(
-                    AppearanceSettingsPanelInteraction.nextExpandedPanel(
-                        current = state.expandedPanel,
-                        selected = AppearanceExpandedPanel.THEMES,
-                    ),
-                )
-            },
-        )
-        if (state.expandedPanel == AppearanceExpandedPanel.THEMES) {
-            GemPanel {
-                AppearanceThemesPanel(
-                    state = state,
-                    textCatalogue = textCatalogue,
-                    onProfileSelected = callbacks.onProfileSelected,
-                    enabled = enabled,
-                )
-            }
+        GemPanel {
+            AppearanceThemesPanel(
+                state = state,
+                textCatalogue = textCatalogue,
+                onProfileSelected = callbacks.onProfileSelected,
+                enabled = enabled,
+            )
         }
 
         AppearanceSettingsPanelInteraction.errorKey(state)?.let { errorKey ->
@@ -112,7 +97,6 @@ fun AppearanceSettingsPanel(
 internal object AppearanceSettingsPanelInteraction {
     val headerOrder: List<AppearanceExpandedPanel> = listOf(
         AppearanceExpandedPanel.CUSTOMISE,
-        AppearanceExpandedPanel.THEMES,
     )
 
     fun nextExpandedPanel(

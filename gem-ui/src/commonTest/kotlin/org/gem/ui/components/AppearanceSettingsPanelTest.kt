@@ -13,13 +13,13 @@ class AppearanceSettingsPanelTest {
 
         assertEquals(AppearanceExpandedPanel.NONE, state.expandedPanel)
         assertEquals(
-            listOf(AppearanceExpandedPanel.CUSTOMISE, AppearanceExpandedPanel.THEMES),
+            listOf(AppearanceExpandedPanel.CUSTOMISE),
             AppearanceSettingsPanelInteraction.headerOrder,
         )
     }
 
     @Test
-    fun openingOnePanelClosesTheOtherAndOpenPanelCanCollapse() {
+    fun openingCustomisePanelCanCollapse() {
         assertEquals(
             AppearanceExpandedPanel.CUSTOMISE,
             AppearanceSettingsPanelInteraction.nextExpandedPanel(
@@ -28,17 +28,10 @@ class AppearanceSettingsPanelTest {
             ),
         )
         assertEquals(
-            AppearanceExpandedPanel.THEMES,
-            AppearanceSettingsPanelInteraction.nextExpandedPanel(
-                current = AppearanceExpandedPanel.CUSTOMISE,
-                selected = AppearanceExpandedPanel.THEMES,
-            ),
-        )
-        assertEquals(
             AppearanceExpandedPanel.NONE,
             AppearanceSettingsPanelInteraction.nextExpandedPanel(
-                current = AppearanceExpandedPanel.THEMES,
-                selected = AppearanceExpandedPanel.THEMES,
+                current = AppearanceExpandedPanel.CUSTOMISE,
+                selected = AppearanceExpandedPanel.CUSTOMISE,
             ),
         )
     }

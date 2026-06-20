@@ -182,6 +182,33 @@ class AppearanceProfileServiceTest {
     }
 
     @Test
+    fun `reset all modes clears both active profiles without deleting custom profiles`() {
+        val existing = customProfile(
+            id = "custom:light:venue",
+            name = "Venue",
+            mode = AppearanceMode.LIGHT,
+        )
+        val store = LoadStore(
+            loadResult = AppearanceProfileStoreLoadResult.Loaded(
+                AppearanceProfileStoreSnapshot(
+                    customProfiles = listOf(existing),
+                    activeLightProfileId = existing.id,
+                    activeDarkProfileId = AppearanceProfileId("stock-goth-dark"),
+                ),
+            ),
+        )
+        val result = service(store).resetAllModes()
+        val reset = assertIs<AppearanceProfileResetResult.Reset>(result)
+
+        assertNull(reset.state.activeLightProfileId)
+        assertNull(reset.state.activeDarkProfileId)
+        assertNull(reset.state.selectedDraftFor(AppearanceMode.LIGHT))
+        assertNull(reset.state.selectedDraftFor(AppearanceMode.DARK))
+        assertEquals(listOf(existing), reset.state.customProfiles)
+        assertEquals(listOf(existing), store.savedSnapshots.single().customProfiles)
+    }
+
+    @Test
     fun `mode switch maps stock profile to matching target mode family`() {
         val store = LoadStore(
             loadResult = AppearanceProfileStoreLoadResult.Loaded(

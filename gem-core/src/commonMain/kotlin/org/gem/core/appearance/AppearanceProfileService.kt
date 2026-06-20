@@ -115,6 +115,24 @@ class AppearanceProfileService(
         }
     }
 
+    fun resetAllModes(): AppearanceProfileResetResult {
+        val snapshot = loadMutableSnapshotOrReturnStorageFailure {
+            return AppearanceProfileResetResult.StorageFailed(it)
+        }
+        val nextSnapshot = snapshot
+            .withActiveProfile(AppearanceMode.LIGHT, profileId = null)
+            .withActiveProfile(AppearanceMode.DARK, profileId = null)
+
+        return when (val saved = store.save(nextSnapshot)) {
+            AppearanceProfileStoreSaveResult.Saved -> AppearanceProfileResetResult.Reset(
+                state = stateFrom(nextSnapshot, warning = null),
+            )
+            is AppearanceProfileStoreSaveResult.StorageFailed -> AppearanceProfileResetResult.StorageFailed(
+                saved.message,
+            )
+        }
+    }
+
     fun switchModePreservingProfileFamily(
         targetMode: AppearanceMode,
         sourceProfileId: AppearanceProfileId?,

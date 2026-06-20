@@ -78,7 +78,9 @@ fun GemApp(
         mutableStateOf(secondLifeTimeService.currentSnapshot().display)
     }
     val coroutineScope = rememberCoroutineScope()
-    val osDark = isSystemInDarkTheme()
+    val composeOsDark = isSystemInDarkTheme()
+    val platformOsDark = remember { gemPlatformPrefersDarkTheme() }
+    val osDark = platformOsDark ?: composeOsDark
     var appearanceController by remember(runtime) { mutableStateOf(AppearanceController.initial(runtime, osDark)) }
     LaunchedEffect(runtime, osDark) {
         appearanceController = appearanceController.refresh(osDark)
@@ -546,7 +548,7 @@ fun GemApp(
                                 appearanceController = appearanceController.saveTheme(name, mode)
                             },
                             onResetCurrentMode = {
-                                appearanceController = appearanceController.resetCurrentMode()
+                                appearanceController = appearanceController.resetToSystemDefault(osDark)
                             },
                             onProfileSelected = { profileId ->
                                 appearanceController = appearanceController.selectProfile(profileId)
