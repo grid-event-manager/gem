@@ -11,15 +11,21 @@ import org.gem.ui.time.SecondLifeTimeDisplay
 
 data class GemTopBarTitle(
     val titleKey: GemTextKey,
-    val subtitleKey: GemTextKey?,
+    val subtitle: GemTopBarSubtitle,
 ) {
     companion object {
         fun brand(): GemTopBarTitle =
             GemTopBarTitle(
                 titleKey = GemTextKey.BrandInitials,
-                subtitleKey = GemTextKey.BrandSubtitle,
+                subtitle = GemTopBarSubtitle.Catalogue(GemTextKey.BrandSubtitle),
             )
     }
+}
+
+sealed interface GemTopBarSubtitle {
+    data object None : GemTopBarSubtitle
+    data class Catalogue(val key: GemTextKey) : GemTopBarSubtitle
+    data class Data(val value: String) : GemTopBarSubtitle
 }
 
 @Composable

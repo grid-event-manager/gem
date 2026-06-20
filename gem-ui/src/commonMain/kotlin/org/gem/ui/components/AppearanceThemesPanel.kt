@@ -3,10 +3,9 @@ package org.gem.ui.components
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
-import org.gem.core.appearance.AppearanceProfile
 import org.gem.core.appearance.AppearanceProfileId
-import org.gem.core.appearance.AppearanceProfileSource
 import org.gem.ui.state.AppearanceUiState
+import org.gem.ui.text.AppearanceProfileDisplayLabel
 import org.gem.ui.text.GemTextCatalogue
 import org.gem.ui.text.GemTextKey
 
@@ -45,7 +44,7 @@ internal object AppearanceThemesPanelInteraction {
         ) + state.profiles.map { profile ->
             GemDropdownOption(
                 profile.id,
-                profileLabel(profile, textCatalogue),
+                AppearanceProfileDisplayLabel.profile(profile, textCatalogue),
             )
         }
 
@@ -55,25 +54,7 @@ internal object AppearanceThemesPanelInteraction {
     ): String? =
         state.profiles
             .firstOrNull { it.id == state.selectedProfileId }
-            ?.let { profileLabel(it, textCatalogue) }
-
-    fun profileLabel(
-        profile: AppearanceProfile,
-        textCatalogue: GemTextCatalogue,
-    ): String {
-        val mode = textCatalogue.text(profile.mode.labelKey())
-        return when (profile.source) {
-            AppearanceProfileSource.STOCK -> "${profile.name.value} $mode"
-            AppearanceProfileSource.CUSTOM -> "${profile.name.value} ($mode)"
-            AppearanceProfileSource.SYSTEM -> error("System profiles are hidden and are not renderable options.")
-        }
-    }
+            ?.let { AppearanceProfileDisplayLabel.profile(it, textCatalogue) }
 
     fun hasSaveOrResetControls(): Boolean = false
 }
-
-private fun org.gem.core.appearance.AppearanceMode.labelKey(): GemTextKey =
-    when (this) {
-        org.gem.core.appearance.AppearanceMode.LIGHT -> GemTextKey.Light
-        org.gem.core.appearance.AppearanceMode.DARK -> GemTextKey.Dark
-    }

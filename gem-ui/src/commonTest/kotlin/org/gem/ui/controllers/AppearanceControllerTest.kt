@@ -49,7 +49,7 @@ class AppearanceControllerTest {
     }
 
     @Test
-    fun setManualThemeSavesPreferenceAndClearsSelectedProfile() {
+    fun setManualThemeSavesPreferenceAndPreservesStockProfileFamily() {
         val store = FakeThemePreferenceStore(ThemePreferenceLoadResult.Missing)
         val runtime = FakeGemUiRuntime.ready(themePreferenceStore = store)
         val selected = AppearanceController.initial(runtime, osDark = false)
@@ -59,9 +59,27 @@ class AppearanceControllerTest {
 
         assertEquals(ThemePreference.LIGHT, store.lastSavedPreference)
         assertEquals(AppearanceMode.LIGHT, controller.state.mode)
-        assertNull(controller.state.selectedProfileId)
-        assertTrue(controller.state.currentDraft.textFonts.values.all { it == AppearanceFontFamily("sans-serif") })
+        assertEquals(AppearanceProfileId("stock-goth-light"), controller.state.selectedProfileId)
+        assertEquals("Georgia", controller.state.currentDraft.textFonts.getValue(AppearanceTextTarget.TITLE_BAR).value)
         assertFalse(controller.state.currentDraft.dirty)
+    }
+
+    @Test
+    fun setManualThemeFallsBackToSystemOnlyWhenCustomCounterpartIsAbsentAndRestoresFamilyWhenReturning() {
+        val store = FakeThemePreferenceStore(ThemePreferenceLoadResult.Missing)
+        val runtime = FakeGemUiRuntime.ready(themePreferenceStore = store)
+        val darkCustom = AppearanceController.initial(runtime, osDark = false)
+            .selectProfile(AppearanceProfileId("stock-goth-dark"))
+            .saveTheme("Venue", AppearanceMode.DARK)
+
+        val light = darkCustom.setManualTheme(AppearanceMode.LIGHT, osDark = true)
+        val dark = light.setManualTheme(AppearanceMode.DARK, osDark = false)
+
+        assertEquals(AppearanceMode.LIGHT, light.state.mode)
+        assertNull(light.state.selectedProfileId)
+        assertTrue(light.state.currentDraft.textFonts.values.all { it == AppearanceFontFamily("sans-serif") })
+        assertEquals(AppearanceMode.DARK, dark.state.mode)
+        assertEquals(AppearanceProfileId("custom:dark:venue"), dark.state.selectedProfileId)
     }
 
     @Test
@@ -306,7 +324,13 @@ private class StorageFailingAppearanceProfileStore : AppearanceProfileStore {
 
 private class ResetStorageFailingAppearanceProfileStore : AppearanceProfileStore {
     override fun load(): AppearanceProfileStoreLoadResult =
-        AppearanceProfileStoreLoadResult.Missing
+        AppearanceProfileStoreLoadResult.Loaded(
+            AppearanceProfileStoreSnapshot(
+                customProfiles = emptyList(),
+                activeLightProfileId = AppearanceProfileId("stock-princess-light"),
+                activeDarkProfileId = null,
+            ),
+        )
 
     override fun save(snapshot: AppearanceProfileStoreSnapshot): AppearanceProfileStoreSaveResult =
         AppearanceProfileStoreSaveResult.StorageFailed("no-write")

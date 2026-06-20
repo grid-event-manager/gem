@@ -21,6 +21,7 @@ import org.gem.ui.components.GemOperationModal
 import org.gem.ui.components.GemPlatformBackHandler
 import org.gem.ui.components.GemSendFooter
 import org.gem.ui.components.GemTopBar
+import org.gem.ui.components.GemTopBarSubtitle
 import org.gem.ui.components.GemTopBarTitle
 import org.gem.ui.components.SessionStrip
 import org.gem.ui.components.SectionBackNav
@@ -46,10 +47,12 @@ import org.gem.ui.runtime.GemUiRuntime
 import org.gem.ui.screens.LoginScreen
 import org.gem.ui.screens.AccountsScreen
 import org.gem.ui.screens.SettingsScreen
+import org.gem.ui.state.AppearanceUiState
 import org.gem.ui.state.LoginEntryMode
 import org.gem.ui.state.UiRoute
 import org.gem.ui.testtags.GemTestTags
 import org.gem.ui.text.EnglishGemTextCatalogue
+import org.gem.ui.text.AppearanceProfileDisplayLabel
 import org.gem.ui.text.GemTextCatalogue
 import org.gem.ui.text.GemTextKey
 import org.gem.ui.time.SecondLifeTimeService
@@ -277,7 +280,11 @@ fun GemApp(
         GemAppScaffold(
             topBar = {
                 GemTopBar(
-                    title = topBarTitleForRoute(route),
+                    title = topBarTitleForRoute(
+                        route = route,
+                        appearanceState = appearanceController.state,
+                        textCatalogue = textCatalogue,
+                    ),
                     activeAccountLabel = appController.state.activeAccountLabel,
                     secondLifeTimeDisplay = secondLifeTimeDisplay,
                     menuOpen = appController.state.menuOpen,
@@ -557,12 +564,21 @@ private const val SendValidationFeedbackMillis: Long = 3_000L
 private const val AvatarProgressDetailMillis: Long = 5_000L
 private const val ClockMinuteMillis: Long = 60_000L
 
-internal fun topBarTitleForRoute(route: UiRoute): GemTopBarTitle =
+internal fun topBarTitleForRoute(
+    route: UiRoute,
+    appearanceState: AppearanceUiState,
+    textCatalogue: GemTextCatalogue,
+): GemTopBarTitle =
     when (route) {
-        UiRoute.Settings,
+        UiRoute.Settings -> GemTopBarTitle(
+            titleKey = AppSectionCatalogue.sectionFor(route).labelKey,
+            subtitle = GemTopBarSubtitle.Data(
+                AppearanceProfileDisplayLabel.current(appearanceState, textCatalogue),
+            ),
+        )
         UiRoute.Accounts -> GemTopBarTitle(
             titleKey = AppSectionCatalogue.sectionFor(route).labelKey,
-            subtitleKey = null,
+            subtitle = GemTopBarSubtitle.None,
         )
         UiRoute.Login,
         UiRoute.Compose -> GemTopBarTitle.brand()

@@ -182,6 +182,117 @@ class AppearanceProfileServiceTest {
     }
 
     @Test
+    fun `mode switch maps stock profile to matching target mode family`() {
+        val store = LoadStore(
+            loadResult = AppearanceProfileStoreLoadResult.Loaded(
+                AppearanceProfileStoreSnapshot(
+                    customProfiles = emptyList(),
+                    activeLightProfileId = null,
+                    activeDarkProfileId = AppearanceProfileId("stock-goth-dark"),
+                ),
+            ),
+        )
+
+        val result = service(store).switchModePreservingProfileFamily(
+            targetMode = AppearanceMode.LIGHT,
+            sourceProfileId = AppearanceProfileId("stock-goth-dark"),
+        )
+        val switched = assertIs<AppearanceProfileModeSwitchResult.Switched>(result)
+
+        assertEquals("stock-goth-light", switched.state.activeLightProfileId?.value)
+        assertEquals("stock-goth-dark", switched.state.activeDarkProfileId?.value)
+        assertEquals("stock-goth-light", switched.state.selectedDraftFor(AppearanceMode.LIGHT)?.selectedProfileId?.value)
+        assertEquals("stock-goth-light", store.savedSnapshots.single().activeLightProfileId?.value)
+    }
+
+    @Test
+    fun `mode switch treats missing source as null source and leaves target active profile unchanged`() {
+        val store = LoadStore(
+            loadResult = AppearanceProfileStoreLoadResult.Loaded(
+                AppearanceProfileStoreSnapshot(
+                    customProfiles = emptyList(),
+                    activeLightProfileId = AppearanceProfileId("stock-cyber-light"),
+                    activeDarkProfileId = null,
+                ),
+            ),
+        )
+
+        val result = service(store).switchModePreservingProfileFamily(
+            targetMode = AppearanceMode.LIGHT,
+            sourceProfileId = AppearanceProfileId("missing-profile"),
+        )
+        val switched = assertIs<AppearanceProfileModeSwitchResult.Switched>(result)
+
+        assertEquals("stock-cyber-light", switched.state.activeLightProfileId?.value)
+        assertEquals(emptyList(), store.savedSnapshots)
+    }
+
+    @Test
+    fun `mode switch chooses smallest matching custom counterpart id`() {
+        val source = customProfile(
+            id = "custom:dark:venue",
+            name = "Venue",
+            mode = AppearanceMode.DARK,
+        )
+        val targetB = customProfile(
+            id = "custom:light:venue-b",
+            name = "venue",
+            mode = AppearanceMode.LIGHT,
+        )
+        val targetA = customProfile(
+            id = "custom:light:venue-a",
+            name = "VENUE",
+            mode = AppearanceMode.LIGHT,
+        )
+        val store = LoadStore(
+            loadResult = AppearanceProfileStoreLoadResult.Loaded(
+                AppearanceProfileStoreSnapshot(
+                    customProfiles = listOf(source, targetB, targetA),
+                    activeLightProfileId = null,
+                    activeDarkProfileId = source.id,
+                ),
+            ),
+        )
+
+        val result = service(store).switchModePreservingProfileFamily(
+            targetMode = AppearanceMode.LIGHT,
+            sourceProfileId = source.id,
+        )
+        val switched = assertIs<AppearanceProfileModeSwitchResult.Switched>(result)
+
+        assertEquals("custom:light:venue-a", switched.state.activeLightProfileId?.value)
+        assertEquals("custom:light:venue-a", store.savedSnapshots.single().activeLightProfileId?.value)
+    }
+
+    @Test
+    fun `mode switch clears only target mode when counterpart is absent`() {
+        val source = customProfile(
+            id = "custom:dark:venue",
+            name = "Venue",
+            mode = AppearanceMode.DARK,
+        )
+        val store = LoadStore(
+            loadResult = AppearanceProfileStoreLoadResult.Loaded(
+                AppearanceProfileStoreSnapshot(
+                    customProfiles = listOf(source),
+                    activeLightProfileId = AppearanceProfileId("stock-princess-light"),
+                    activeDarkProfileId = source.id,
+                ),
+            ),
+        )
+
+        val result = service(store).switchModePreservingProfileFamily(
+            targetMode = AppearanceMode.LIGHT,
+            sourceProfileId = source.id,
+        )
+        val switched = assertIs<AppearanceProfileModeSwitchResult.Switched>(result)
+
+        assertNull(switched.state.activeLightProfileId)
+        assertEquals(source.id, switched.state.activeDarkProfileId)
+        assertNull(store.savedSnapshots.single().activeLightProfileId)
+    }
+
+    @Test
     fun `save and reset return storage failures without pretending to save`() {
         val store = LoadStore(saveResult = AppearanceProfileStoreSaveResult.StorageFailed("[redacted-write]"))
         val draft = stockDraft(AppearanceMode.LIGHT)
@@ -193,6 +304,13 @@ class AppearanceProfileServiceTest {
         assertEquals(
             AppearanceProfileResetResult.StorageFailed("[redacted-write]"),
             service(store).resetMode(AppearanceMode.LIGHT),
+        )
+        assertEquals(
+            AppearanceProfileModeSwitchResult.StorageFailed("[redacted-write]"),
+            service(store).switchModePreservingProfileFamily(
+                targetMode = AppearanceMode.LIGHT,
+                sourceProfileId = AppearanceProfileId("stock-princess-dark"),
+            ),
         )
     }
 

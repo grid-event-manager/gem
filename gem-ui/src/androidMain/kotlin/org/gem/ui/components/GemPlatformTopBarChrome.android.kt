@@ -63,9 +63,9 @@ internal actual fun GemPlatformTopBarChrome(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                title.subtitleKey?.let { subtitleKey ->
+                title.subtitle.renderText(textCatalogue)?.let { subtitle ->
                     Text(
-                        text = textCatalogue.text(subtitleKey),
+                        text = subtitle,
                         style = GemTheme.typeScale.brandSubtitle,
                         color = GemTheme.colors.brandWordmark,
                         maxLines = 1,
@@ -111,3 +111,10 @@ internal actual fun GemPlatformTopBarChrome(
         },
     )
 }
+
+private fun GemTopBarSubtitle.renderText(textCatalogue: GemTextCatalogue): String? =
+    when (this) {
+        GemTopBarSubtitle.None -> null
+        is GemTopBarSubtitle.Catalogue -> textCatalogue.text(key)
+        is GemTopBarSubtitle.Data -> value
+    }

@@ -69,3 +69,11 @@ sealed interface AppearanceProfileResetResult {
 
     data class StorageFailed(val message: String? = null) : AppearanceProfileResetResult
 }
+
+sealed interface AppearanceProfileModeSwitchResult {
+    data class Switched(
+        val state: AppearanceProfileState,
+    ) : AppearanceProfileModeSwitchResult
+
+    data class StorageFailed(val message: String? = null) : AppearanceProfileModeSwitchResult
+}

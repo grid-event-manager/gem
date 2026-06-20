@@ -6,6 +6,7 @@ import org.gem.core.appearance.AppearanceMode
 import org.gem.core.appearance.AppearanceProfileId
 import org.gem.ui.appearanceModeForNavigationToggleChecked
 import org.gem.ui.applyNavigationThemeToggle
+import org.gem.ui.components.GemTopBarSubtitle
 import org.gem.ui.components.GemAppScaffold
 import org.gem.ui.components.SectionBackNav
 import org.gem.ui.controllers.AppearanceController
@@ -13,6 +14,7 @@ import org.gem.ui.design.GemSpacing
 import org.gem.ui.sectionNavigationShowsThemeToggle
 import org.gem.ui.testing.FakeGemUiRuntime
 import org.gem.ui.testtags.GemTestTags
+import org.gem.ui.text.EnglishGemTextCatalogue
 import org.gem.ui.text.GemTextKey
 import org.gem.ui.topBarTitleForRoute
 import org.gem.ui.state.UiRoute
@@ -51,24 +53,28 @@ class GemAppScaffoldTest {
 
     @Test
     fun `top bar title model preserves brand on root routes`() {
-        val login = topBarTitleForRoute(UiRoute.Login)
-        val compose = topBarTitleForRoute(UiRoute.Compose)
+        val appearanceState = AppearanceController.initial(FakeGemUiRuntime.ready(), osDark = false).state
+        val login = topBarTitleForRoute(UiRoute.Login, appearanceState, EnglishGemTextCatalogue)
+        val compose = topBarTitleForRoute(UiRoute.Compose, appearanceState, EnglishGemTextCatalogue)
 
         assertEquals(GemTextKey.BrandInitials, login.titleKey)
-        assertEquals(GemTextKey.BrandSubtitle, login.subtitleKey)
+        assertEquals(GemTopBarSubtitle.Catalogue(GemTextKey.BrandSubtitle), login.subtitle)
         assertEquals(GemTextKey.BrandInitials, compose.titleKey)
-        assertEquals(GemTextKey.BrandSubtitle, compose.subtitleKey)
+        assertEquals(GemTopBarSubtitle.Catalogue(GemTextKey.BrandSubtitle), compose.subtitle)
     }
 
     @Test
-    fun `top bar title model uses section labels without subtitle on section routes`() {
-        val settings = topBarTitleForRoute(UiRoute.Settings)
-        val accounts = topBarTitleForRoute(UiRoute.Accounts)
+    fun `top bar title model uses active theme subtitle for settings and none for accounts`() {
+        val appearanceState = AppearanceController.initial(FakeGemUiRuntime.ready(), osDark = false)
+            .selectProfile(AppearanceProfileId("stock-goth-dark"))
+            .state
+        val settings = topBarTitleForRoute(UiRoute.Settings, appearanceState, EnglishGemTextCatalogue)
+        val accounts = topBarTitleForRoute(UiRoute.Accounts, appearanceState, EnglishGemTextCatalogue)
 
         assertEquals(GemTextKey.Settings, settings.titleKey)
-        assertNull(settings.subtitleKey)
+        assertEquals(GemTopBarSubtitle.Data("Goth Dark"), settings.subtitle)
         assertEquals(GemTextKey.Accounts, accounts.titleKey)
-        assertNull(accounts.subtitleKey)
+        assertEquals(GemTopBarSubtitle.None, accounts.subtitle)
     }
 
     @Test
@@ -86,7 +92,7 @@ class GemAppScaffoldTest {
     }
 
     @Test
-    fun `navigation theme toggle uses manual theme route and clears selected profile`() {
+    fun `navigation theme toggle uses manual theme route and preserves selected profile family`() {
         val selected = AppearanceController.initial(FakeGemUiRuntime.ready(), osDark = false)
             .selectProfile(AppearanceProfileId("stock-goth-dark"))
 
@@ -97,7 +103,7 @@ class GemAppScaffoldTest {
         )
 
         assertEquals(AppearanceMode.LIGHT, toggled.state.mode)
-        assertNull(toggled.state.selectedProfileId)
+        assertEquals(AppearanceProfileId("stock-goth-light"), toggled.state.selectedProfileId)
         assertFalse(toggled.state.toggleChecked)
     }
 

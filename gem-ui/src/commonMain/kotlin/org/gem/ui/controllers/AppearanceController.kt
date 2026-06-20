@@ -8,6 +8,7 @@ import org.gem.core.appearance.AppearanceFontFamily
 import org.gem.core.appearance.AppearanceMode
 import org.gem.core.appearance.AppearanceProfileId
 import org.gem.core.appearance.AppearanceProfileLoadResult
+import org.gem.core.appearance.AppearanceProfileModeSwitchResult
 import org.gem.core.appearance.AppearanceProfileName
 import org.gem.core.appearance.AppearanceProfileResetResult
 import org.gem.core.appearance.AppearanceProfileSaveResult
@@ -52,6 +53,28 @@ class AppearanceController(
         )
     }
 
+    fun resetCurrentMode(): AppearanceController =
+        when (val reset = runtime.appearanceProfileService.resetMode(state.mode)) {
+            is AppearanceProfileResetResult.Reset -> copy(
+                state = stateFrom(
+                    mode = state.mode,
+                    themePreference = state.themePreference,
+                    profileState = reset.state,
+                    availableFontFamilies = state.availableFontFamilies,
+                    errorKey = null,
+                ).copy(
+                    expandedPanel = state.expandedPanel,
+                    activeEditMode = state.activeEditMode,
+                    activeTextTarget = state.activeTextTarget,
+                    activeElementTarget = state.activeElementTarget,
+                    fontsVisible = state.fontsVisible,
+                ),
+            )
+            is AppearanceProfileResetResult.StorageFailed -> copy(
+                state = state.copy(errorKey = GemTextKey.ThemePreferenceSaveFailed),
+            )
+        }
+
     fun setManualTheme(
         mode: AppearanceMode,
         osDark: Boolean,
@@ -59,19 +82,22 @@ class AppearanceController(
         val preference = mode.toPreference()
         return when (runtime.themePreferenceService.savePreference(preference)) {
             ThemePreferenceSaveResult.Saved -> {
-                when (val reset = runtime.appearanceProfileService.resetMode(mode)) {
-                    is AppearanceProfileResetResult.Reset -> copy(
+                when (val switched = runtime.appearanceProfileService.switchModePreservingProfileFamily(
+                    targetMode = mode,
+                    sourceProfileId = state.selectedProfileId,
+                )) {
+                    is AppearanceProfileModeSwitchResult.Switched -> copy(
                         state = stateFrom(
                             mode = resolve(preference, osDark),
                             themePreference = preference,
-                            profileState = reset.state,
+                            profileState = switched.state,
                             availableFontFamilies = state.availableFontFamilies,
                             errorKey = null,
                         ),
                     )
-                    is AppearanceProfileResetResult.StorageFailed -> copy(
+                    is AppearanceProfileModeSwitchResult.StorageFailed -> copy(
                         state = state.copy(
-                            mode = mode,
+                            mode = resolve(preference, osDark),
                             themePreference = preference,
                             selectedProfileId = null,
                             currentDraft = systemDraft(mode, state.availableFontFamilies),
@@ -184,28 +210,6 @@ class AppearanceController(
                     .copy(hexInputInvalid = false),
             )
             is AppearanceColorParseResult.Invalid -> copy(state = state.copy(hexInputInvalid = true))
-        }
-
-    fun resetCurrentMode(): AppearanceController =
-        when (val reset = runtime.appearanceProfileService.resetMode(state.mode)) {
-            is AppearanceProfileResetResult.Reset -> copy(
-                state = stateFrom(
-                    mode = state.mode,
-                    themePreference = state.themePreference,
-                    profileState = reset.state,
-                    availableFontFamilies = state.availableFontFamilies,
-                    errorKey = null,
-                ).copy(
-                    expandedPanel = state.expandedPanel,
-                    activeEditMode = state.activeEditMode,
-                    activeTextTarget = state.activeTextTarget,
-                    activeElementTarget = state.activeElementTarget,
-                    fontsVisible = state.fontsVisible,
-                ),
-            )
-            is AppearanceProfileResetResult.StorageFailed -> copy(
-                state = state.copy(errorKey = GemTextKey.ThemePreferenceSaveFailed),
-            )
         }
 
     fun openSaveThemeDialog(): AppearanceController =

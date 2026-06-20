@@ -7,7 +7,7 @@ import kotlin.test.assertTrue
 class GemTextTest {
     @Test
     fun fixedKeysCoverPrototypeCopy() {
-        assertEquals(118, GemTextKey.fixedKeys.size)
+        assertEquals(119, GemTextKey.fixedKeys.size)
         assertTrue(GemTextKey.AppName in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.BrandInitials in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.BrandSubtitle in GemTextKey.fixedKeys)
@@ -35,6 +35,7 @@ class GemTextTest {
         assertTrue(GemTextKey.BlankStatus in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.Light in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.Dark in GemTextKey.fixedKeys)
+        assertTrue(GemTextKey.GemDefault in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.ThemePreferenceUnavailable in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.ThemePreferenceSaveFailed in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.Customise in GemTextKey.fixedKeys)
@@ -104,6 +105,7 @@ class GemTextTest {
         assertEquals("", catalogue.text(GemTextKey.BlankStatus))
         assertEquals("Light", catalogue.text(GemTextKey.Light))
         assertEquals("Dark", catalogue.text(GemTextKey.Dark))
+        assertEquals("GEM Default", catalogue.text(GemTextKey.GemDefault))
         assertEquals("Theme preference unavailable", catalogue.text(GemTextKey.ThemePreferenceUnavailable))
         assertEquals("Theme preference could not be saved", catalogue.text(GemTextKey.ThemePreferenceSaveFailed))
         assertEquals("Customise", catalogue.text(GemTextKey.Customise))

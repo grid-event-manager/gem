@@ -115,6 +115,34 @@ class AppearanceProfileService(
         }
     }
 
+    fun switchModePreservingProfileFamily(
+        targetMode: AppearanceMode,
+        sourceProfileId: AppearanceProfileId?,
+    ): AppearanceProfileModeSwitchResult {
+        val snapshot = loadMutableSnapshotOrReturnStorageFailure {
+            return AppearanceProfileModeSwitchResult.StorageFailed(it)
+        }
+        val state = stateFrom(snapshot, warning = null)
+        val sourceProfile = sourceProfileId
+            ?.let { id -> state.profiles.firstOrNull { it.id == id } }
+            ?: return AppearanceProfileModeSwitchResult.Switched(state)
+        val targetProfileId = counterpartProfileId(
+            targetMode = targetMode,
+            sourceProfile = sourceProfile,
+            profiles = state.profiles,
+        )
+        val nextSnapshot = snapshot.withActiveProfile(targetMode, targetProfileId)
+
+        return when (val saved = store.save(nextSnapshot)) {
+            AppearanceProfileStoreSaveResult.Saved -> AppearanceProfileModeSwitchResult.Switched(
+                state = stateFrom(nextSnapshot, warning = null),
+            )
+            is AppearanceProfileStoreSaveResult.StorageFailed -> AppearanceProfileModeSwitchResult.StorageFailed(
+                saved.message,
+            )
+        }
+    }
+
     private inline fun loadMutableSnapshotOrReturnStorageFailure(
         onStorageFailure: (String?) -> Nothing,
     ): AppearanceProfileStoreSnapshot =
@@ -175,6 +203,22 @@ class AppearanceProfileService(
             activeLightProfileId = null,
             activeDarkProfileId = null,
         )
+
+    private fun counterpartProfileId(
+        targetMode: AppearanceMode,
+        sourceProfile: AppearanceProfile,
+        profiles: List<AppearanceProfile>,
+    ): AppearanceProfileId? =
+        profiles
+            .filter { profile ->
+                profile.mode == targetMode &&
+                    profile.source == sourceProfile.source &&
+                    profile.id != sourceProfile.id &&
+                    profile.name.value.equals(sourceProfile.name.value, ignoreCase = true)
+            }
+            .sortedBy { it.id.value }
+            .firstOrNull()
+            ?.id
 
     private fun nextCustomProfileId(
         name: String,

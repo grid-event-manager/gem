@@ -65,6 +65,7 @@ sealed interface GemTextKey {
     data object BlankStatus : GemTextKey
     data object Light : GemTextKey
     data object Dark : GemTextKey
+    data object GemDefault : GemTextKey
     data object ThemePreferenceUnavailable : GemTextKey
     data object ThemePreferenceSaveFailed : GemTextKey
     data object Customise : GemTextKey
@@ -187,6 +188,7 @@ sealed interface GemTextKey {
             BlankStatus,
             Light,
             Dark,
+            GemDefault,
             ThemePreferenceUnavailable,
             ThemePreferenceSaveFailed,
             Customise,
@@ -316,6 +318,7 @@ object EnglishGemTextCatalogue : GemTextCatalogue {
         GemTextKey.BlankStatus -> ""
         GemTextKey.Light -> "Light"
         GemTextKey.Dark -> "Dark"
+        GemTextKey.GemDefault -> "GEM Default"
         GemTextKey.ThemePreferenceUnavailable -> "Theme preference unavailable"
         GemTextKey.ThemePreferenceSaveFailed -> "Theme preference could not be saved"
         GemTextKey.Customise -> "Customise"

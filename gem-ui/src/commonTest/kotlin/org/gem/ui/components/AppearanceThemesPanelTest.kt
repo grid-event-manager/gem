@@ -9,6 +9,7 @@ import org.gem.core.appearance.AppearanceProfileName
 import org.gem.core.appearance.AppearanceProfileSource
 import org.gem.core.appearance.AppearanceTextTarget
 import org.gem.ui.testing.controllerBackedAppearanceState
+import org.gem.ui.text.AppearanceProfileDisplayLabel
 import org.gem.ui.text.EnglishGemTextCatalogue
 import org.gem.ui.text.GemTextKey
 import kotlin.test.Test
@@ -47,8 +48,8 @@ class AppearanceThemesPanelTest {
         val stock = AppearanceProfileCatalogue.stockProfiles().first { it.mode == AppearanceMode.LIGHT }
         val custom = customProfile()
 
-        assertEquals("${stock.name.value} ${text.text(GemTextKey.Light)}", AppearanceThemesPanelInteraction.profileLabel(stock, text))
-        assertEquals("My Theme (${text.text(GemTextKey.Dark)})", AppearanceThemesPanelInteraction.profileLabel(custom, text))
+        assertEquals("${stock.name.value} ${text.text(GemTextKey.Light)}", AppearanceProfileDisplayLabel.profile(stock, text))
+        assertEquals("My Theme (${text.text(GemTextKey.Dark)})", AppearanceProfileDisplayLabel.profile(custom, text))
     }
 
     @Test
@@ -59,7 +60,7 @@ class AppearanceThemesPanelTest {
         )
 
         assertFailsWith<IllegalStateException> {
-            AppearanceThemesPanelInteraction.profileLabel(system, text)
+            AppearanceProfileDisplayLabel.profile(system, text)
         }
     }
 
