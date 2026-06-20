@@ -30,6 +30,20 @@ class GemDropdownsTest {
 
         assertEquals(Color(0xFF102030), GemMenuTextTokens.textColor(colors, enabled = true))
         assertEquals(Color(0xFF405060), GemMenuTextTokens.textColor(colors, enabled = false))
+        assertEquals(
+            Color(0xFF405060),
+            GemDropdownTokens.menuTextColor(colors, GemDropdownOptionVisualTone.PLACEHOLDER),
+        )
         assertEquals(typeScale.menuItem, GemMenuTextTokens.textStyle(typeScale))
+    }
+
+    @Test
+    fun dropdownOptionVisualToneDefaultsToClickability() {
+        assertEquals(GemDropdownOptionVisualTone.DEFAULT, GemDropdownOption("value", "Value").visualTone)
+        assertEquals(GemDropdownOptionVisualTone.DISABLED, GemDropdownOption<String>(null, "Label", enabled = false).visualTone)
+        assertEquals(
+            GemDropdownOptionVisualTone.PLACEHOLDER,
+            GemDropdownOption<String>(null, "Label", visualTone = GemDropdownOptionVisualTone.PLACEHOLDER).visualTone,
+        )
     }
 }

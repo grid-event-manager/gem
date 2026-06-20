@@ -40,6 +40,7 @@ internal object AppearanceThemesPanelInteraction {
                 null,
                 textCatalogue.text(GemTextKey.ChooseTheme),
                 enabled = false,
+                visualTone = GemDropdownOptionVisualTone.DISABLED,
             ),
         ) + state.profiles.map { profile ->
             GemDropdownOption(

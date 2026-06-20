@@ -38,10 +38,21 @@ import org.gem.ui.design.GemColors
 import org.gem.ui.design.GemTheme
 import org.gem.ui.design.GemTypeScale
 
+enum class GemDropdownOptionVisualTone {
+    DEFAULT,
+    PLACEHOLDER,
+    DISABLED,
+}
+
 data class GemDropdownOption<T>(
     val value: T?,
     val label: String,
     val enabled: Boolean = true,
+    val visualTone: GemDropdownOptionVisualTone = if (enabled) {
+        GemDropdownOptionVisualTone.DEFAULT
+    } else {
+        GemDropdownOptionVisualTone.DISABLED
+    },
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -264,6 +275,7 @@ private fun <T> GemDropdownMenuItems(
         GemDropdownMenuItem(
             label = option.label,
             enabled = option.enabled,
+            visualTone = option.visualTone,
             onClick = { onSelected(option.value) },
         )
     }
@@ -273,6 +285,7 @@ private fun <T> GemDropdownMenuItems(
 private fun GemDropdownMenuItem(
     label: String,
     enabled: Boolean,
+    visualTone: GemDropdownOptionVisualTone,
     onClick: () -> Unit,
 ) {
     val colors = GemTheme.colors
@@ -282,7 +295,7 @@ private fun GemDropdownMenuItem(
             Text(
                 text = label,
                 style = GemMenuTextTokens.textStyle(GemTheme.typeScale),
-                color = GemMenuTextTokens.textColor(colors, enabled),
+                color = GemDropdownTokens.menuTextColor(colors, visualTone),
             )
         },
         onClick = onClick,
@@ -292,8 +305,8 @@ private fun GemDropdownMenuItem(
             vertical = spacing.menuItemVerticalPadding,
         ),
         colors = MenuDefaults.itemColors(
-            textColor = GemMenuTextTokens.textColor(colors, enabled = true),
-            disabledTextColor = GemMenuTextTokens.textColor(colors, enabled = false),
+            textColor = GemDropdownTokens.menuTextColor(colors, visualTone),
+            disabledTextColor = GemDropdownTokens.menuTextColor(colors, GemDropdownOptionVisualTone.DISABLED),
         ),
     )
 }
@@ -307,4 +320,15 @@ internal object GemDropdownTokens {
 
     fun selectorTextStyle(typeScale: GemTypeScale): TextStyle =
         typeScale.fieldText
+
+    fun menuTextColor(
+        colors: GemColors,
+        visualTone: GemDropdownOptionVisualTone,
+    ): Color =
+        when (visualTone) {
+            GemDropdownOptionVisualTone.DEFAULT -> GemMenuTextTokens.textColor(colors, enabled = true)
+            GemDropdownOptionVisualTone.PLACEHOLDER,
+            GemDropdownOptionVisualTone.DISABLED,
+            -> GemMenuTextTokens.textColor(colors, enabled = false)
+        }
 }

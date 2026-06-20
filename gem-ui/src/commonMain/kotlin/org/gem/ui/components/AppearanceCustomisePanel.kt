@@ -89,25 +89,19 @@ private fun AppearanceModeSelectors(
         horizontalArrangement = Arrangement.spacedBy(GemTheme.spacing.appearanceSelectorRowGap),
     ) {
         GemUnlabelledDropdownField(
-            selectedLabel = AppearanceCustomisePanelInteraction.textTargetLabel(
-                state.activeTextTarget,
-                textCatalogue,
-            ),
+            selectedLabel = AppearanceCustomisePanelInteraction.textTargetSelectedLabel(state, textCatalogue),
             placeholderLabel = textCatalogue.text(GemTextKey.Text),
             options = AppearanceCustomisePanelInteraction.textTargetOptions(textCatalogue),
-            onOpen = { callbacks.onTextTargetSelected(state.activeTextTarget) },
+            onOpen = callbacks.onTextTargetSelectorOpened,
             onSelected = { selected -> selected?.let(callbacks.onTextTargetSelected) },
             enabled = enabled,
             modifier = Modifier.weight(1f),
         )
         GemUnlabelledDropdownField(
-            selectedLabel = AppearanceCustomisePanelInteraction.elementTargetLabel(
-                state.activeElementTarget,
-                textCatalogue,
-            ),
+            selectedLabel = AppearanceCustomisePanelInteraction.elementTargetSelectedLabel(state, textCatalogue),
             placeholderLabel = textCatalogue.text(GemTextKey.Element),
             options = AppearanceCustomisePanelInteraction.elementTargetOptions(textCatalogue),
-            onOpen = { callbacks.onElementTargetSelected(state.activeElementTarget) },
+            onOpen = callbacks.onElementTargetSelectorOpened,
             onSelected = { selected -> selected?.let(callbacks.onElementTargetSelected) },
             enabled = enabled,
             modifier = Modifier.weight(1f),
@@ -147,12 +141,30 @@ internal object AppearanceCustomisePanelInteraction {
     fun layoutOrder(state: AppearanceUiState): List<String> =
         if (state.fontsVisible) fontsVisibleOrder else collapsedOrder
 
+    fun fontOptions(
+        state: AppearanceUiState,
+        textCatalogue: GemTextCatalogue,
+    ): List<GemDropdownOption<AppearanceFontFamily>> =
+        listOf<GemDropdownOption<AppearanceFontFamily>>(
+            GemDropdownOption(
+                null,
+                textCatalogue.text(GemTextKey.Fonts),
+                enabled = false,
+                visualTone = GemDropdownOptionVisualTone.DISABLED,
+            ),
+        ) + state.availableFontFamilies.map { family ->
+            GemDropdownOption(
+                family,
+                family.value,
+            )
+        }
+
     fun textTargetOptions(textCatalogue: GemTextCatalogue): List<GemDropdownOption<AppearanceTextTarget>> =
         listOf<GemDropdownOption<AppearanceTextTarget>>(
             GemDropdownOption(
                 null,
                 textCatalogue.text(GemTextKey.Text),
-                enabled = false,
+                visualTone = GemDropdownOptionVisualTone.PLACEHOLDER,
             ),
         ) + AppearanceTargetCatalogue.textTargets.map { spec ->
             GemDropdownOption(
@@ -166,29 +178,12 @@ internal object AppearanceCustomisePanelInteraction {
             GemDropdownOption(
                 null,
                 textCatalogue.text(GemTextKey.Element),
-                enabled = false,
+                visualTone = GemDropdownOptionVisualTone.PLACEHOLDER,
             ),
         ) + AppearanceTargetCatalogue.elementTargets.map { spec ->
             GemDropdownOption(
                 spec.target,
                 textCatalogue.text(spec.labelKey),
-            )
-        }
-
-    fun fontOptions(
-        state: AppearanceUiState,
-        textCatalogue: GemTextCatalogue,
-    ): List<GemDropdownOption<AppearanceFontFamily>> =
-        listOf<GemDropdownOption<AppearanceFontFamily>>(
-            GemDropdownOption(
-                null,
-                textCatalogue.text(GemTextKey.Fonts),
-                enabled = false,
-            ),
-        ) + state.availableFontFamilies.map { family ->
-            GemDropdownOption(
-                family,
-                family.value,
             )
         }
 
@@ -203,4 +198,24 @@ internal object AppearanceCustomisePanelInteraction {
         textCatalogue: GemTextCatalogue,
     ): String =
         textCatalogue.text(AppearanceTargetCatalogue.elementTargets.first { it.target == target }.labelKey)
+
+    fun textTargetSelectedLabel(
+        state: AppearanceUiState,
+        textCatalogue: GemTextCatalogue,
+    ): String? =
+        if (state.textTargetSelectorHasConcreteSelection) {
+            textTargetLabel(state.activeTextTarget, textCatalogue)
+        } else {
+            null
+        }
+
+    fun elementTargetSelectedLabel(
+        state: AppearanceUiState,
+        textCatalogue: GemTextCatalogue,
+    ): String? =
+        if (state.elementTargetSelectorHasConcreteSelection) {
+            elementTargetLabel(state.activeElementTarget, textCatalogue)
+        } else {
+            null
+        }
 }

@@ -24,6 +24,8 @@ data class AppearanceUiState(
     val activeEditMode: AppearanceEditMode = AppearanceEditMode.TEXT,
     val activeTextTarget: AppearanceTextTarget = AppearanceTextTarget.TITLE_BAR,
     val activeElementTarget: AppearanceElementTarget = AppearanceElementTarget.PAGE_BACKGROUND,
+    val textTargetSelectorHasConcreteSelection: Boolean = false,
+    val elementTargetSelectorHasConcreteSelection: Boolean = false,
     val fontsVisible: Boolean = false,
     val invalidRgbChannels: Set<AppearanceRgbChannel> = emptySet(),
     val hexInputInvalid: Boolean = false,

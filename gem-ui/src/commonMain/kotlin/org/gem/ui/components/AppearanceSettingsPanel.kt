@@ -21,6 +21,8 @@ import org.gem.ui.text.GemTextKey
 
 data class AppearancePanelCallbacks(
     val onExpandedPanelChanged: (AppearanceExpandedPanel) -> Unit,
+    val onTextTargetSelectorOpened: () -> Unit,
+    val onElementTargetSelectorOpened: () -> Unit,
     val onTextTargetSelected: (AppearanceTextTarget) -> Unit,
     val onElementTargetSelected: (AppearanceElementTarget) -> Unit,
     val onFontSelected: (AppearanceFontFamily) -> Unit,

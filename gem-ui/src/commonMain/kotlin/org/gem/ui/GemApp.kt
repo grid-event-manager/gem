@@ -503,11 +503,17 @@ fun GemApp(
                             onExpandedPanelChanged = { panel ->
                                 appearanceController = appearanceController.setExpandedPanel(panel)
                             },
+                            onTextTargetSelectorOpened = {
+                                appearanceController = appearanceController.openTextTargetSelector()
+                            },
+                            onElementTargetSelectorOpened = {
+                                appearanceController = appearanceController.openElementTargetSelector()
+                            },
                             onTextTargetSelected = { target ->
-                                appearanceController = appearanceController.updateTextTarget(target)
+                                appearanceController = appearanceController.selectTextTarget(target)
                             },
                             onElementTargetSelected = { target ->
-                                appearanceController = appearanceController.updateElementTarget(target)
+                                appearanceController = appearanceController.selectElementTarget(target)
                             },
                             onFontSelected = { family ->
                                 appearanceController = appearanceController.updateFont(family)

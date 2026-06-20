@@ -140,7 +140,27 @@ class AppearanceController(
             -> copy(state = state.copy(errorKey = GemTextKey.ThemePreferenceUnavailable))
         }
 
-    fun updateTextTarget(target: AppearanceTextTarget): AppearanceController {
+    fun openTextTargetSelector(): AppearanceController =
+        copy(
+            state = state.copy(
+                activeEditMode = AppearanceEditMode.TEXT,
+                fontsVisible = true,
+                invalidRgbChannels = emptySet(),
+                hexInputInvalid = false,
+            ),
+        )
+
+    fun openElementTargetSelector(): AppearanceController =
+        copy(
+            state = state.copy(
+                activeEditMode = AppearanceEditMode.ELEMENT,
+                fontsVisible = false,
+                invalidRgbChannels = emptySet(),
+                hexInputInvalid = false,
+            ),
+        )
+
+    fun selectTextTarget(target: AppearanceTextTarget): AppearanceController {
         val carriedColor = state.activeColor
         val nextState = state.withDraftIfChanged(state.currentDraft.withTextColor(target, carriedColor))
 
@@ -148,6 +168,7 @@ class AppearanceController(
             state = nextState.copy(
                 activeEditMode = AppearanceEditMode.TEXT,
                 activeTextTarget = target,
+                textTargetSelectorHasConcreteSelection = true,
                 fontsVisible = true,
                 invalidRgbChannels = emptySet(),
                 hexInputInvalid = false,
@@ -155,7 +176,7 @@ class AppearanceController(
         )
     }
 
-    fun updateElementTarget(target: AppearanceElementTarget): AppearanceController {
+    fun selectElementTarget(target: AppearanceElementTarget): AppearanceController {
         val carriedColor = state.activeColor
         val nextState = state.withDraftIfChanged(state.currentDraft.withElementColor(target, carriedColor))
 
@@ -163,6 +184,7 @@ class AppearanceController(
             state = nextState.copy(
                 activeEditMode = AppearanceEditMode.ELEMENT,
                 activeElementTarget = target,
+                elementTargetSelectorHasConcreteSelection = true,
                 fontsVisible = false,
                 invalidRgbChannels = emptySet(),
                 hexInputInvalid = false,
