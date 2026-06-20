@@ -176,7 +176,7 @@ class AppearanceTargetCatalogueTest {
                 typeSlot = AppearanceTypeSlot.BRAND_TITLE,
                 mapperOutput = "GemColors.brandInitialsInk; GemTypeScale.brandTitle",
                 centralConsumer = "GemPlatformTopBarChrome title slot",
-                proofOwner = "GemAppScaffoldTest; AppearanceDesignTokenMapperTest",
+                proofOwner = "GemAppScaffoldTest; AppearanceControllerTest; AppearanceDesignTokenMapperTest",
                 redPathAssertion = "Settings and Accounts top-bar titles must not render brand subtitle or body styling.",
             ),
             TextTargetCoverage(
@@ -221,7 +221,7 @@ class AppearanceTargetCatalogueTest {
                 typeSlot = AppearanceTypeSlot.BODY,
                 mapperOutput = "GemColors.ink; GemTypeScale.fieldText",
                 centralConsumer = "GemFieldTokens and GemDropdownTokens selector text",
-                proofOwner = "GemFieldsTest; GemDropdownsTest; AppearanceDesignTokenMapperTest",
+                proofOwner = "GemFieldsTest; GemDropdownsTest; AppearanceControllerTest; AppearanceDesignTokenMapperTest",
                 redPathAssertion = "Field text must not be rendered through button, menu, or small-label tokens.",
             ),
             TextTargetCoverage(
@@ -239,7 +239,7 @@ class AppearanceTargetCatalogueTest {
                 typeSlot = AppearanceTypeSlot.BUTTON,
                 mapperOutput = "GemColors.buttonLabelInk and primaryInk; GemTypeScale.button",
                 centralConsumer = "GemButtons and action-card button owners",
-                proofOwner = "AppearanceDesignTokenMapperTest",
+                proofOwner = "AppearanceControllerTest; AppearanceDesignTokenMapperTest",
                 redPathAssertion = "Button-label changes must not alter ThemeModeToggle labels.",
             ),
             TextTargetCoverage(
@@ -248,7 +248,7 @@ class AppearanceTargetCatalogueTest {
                 typeSlot = AppearanceTypeSlot.MENU_ITEM,
                 mapperOutput = "GemColors.topBarMenuInk; GemTypeScale.menuItem",
                 centralConsumer = "GemMenuTextTokens plus Android/JVM overflow menu chrome",
-                proofOwner = "GemDropdownsTest; GemPlatformOverflowMenuChromeTest; AppearanceDesignTokenMapperTest",
+                proofOwner = "GemDropdownsTest; GemPlatformOverflowMenuChromeTest; AppearanceControllerTest; AppearanceDesignTokenMapperTest",
                 redPathAssertion = "Menu rows must not read colors.secondary.",
             ),
             TextTargetCoverage(
@@ -266,7 +266,7 @@ class AppearanceTargetCatalogueTest {
                 typeSlot = AppearanceTypeSlot.SMALL_LABEL,
                 mapperOutput = "GemColors.navigationInk; GemTypeScale.backLabel",
                 centralConsumer = "SectionBackNav",
-                proofOwner = "SectionBackNavTest; AppearanceDesignTokenMapperTest",
+                proofOwner = "SectionBackNavTest; AppearanceControllerTest; AppearanceDesignTokenMapperTest",
                 redPathAssertion = "Back label and arrow must not read smallLabel or colors.secondary directly.",
             ),
             TextTargetCoverage(
@@ -275,7 +275,7 @@ class AppearanceTargetCatalogueTest {
                 typeSlot = AppearanceTypeSlot.SMALL_LABEL,
                 mapperOutput = "GemColors.themeToggleLabelInk; GemTypeScale.themeToggleLabel",
                 centralConsumer = "ThemeModeToggle",
-                proofOwner = "ThemeModeToggleTest; AppearanceDesignTokenMapperTest",
+                proofOwner = "ThemeModeToggleTest; AppearanceControllerTest; AppearanceDesignTokenMapperTest",
                 redPathAssertion = "Theme toggle labels must not alias button labels.",
             ),
         )
@@ -286,7 +286,7 @@ class AppearanceTargetCatalogueTest {
                 colorSlot = AppearanceElementColorSlot.PAGE,
                 mapperOutput = "GemColors.page",
                 centralConsumer = "GemAppScaffold page surface",
-                proofOwner = "GemDesignTokenTest; AppearancePaletteCoverageTest",
+                proofOwner = "AppearanceControllerTest; GemDesignTokenTest; AppearancePaletteCoverageTest",
                 redPathAssertion = "Page background must not be a page-local colour.",
             ),
             ElementTargetCoverage(

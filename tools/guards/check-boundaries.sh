@@ -102,7 +102,7 @@ APPEARANCE_SYSTEM_SOURCE_PATTERN='AppearanceProfileSource\.SYSTEM'
 APPEARANCE_PROFILE_COMPLETION_CALL_PATTERN='AppearanceProfileCompletion\.(completeTextColors|completeElementColors|completeTextFonts)'
 APPEARANCE_NEW_ELEMENT_LABEL_PATTERN='"(Accent text|Error text|Status text|Menu disabled text|Interactive hover text)"'
 APPEARANCE_NEW_ELEMENT_TARGET_KEY_PATTERN='AppearanceElement(AccentText|ErrorText|StatusText|MenuDisabledText|InteractiveHoverText)'
-APPEARANCE_PROTOTYPE_LEAKAGE_PATTERN='appearance-customizer|WebView|<script|color-picker\.js|tokens\.js'
+APPEARANCE_PROTOTYPE_LEAKAGE_PATTERN='appearance-customizer|WebView|<script|color-picker\.js|tokens\.js|index\.html'
 APPEARANCE_STALE_MODE_CONTROL_PATTERN='Text style|Area colour|RadioButton|GemSegmentButton|SegmentButton'
 APPEARANCE_LOCAL_STYLE_PATTERN='Color\(|#[0-9A-Fa-f]{6}|\.dp|FontWeight|fontSize|RoundedCornerShape'
 APPEARANCE_DIRECT_STORAGE_PLATFORM_PATTERN='ThemePreferenceService|AppearanceProfileStore|FileAppearanceProfileStore|PreferenceFileStorage|PlatformFontCatalogue|PlatformFontFamilyResolver|GraphicsEnvironment|SystemFonts'
@@ -112,9 +112,15 @@ APPEARANCE_SETTINGS_CONTENT_TITLE_PATTERN='GemTextKey\.Settings|textCatalogue\.t
 APPEARANCE_ACCOUNTS_CONTENT_TITLE_PATTERN='GemTextKey\.Accounts|textCatalogue\.text\([[:space:]]*GemTextKey\.Accounts[[:space:]]*\)'
 APPEARANCE_THEME_TOGGLE_NOOP_PATTERN='AppearanceTextColorSlot\.THEME_TOGGLE[[:space:]]*->[[:space:]]*this'
 APPEARANCE_LEDGER_SECONDARY_CONSUMER_PATTERN='colors\.secondary'
+APPEARANCE_SUBTITLE_KEY_PATTERN='(^|[^[:alnum:]_])subtitleKey([^[:alnum:]_]|$)'
+APPEARANCE_LOCAL_PROFILE_LABEL_PATTERN='(^|[^[:alnum:]_])profileLabel([^[:alnum:]_]|$)'
+APPEARANCE_SELECTOR_OPEN_MUTATION_PATTERN='on(Text|Element)TargetSelectorOpened[^\n]*select(Text|Element)Target|open(Text|Element)TargetSelector[^\n]*select(Text|Element)Target'
+APPEARANCE_SELECTED_INK_SEGMENT_PATTERN='selectedInk'
+APPEARANCE_LOCAL_RGB_HEX_STATE_PATTERN='(rgb|Rgb|hex|Hex)[A-Za-z0-9_]*[[:space:]]+by[[:space:]]+remember|remember[[:space:]]*\([^)]*\)[[:space:]]*\{[[:space:]]*mutableStateOf\([^)]*(rgb|Rgb|hex|Hex)'
+APPEARANCE_SCREEN_LOCAL_FONT_PATTERN='fontFamily[[:space:]]*='
 APPEARANCE_CURRENT_STREAM_FRAGMENT='HS003'
 APPEARANCE_CURRENT_TRACK_PREFIX='B'
-APPEARANCE_CURRENT_TRACK_SUFFIX='1'
+APPEARANCE_CURRENT_TRACK_SUFFIX='2'
 APPEARANCE_CURRENT_TRACK_LABEL="${APPEARANCE_CURRENT_TRACK_PREFIX}${APPEARANCE_CURRENT_TRACK_SUFFIX}"
 APPEARANCE_CURRENT_TRACK_LABEL_LOWER="${APPEARANCE_CURRENT_TRACK_LABEL,,}"
 APPEARANCE_PUBLIC_WORKSTREAM_LABEL_PATTERN="\\b${APPEARANCE_CURRENT_TRACK_LABEL}\\b|Track${APPEARANCE_CURRENT_TRACK_LABEL}|track_${APPEARANCE_CURRENT_TRACK_LABEL_LOWER}|track-${APPEARANCE_CURRENT_TRACK_LABEL_LOWER}|${APPEARANCE_CURRENT_STREAM_FRAGMENT}_TRACK_${APPEARANCE_CURRENT_TRACK_LABEL}|${APPEARANCE_CURRENT_STREAM_FRAGMENT}-${APPEARANCE_CURRENT_TRACK_LABEL}"
@@ -362,6 +368,43 @@ check_gem_colors_palette_coverage() {
     check_matching_name_sets "appearance palette coverage matches GemColors constructor" \
         "$constructor_names" \
         "$coverage_names"
+}
+
+check_appearance_target_placeholders_selectable() {
+    local path="gem-ui/src/commonMain/kotlin/org/gem/ui/components/AppearanceCustomisePanel.kt"
+
+    if [[ ! -e "$path" ]]; then
+        echo "ERROR: appearance target placeholder scan missing $path"
+        failures=1
+        return
+    fi
+
+    local output
+    local status
+    set +e
+    output="$(perl -0ne '
+        my $content = $_;
+        for my $key ("Text", "Element") {
+            while ($content =~ /GemTextKey\.$key/g) {
+                my $window = substr($content, pos($content), 260);
+                print "$ARGV: GemTextKey.$key placeholder must remain selectable\n" if $window =~ /enabled\s*=\s*false/;
+            }
+        }
+    ' "$path" 2>&1)"
+    status="$?"
+    set -e
+
+    if [[ "$status" -ne 0 ]]; then
+        echo "ERROR: appearance target placeholder scan failed"
+        echo "$output"
+        failures=1
+    elif [[ -n "$output" ]]; then
+        echo "FAIL: appearance Text/Element placeholders stay selectable"
+        echo "$output"
+        failures=1
+    else
+        echo "PASS: appearance Text/Element placeholders stay selectable"
+    fi
 }
 
 is_allowed_stale_gem_identity_hit() {
@@ -2408,6 +2451,52 @@ check_no_hits \
     "$APPEARANCE_THEME_TOGGLE_NOOP_PATTERN" \
     "${appearance_mapper_targets[@]}"
 
+check_exact_pattern_count \
+    "appearance reset profile route has single explicit owner" \
+    'resetMode\(' \
+    1 \
+    "gem-ui/src/commonMain/kotlin/org/gem/ui/controllers/AppearanceController.kt"
+
+check_required_hits \
+    "appearance manual toggle preserves profile family route" \
+    'switchModePreservingProfileFamily\(' \
+    "gem-ui/src/commonMain/kotlin/org/gem/ui/controllers/AppearanceController.kt"
+
+check_no_hits \
+    "appearance top-bar subtitle uses model not local key" \
+    "$APPEARANCE_SUBTITLE_KEY_PATTERN" \
+    "${appearance_ui_production_targets[@]}"
+
+check_no_hits \
+    "appearance top-bar profile label has no local shadow state" \
+    "$APPEARANCE_LOCAL_PROFILE_LABEL_PATTERN" \
+    "${appearance_ui_production_targets[@]}"
+
+check_no_hits \
+    "appearance target selector open does not mutate selected target" \
+    "$APPEARANCE_SELECTOR_OPEN_MUTATION_PATTERN" \
+    "gem-ui/src/commonMain/kotlin/org/gem/ui/GemApp.kt" \
+    "gem-ui/src/commonMain/kotlin/org/gem/ui/components/AppearanceCustomisePanel.kt"
+
+check_appearance_target_placeholders_selectable
+
+check_no_hits \
+    "appearance segmented selected label does not read selectedInk" \
+    "$APPEARANCE_SELECTED_INK_SEGMENT_PATTERN" \
+    "gem-ui/src/commonMain/kotlin/org/gem/ui/components/GemSegmentButton.kt"
+
+check_no_hits \
+    "appearance colour picker has no independent RGB or hex state" \
+    "$APPEARANCE_LOCAL_RGB_HEX_STATE_PATTERN" \
+    "gem-ui/src/commonMain/kotlin/org/gem/ui/components/AppearanceCustomisePanel.kt" \
+    "gem-ui/src/commonMain/kotlin/org/gem/ui/components/GemColorPicker.kt"
+
+check_no_hits \
+    "appearance screens have no local font application" \
+    "$APPEARANCE_SCREEN_LOCAL_FONT_PATTERN" \
+    "${appearance_settings_targets[@]}" \
+    "gem-ui/src/commonMain/kotlin/org/gem/ui/screens/SettingsScreen.kt"
+
 check_no_hits \
     "appearance ledger consumers do not read stale secondary token" \
     "$APPEARANCE_LEDGER_SECONDARY_CONSUMER_PATTERN" \
@@ -3052,6 +3141,36 @@ check_pattern_matches \
     "self-test appearance direct storage platform pattern" \
     "$APPEARANCE_DIRECT_STORAGE_PLATFORM_PATTERN" \
     'PlatformFontCatalogue { emptyList() }'
+
+check_pattern_matches \
+    "self-test appearance subtitle-key pattern" \
+    "$APPEARANCE_SUBTITLE_KEY_PATTERN" \
+    'val subtitleKey = GemTextKey.BrandSubtitle'
+
+check_pattern_matches \
+    "self-test appearance local profile label pattern" \
+    "$APPEARANCE_LOCAL_PROFILE_LABEL_PATTERN" \
+    'val profileLabel = AppearanceProfileDisplayLabel.current(state, textCatalogue)'
+
+check_pattern_matches \
+    "self-test appearance selector-open mutation pattern" \
+    "$APPEARANCE_SELECTOR_OPEN_MUTATION_PATTERN" \
+    'onTextTargetSelectorOpened = { appearanceController = appearanceController.selectTextTarget(AppearanceTextTarget.TITLE_BAR) }'
+
+check_pattern_matches \
+    "self-test appearance selectedInk segment pattern" \
+    "$APPEARANCE_SELECTED_INK_SEGMENT_PATTERN" \
+    'contentColor = colors.selectedInk'
+
+check_pattern_matches \
+    "self-test appearance local RGB state pattern" \
+    "$APPEARANCE_LOCAL_RGB_HEX_STATE_PATTERN" \
+    'val rgbValue by remember(state) { mutableStateOf("255") }'
+
+check_pattern_matches \
+    "self-test appearance local font application pattern" \
+    "$APPEARANCE_SCREEN_LOCAL_FONT_PATTERN" \
+    'Text("Preview", fontFamily = FontFamily.Serif)'
 
 check_pattern_matches \
     "self-test ephemeral workstream label detector catches current raw track label" \

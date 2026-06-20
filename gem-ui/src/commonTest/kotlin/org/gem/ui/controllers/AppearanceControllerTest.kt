@@ -134,6 +134,33 @@ class AppearanceControllerTest {
     }
 
     @Test
+    fun colourEditsRefreshOneActiveDraftRouteForSwatchRgbNumericAndHexInputs() {
+        val controller = AppearanceController.initial(FakeGemUiRuntime.ready(), osDark = false)
+            .selectElementTarget(AppearanceElementTarget.PAGE_BACKGROUND)
+            .updateColor(AppearanceColor.require("#FFFFFF"))
+            .updateRgb(AppearanceRgbChannel.R, "0")
+            .updateRgb(AppearanceRgbChannel.G, 138)
+            .updateRgb(AppearanceRgbChannel.B, "255")
+
+        assertEquals("#008AFF", controller.state.activeColor.value)
+        assertEquals(
+            "#008AFF",
+            controller.state.currentDraft.elementColors.getValue(AppearanceElementTarget.PAGE_BACKGROUND).value,
+        )
+        assertTrue(controller.state.invalidRgbChannels.isEmpty())
+        assertFalse(controller.state.hexInputInvalid)
+
+        val hex = controller.updateHex("#ffffff")
+
+        assertEquals("#FFFFFF", hex.state.activeColor.value)
+        assertEquals(
+            "#FFFFFF",
+            hex.state.currentDraft.elementColors.getValue(AppearanceElementTarget.PAGE_BACKGROUND).value,
+        )
+        assertFalse(hex.state.hexInputInvalid)
+    }
+
+    @Test
     fun targetOpenPreservesDraftAndTogglesFontsWithoutConcreteSelection() {
         val textColour = AppearanceColor.require("#224466")
         val textActive = AppearanceController.initial(FakeGemUiRuntime.ready(), osDark = false)
@@ -204,6 +231,40 @@ class AppearanceControllerTest {
             AppearanceFontFamily("Display"),
             themeToggle.state.currentDraft.textFonts.getValue(AppearanceTextTarget.THEME_TOGGLE_LABELS),
         )
+    }
+
+    @Test
+    fun fontSelectionUpdatesEveryVisibleTextTargetThroughTheSameDraftRoute() {
+        val requested = AppearanceFontFamily("display")
+        val resolved = AppearanceFontFamily("Display")
+        val runtime = FakeGemUiRuntime.ready(
+            availableFontFamilies = listOf(resolved, AppearanceFontFamily("sans-serif")),
+        )
+        val final = listOf(
+            AppearanceTextTarget.TITLE_BAR,
+            AppearanceTextTarget.FIELD_TEXT,
+            AppearanceTextTarget.BACK_BUTTON,
+            AppearanceTextTarget.THEME_TOGGLE_LABELS,
+            AppearanceTextTarget.BUTTON_LABELS,
+            AppearanceTextTarget.MENU_LABELS,
+        ).fold(AppearanceController.initial(runtime, osDark = false)) { controller, target ->
+            controller
+                .selectTextTarget(target)
+                .updateFont(requested)
+        }
+
+        listOf(
+            AppearanceTextTarget.TITLE_BAR,
+            AppearanceTextTarget.FIELD_TEXT,
+            AppearanceTextTarget.BACK_BUTTON,
+            AppearanceTextTarget.THEME_TOGGLE_LABELS,
+            AppearanceTextTarget.BUTTON_LABELS,
+            AppearanceTextTarget.MENU_LABELS,
+        ).forEach { target ->
+            assertEquals(resolved, final.state.currentDraft.textFonts.getValue(target), target.name)
+        }
+        assertTrue(final.state.currentDraft.dirty)
+        assertTrue(final.state.fontsVisible)
     }
 
     @Test

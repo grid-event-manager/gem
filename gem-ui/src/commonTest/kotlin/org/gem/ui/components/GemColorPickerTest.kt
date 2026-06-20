@@ -33,6 +33,20 @@ class GemColorPickerTest {
     }
 
     @Test
+    fun selectedColourRefreshesHexAndRgbFeedbackTogether() {
+        val first = GemColorPickerFeedback.from(AppearanceColor.require("#FFFFFF"))
+        val second = GemColorPickerFeedback.from(AppearanceColor.require("#008AFF"))
+
+        assertEquals(GemColorPickerFeedback("#FFFFFF", 255, 255, 255), first)
+        assertEquals(GemColorPickerFeedback("#008AFF", 0, 138, 255), second)
+    }
+
+    @Test
+    fun hexDisplayAlwaysUsesUppercaseCanonicalForm() {
+        assertEquals("#008AFF", GemColorPickerInteraction.hexDisplay(AppearanceColor.require("#008aff")))
+    }
+
+    @Test
     fun rgbNumericInputRestoresPreviousValidValueOnInvalidInput() {
         assertEquals(GemRgbNumericUpdate.Valid(17, "17"), GemRgbSliderRowInteraction.numericUpdate(42, "17"))
         assertEquals(GemRgbNumericUpdate.Invalid("42"), GemRgbSliderRowInteraction.numericUpdate(42, "300"))
@@ -63,5 +77,24 @@ class GemColorPickerTest {
         assertEquals(28.dp, spacing.appearanceCompactFieldHeight)
         assertEquals(4.dp, spacing.appearanceCompactFieldHorizontalPadding)
         assertEquals(6.dp, shapes.compactControlRadius)
+    }
+
+    private data class GemColorPickerFeedback(
+        val hex: String,
+        val red: Int,
+        val green: Int,
+        val blue: Int,
+    ) {
+        companion object {
+            fun from(color: AppearanceColor): GemColorPickerFeedback {
+                val channels = GemColorPickerInteraction.channels(color)
+                return GemColorPickerFeedback(
+                    hex = GemColorPickerInteraction.hexDisplay(color),
+                    red = channels.getValue(AppearanceRgbChannel.R),
+                    green = channels.getValue(AppearanceRgbChannel.G),
+                    blue = channels.getValue(AppearanceRgbChannel.B),
+                )
+            }
+        }
     }
 }

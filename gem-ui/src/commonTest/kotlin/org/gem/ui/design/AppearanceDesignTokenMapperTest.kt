@@ -171,43 +171,51 @@ class AppearanceDesignTokenMapperTest {
     fun renderedTextTargetsMapToIndependentTypeScaleSlots() {
         val base = systemDraft(AppearanceMode.LIGHT)
         val default = AppearanceFontFamily("sans-serif")
+        val title = AppearanceFontFamily("TitleFont")
         val field = AppearanceFontFamily("FieldFont")
         val back = AppearanceFontFamily("BackFont")
         val toggle = AppearanceFontFamily("ToggleFont")
+        val button = AppearanceFontFamily("ButtonFont")
         val small = AppearanceFontFamily("SmallFont")
         val menu = AppearanceFontFamily("MenuFont")
         val draft = base.copy(
             textFonts = base.textFonts +
+                (AppearanceTextTarget.TITLE_BAR to title) +
                 (AppearanceTextTarget.FIELD_TEXT to field) +
                 (AppearanceTextTarget.BACK_BUTTON to back) +
                 (AppearanceTextTarget.THEME_TOGGLE_LABELS to toggle) +
+                (AppearanceTextTarget.BUTTON_LABELS to button) +
                 (AppearanceTextTarget.SMALL_LABELS to small) +
                 (AppearanceTextTarget.MENU_LABELS to menu),
         )
 
         val tokens = AppearanceDesignTokenMapper.tokens(
             draft = draft,
-            availableFonts = listOf(default, field, back, toggle, small, menu),
+            availableFonts = listOf(default, title, field, back, toggle, button, small, menu),
             platformFontFamilyResolver = PlatformFontFamilyResolver { family ->
                 when (family) {
                     default -> FontFamily.SansSerif
-                    field -> FontFamily.Serif
-                    back -> FontFamily.Default
+                    title -> FontFamily.Serif
+                    field -> FontFamily.Monospace
+                    back -> FontFamily.Cursive
                     toggle -> FontFamily.Monospace
-                    small -> FontFamily.Cursive
-                    menu -> FontFamily.SansSerif
+                    button -> FontFamily.Serif
+                    small -> FontFamily.Default
+                    menu -> FontFamily.Cursive
                     else -> FontFamily.SansSerif
                 }
             },
         )
 
         assertEquals(FontFamily.SansSerif, tokens.typeScale.body.fontFamily)
-        assertEquals(FontFamily.Serif, tokens.typeScale.fieldText.fontFamily)
-        assertEquals(FontFamily.Default, tokens.typeScale.backLabel.fontFamily)
+        assertEquals(FontFamily.Serif, tokens.typeScale.brandTitle.fontFamily)
+        assertEquals(FontFamily.Monospace, tokens.typeScale.fieldText.fontFamily)
+        assertEquals(FontFamily.Cursive, tokens.typeScale.backLabel.fontFamily)
         assertEquals(FontFamily.Monospace, tokens.typeScale.themeToggleLabel.fontFamily)
-        assertEquals(FontFamily.Cursive, tokens.typeScale.smallLabel.fontFamily)
-        assertEquals(FontFamily.Cursive, tokens.typeScale.statusPill.fontFamily)
-        assertEquals(FontFamily.SansSerif, tokens.typeScale.menuItem.fontFamily)
+        assertEquals(FontFamily.Serif, tokens.typeScale.button.fontFamily)
+        assertEquals(FontFamily.Default, tokens.typeScale.smallLabel.fontFamily)
+        assertEquals(FontFamily.Default, tokens.typeScale.statusPill.fontFamily)
+        assertEquals(FontFamily.Cursive, tokens.typeScale.menuItem.fontFamily)
     }
 
     @Test

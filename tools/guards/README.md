@@ -23,9 +23,10 @@ Protocol and shared UI boundary rules:
 - Runtime and transport composition belongs inside `:gem-protocol-libomv`; app and proof shells must use the existing core service/port/adapter path.
 - Legacy HTTP/TLS, private-reference, GUI, METAbolt, and WinForms names remain forbidden in production source.
 - `:gem-ui` must exist and remains shared Compose UI over `gem-core`; it must not import protocol runtime/transport, vault/native credential, `NoticePort`, `sendGroupNotice`, or UI-side selected-group send loops.
-- Shared UI visible labels live in `GemText.kt`; style constants live under `org/gem/ui/design`; production WebView/HTML/CSS/JS prototype routes and staged placeholder code are forbidden.
+- Shared UI visible labels live in `GemText.kt`; style constants live under `org/gem/ui/design`; production browser-backed prototype routes and staged placeholder code are forbidden.
 - Android and desktop app shells may compose services, but must not add platform-specific screen trees or duplicate product behaviour.
 - `JvmPlatformFontCatalogue.kt` is the only approved `java.awt.GraphicsEnvironment` caller; it owns desktop system-font enumeration behind the shared `PlatformFontCatalogue` interface.
+- Appearance customiser state, fonts, RGB/hex feedback, selector-open actions, and visible palette surfaces stay on the shared controller/design-token/component routes; prototype imports, local screen fonts, local colour state, and duplicate settings titles are forbidden.
 
 Credential and session owner rules:
 
