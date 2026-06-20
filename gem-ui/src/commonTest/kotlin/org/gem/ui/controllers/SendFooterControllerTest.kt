@@ -1,5 +1,6 @@
 package org.gem.ui.controllers
 
+import org.gem.core.domain.GroupMembership
 import org.gem.core.domain.GroupSendState
 import org.gem.ui.testing.FakeGroupFixtures
 import org.gem.ui.testing.FakeGemUiRuntime
@@ -99,8 +100,11 @@ class SendFooterControllerTest {
     }
 
     @Test
-    fun partialDispatchFailureIsStoredWithoutArchiveClaim() {
-        val recorder = FakeNoticeRecorder(listOf(GroupSendState.SENT, GroupSendState.FAILED))
+    fun partialDispatchFailureIsStoredAsCollapsedPlainEnglishDetails() {
+        val recorder = FakeNoticeRecorder(
+            scriptedStates = listOf(GroupSendState.SENT, GroupSendState.FAILED),
+            scriptedDetails = listOf(null, "notice send ack timeout after 3 attempts"),
+        )
         val fixture = readyFixture(recorder = recorder)
         val targetSet = fixture.groupController.selectAllGroupsMode().targetSet
         val ready = fixture.noticeController
@@ -113,7 +117,71 @@ class SendFooterControllerTest {
         assertEquals(2, recorder.sendCallCount)
         assertEquals(1, afterSend.state.sentGroupCount)
         assertEquals(1, afterSend.state.failedGroupCount)
-        assertEquals("m!nx: failed", afterSend.state.sendFooterState.detailText)
+        assertEquals(GemTextKey.SomeNoticesFailed, afterSend.state.sendFooterState.statusTextKey)
+        assertEquals(
+            "m!nx",
+            afterSend.state.sendFooterState.failureDetails.single().groupName,
+        )
+        assertEquals(
+            GemTextKey.SendFailureAckTimeout,
+            afterSend.state.sendFooterState.failureDetails.single().reasonKey,
+        )
+        assertFalse(afterSend.state.sendFooterState.failureDetailsExpanded)
+
+        val expanded = afterSend.toggleSendFailureDetails()
+
+        assertTrue(expanded.state.sendFooterState.failureDetailsExpanded)
+        assertFalse(expanded.toggleSendFailureDetails().state.sendFooterState.failureDetailsExpanded)
+    }
+
+    @Test
+    fun allFailedDispatchGroupsAreStoredAsSeparateDetails() {
+        val groups = listOf(
+            sendableGroup("group-one", "One"),
+            sendableGroup("group-two", "Two"),
+            sendableGroup("group-three", "Three"),
+            sendableGroup("group-four", "Four"),
+        )
+        val recorder = FakeNoticeRecorder(
+            scriptedStates = groups.map { GroupSendState.FAILED },
+            scriptedDetails = listOf(
+                "notice send ack timeout after 3 attempts",
+                "protocol simulator send failed",
+                "notice runtime unavailable",
+                "notice request invalid",
+            ),
+        )
+        val runtime = FakeGemUiRuntime.ready(
+            groups = groups,
+            inventoryListing = FakeInventoryFixtures.listing(),
+            noticeRecorder = recorder,
+        )
+        val session = FakeInventoryFixtures.session()
+        val targetSet = NoticeComposerController(runtime, session, avatarReady = true)
+            .refreshGroups()
+            .selectAllGroupsMode()
+            .targetSet
+        val ready = NoticeComposerController(runtime, session, avatarReady = true)
+            .updateSubject("Tonight")
+            .updateBody("Body")
+            .updateTargetSet(targetSet)
+
+        val afterSend = ready.sendNotices()
+
+        assertEquals(4, afterSend.state.failedGroupCount)
+        assertEquals(
+            listOf("One", "Two", "Three", "Four"),
+            afterSend.state.sendFooterState.failureDetails.map { it.groupName },
+        )
+        assertEquals(
+            listOf(
+                GemTextKey.SendFailureAckTimeout,
+                GemTextKey.SendFailureRejected,
+                GemTextKey.SendFailureSenderUnavailable,
+                GemTextKey.SendFailureRequestInvalid,
+            ),
+            afterSend.state.sendFooterState.failureDetails.map { it.reasonKey },
+        )
     }
 
     private fun readyFixture(
@@ -147,4 +215,12 @@ class SendFooterControllerTest {
         val selectedAttachment: org.gem.ui.state.SelectedAttachmentUiState,
         val noticeController: NoticeComposerController,
     )
+
+    private fun sendableGroup(id: String, displayName: String): GroupMembership =
+        GroupMembership.fromValues(
+            groupId = id,
+            displayName = displayName,
+            canSendNotices = true,
+            acceptsNotices = true,
+        )
 }

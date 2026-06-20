@@ -7,7 +7,7 @@ import kotlin.test.assertTrue
 class GemTextTest {
     @Test
     fun fixedKeysCoverPrototypeCopy() {
-        assertEquals(118, GemTextKey.fixedKeys.size)
+        assertEquals(124, GemTextKey.fixedKeys.size)
         assertTrue(GemTextKey.AppName in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.BrandInitials in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.BrandSubtitle in GemTextKey.fixedKeys)
@@ -56,6 +56,12 @@ class GemTextTest {
         assertTrue(GemTextKey.SendingNotices in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.NoticesSent in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.SomeNoticesFailed in GemTextKey.fixedKeys)
+        assertTrue(GemTextKey.SendFailureCannotSendNotices in GemTextKey.fixedKeys)
+        assertTrue(GemTextKey.SendFailureAckTimeout in GemTextKey.fixedKeys)
+        assertTrue(GemTextKey.SendFailureRejected in GemTextKey.fixedKeys)
+        assertTrue(GemTextKey.SendFailureSenderUnavailable in GemTextKey.fixedKeys)
+        assertTrue(GemTextKey.SendFailureRequestInvalid in GemTextKey.fixedKeys)
+        assertTrue(GemTextKey.SendFailureSessionNotReady in GemTextKey.fixedKeys)
     }
 
     @Test
@@ -126,7 +132,31 @@ class GemTextTest {
         assertEquals("Clear attachment", catalogue.text(GemTextKey.ClearAttachment))
         assertEquals("Sending notices", catalogue.text(GemTextKey.SendingNotices))
         assertEquals("Notices sent", catalogue.text(GemTextKey.NoticesSent))
-        assertEquals("Some notices failed", catalogue.text(GemTextKey.SomeNoticesFailed))
+        assertEquals("Some notices could not be sent", catalogue.text(GemTextKey.SomeNoticesFailed))
+        assertEquals(
+            "Your avatar cannot send notices to this group.",
+            catalogue.text(GemTextKey.SendFailureCannotSendNotices),
+        )
+        assertEquals(
+            "Second Life did not confirm the send in time.",
+            catalogue.text(GemTextKey.SendFailureAckTimeout),
+        )
+        assertEquals(
+            "Second Life did not accept the notice send.",
+            catalogue.text(GemTextKey.SendFailureRejected),
+        )
+        assertEquals(
+            "The notice sender was not available.",
+            catalogue.text(GemTextKey.SendFailureSenderUnavailable),
+        )
+        assertEquals(
+            "The notice request could not be prepared.",
+            catalogue.text(GemTextKey.SendFailureRequestInvalid),
+        )
+        assertEquals(
+            "The logged-in avatar session was not ready.",
+            catalogue.text(GemTextKey.SendFailureSessionNotReady),
+        )
     }
 
     @Test
@@ -137,5 +167,14 @@ class GemTextTest {
         assertEquals("249 chars", catalogue.text(GemTextKey.DraftCharCount(249)))
         assertEquals("0 selected", catalogue.text(GemTextKey.SelectedCount(0)))
         assertEquals("3 selected", catalogue.text(GemTextKey.SelectedCount(3)))
+        assertEquals(
+            "Owks: Second Life did not accept the notice send.",
+            catalogue.text(
+                GemTextKey.SendFailureDetailLine(
+                    groupName = "Owks",
+                    reason = "Second Life did not accept the notice send.",
+                ),
+            ),
+        )
     }
 }

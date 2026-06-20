@@ -13,6 +13,7 @@ import org.gem.ui.runtime.GemUiRuntime
 import org.gem.ui.state.GroupTargetUiState
 import org.gem.ui.state.SelectedAttachmentUiState
 import org.gem.ui.state.NoticeComposerUiState
+import org.gem.ui.state.SendFailureDetailUiState
 import org.gem.ui.state.SendFooterUiState
 import org.gem.ui.text.GemTextKey
 
@@ -82,7 +83,8 @@ class NoticeComposerController(
                     statusTextKey = GemTextKey.SendingNotices,
                     sending = true,
                     showMissingRequirements = false,
-                    detailText = null,
+                    failureDetails = emptyList(),
+                    failureDetailsExpanded = false,
                 ),
             ),
         )
@@ -117,6 +119,17 @@ class NoticeComposerController(
             is NoticeDispatchResult.Sent -> copy(projectDispatchSent(result))
             is NoticeDispatchResult.Rejected -> copy(projectDispatchRejected(result.validation))
         }
+    }
+
+    fun toggleSendFailureDetails(): NoticeComposerController {
+        val hasFailureDetails = state.sendFooterState.failureDetails.isNotEmpty()
+        return copy(
+            state.copy(
+                sendFooterState = state.sendFooterState.copy(
+                    failureDetailsExpanded = hasFailureDetails && !state.sendFooterState.failureDetailsExpanded,
+                ),
+            ),
+        )
     }
 
     private fun copy(
@@ -227,7 +240,8 @@ class NoticeComposerController(
             dispatchRejected = false,
             sendFooterState = state.sendFooterState.copy(
                 statusTextKey = sendStatusTextKey(hasTransportFailure),
-                detailText = failureDetail(result.result.statuses),
+                failureDetails = failureDetails(result.result.statuses),
+                failureDetailsExpanded = false,
                 enabled = true,
                 sending = false,
                 showMissingRequirements = false,
@@ -246,7 +260,7 @@ class NoticeComposerController(
             sendFooterState = SendFooterUiState(
                 visible = true,
                 statusTextKey = GemTextKey.BlankStatus,
-                detailText = null,
+                failureDetails = emptyList(),
                 enabled = false,
                 sending = false,
                 showMissingRequirements = true,
@@ -258,22 +272,37 @@ class NoticeComposerController(
     ): GemTextKey =
         if (hasTransportFailure) GemTextKey.SomeNoticesFailed else GemTextKey.NoticesSent
 
-    private fun failureDetail(
+    private fun failureDetails(
         statuses: List<GroupSendStatus>,
-    ): String? {
+    ): List<SendFailureDetailUiState> {
         val failed = statuses.filter { it.state != GroupSendState.SENT }
         if (failed.isEmpty()) {
-            return null
+            return emptyList()
         }
-        val details = mutableListOf<String>()
-        failed.take(MAX_FAILURE_DETAILS).mapTo(details) { status ->
-            val detail = status.detail?.takeIf(String::isNotBlank) ?: status.state.name.lowercase()
-            "${status.group.displayName.value}: $detail"
+        return failed.map { status ->
+            SendFailureDetailUiState(
+                groupName = status.group.displayName.value,
+                reasonKey = sendFailureReasonKey(status),
+            )
         }
-        return details.joinToString(separator = " | ")
     }
 
-    private companion object {
-        const val MAX_FAILURE_DETAILS: Int = 3
+    private fun sendFailureReasonKey(status: GroupSendStatus): GemTextKey {
+        val detail = status.detail.orEmpty().lowercase()
+        return when {
+            status.state == GroupSendState.SKIPPED || "cannot send notices" in detail ->
+                GemTextKey.SendFailureCannotSendNotices
+            "ack timeout" in detail ->
+                GemTextKey.SendFailureAckTimeout
+            "simulator send failed" in detail ->
+                GemTextKey.SendFailureRejected
+            "runtime unavailable" in detail ->
+                GemTextKey.SendFailureSenderUnavailable
+            "request invalid" in detail ->
+                GemTextKey.SendFailureRequestInvalid
+            "identity unavailable" in detail || "session inactive" in detail || "session mismatch" in detail ->
+                GemTextKey.SendFailureSessionNotReady
+            else -> GemTextKey.SendFailureRejected
+        }
     }
 }

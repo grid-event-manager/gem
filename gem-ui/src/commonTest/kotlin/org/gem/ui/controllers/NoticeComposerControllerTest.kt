@@ -94,7 +94,7 @@ class NoticeComposerControllerTest {
             .sendNotices()
 
         assertEquals(GemTextKey.NoticesSent, sent.state.sendFooterState.statusTextKey)
-        assertEquals(null, sent.state.sendFooterState.detailText)
+        assertEquals(emptyList(), sent.state.sendFooterState.failureDetails)
         assertTrue(archiveReads.isEmpty())
     }
 
@@ -127,7 +127,7 @@ class NoticeComposerControllerTest {
             .sendNotices()
 
         assertEquals(GemTextKey.NoticesSent, sent.state.sendFooterState.statusTextKey)
-        assertEquals(null, sent.state.sendFooterState.detailText)
+        assertEquals(emptyList(), sent.state.sendFooterState.failureDetails)
         assertTrue(archiveReads.isEmpty())
     }
 
@@ -156,10 +156,12 @@ class NoticeComposerControllerTest {
             .sendNotices()
 
         assertEquals(GemTextKey.SomeNoticesFailed, sent.state.sendFooterState.statusTextKey)
+        assertEquals("m!nx", sent.state.sendFooterState.failureDetails.single().groupName)
         assertEquals(
-            "m!nx: failed",
-            sent.state.sendFooterState.detailText,
+            GemTextKey.SendFailureRejected,
+            sent.state.sendFooterState.failureDetails.single().reasonKey,
         )
+        assertEquals(false, sent.state.sendFooterState.failureDetailsExpanded)
         assertTrue(archiveReads.isEmpty())
     }
 }

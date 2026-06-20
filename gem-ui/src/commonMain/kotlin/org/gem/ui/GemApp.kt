@@ -363,6 +363,9 @@ fun GemApp(
                                 }
                             }
                         },
+                        onFailureDetailsToggle = {
+                            noticeController = noticeController.toggleSendFailureDetails()
+                        },
                     )
                 }
             } else {

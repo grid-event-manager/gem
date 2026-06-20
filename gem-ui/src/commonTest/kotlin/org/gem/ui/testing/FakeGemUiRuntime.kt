@@ -251,6 +251,7 @@ object FakeGemUiRuntime {
 
 class FakeNoticeRecorder(
     private val scriptedStates: List<GroupSendState> = emptyList(),
+    private val scriptedDetails: List<String?> = emptyList(),
 ) {
     private val sentGroups = mutableListOf<String>()
     private var recordedSubject: String? = null
@@ -268,10 +269,12 @@ class FakeNoticeRecorder(
         group: GroupMembership,
         draft: org.gem.core.domain.NoticeDraft,
     ): GroupSendStatus {
-        val state = scriptedStates.getOrElse(sentGroups.size) { GroupSendState.SENT }
+        val index = sentGroups.size
+        val state = scriptedStates.getOrElse(index) { GroupSendState.SENT }
+        val detail = scriptedDetails.getOrNull(index)
         recordedSubject = draft.subject
         sentGroups += group.displayName.value
-        return GroupSendStatus(group, state)
+        return GroupSendStatus(group, state, detail)
     }
 }
 

@@ -120,6 +120,13 @@ sealed interface GemTextKey {
     data object SendingNotices : GemTextKey
     data object NoticesSent : GemTextKey
     data object SomeNoticesFailed : GemTextKey
+    data object SendFailureCannotSendNotices : GemTextKey
+    data object SendFailureAckTimeout : GemTextKey
+    data object SendFailureRejected : GemTextKey
+    data object SendFailureSenderUnavailable : GemTextKey
+    data object SendFailureRequestInvalid : GemTextKey
+    data object SendFailureSessionNotReady : GemTextKey
+    data class SendFailureDetailLine(val groupName: String, val reason: String) : GemTextKey
     data class SelectedCount(val count: Int) : GemTextKey
 
     companion object {
@@ -242,6 +249,12 @@ sealed interface GemTextKey {
             SendingNotices,
             NoticesSent,
             SomeNoticesFailed,
+            SendFailureCannotSendNotices,
+            SendFailureAckTimeout,
+            SendFailureRejected,
+            SendFailureSenderUnavailable,
+            SendFailureRequestInvalid,
+            SendFailureSessionNotReady,
         )
     }
 }
@@ -370,7 +383,14 @@ object EnglishGemTextCatalogue : GemTextCatalogue {
         GemTextKey.ClearAttachment -> "Clear attachment"
         GemTextKey.SendingNotices -> "Sending notices"
         GemTextKey.NoticesSent -> "Notices sent"
-        GemTextKey.SomeNoticesFailed -> "Some notices failed"
+        GemTextKey.SomeNoticesFailed -> "Some notices could not be sent"
+        GemTextKey.SendFailureCannotSendNotices -> "Your avatar cannot send notices to this group."
+        GemTextKey.SendFailureAckTimeout -> "Second Life did not confirm the send in time."
+        GemTextKey.SendFailureRejected -> "Second Life did not accept the notice send."
+        GemTextKey.SendFailureSenderUnavailable -> "The notice sender was not available."
+        GemTextKey.SendFailureRequestInvalid -> "The notice request could not be prepared."
+        GemTextKey.SendFailureSessionNotReady -> "The logged-in avatar session was not ready."
+        is GemTextKey.SendFailureDetailLine -> "${key.groupName}: ${key.reason}"
         is GemTextKey.SelectedCount -> "${key.count} selected"
     }
 }
