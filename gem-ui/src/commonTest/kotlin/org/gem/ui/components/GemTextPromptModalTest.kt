@@ -3,6 +3,7 @@ package org.gem.ui.components
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class GemTextPromptModalTest {
@@ -24,8 +25,12 @@ class GemTextPromptModalTest {
 
     @Test
     fun placeholderInteractionMatchesPrototype() {
-        assertEquals("", GemTextPromptModalInteraction.focusedValue("Enter a new theme name", "Enter a new theme name"))
-        assertEquals("Enter a new theme name", GemTextPromptModalInteraction.blurredValue("", "Enter a new theme name"))
-        assertEquals("Goth Night", GemTextPromptModalInteraction.blurredValue("Goth Night", "Enter a new theme name"))
+        val placeholder = "Enter a new theme name"
+
+        assertEquals(placeholder, GemTextPromptModalInteraction.displayedPlaceholder(placeholder, visible = true))
+        assertNull(GemTextPromptModalInteraction.displayedPlaceholder(placeholder, visible = false))
+        assertFalse(GemTextPromptModalInteraction.placeholderVisibleAfterFocusChange(focused = true, value = ""))
+        assertTrue(GemTextPromptModalInteraction.placeholderVisibleAfterFocusChange(focused = false, value = ""))
+        assertFalse(GemTextPromptModalInteraction.placeholderVisibleAfterFocusChange(focused = false, value = "Goth Night"))
     }
 }

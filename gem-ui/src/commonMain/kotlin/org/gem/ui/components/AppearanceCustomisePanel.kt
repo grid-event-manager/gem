@@ -72,6 +72,7 @@ fun AppearanceCustomisePanel(
             },
             onCancel = callbacks.onCloseSaveThemeDialog,
             onSave = { callbacks.onSaveTheme(state.saveThemeName, state.saveThemeMode) },
+            focusRequested = state.saveThemeNameFocusRequested,
         )
     }
 }

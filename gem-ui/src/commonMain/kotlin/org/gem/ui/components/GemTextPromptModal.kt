@@ -8,8 +8,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.window.Dialog
 import org.gem.ui.design.GemTheme
@@ -30,12 +38,22 @@ fun GemTextPromptModal(
     onSave: () -> Unit,
     modifier: Modifier = Modifier,
     nameInvalid: Boolean = false,
+    focusRequested: Boolean = false,
 ) {
     if (!visible) {
         return
     }
 
     val spacing = GemTheme.spacing
+    val nameFocusRequester = remember { FocusRequester() }
+    var placeholderVisible by remember(visible, placeholder) { mutableStateOf(true) }
+    LaunchedEffect(visible, focusRequested) {
+        if (visible && focusRequested) {
+            placeholderVisible = false
+            withFrameNanos { }
+            nameFocusRequester.requestFocus()
+        }
+    }
     Dialog(onDismissRequest = onCancel) {
         Surface(
             modifier = modifier.widthIn(max = spacing.modalMaxWidth),
@@ -57,20 +75,21 @@ fun GemTextPromptModal(
                 GemCompactTextField(
                     value = name,
                     onValueChange = onNameChange,
-                    placeholder = placeholder,
+                    placeholder = GemTextPromptModalInteraction.displayedPlaceholder(
+                        placeholder = placeholder,
+                        visible = placeholderVisible,
+                    ),
                     invalid = nameInvalid,
                     textAlign = TextAlign.Start,
                     onFocusedChange = { focused ->
-                        val nextName = if (focused) {
-                            GemTextPromptModalInteraction.focusedValue(name, placeholder)
-                        } else {
-                            GemTextPromptModalInteraction.blurredValue(name, placeholder)
-                        }
-                        if (nextName != name) {
-                            onNameChange(nextName)
-                        }
+                        placeholderVisible = GemTextPromptModalInteraction.placeholderVisibleAfterFocusChange(
+                            focused = focused,
+                            value = name,
+                        )
                     },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .focusRequester(nameFocusRequester),
                 )
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -103,15 +122,15 @@ internal object GemTextPromptModalInteraction {
     ): Boolean =
         name.isNotBlank() && name != placeholder
 
-    fun focusedValue(
-        value: String,
+    fun displayedPlaceholder(
         placeholder: String,
-    ): String =
-        if (value == placeholder) "" else value
+        visible: Boolean,
+    ): String? =
+        if (visible) placeholder else null
 
-    fun blurredValue(
+    fun placeholderVisibleAfterFocusChange(
+        focused: Boolean,
         value: String,
-        placeholder: String,
-    ): String =
-        value.ifBlank { placeholder }
+    ): Boolean =
+        !focused && value.isBlank()
 }
