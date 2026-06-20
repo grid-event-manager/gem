@@ -106,6 +106,18 @@ APPEARANCE_PROTOTYPE_LEAKAGE_PATTERN='appearance-customizer|WebView|<script|colo
 APPEARANCE_STALE_MODE_CONTROL_PATTERN='Text style|Area colour|RadioButton|GemSegmentButton|SegmentButton'
 APPEARANCE_LOCAL_STYLE_PATTERN='Color\(|#[0-9A-Fa-f]{6}|\.dp|FontWeight|fontSize|RoundedCornerShape'
 APPEARANCE_DIRECT_STORAGE_PLATFORM_PATTERN='ThemePreferenceService|AppearanceProfileStore|FileAppearanceProfileStore|PreferenceFileStorage|PlatformFontCatalogue|PlatformFontFamilyResolver|GraphicsEnvironment|SystemFonts'
+APPEARANCE_SETTINGS_CONTENT_TOGGLE_PATTERN='ThemeModeToggle\('
+APPEARANCE_SETTINGS_TOGGLE_CALLBACK_PATTERN='onThemeCheckedChange'
+APPEARANCE_SETTINGS_CONTENT_TITLE_PATTERN='GemTextKey\.Settings|textCatalogue\.text\([[:space:]]*GemTextKey\.Settings[[:space:]]*\)'
+APPEARANCE_ACCOUNTS_CONTENT_TITLE_PATTERN='GemTextKey\.Accounts|textCatalogue\.text\([[:space:]]*GemTextKey\.Accounts[[:space:]]*\)'
+APPEARANCE_THEME_TOGGLE_NOOP_PATTERN='AppearanceTextColorSlot\.THEME_TOGGLE[[:space:]]*->[[:space:]]*this'
+APPEARANCE_LEDGER_SECONDARY_CONSUMER_PATTERN='colors\.secondary'
+APPEARANCE_CURRENT_STREAM_FRAGMENT='HS003'
+APPEARANCE_CURRENT_TRACK_PREFIX='B'
+APPEARANCE_CURRENT_TRACK_SUFFIX='1'
+APPEARANCE_CURRENT_TRACK_LABEL="${APPEARANCE_CURRENT_TRACK_PREFIX}${APPEARANCE_CURRENT_TRACK_SUFFIX}"
+APPEARANCE_CURRENT_TRACK_LABEL_LOWER="${APPEARANCE_CURRENT_TRACK_LABEL,,}"
+APPEARANCE_PUBLIC_WORKSTREAM_LABEL_PATTERN="\\b${APPEARANCE_CURRENT_TRACK_LABEL}\\b|Track${APPEARANCE_CURRENT_TRACK_LABEL}|track_${APPEARANCE_CURRENT_TRACK_LABEL_LOWER}|track-${APPEARANCE_CURRENT_TRACK_LABEL_LOWER}|${APPEARANCE_CURRENT_STREAM_FRAGMENT}_TRACK_${APPEARANCE_CURRENT_TRACK_LABEL}|${APPEARANCE_CURRENT_STREAM_FRAGMENT}-${APPEARANCE_CURRENT_TRACK_LABEL}"
 ARCHITECTURE_GENERIC_OWNER_PATTERN='(^|/)(LoginCompliance|NoticeCompliance|.*(Manager|Helper|Utils|Common))\.kt$'
 SESSION_LOGIN_OVERLOAD_PATTERN='fun[[:space:]]+login\([[:space:]]*request:[[:space:]]*LoginRequest[[:space:]]*\)'
 SESSION_LOGIN_ONE_ARG_PATTERN='sessionService\.login\([^,\n)]*\)'
@@ -703,6 +715,46 @@ check_exact_owner_count() {
         echo "PASS: $label"
     else
         echo "FAIL: $label expected $expected declaration(s), found $count"
+        [[ -n "$output" ]] && echo "$output"
+        failures=1
+    fi
+}
+
+check_exact_pattern_count() {
+    local label="$1"
+    local pattern="$2"
+    local expected="$3"
+    shift 3
+
+    if [[ "$#" -eq 0 ]]; then
+        echo "ERROR: $label has no scan targets"
+        failures=1
+        return
+    fi
+
+    local output
+    local status
+    set +e
+    output="$(rg -n -- "$pattern" "$@" 2>&1)"
+    status="$?"
+    set -e
+
+    if [[ "$status" -gt 1 ]]; then
+        echo "ERROR: $label scan failed"
+        echo "$output"
+        failures=1
+        return
+    fi
+
+    local count=0
+    if [[ -n "$output" ]]; then
+        count="$(printf '%s\n' "$output" | wc -l | tr -d ' ')"
+    fi
+
+    if [[ "$count" -eq "$expected" ]]; then
+        echo "PASS: $label"
+    else
+        echo "FAIL: $label expected $expected match(es), found $count"
         [[ -n "$output" ]] && echo "$output"
         failures=1
     fi
@@ -1419,6 +1471,51 @@ appearance_storage_platform_targets=()
 add_existing appearance_storage_platform_targets \
     "gem-ui/src/commonMain/kotlin/org/gem/ui/screens" \
     "gem-ui/src/commonMain/kotlin/org/gem/ui/components"
+
+appearance_settings_screen_targets=()
+add_existing appearance_settings_screen_targets \
+    "gem-ui/src/commonMain/kotlin/org/gem/ui/screens/SettingsScreen.kt"
+
+appearance_accounts_screen_targets=()
+add_existing appearance_accounts_screen_targets \
+    "gem-ui/src/commonMain/kotlin/org/gem/ui/screens/AccountsScreen.kt"
+
+appearance_mapper_targets=()
+add_existing appearance_mapper_targets \
+    "gem-ui/src/commonMain/kotlin/org/gem/ui/design/AppearanceDesignTokenMapper.kt"
+
+appearance_ledger_consumer_targets=()
+add_existing appearance_ledger_consumer_targets \
+    "gem-ui/src/commonMain/kotlin/org/gem/ui/components/ThemeModeToggle.kt" \
+    "gem-ui/src/commonMain/kotlin/org/gem/ui/components/GemFields.kt" \
+    "gem-ui/src/commonMain/kotlin/org/gem/ui/components/GemRgbSliderRow.kt" \
+    "gem-ui/src/commonMain/kotlin/org/gem/ui/components/GemDropdowns.kt" \
+    "gem-ui/src/androidMain/kotlin/org/gem/ui/components/GemPlatformOverflowMenuChrome.android.kt" \
+    "gem-ui/src/jvmMain/kotlin/org/gem/ui/components/GemPlatformOverflowMenuChrome.jvm.kt"
+
+appearance_public_label_targets=()
+add_existing appearance_public_label_targets \
+    "gem-core/src/commonMain" \
+    "gem-core/src/commonTest" \
+    "gem-preferences/src/commonMain" \
+    "gem-preferences/src/commonTest" \
+    "gem-ui/src/commonMain" \
+    "gem-ui/src/commonTest" \
+    "gem-ui/src/androidMain" \
+    "gem-ui/src/jvmMain" \
+    "apps/desktop/src/main" \
+    "apps/desktop/src/test" \
+    "apps/android/src/main" \
+    "apps/android/src/test" \
+    "tools/guards"
+
+appearance_ui_production_targets=()
+add_existing appearance_ui_production_targets \
+    "gem-ui/src/commonMain" \
+    "gem-ui/src/androidMain" \
+    "gem-ui/src/jvmMain" \
+    "apps/desktop/src/main" \
+    "apps/android/src/main"
 
 session_protocol_runtime_forbidden_targets=()
 while IFS= read -r path; do
@@ -2287,6 +2384,47 @@ check_no_hits \
     "${appearance_storage_platform_targets[@]}"
 
 check_no_hits \
+    "appearance settings content toggle absent" \
+    "$APPEARANCE_SETTINGS_CONTENT_TOGGLE_PATTERN" \
+    "${appearance_settings_screen_targets[@]}"
+
+check_no_hits \
+    "appearance settings stale toggle callback absent" \
+    "$APPEARANCE_SETTINGS_TOGGLE_CALLBACK_PATTERN" \
+    "${appearance_settings_screen_targets[@]}"
+
+check_no_hits \
+    "appearance settings content title absent" \
+    "$APPEARANCE_SETTINGS_CONTENT_TITLE_PATTERN" \
+    "${appearance_settings_screen_targets[@]}"
+
+check_no_hits \
+    "appearance accounts content title absent" \
+    "$APPEARANCE_ACCOUNTS_CONTENT_TITLE_PATTERN" \
+    "${appearance_accounts_screen_targets[@]}"
+
+check_no_hits \
+    "appearance theme-toggle mapper no-op absent" \
+    "$APPEARANCE_THEME_TOGGLE_NOOP_PATTERN" \
+    "${appearance_mapper_targets[@]}"
+
+check_no_hits \
+    "appearance ledger consumers do not read stale secondary token" \
+    "$APPEARANCE_LEDGER_SECONDARY_CONSUMER_PATTERN" \
+    "${appearance_ledger_consumer_targets[@]}"
+
+check_exact_pattern_count \
+    "appearance single theme mode toggle owner" \
+    '^[[:space:]]*fun[[:space:]]+ThemeModeToggle[[:space:]]*\(' \
+    1 \
+    "${appearance_ui_production_targets[@]}"
+
+check_no_hits \
+    "ephemeral workstream label detected" \
+    "$APPEARANCE_PUBLIC_WORKSTREAM_LABEL_PATTERN" \
+    "${appearance_public_label_targets[@]}"
+
+check_no_hits \
     "vault forbidden vault dependency acquisition" \
     "$VAULT_FORBIDDEN_DEPENDENCY_PATTERN" \
     "${vault_dependency_targets[@]}"
@@ -2914,6 +3052,16 @@ check_pattern_matches \
     "self-test appearance direct storage platform pattern" \
     "$APPEARANCE_DIRECT_STORAGE_PLATFORM_PATTERN" \
     'PlatformFontCatalogue { emptyList() }'
+
+check_pattern_matches \
+    "self-test ephemeral workstream label detector catches current raw track label" \
+    "$APPEARANCE_PUBLIC_WORKSTREAM_LABEL_PATTERN" \
+    "$APPEARANCE_CURRENT_TRACK_LABEL"
+
+check_pattern_matches \
+    "self-test ephemeral workstream label detector catches current stream-track label" \
+    "$APPEARANCE_PUBLIC_WORKSTREAM_LABEL_PATTERN" \
+    "${APPEARANCE_CURRENT_STREAM_FRAGMENT}-${APPEARANCE_CURRENT_TRACK_LABEL}"
 
 check_pattern_matches \
     "self-test vault forbidden vault dependency pattern" \
