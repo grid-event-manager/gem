@@ -111,10 +111,3 @@ internal actual fun GemPlatformTopBarChrome(
         },
     )
 }
-
-private fun GemTopBarSubtitle.renderText(textCatalogue: GemTextCatalogue): String? =
-    when (this) {
-        GemTopBarSubtitle.None -> null
-        is GemTopBarSubtitle.Catalogue -> textCatalogue.text(key)
-        is GemTopBarSubtitle.Data -> value
-    }

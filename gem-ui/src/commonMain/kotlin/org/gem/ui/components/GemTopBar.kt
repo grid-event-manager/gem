@@ -28,6 +28,13 @@ sealed interface GemTopBarSubtitle {
     data class Data(val value: String) : GemTopBarSubtitle
 }
 
+internal fun GemTopBarSubtitle.renderText(textCatalogue: GemTextCatalogue): String? =
+    when (this) {
+        GemTopBarSubtitle.None -> null
+        is GemTopBarSubtitle.Catalogue -> textCatalogue.text(key)
+        is GemTopBarSubtitle.Data -> value
+    }
+
 @Composable
 fun GemTopBar(
     title: GemTopBarTitle,
