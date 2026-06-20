@@ -10,7 +10,6 @@ import org.gem.core.services.GemCredentialRuntimeState
 import org.gem.core.services.InventoryDirectoryService
 import org.gem.core.services.InventorySelectionService
 import org.gem.core.services.LoginProfileAuthenticationService
-import org.gem.core.services.NoticeConfirmationService
 import org.gem.core.services.NoticeDispatchService
 import org.gem.core.services.NoticeDraftService
 import org.gem.core.services.SavedLoginAuthenticationService
@@ -36,7 +35,6 @@ data class GemUiRuntime(
     val attachmentService: AttachmentService,
     val noticeDraftService: NoticeDraftService,
     val noticeDispatchService: NoticeDispatchService,
-    val noticeConfirmationService: NoticeConfirmationService,
     val loginComplianceProvider: GemLoginComplianceProvider,
     val themePreferenceService: ThemePreferenceService,
     val appearanceProfileService: AppearanceProfileService,

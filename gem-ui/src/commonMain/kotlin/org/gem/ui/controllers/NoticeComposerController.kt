@@ -1,7 +1,5 @@
 package org.gem.ui.controllers
 
-import org.gem.core.domain.GroupNoticeConfirmationState
-import org.gem.core.domain.GroupNoticeConfirmationStatus
 import org.gem.core.domain.GroupSendState
 import org.gem.core.domain.GroupSendStatus
 import org.gem.core.domain.GroupTargetSet
@@ -9,7 +7,6 @@ import org.gem.core.domain.GemSession
 import org.gem.core.domain.NoticeDispatchResult
 import org.gem.core.domain.NoticeDraftInvalidReason
 import org.gem.core.domain.NoticeDraftValidation
-import org.gem.core.domain.NoticeConfirmationResult
 import org.gem.core.domain.PacingPolicy
 import org.gem.core.ports.GroupListResult
 import org.gem.ui.runtime.GemUiRuntime
@@ -117,10 +114,7 @@ class NoticeComposerController(
                 attachment = selectedAttachment?.attachmentRef,
             )
         ) {
-            is NoticeDispatchResult.Sent -> {
-                val confirmation = runtime.noticeConfirmationService.confirmArchive(session, result.result)
-                copy(projectDispatchSent(result, confirmation))
-            }
+            is NoticeDispatchResult.Sent -> copy(projectDispatchSent(result))
             is NoticeDispatchResult.Rejected -> copy(projectDispatchRejected(result.validation))
         }
     }
@@ -222,7 +216,6 @@ class NoticeComposerController(
 
     private fun projectDispatchSent(
         result: NoticeDispatchResult.Sent,
-        confirmation: NoticeConfirmationResult,
     ): NoticeComposerUiState {
         val sentCount = result.result.statuses.count { it.state == GroupSendState.SENT }
         val failedCount = result.result.statuses.count { it.state != GroupSendState.SENT }
@@ -233,8 +226,8 @@ class NoticeComposerController(
             failedGroupCount = failedCount,
             dispatchRejected = false,
             sendFooterState = state.sendFooterState.copy(
-                statusTextKey = sendStatusTextKey(hasTransportFailure, confirmation),
-                detailText = failureDetail(result.result.statuses, confirmation.statuses),
+                statusTextKey = sendStatusTextKey(hasTransportFailure),
+                detailText = failureDetail(result.result.statuses),
                 enabled = true,
                 sending = false,
                 showMissingRequirements = false,
@@ -262,36 +255,20 @@ class NoticeComposerController(
 
     private fun sendStatusTextKey(
         hasTransportFailure: Boolean,
-        confirmation: NoticeConfirmationResult,
     ): GemTextKey =
-        when {
-            hasTransportFailure -> GemTextKey.SomeNoticesFailed
-            confirmation.allConfirmed -> GemTextKey.NoticesSent
-            else -> GemTextKey.SomeNoticesUnconfirmed
-        }
+        if (hasTransportFailure) GemTextKey.SomeNoticesFailed else GemTextKey.NoticesSent
 
     private fun failureDetail(
         statuses: List<GroupSendStatus>,
-        confirmationStatuses: List<GroupNoticeConfirmationStatus>,
     ): String? {
         val failed = statuses.filter { it.state != GroupSendState.SENT }
-        val confirmationGaps = confirmationStatuses.filter {
-            it.state == GroupNoticeConfirmationState.UNCONFIRMED ||
-                it.state == GroupNoticeConfirmationState.FAILED
-        }
-        if (failed.isEmpty() && confirmationGaps.isEmpty()) {
+        if (failed.isEmpty()) {
             return null
         }
         val details = mutableListOf<String>()
         failed.take(MAX_FAILURE_DETAILS).mapTo(details) { status ->
             val detail = status.detail?.takeIf(String::isNotBlank) ?: status.state.name.lowercase()
             "${status.group.displayName.value}: $detail"
-        }
-        if (details.size < MAX_FAILURE_DETAILS) {
-            confirmationGaps.take(MAX_FAILURE_DETAILS - details.size).mapTo(details) { status ->
-                val detail = status.detail?.takeIf(String::isNotBlank) ?: status.state.name.lowercase()
-                "${status.group.displayName.value}: $detail"
-            }
         }
         return details.joinToString(separator = " | ")
     }

@@ -102,6 +102,7 @@ object FakeGemUiRuntime {
         noticeRecorder: FakeNoticeRecorder = FakeNoticeRecorder(),
         noticeArchiveEntriesByGroupId: Map<GroupId, List<GroupNoticeArchiveEntry>>? = null,
         noticeArchiveFailuresByGroupId: Map<GroupId, CoreFailure> = emptyMap(),
+        noticeArchiveReadLog: MutableList<GroupId>? = null,
         themePreferenceStore: FakeThemePreferenceStore = FakeThemePreferenceStore(),
         appearanceProfileStore: AppearanceProfileStore = InMemoryAppearanceProfileStore(),
         availableFontFamilies: List<AppearanceFontFamily> = listOf(AppearanceFontFamily("sans-serif")),
@@ -134,6 +135,7 @@ object FakeGemUiRuntime {
             noticeRecorder = noticeRecorder,
             noticeArchiveEntriesByGroupId = noticeArchiveEntriesByGroupId,
             noticeArchiveFailuresByGroupId = noticeArchiveFailuresByGroupId,
+            noticeArchiveReadLog = noticeArchiveReadLog,
             themePreferenceStore = themePreferenceStore,
             appearanceProfileStore = appearanceProfileStore,
             availableFontFamilies = availableFontFamilies,
@@ -173,6 +175,7 @@ object FakeGemUiRuntime {
         noticeRecorder: FakeNoticeRecorder = FakeNoticeRecorder(),
         noticeArchiveEntriesByGroupId: Map<GroupId, List<GroupNoticeArchiveEntry>>? = null,
         noticeArchiveFailuresByGroupId: Map<GroupId, CoreFailure> = emptyMap(),
+        noticeArchiveReadLog: MutableList<GroupId>? = null,
         themePreferenceStore: FakeThemePreferenceStore = FakeThemePreferenceStore(),
         appearanceProfileStore: AppearanceProfileStore = InMemoryAppearanceProfileStore(),
         availableFontFamilies: List<AppearanceFontFamily> = listOf(AppearanceFontFamily("sans-serif")),
@@ -191,6 +194,7 @@ object FakeGemUiRuntime {
                 noticeArchiveEntriesByGroupId = noticeArchiveEntriesByGroupId,
                 noticeArchiveFailuresByGroupId = noticeArchiveFailuresByGroupId,
                 noticeArchiveSubject = { noticeRecorder.lastSubject },
+                noticeArchiveReadLog = noticeArchiveReadLog,
             ),
         )
         return GemUiRuntime(
@@ -209,7 +213,6 @@ object FakeGemUiRuntime {
             attachmentService = AttachmentService(inventoryPort),
             noticeDraftService = NoticeDraftService(),
             noticeDispatchService = NoticeDispatchService(FakeNoticePort(noticeRecorder), FakeClockPort()),
-            noticeConfirmationService = org.gem.core.services.NoticeConfirmationService(groupDirectoryService),
             loginComplianceProvider = GemLoginComplianceProvider { profile ->
                 LoginComplianceRequest(
                     proofAccountAttested = true,
@@ -417,6 +420,7 @@ private class FakeGroupPort(
     private val noticeArchiveEntriesByGroupId: Map<GroupId, List<GroupNoticeArchiveEntry>>?,
     private val noticeArchiveFailuresByGroupId: Map<GroupId, CoreFailure>,
     private val noticeArchiveSubject: () -> String?,
+    private val noticeArchiveReadLog: MutableList<GroupId>?,
 ) : GroupPort {
     override fun currentGroups(session: GemSession): GroupListResult =
         if (groupListSucceeds) {
@@ -439,10 +443,12 @@ private class FakeGroupPort(
     override fun noticeArchive(
         session: GemSession,
         group: GroupMembership,
-    ): GroupNoticeArchiveResult =
-        noticeArchiveFailuresByGroupId[group.groupId]?.let { failure ->
+    ): GroupNoticeArchiveResult {
+        noticeArchiveReadLog?.add(group.groupId)
+        return noticeArchiveFailuresByGroupId[group.groupId]?.let { failure ->
             GroupNoticeArchiveResult.Failure(group, failure)
         } ?: GroupNoticeArchiveResult.Success(group, archiveEntries(group))
+    }
 
     private fun archiveEntries(group: GroupMembership): List<GroupNoticeArchiveEntry> =
         if (noticeArchiveEntriesByGroupId != null) {

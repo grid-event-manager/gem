@@ -19,7 +19,6 @@ import org.gem.core.services.GroupDirectoryService
 import org.gem.core.services.InventoryDirectoryService
 import org.gem.core.services.InventorySelectionService
 import org.gem.core.services.LoginComplianceService
-import org.gem.core.services.NoticeConfirmationService
 import org.gem.core.services.NoticeDispatchService
 import org.gem.core.services.NoticeDraftService
 import org.gem.core.services.SessionService
@@ -104,7 +103,6 @@ object GemAndroidCompositionRoot {
                     noticePort = protocolRuntime.noticePort,
                     clockPort = AndroidAppClockPort,
                 ),
-                noticeConfirmationService = NoticeConfirmationService(groupDirectoryService),
                 loginComplianceProvider = GemUiLoginComplianceProvider,
                 themePreferenceService = themePreferenceService,
                 appearanceProfileService = appearanceProfileService,

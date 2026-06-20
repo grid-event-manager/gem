@@ -2,6 +2,7 @@ package org.gem.ui.controllers
 
 import org.gem.core.domain.CoreFailure
 import org.gem.core.domain.CoreFailureReason
+import org.gem.core.domain.GroupId
 import org.gem.core.domain.GroupSendState
 import org.gem.ui.testing.FakeGroupFixtures
 import org.gem.core.domain.NoticeDraftInvalidReason
@@ -70,10 +71,12 @@ class NoticeComposerControllerTest {
     }
 
     @Test
-    fun sendNoticesProjectsUnconfirmedFeedbackWhenArchiveProofMisses() {
+    fun sendNoticesKeepsArchiveProofMissesOutOfVisibleFeedback() {
+        val archiveReads = mutableListOf<GroupId>()
         val runtime = FakeGemUiRuntime.ready(
             groups = FakeGroupFixtures.sendableGroups(),
             noticeArchiveEntriesByGroupId = emptyMap(),
+            noticeArchiveReadLog = archiveReads,
         )
         val targets = NoticeComposerController(
             runtime = runtime,
@@ -90,16 +93,14 @@ class NoticeComposerControllerTest {
             .updateTargetSet(targets.targetSet)
             .sendNotices()
 
-        assertEquals(GemTextKey.SomeNoticesUnconfirmed, sent.state.sendFooterState.statusTextKey)
-        assertEquals(
-            "Owks: notice archive proof_gap subject_or_attachment_not_found; attempts=4 | " +
-                "m!nx: notice archive proof_gap subject_or_attachment_not_found; attempts=4",
-            sent.state.sendFooterState.detailText,
-        )
+        assertEquals(GemTextKey.NoticesSent, sent.state.sendFooterState.statusTextKey)
+        assertEquals(null, sent.state.sendFooterState.detailText)
+        assertTrue(archiveReads.isEmpty())
     }
 
     @Test
-    fun sendNoticesProjectsArchiveFailureWithoutHidingBehindSuccess() {
+    fun sendNoticesKeepsArchiveFailuresOutOfVisibleFeedback() {
+        val archiveReads = mutableListOf<GroupId>()
         val runtime = FakeGemUiRuntime.ready(
             groups = FakeGroupFixtures.sendableGroups(),
             noticeArchiveFailuresByGroupId = mapOf(
@@ -108,6 +109,7 @@ class NoticeComposerControllerTest {
                     "archive failed",
                 ),
             ),
+            noticeArchiveReadLog = archiveReads,
         )
         val targets = NoticeComposerController(
             runtime = runtime,
@@ -124,16 +126,19 @@ class NoticeComposerControllerTest {
             .updateTargetSet(targets.targetSet)
             .sendNotices()
 
-        assertEquals(GemTextKey.SomeNoticesUnconfirmed, sent.state.sendFooterState.statusTextKey)
-        assertEquals("Owks: archive failed; attempts=4", sent.state.sendFooterState.detailText)
+        assertEquals(GemTextKey.NoticesSent, sent.state.sendFooterState.statusTextKey)
+        assertEquals(null, sent.state.sendFooterState.detailText)
+        assertTrue(archiveReads.isEmpty())
     }
 
     @Test
     fun sendNoticesListsTransportFailuresBeforeArchiveProofGaps() {
+        val archiveReads = mutableListOf<GroupId>()
         val runtime = FakeGemUiRuntime.ready(
             groups = FakeGroupFixtures.sendableGroups(),
             noticeRecorder = FakeNoticeRecorder(listOf(GroupSendState.SENT, GroupSendState.FAILED)),
             noticeArchiveEntriesByGroupId = emptyMap(),
+            noticeArchiveReadLog = archiveReads,
         )
         val targets = NoticeComposerController(
             runtime = runtime,
@@ -152,8 +157,9 @@ class NoticeComposerControllerTest {
 
         assertEquals(GemTextKey.SomeNoticesFailed, sent.state.sendFooterState.statusTextKey)
         assertEquals(
-            "m!nx: failed | Owks: notice archive proof_gap subject_or_attachment_not_found; attempts=4",
+            "m!nx: failed",
             sent.state.sendFooterState.detailText,
         )
+        assertTrue(archiveReads.isEmpty())
     }
 }

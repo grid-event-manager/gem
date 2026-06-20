@@ -78,7 +78,6 @@ import org.gem.core.services.GroupDirectoryService
 import org.gem.core.services.InventoryDirectoryService
 import org.gem.core.services.InventorySelectionService
 import org.gem.core.services.LoginComplianceService
-import org.gem.core.services.NoticeConfirmationService
 import org.gem.core.services.NoticeDispatchService
 import org.gem.core.services.NoticeDraftService
 import org.gem.core.services.SessionService
@@ -135,7 +134,6 @@ internal object GemAndroidUiTestRuntime {
             attachmentService = AttachmentService(inventoryPort),
             noticeDraftService = NoticeDraftService(),
             noticeDispatchService = NoticeDispatchService(AndroidUiNoticePort, AndroidUiClockPort),
-            noticeConfirmationService = NoticeConfirmationService(groupDirectoryService),
             loginComplianceProvider = AndroidUiLoginComplianceProvider,
             themePreferenceService = ThemePreferenceService(AndroidUiThemePreferenceStore()),
             appearanceProfileService = AppearanceProfileService(AndroidUiAppearanceProfileStore()),

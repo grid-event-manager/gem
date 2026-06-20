@@ -17,7 +17,6 @@ import org.gem.core.services.GroupDirectoryService
 import org.gem.core.services.InventoryDirectoryService
 import org.gem.core.services.InventorySelectionService
 import org.gem.core.services.LoginComplianceService
-import org.gem.core.services.NoticeConfirmationService
 import org.gem.core.services.NoticeDispatchService
 import org.gem.core.services.NoticeDraftService
 import org.gem.core.services.SessionService
@@ -96,7 +95,6 @@ object GemDesktopCompositionRoot {
                     noticePort = protocolRuntime.noticePort,
                     clockPort = DesktopAppClockPort,
                 ),
-                noticeConfirmationService = NoticeConfirmationService(groupDirectoryService),
                 loginComplianceProvider = GemUiLoginComplianceProvider,
                 themePreferenceService = themePreferenceService,
                 appearanceProfileService = appearanceProfileService,

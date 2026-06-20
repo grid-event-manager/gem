@@ -120,7 +120,6 @@ sealed interface GemTextKey {
     data object SendingNotices : GemTextKey
     data object NoticesSent : GemTextKey
     data object SomeNoticesFailed : GemTextKey
-    data object SomeNoticesUnconfirmed : GemTextKey
     data class SelectedCount(val count: Int) : GemTextKey
 
     companion object {
@@ -243,7 +242,6 @@ sealed interface GemTextKey {
             SendingNotices,
             NoticesSent,
             SomeNoticesFailed,
-            SomeNoticesUnconfirmed,
         )
     }
 }
@@ -373,7 +371,6 @@ object EnglishGemTextCatalogue : GemTextCatalogue {
         GemTextKey.SendingNotices -> "Sending notices"
         GemTextKey.NoticesSent -> "Notices sent"
         GemTextKey.SomeNoticesFailed -> "Some notices failed"
-        GemTextKey.SomeNoticesUnconfirmed -> "Some notices unconfirmed"
         is GemTextKey.SelectedCount -> "${key.count} selected"
     }
 }
