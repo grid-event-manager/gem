@@ -7,7 +7,7 @@ import kotlin.test.assertTrue
 class GemTextTest {
     @Test
     fun fixedKeysCoverPrototypeCopy() {
-        assertEquals(124, GemTextKey.fixedKeys.size)
+        assertEquals(123, GemTextKey.fixedKeys.size)
         assertTrue(GemTextKey.AppName in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.BrandInitials in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.BrandSubtitle in GemTextKey.fixedKeys)
@@ -57,7 +57,6 @@ class GemTextTest {
         assertTrue(GemTextKey.NoticesSent in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.SomeNoticesFailed in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.SendFailureCannotSendNotices in GemTextKey.fixedKeys)
-        assertTrue(GemTextKey.SendFailureAckTimeout in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.SendFailureRejected in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.SendFailureSenderUnavailable in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.SendFailureRequestInvalid in GemTextKey.fixedKeys)
@@ -136,10 +135,6 @@ class GemTextTest {
         assertEquals(
             "Your avatar cannot send notices to this group.",
             catalogue.text(GemTextKey.SendFailureCannotSendNotices),
-        )
-        assertEquals(
-            "Second Life did not confirm the send in time.",
-            catalogue.text(GemTextKey.SendFailureAckTimeout),
         )
         assertEquals(
             "Second Life did not accept the notice send.",

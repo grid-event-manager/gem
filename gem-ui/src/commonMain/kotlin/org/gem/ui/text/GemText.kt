@@ -121,7 +121,6 @@ sealed interface GemTextKey {
     data object NoticesSent : GemTextKey
     data object SomeNoticesFailed : GemTextKey
     data object SendFailureCannotSendNotices : GemTextKey
-    data object SendFailureAckTimeout : GemTextKey
     data object SendFailureRejected : GemTextKey
     data object SendFailureSenderUnavailable : GemTextKey
     data object SendFailureRequestInvalid : GemTextKey
@@ -250,7 +249,6 @@ sealed interface GemTextKey {
             NoticesSent,
             SomeNoticesFailed,
             SendFailureCannotSendNotices,
-            SendFailureAckTimeout,
             SendFailureRejected,
             SendFailureSenderUnavailable,
             SendFailureRequestInvalid,
@@ -385,7 +383,6 @@ object EnglishGemTextCatalogue : GemTextCatalogue {
         GemTextKey.NoticesSent -> "Notices sent"
         GemTextKey.SomeNoticesFailed -> "Some notices could not be sent"
         GemTextKey.SendFailureCannotSendNotices -> "Your avatar cannot send notices to this group."
-        GemTextKey.SendFailureAckTimeout -> "Second Life did not confirm the send in time."
         GemTextKey.SendFailureRejected -> "Second Life did not accept the notice send."
         GemTextKey.SendFailureSenderUnavailable -> "The notice sender was not available."
         GemTextKey.SendFailureRequestInvalid -> "The notice request could not be prepared."

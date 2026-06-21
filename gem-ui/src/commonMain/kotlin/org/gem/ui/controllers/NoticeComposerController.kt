@@ -269,9 +269,9 @@ class NoticeComposerController(
         )
 
     private fun sendStatusTextKey(
-        hasTransportFailure: Boolean,
+        hasVisibleFailure: Boolean,
     ): GemTextKey =
-        if (hasTransportFailure) GemTextKey.SomeNoticesFailed else GemTextKey.NoticesSent
+        if (hasVisibleFailure) GemTextKey.SomeNoticesFailed else GemTextKey.NoticesSent
 
     private fun failureDetails(
         statuses: List<GroupSendStatus>,
@@ -302,10 +302,6 @@ class NoticeComposerController(
         return when {
             status.state == GroupSendState.SKIPPED || "cannot send notices" in detail ->
                 GemTextKey.SendFailureCannotSendNotices
-            "ack timeout" in detail ->
-                GemTextKey.SendFailureAckTimeout
-            "simulator send failed" in detail ->
-                GemTextKey.SendFailureRejected
             "runtime unavailable" in detail ->
                 GemTextKey.SendFailureSenderUnavailable
             "request invalid" in detail ->

@@ -133,6 +133,7 @@ class SendFooterControllerTest {
             sendableGroup("group-two", "Two"),
             sendableGroup("group-three", "Three"),
             sendableGroup("group-four", "Four"),
+            sendableGroup("group-five", "Five"),
         )
         val recorder = FakeNoticeRecorder(
             scriptedStates = groups.map { GroupSendState.FAILED },
@@ -141,6 +142,7 @@ class SendFooterControllerTest {
                 "protocol simulator send failed",
                 "notice runtime unavailable",
                 "notice request invalid",
+                "notice send packet transport failed",
             ),
         )
         val runtime = FakeGemUiRuntime.ready(
@@ -160,7 +162,7 @@ class SendFooterControllerTest {
 
         val afterSend = ready.sendNotices()
 
-        assertEquals(4, afterSend.state.failedGroupCount)
+        assertEquals(5, afterSend.state.failedGroupCount)
         assertEquals(GemTextKey.SomeNoticesFailed, afterSend.state.sendFooterState.statusTextKey)
         assertEquals(
             listOf("Three", "Four"),
