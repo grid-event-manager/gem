@@ -3,19 +3,25 @@ package org.gem.ui.components
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import org.gem.ui.design.GemTheme
+import org.gem.ui.state.SendFailureDetailUiState
 import org.gem.ui.state.SendFooterUiState
 import org.gem.ui.testtags.GemTestTags
 import org.gem.ui.text.GemTextCatalogue
@@ -94,24 +100,10 @@ fun GemSendFooter(
             enter = fadeIn(),
             exit = fadeOut(),
         ) {
-            GemScrollablePane(
-                minHeight = GemTheme.spacing.compactRowMinHeight,
-                maxHeight = GemTheme.spacing.scrollListMaxHeight,
-                testTag = GemTestTags.StatusText,
-            ) {
-                Text(
-                    text = state.failureDetails.joinToString(separator = "\n") { detail ->
-                        textCatalogue.text(
-                            GemTextKey.SendFailureDetailLine(
-                                groupName = detail.groupName,
-                                reason = textCatalogue.text(detail.reasonKey),
-                            ),
-                        )
-                    },
-                    style = GemTheme.typeScale.smallLabel,
-                    color = GemTheme.colors.danger,
-                )
-            }
+            SendFailureDetailsPane(
+                detailsText = state.failureDetails.failureDetailsText(textCatalogue),
+                scrollable = state.failureDetails.size > SendFailureDetailsMaxVisibleRows,
+            )
         }
         GemPrimaryButton(
             text = textCatalogue.text(state.primaryLabelKey),
@@ -124,3 +116,61 @@ fun GemSendFooter(
         )
     }
 }
+
+@Composable
+private fun SendFailureDetailsPane(
+    detailsText: String,
+    scrollable: Boolean,
+) {
+    if (scrollable) {
+        GemScrollablePane(
+            minHeight = GemTheme.spacing.compactRowMinHeight,
+            maxHeight = GemTheme.spacing.sendFailureDetailsMaxHeight,
+            testTag = GemTestTags.StatusText,
+        ) {
+            SendFailureDetailsText(detailsText)
+        }
+        return
+    }
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = GemTheme.colors.fieldSurface,
+        contentColor = GemTheme.colors.ink,
+        shape = GemTheme.shapes.control,
+        border = BorderStroke(GemTheme.spacing.borderWidth, GemTheme.colors.lineStrong),
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = GemTheme.spacing.compactRowMinHeight)
+                .padding(GemTheme.spacing.fieldGap)
+                .testTag(GemTestTags.StatusText),
+        ) {
+            SendFailureDetailsText(detailsText)
+        }
+    }
+}
+
+@Composable
+private fun SendFailureDetailsText(detailsText: String) {
+    Text(
+        text = detailsText,
+        style = GemTheme.typeScale.smallLabel,
+        color = GemTheme.colors.danger,
+    )
+}
+
+private fun List<SendFailureDetailUiState>.failureDetailsText(
+    textCatalogue: GemTextCatalogue,
+): String =
+    joinToString(separator = "\n") { detail ->
+        textCatalogue.text(
+            GemTextKey.SendFailureDetailLine(
+                groupName = detail.groupName,
+                reason = textCatalogue.text(detail.reasonKey),
+            ),
+        )
+    }
+
+private const val SendFailureDetailsMaxVisibleRows = 10

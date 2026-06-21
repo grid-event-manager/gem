@@ -132,11 +132,14 @@ class NoticeComposerControllerTest {
     }
 
     @Test
-    fun sendNoticesListsTransportFailuresBeforeArchiveProofGaps() {
+    fun sendNoticesKeepsPostSendOffAppFailuresOutOfVisibleFeedback() {
         val archiveReads = mutableListOf<GroupId>()
         val runtime = FakeGemUiRuntime.ready(
             groups = FakeGroupFixtures.sendableGroups(),
-            noticeRecorder = FakeNoticeRecorder(listOf(GroupSendState.SENT, GroupSendState.FAILED)),
+            noticeRecorder = FakeNoticeRecorder(
+                scriptedStates = listOf(GroupSendState.SENT, GroupSendState.FAILED),
+                scriptedDetails = listOf(null, "protocol simulator send failed"),
+            ),
             noticeArchiveEntriesByGroupId = emptyMap(),
             noticeArchiveReadLog = archiveReads,
         )
@@ -155,12 +158,9 @@ class NoticeComposerControllerTest {
             .updateTargetSet(targets.targetSet)
             .sendNotices()
 
-        assertEquals(GemTextKey.SomeNoticesFailed, sent.state.sendFooterState.statusTextKey)
-        assertEquals("m!nx", sent.state.sendFooterState.failureDetails.single().groupName)
-        assertEquals(
-            GemTextKey.SendFailureRejected,
-            sent.state.sendFooterState.failureDetails.single().reasonKey,
-        )
+        assertEquals(1, sent.state.failedGroupCount)
+        assertEquals(GemTextKey.NoticesSent, sent.state.sendFooterState.statusTextKey)
+        assertEquals(emptyList(), sent.state.sendFooterState.failureDetails)
         assertEquals(false, sent.state.sendFooterState.failureDetailsExpanded)
         assertTrue(archiveReads.isEmpty())
     }

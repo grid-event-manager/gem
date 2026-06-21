@@ -70,6 +70,7 @@ data class GemSpacing(
     val inventoryPaneMaxHeight: Dp = 220.dp,
     val groupPickerMaxHeight: Dp = 220.dp,
     val scrollListMaxHeight: Dp = 220.dp,
+    val sendFailureDetailsMaxHeight: Dp = 166.dp,
     val modalInset: Dp = 22.dp,
     val modalMaxWidth: Dp = 360.dp,
     val modalActionMinWidth: Dp = 112.dp,

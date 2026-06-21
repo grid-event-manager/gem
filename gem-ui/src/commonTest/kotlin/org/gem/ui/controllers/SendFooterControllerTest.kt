@@ -100,7 +100,7 @@ class SendFooterControllerTest {
     }
 
     @Test
-    fun partialDispatchFailureIsStoredAsCollapsedPlainEnglishDetails() {
+    fun postSendOffAppFailureIsDetectedButNotSurfacedInFooter() {
         val recorder = FakeNoticeRecorder(
             scriptedStates = listOf(GroupSendState.SENT, GroupSendState.FAILED),
             scriptedDetails = listOf(null, "notice send ack timeout after 3 attempts"),
@@ -117,25 +117,17 @@ class SendFooterControllerTest {
         assertEquals(2, recorder.sendCallCount)
         assertEquals(1, afterSend.state.sentGroupCount)
         assertEquals(1, afterSend.state.failedGroupCount)
-        assertEquals(GemTextKey.SomeNoticesFailed, afterSend.state.sendFooterState.statusTextKey)
-        assertEquals(
-            "m!nx",
-            afterSend.state.sendFooterState.failureDetails.single().groupName,
-        )
-        assertEquals(
-            GemTextKey.SendFailureAckTimeout,
-            afterSend.state.sendFooterState.failureDetails.single().reasonKey,
-        )
+        assertEquals(GemTextKey.NoticesSent, afterSend.state.sendFooterState.statusTextKey)
+        assertEquals(emptyList(), afterSend.state.sendFooterState.failureDetails)
         assertFalse(afterSend.state.sendFooterState.failureDetailsExpanded)
 
         val expanded = afterSend.toggleSendFailureDetails()
 
-        assertTrue(expanded.state.sendFooterState.failureDetailsExpanded)
-        assertFalse(expanded.toggleSendFailureDetails().state.sendFooterState.failureDetailsExpanded)
+        assertFalse(expanded.state.sendFooterState.failureDetailsExpanded)
     }
 
     @Test
-    fun allFailedDispatchGroupsAreStoredAsSeparateDetails() {
+    fun onlyAppOwnedDispatchFailuresAreStoredAsSeparateDetails() {
         val groups = listOf(
             sendableGroup("group-one", "One"),
             sendableGroup("group-two", "Two"),
@@ -169,14 +161,13 @@ class SendFooterControllerTest {
         val afterSend = ready.sendNotices()
 
         assertEquals(4, afterSend.state.failedGroupCount)
+        assertEquals(GemTextKey.SomeNoticesFailed, afterSend.state.sendFooterState.statusTextKey)
         assertEquals(
-            listOf("One", "Two", "Three", "Four"),
+            listOf("Three", "Four"),
             afterSend.state.sendFooterState.failureDetails.map { it.groupName },
         )
         assertEquals(
             listOf(
-                GemTextKey.SendFailureAckTimeout,
-                GemTextKey.SendFailureRejected,
                 GemTextKey.SendFailureSenderUnavailable,
                 GemTextKey.SendFailureRequestInvalid,
             ),

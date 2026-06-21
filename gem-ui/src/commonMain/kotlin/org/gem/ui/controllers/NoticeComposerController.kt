@@ -232,15 +232,16 @@ class NoticeComposerController(
     ): NoticeComposerUiState {
         val sentCount = result.result.statuses.count { it.state == GroupSendState.SENT }
         val failedCount = result.result.statuses.count { it.state != GroupSendState.SENT }
-        val hasTransportFailure = failedCount > 0
+        val visibleFailures = result.result.statuses.filter(::isUiVisibleFailure)
+        val hasVisibleFailure = visibleFailures.isNotEmpty()
         return state.copy(
             sendAttempted = true,
             sentGroupCount = sentCount,
             failedGroupCount = failedCount,
             dispatchRejected = false,
             sendFooterState = state.sendFooterState.copy(
-                statusTextKey = sendStatusTextKey(hasTransportFailure),
-                failureDetails = failureDetails(result.result.statuses),
+                statusTextKey = sendStatusTextKey(hasVisibleFailure),
+                failureDetails = failureDetails(visibleFailures),
                 failureDetailsExpanded = false,
                 enabled = true,
                 sending = false,
@@ -275,16 +276,25 @@ class NoticeComposerController(
     private fun failureDetails(
         statuses: List<GroupSendStatus>,
     ): List<SendFailureDetailUiState> {
-        val failed = statuses.filter { it.state != GroupSendState.SENT }
-        if (failed.isEmpty()) {
+        if (statuses.isEmpty()) {
             return emptyList()
         }
-        return failed.map { status ->
+        return statuses.map { status ->
             SendFailureDetailUiState(
                 groupName = status.group.displayName.value,
                 reasonKey = sendFailureReasonKey(status),
             )
         }
+    }
+
+    private fun isUiVisibleFailure(status: GroupSendStatus): Boolean =
+        status.state != GroupSendState.SENT && !status.isPostSendOffAppFailure()
+
+    private fun GroupSendStatus.isPostSendOffAppFailure(): Boolean {
+        val detail = detail.orEmpty().lowercase()
+        return "ack timeout" in detail ||
+            "protocol simulator send failed" in detail ||
+            "notice send packet transport failed" in detail
     }
 
     private fun sendFailureReasonKey(status: GroupSendStatus): GemTextKey {
