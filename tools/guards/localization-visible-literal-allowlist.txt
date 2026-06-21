@@ -1,2 +1,2 @@
 # path::symbolOrLiteral::uiVisible=true|false::allowedClass=identifier|test-tag|package-build|diagnostic-log|data-label|private-proof::reason
-# No Track D raw visible UI copy survivors are allowed in production UI source.
+# No raw visible UI copy survivors are allowed in production UI source.
