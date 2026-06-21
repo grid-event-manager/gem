@@ -2389,9 +2389,9 @@ for appearance_element_label in \
     "Menu disabled text" \
     "Interactive hover text"; do
     check_required_hits \
-        "appearance element label present in text catalogue: $appearance_element_label" \
-        "\"$appearance_element_label\"" \
-        "gem-ui/src/commonMain/kotlin/org/gem/ui/text/GemText.kt"
+        "appearance element label present in localization source: $appearance_element_label" \
+        "$appearance_element_label" \
+        "gem-ui/src/commonMain/localization/en-GB.properties"
 done
 
 for appearance_element_key in \

@@ -7,7 +7,7 @@ import kotlin.test.assertTrue
 class GemTextTest {
     @Test
     fun fixedKeysCoverPrototypeCopy() {
-        assertEquals(123, GemTextKey.fixedKeys.size)
+        assertEquals(128, GemTextKey.fixedKeys.size)
         assertTrue(GemTextKey.AppName in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.BrandInitials in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.BrandSubtitle in GemTextKey.fixedKeys)
@@ -19,6 +19,11 @@ class GemTextTest {
         assertTrue(GemTextKey.LogOut in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.Exit in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.Accounts in GemTextKey.fixedKeys)
+        assertTrue(GemTextKey.Language in GemTextKey.fixedKeys)
+        assertTrue(GemTextKey.ChooseLanguage in GemTextKey.fixedKeys)
+        assertTrue(GemTextKey.SystemLanguage in GemTextKey.fixedKeys)
+        assertTrue(GemTextKey.LanguagePreferenceUnavailable in GemTextKey.fixedKeys)
+        assertTrue(GemTextKey.LanguagePreferenceSaveFailed in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.AddGroups in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.SavingLogin in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.SendingLoginDetails in GemTextKey.fixedKeys)
@@ -79,6 +84,11 @@ class GemTextTest {
         assertEquals("PM", catalogue.text(GemTextKey.MeridiemPm))
         assertEquals("Menu", catalogue.text(GemTextKey.Menu))
         assertEquals("Accounts", catalogue.text(GemTextKey.Accounts))
+        assertEquals("Language", catalogue.text(GemTextKey.Language))
+        assertEquals("\u2014 choose language \u2014", catalogue.text(GemTextKey.ChooseLanguage))
+        assertEquals("System language", catalogue.text(GemTextKey.SystemLanguage))
+        assertEquals("Language preference unavailable", catalogue.text(GemTextKey.LanguagePreferenceUnavailable))
+        assertEquals("Language preference could not be saved", catalogue.text(GemTextKey.LanguagePreferenceSaveFailed))
         assertEquals("Log out", catalogue.text(GemTextKey.LogOut))
         assertEquals("Exit", catalogue.text(GemTextKey.Exit))
         assertEquals("\u2014 select \u2014", catalogue.text(GemTextKey.SavedLoginPlaceholder))
@@ -159,6 +169,7 @@ class GemTextTest {
         val catalogue = EnglishGemTextCatalogue
 
         assertEquals("0 chars", catalogue.text(GemTextKey.DraftCharCount(0)))
+        assertEquals("1 char", catalogue.text(GemTextKey.DraftCharCount(1)))
         assertEquals("249 chars", catalogue.text(GemTextKey.DraftCharCount(249)))
         assertEquals("0 selected", catalogue.text(GemTextKey.SelectedCount(0)))
         assertEquals("3 selected", catalogue.text(GemTextKey.SelectedCount(3)))

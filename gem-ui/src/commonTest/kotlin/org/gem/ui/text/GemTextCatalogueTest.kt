@@ -2,8 +2,20 @@ package org.gem.ui.text
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertSame
 
 class GemTextCatalogueTest {
+    @Test
+    fun generatedRegistryExposesEnglishCatalogueMetadata() {
+        assertEquals(listOf("en-GB"), GemTextCatalogueRegistry.locales.map { it.localeTag })
+        val metadata = GemTextCatalogueRegistry.locales.single()
+        assertEquals("English", metadata.languageName)
+        assertEquals("English", metadata.nativeName)
+        assertSame(EnglishGemTextCatalogue, metadata.catalogue)
+        assertSame(EnglishGemTextCatalogue, GemTextCatalogueRegistry.catalogueFor("en-GB"))
+        assertEquals(null, GemTextCatalogueRegistry.catalogueFor("fr-FR"))
+    }
+
     @Test
     fun appearanceTextTargetCopyMatchesPrototypeContract() {
         val catalogue = EnglishGemTextCatalogue

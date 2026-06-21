@@ -1,3 +1,5 @@
+import org.gem.build.localization.GemLocalizationGeneratorTask
+
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.android.kotlin.multiplatform.library)
@@ -6,6 +8,11 @@ plugins {
 }
 
 val materialIconsCore = libs.compose.material.icons.core
+val generateGemLocalization by tasks.registering(GemLocalizationGeneratorTask::class) {
+    sourceDirectory.set(layout.projectDirectory.dir("src/commonMain/localization"))
+    generatedSourceDirectory.set(layout.buildDirectory.dir("generated/source/gemLocalization/commonMain/kotlin"))
+    reportDirectory.set(layout.buildDirectory.dir("reports/gem-localization"))
+}
 
 kotlin {
     jvm {
@@ -26,6 +33,8 @@ kotlin {
 
     sourceSets {
         commonMain {
+            kotlin.srcDir(generateGemLocalization.flatMap { it.generatedSourceDirectory })
+
             dependencies {
                 implementation(project(":gem-core"))
                 implementation(compose.runtime)
@@ -54,4 +63,8 @@ kotlin {
 
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
+}
+
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask<*>>().configureEach {
+    dependsOn(generateGemLocalization)
 }

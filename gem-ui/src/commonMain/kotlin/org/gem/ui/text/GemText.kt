@@ -20,6 +20,11 @@ sealed interface GemTextKey {
     data object SaveAndLogin : GemTextKey
     data object Accounts : GemTextKey
     data object Settings : GemTextKey
+    data object Language : GemTextKey
+    data object ChooseLanguage : GemTextKey
+    data object SystemLanguage : GemTextKey
+    data object LanguagePreferenceUnavailable : GemTextKey
+    data object LanguagePreferenceSaveFailed : GemTextKey
     data object EditAccount : GemTextKey
     data object SavePassword : GemTextKey
     data object AddNewAccount : GemTextKey
@@ -149,6 +154,11 @@ sealed interface GemTextKey {
             SaveAndLogin,
             Accounts,
             Settings,
+            Language,
+            ChooseLanguage,
+            SystemLanguage,
+            LanguagePreferenceUnavailable,
+            LanguagePreferenceSaveFailed,
             EditAccount,
             SavePassword,
             AddNewAccount,
@@ -259,135 +269,4 @@ sealed interface GemTextKey {
 
 interface GemTextCatalogue {
     fun text(key: GemTextKey): String
-}
-
-object EnglishGemTextCatalogue : GemTextCatalogue {
-    override fun text(key: GemTextKey): String = when (key) {
-        GemTextKey.AppName -> "Grid Event Manager"
-        GemTextKey.BrandInitials -> "GEM"
-        GemTextKey.BrandSubtitle -> "GRID EVENT MANAGER"
-        GemTextKey.Username -> "User Name"
-        GemTextKey.Password -> "Password"
-        GemTextKey.Show -> "Show"
-        GemTextKey.Hide -> "Hide"
-        GemTextKey.SavedLoginPlaceholder -> "\u2014 select \u2014"
-        GemTextKey.Login -> "Login"
-        GemTextKey.SecondLifeTimePrefix -> "SLT"
-        GemTextKey.MeridiemAm -> "AM"
-        GemTextKey.MeridiemPm -> "PM"
-        GemTextKey.Menu -> "Menu"
-        GemTextKey.LogOut -> "Log out"
-        GemTextKey.Exit -> "Exit"
-        GemTextKey.AddNewLogin -> "Add new login..."
-        GemTextKey.SaveAndLogin -> "Save and login"
-        GemTextKey.Accounts -> "Accounts"
-        GemTextKey.Settings -> "Settings"
-        GemTextKey.EditAccount -> "Edit account"
-        GemTextKey.SavePassword -> "Save password"
-        GemTextKey.AddNewAccount -> "Add new account"
-        GemTextKey.SaveNewAccount -> "Save new account"
-        GemTextKey.DeleteAccount -> "Delete account"
-        GemTextKey.Delete -> "Delete"
-        GemTextKey.DeleteConfirmation -> "Are you sure you want to delete these accounts?"
-        GemTextKey.Ok -> "OK"
-        GemTextKey.Cancel -> "Cancel"
-        GemTextKey.Back -> "BACK"
-        GemTextKey.Subject -> "Subject"
-        GemTextKey.Body -> "Body"
-        is GemTextKey.DraftCharCount -> "${key.count} chars"
-        GemTextKey.Inventory -> "Inventory"
-        GemTextKey.Landmarks -> "Landmarks"
-        GemTextKey.Textures -> "Textures"
-        GemTextKey.None -> "None"
-        GemTextKey.Groups -> "Groups"
-        GemTextKey.AddAll -> "Add all"
-        GemTextKey.AddGroups -> "Select..."
-        GemTextKey.SendNotices -> "Send notices"
-        GemTextKey.Ready -> "Ready"
-        GemTextKey.MissingSubject -> "Subject required"
-        GemTextKey.MissingBody -> "Body required"
-        GemTextKey.MissingGroups -> "Select groups"
-        GemTextKey.SavingLogin -> "Saving login"
-        GemTextKey.SendingLoginDetails -> "Sending login details"
-        GemTextKey.LoggingIn -> "Logging in"
-        GemTextKey.LoggingOut -> "Logging out"
-        GemTextKey.RezzingWorld -> "Rezzing world"
-        GemTextKey.LoadingAvatar -> "Loading avatar"
-        GemTextKey.PreparingAvatar -> "Preparing avatar"
-        GemTextKey.LoadingGroups -> "Loading groups"
-        GemTextKey.LoadingInventory -> "Loading inventory folders"
-        GemTextKey.InventoryEmpty -> "No inventory"
-        GemTextKey.InventoryUnavailable -> "Inventory unavailable"
-        GemTextKey.GroupsEmpty -> "No groups"
-        GemTextKey.GroupsUnavailable -> "Groups unavailable"
-        GemTextKey.LoginFailed -> "Login failed"
-        GemTextKey.RemovingFailedLogin -> "Removing failed login"
-        GemTextKey.Online -> "Online"
-        GemTextKey.Offline -> "Offline"
-        GemTextKey.BlankStatus -> ""
-        GemTextKey.Light -> "Light"
-        GemTextKey.Dark -> "Dark"
-        GemTextKey.GemDefault -> "GEM Default"
-        GemTextKey.ThemePreferenceUnavailable -> "Theme preference unavailable"
-        GemTextKey.ThemePreferenceSaveFailed -> "Theme preference could not be saved"
-        GemTextKey.Customise -> "Customise"
-        GemTextKey.Themes -> "Themes"
-        GemTextKey.SaveTheme -> "Save theme"
-        GemTextKey.ResetToDefault -> "Reset to default"
-        GemTextKey.EnterNewThemeName -> "Enter a new theme name"
-        GemTextKey.Save -> "Save"
-        GemTextKey.ChooseTheme -> "\u2014 choose theme \u2014"
-        GemTextKey.Text -> "Text"
-        GemTextKey.Fonts -> "Fonts"
-        GemTextKey.Element -> "Element"
-        GemTextKey.AppearanceTextTitleBar -> "Title bar"
-        GemTextKey.AppearanceTextTitleSubtitle -> "Title subtitle"
-        GemTextKey.AppearanceTextLogo -> "Logo"
-        GemTextKey.AppearanceTextSectionHeadings -> "Section headings"
-        GemTextKey.AppearanceTextMainBody -> "Main body"
-        GemTextKey.AppearanceTextFieldText -> "Field text"
-        GemTextKey.AppearanceTextSmallLabels -> "Small labels"
-        GemTextKey.AppearanceTextButtonLabels -> "Button labels"
-        GemTextKey.AppearanceTextMenuLabels -> "Menu labels"
-        GemTextKey.AppearanceTextSltClock -> "SLT clock"
-        GemTextKey.AppearanceTextBackButton -> "Back button"
-        GemTextKey.AppearanceTextThemeToggleLabels -> "Theme toggle labels"
-        GemTextKey.AppearanceElementPageBackground -> "Page background"
-        GemTextKey.AppearanceElementCardBackground -> "Card background"
-        GemTextKey.AppearanceElementPanelBackground -> "Panel background"
-        GemTextKey.AppearanceElementFieldBackground -> "Field background"
-        GemTextKey.AppearanceElementFieldControlBorders -> "Field/control borders"
-        GemTextKey.AppearanceElementTitleBar -> "Title bar"
-        GemTextKey.AppearanceElementTitleButton -> "Title button"
-        GemTextKey.AppearanceElementTitleButtonBorder -> "Title button border"
-        GemTextKey.AppearanceElementHamburgerBackground -> "Hamburger background"
-        GemTextKey.AppearanceElementHamburgerBorder -> "Hamburger border"
-        GemTextKey.AppearanceElementHamburgerBars -> "Hamburger bars"
-        GemTextKey.AppearanceElementThemeToggleTrack -> "Theme toggle track"
-        GemTextKey.AppearanceElementThemeToggleSelectedTrack -> "Theme toggle selected track"
-        GemTextKey.AppearanceElementThemeToggleKnob -> "Theme toggle knob"
-        GemTextKey.AppearanceElementAccentText -> "Accent text"
-        GemTextKey.AppearanceElementErrorText -> "Error text"
-        GemTextKey.AppearanceElementStatusText -> "Status text"
-        GemTextKey.AppearanceElementMenuDisabledText -> "Menu disabled text"
-        GemTextKey.AppearanceElementInteractiveHoverText -> "Interactive hover text"
-        GemTextKey.AppearanceElementPrimaryButtonFill -> "Primary button fill"
-        GemTextKey.AppearanceElementSelectedItemFill -> "Selected item fill"
-        GemTextKey.AppearanceElementMenuBackground -> "Menu background"
-        GemTextKey.AppearanceElementMenuHover -> "Menu hover"
-        GemTextKey.AppearanceElementStatusPill -> "Status pill"
-        GemTextKey.AppearanceElementRulesAndSeparators -> "Rules and separators"
-        GemTextKey.NoAttachmentsAdded -> "No attachments added"
-        GemTextKey.ClearAttachment -> "Clear attachment"
-        GemTextKey.SendingNotices -> "Sending notices"
-        GemTextKey.NoticesSent -> "Notices sent"
-        GemTextKey.SomeNoticesFailed -> "Some notices could not be sent"
-        GemTextKey.SendFailureCannotSendNotices -> "Your avatar cannot send notices to this group."
-        GemTextKey.SendFailureRejected -> "Second Life did not accept the notice send."
-        GemTextKey.SendFailureSenderUnavailable -> "The notice sender was not available."
-        GemTextKey.SendFailureRequestInvalid -> "The notice request could not be prepared."
-        GemTextKey.SendFailureSessionNotReady -> "The logged-in avatar session was not ready."
-        is GemTextKey.SendFailureDetailLine -> "${key.groupName}: ${key.reason}"
-        is GemTextKey.SelectedCount -> "${key.count} selected"
-    }
 }
