@@ -42,13 +42,31 @@ internal object GemLocalizationKotlinWriter {
                 val catalogue: GemTextCatalogue,
             )
 
-            object GemTextCatalogueRegistry {
-                val locales: List<GemTextCatalogueMetadata> = listOf(
-$registryRows
-                ).sortedBy { it.localeTag }
+            class GemTextCatalogueRegistry(
+                localeMetadata: List<GemTextCatalogueMetadata>,
+            ) {
+                val locales: List<GemTextCatalogueMetadata> =
+                    localeMetadata.sortedBy { it.localeTag }
 
                 fun catalogueFor(localeTag: String): GemTextCatalogue? =
                     locales.firstOrNull { it.localeTag == localeTag }?.catalogue
+
+                companion object {
+                    private val generated = GemTextCatalogueRegistry(
+                        listOf(
+$registryRows
+                        ),
+                    )
+
+                    val locales: List<GemTextCatalogueMetadata>
+                        get() = generated.locales
+
+                    fun catalogueFor(localeTag: String): GemTextCatalogue? =
+                        generated.catalogueFor(localeTag)
+
+                    fun generated(): GemTextCatalogueRegistry =
+                        generated
+                }
             }
 
             $catalogueObjects

@@ -17,4 +17,11 @@ class AndroidGemPreferencePathsTest {
 
         assertEquals("/data/user/0/org.gem/files/gem/preferences/appearance-profiles.properties", path)
     }
+
+    @Test
+    fun `places language preference file under android app files dir`() {
+        val path = AndroidGemPreferencePaths.defaultLanguagePreferenceFile("/data/user/0/org.gem/files")
+
+        assertEquals("/data/user/0/org.gem/files/gem/preferences/language.properties", path)
+    }
 }

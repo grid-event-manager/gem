@@ -7,6 +7,8 @@ import org.gem.core.appearance.AppearanceMode
 import org.gem.core.appearance.AppearanceProfileCatalogue
 import org.gem.core.appearance.AppearanceProfileName
 import org.gem.core.appearance.AppearanceProfileSaveResult
+import org.gem.core.language.LanguagePreference
+import org.gem.core.language.LanguagePreferenceSaveResult
 import org.gem.core.theme.ThemePreference
 import org.gem.core.theme.ThemePreferenceSaveResult
 import org.gem.preferences.DesktopGemPreferencePaths
@@ -56,6 +58,24 @@ class DesktopPreferenceCompositionTest {
         }
     }
 
+    @Test
+    fun `opens desktop language preference service at desktop language path`() {
+        val tempDataHome = Files.createTempDirectory("gem-desktop-language-composition-test")
+        try {
+            val service = DesktopPreferenceComposition.openLanguagePreference(
+                osName = "Linux",
+                env = mapOf("XDG_DATA_HOME" to tempDataHome.toString()),
+                userHome = tempDataHome.resolve("home").toString(),
+            )
+
+            assertEquals(LanguagePreferenceSaveResult.Saved, service.savePreference(LanguagePreference.Locale("fr-FR")))
+            assertEquals(LanguagePreference.Locale("fr-FR"), service.loadPreference().preference)
+            assertTrue(Files.exists(Path.of(languagePreferenceFile(tempDataHome))))
+        } finally {
+            DesktopTestDirectoryCleaner.deleteRecursively(tempDataHome)
+        }
+    }
+
     private fun preferenceFile(tempDataHome: Path): String =
         DesktopGemPreferencePaths.defaultPreferenceFile(
             osName = "Linux",
@@ -65,6 +85,13 @@ class DesktopPreferenceCompositionTest {
 
     private fun appearanceProfileFile(tempDataHome: Path): String =
         DesktopGemPreferencePaths.defaultAppearanceProfileFile(
+            osName = "Linux",
+            env = mapOf("XDG_DATA_HOME" to tempDataHome.toString()),
+            userHome = tempDataHome.resolve("home").toString(),
+        )
+
+    private fun languagePreferenceFile(tempDataHome: Path): String =
+        DesktopGemPreferencePaths.defaultLanguagePreferenceFile(
             osName = "Linux",
             env = mapOf("XDG_DATA_HOME" to tempDataHome.toString()),
             userHome = tempDataHome.resolve("home").toString(),

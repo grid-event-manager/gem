@@ -44,6 +44,7 @@ import org.gem.core.services.NoticeDispatchService
 import org.gem.core.services.NoticeDraftService
 import org.gem.core.services.SessionService
 import org.gem.core.services.TargetSelectionService
+import org.gem.core.language.LanguagePreferenceService
 import org.gem.core.theme.ThemePreferenceService
 import org.gem.core.ports.AccountProfileIdSource
 import org.gem.core.ports.AccountProfileStore
@@ -86,6 +87,7 @@ import org.gem.ui.design.PlatformFontFamilyResolver
 import org.gem.ui.design.PlatformSystemFontFamilyProvider
 import org.gem.ui.runtime.GemLoginComplianceProvider
 import org.gem.ui.runtime.GemUiRuntime
+import org.gem.ui.text.PlatformLocaleProvider
 import androidx.compose.ui.text.font.FontFamily
 
 object FakeGemUiRuntime {
@@ -104,6 +106,8 @@ object FakeGemUiRuntime {
         noticeArchiveFailuresByGroupId: Map<GroupId, CoreFailure> = emptyMap(),
         noticeArchiveReadLog: MutableList<GroupId>? = null,
         themePreferenceStore: FakeThemePreferenceStore = FakeThemePreferenceStore(),
+        languagePreferenceStore: FakeLanguagePreferenceStore = FakeLanguagePreferenceStore(),
+        platformLocaleProvider: PlatformLocaleProvider = PlatformLocaleProvider { "en-GB" },
         appearanceProfileStore: AppearanceProfileStore = InMemoryAppearanceProfileStore(),
         availableFontFamilies: List<AppearanceFontFamily> = listOf(AppearanceFontFamily("sans-serif")),
         platformFontFamilyResolver: PlatformFontFamilyResolver = PlatformFontFamilyResolver { FontFamily.Default },
@@ -137,6 +141,8 @@ object FakeGemUiRuntime {
             noticeArchiveFailuresByGroupId = noticeArchiveFailuresByGroupId,
             noticeArchiveReadLog = noticeArchiveReadLog,
             themePreferenceStore = themePreferenceStore,
+            languagePreferenceStore = languagePreferenceStore,
+            platformLocaleProvider = platformLocaleProvider,
             appearanceProfileStore = appearanceProfileStore,
             availableFontFamilies = availableFontFamilies,
             platformFontFamilyResolver = platformFontFamilyResolver,
@@ -177,6 +183,8 @@ object FakeGemUiRuntime {
         noticeArchiveFailuresByGroupId: Map<GroupId, CoreFailure> = emptyMap(),
         noticeArchiveReadLog: MutableList<GroupId>? = null,
         themePreferenceStore: FakeThemePreferenceStore = FakeThemePreferenceStore(),
+        languagePreferenceStore: FakeLanguagePreferenceStore = FakeLanguagePreferenceStore(),
+        platformLocaleProvider: PlatformLocaleProvider = PlatformLocaleProvider { "en-GB" },
         appearanceProfileStore: AppearanceProfileStore = InMemoryAppearanceProfileStore(),
         availableFontFamilies: List<AppearanceFontFamily> = listOf(AppearanceFontFamily("sans-serif")),
         platformFontFamilyResolver: PlatformFontFamilyResolver = PlatformFontFamilyResolver { FontFamily.Default },
@@ -224,6 +232,8 @@ object FakeGemUiRuntime {
                 )
             },
             themePreferenceService = ThemePreferenceService(themePreferenceStore),
+            languagePreferenceService = LanguagePreferenceService(languagePreferenceStore),
+            platformLocaleProvider = platformLocaleProvider,
             appearanceProfileService = AppearanceProfileService(appearanceProfileStore),
             platformFontCatalogue = PlatformFontCatalogue {
                 availableFontFamilies

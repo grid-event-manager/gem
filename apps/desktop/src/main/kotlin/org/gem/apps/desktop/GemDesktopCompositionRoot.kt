@@ -8,6 +8,7 @@ import org.gem.core.domain.SavedAccountProfile
 import org.gem.core.domain.ScriptedAgentEvidenceSource
 import java.nio.file.Path
 import org.gem.core.appearance.AppearanceProfileService
+import org.gem.core.language.LanguagePreferenceService
 import org.gem.core.ports.ClockPort
 import org.gem.core.preferences.LastLoginProfilePreferenceService
 import org.gem.core.services.AttachmentService
@@ -32,6 +33,7 @@ import org.gem.ui.design.JvmPlatformSystemFontFamilyProvider
 import org.gem.ui.design.PlatformSystemFontFamilyProvider
 import org.gem.ui.runtime.GemLoginComplianceProvider
 import org.gem.ui.runtime.GemUiRuntime
+import org.gem.ui.text.PlatformLocaleProvider
 
 object GemDesktopCompositionRoot {
     fun create(): GemUiRuntime {
@@ -39,9 +41,11 @@ object GemDesktopCompositionRoot {
         return GemRuntimeComposition.create(
             vaultAccess = DesktopVaultComposition.open(),
             themePreferenceService = DesktopPreferenceComposition.open(),
+            languagePreferenceService = DesktopPreferenceComposition.openLanguagePreference(),
             appearanceProfileService = DesktopPreferenceComposition.openAppearanceProfiles(),
             lastLoginProfilePreferenceService = DesktopPreferenceComposition.openLastLoginProfile(),
             inventorySnapshotCacheDirectory = DesktopPreferenceComposition.inventorySnapshotCacheDirectory(),
+            platformLocaleProvider = DesktopPlatformLocaleProvider(),
             platformSystemFontFamilyProvider = JvmPlatformSystemFontFamilyProvider(),
         )
     }
@@ -55,9 +59,11 @@ object GemDesktopCompositionRoot {
         return GemRuntimeComposition.create(
             vaultAccess = DesktopVaultComposition.open(osName, env, userHome),
             themePreferenceService = DesktopPreferenceComposition.open(osName, env, userHome),
+            languagePreferenceService = DesktopPreferenceComposition.openLanguagePreference(osName, env, userHome),
             appearanceProfileService = DesktopPreferenceComposition.openAppearanceProfiles(osName, env, userHome),
             lastLoginProfilePreferenceService = DesktopPreferenceComposition.openLastLoginProfile(osName, env, userHome),
             inventorySnapshotCacheDirectory = DesktopPreferenceComposition.inventorySnapshotCacheDirectory(osName, env, userHome),
+            platformLocaleProvider = DesktopPlatformLocaleProvider(),
             platformSystemFontFamilyProvider = JvmPlatformSystemFontFamilyProvider(osName),
         )
     }
@@ -66,9 +72,11 @@ object GemDesktopCompositionRoot {
         fun create(
             vaultAccess: GemVaultRuntimeAccess,
             themePreferenceService: ThemePreferenceService,
+            languagePreferenceService: LanguagePreferenceService,
             appearanceProfileService: AppearanceProfileService,
             lastLoginProfilePreferenceService: LastLoginProfilePreferenceService,
             inventorySnapshotCacheDirectory: Path,
+            platformLocaleProvider: PlatformLocaleProvider,
             platformSystemFontFamilyProvider: PlatformSystemFontFamilyProvider,
         ): GemUiRuntime {
             val protocolRuntime = ProtocolLibomvModule.liveRuntime(
@@ -97,6 +105,8 @@ object GemDesktopCompositionRoot {
                 ),
                 loginComplianceProvider = GemUiLoginComplianceProvider,
                 themePreferenceService = themePreferenceService,
+                languagePreferenceService = languagePreferenceService,
+                platformLocaleProvider = platformLocaleProvider,
                 appearanceProfileService = appearanceProfileService,
                 platformFontCatalogue = JvmPlatformFontCatalogue(),
                 platformFontFamilyResolver = JvmPlatformFontFamilyResolver(),

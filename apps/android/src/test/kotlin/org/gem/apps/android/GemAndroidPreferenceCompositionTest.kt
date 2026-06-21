@@ -7,6 +7,8 @@ import org.gem.core.appearance.AppearanceMode
 import org.gem.core.appearance.AppearanceProfileCatalogue
 import org.gem.core.appearance.AppearanceProfileName
 import org.gem.core.appearance.AppearanceProfileSaveResult
+import org.gem.core.language.LanguagePreference
+import org.gem.core.language.LanguagePreferenceSaveResult
 import org.gem.core.theme.ThemePreference
 import org.gem.core.theme.ThemePreferenceSaveResult
 import org.gem.preferences.AndroidGemPreferencePaths
@@ -48,11 +50,28 @@ class GemAndroidPreferenceCompositionTest {
         }
     }
 
+    @Test
+    fun `opens android language preference service at app files language path`() {
+        val appFilesDir = Files.createTempDirectory("gem-android-language-composition-test")
+        try {
+            val service = GemAndroidPreferenceComposition.openLanguagePreference(appFilesDir.toFile())
+
+            assertEquals(LanguagePreferenceSaveResult.Saved, service.savePreference(LanguagePreference.Locale("uk-UA")))
+            assertEquals(LanguagePreference.Locale("uk-UA"), service.loadPreference().preference)
+            assertTrue(Files.exists(Path.of(languagePreferenceFile(appFilesDir))))
+        } finally {
+            GemAndroidTestDirectoryCleaner.deleteRecursively(appFilesDir)
+        }
+    }
+
     private fun preferenceFile(appFilesDir: Path): String =
         AndroidGemPreferencePaths.defaultPreferenceFile(appFilesDir.toString())
 
     private fun appearanceProfileFile(appFilesDir: Path): String =
         AndroidGemPreferencePaths.defaultAppearanceProfileFile(appFilesDir.toString())
+
+    private fun languagePreferenceFile(appFilesDir: Path): String =
+        AndroidGemPreferencePaths.defaultLanguagePreferenceFile(appFilesDir.toString())
 
     private fun stockDraft(mode: AppearanceMode): AppearanceDraft =
         AppearanceDraft.fromProfile(AppearanceProfileCatalogue.stockProfiles().first { it.mode == mode })

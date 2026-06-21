@@ -70,6 +70,11 @@ import org.gem.core.preferences.LastLoginProfilePreferenceLoadResult
 import org.gem.core.preferences.LastLoginProfilePreferenceSaveResult
 import org.gem.core.preferences.LastLoginProfilePreferenceService
 import org.gem.core.preferences.LastLoginProfilePreferenceStore
+import org.gem.core.language.LanguagePreference
+import org.gem.core.language.LanguagePreferenceLoadResult
+import org.gem.core.language.LanguagePreferenceSaveResult
+import org.gem.core.language.LanguagePreferenceService
+import org.gem.core.language.LanguagePreferenceStore
 import org.gem.core.services.AttachmentService
 import org.gem.core.services.AvatarReadinessService
 import org.gem.core.services.CredentialService
@@ -92,6 +97,7 @@ import org.gem.ui.design.PlatformFontFamilyResolver
 import org.gem.ui.design.AndroidPlatformSystemFontFamilyProvider
 import org.gem.ui.runtime.GemLoginComplianceProvider
 import org.gem.ui.runtime.GemUiRuntime
+import org.gem.ui.text.PlatformLocaleProvider
 
 internal object GemAndroidUiTestRuntime {
     fun ready(): GemUiRuntime {
@@ -136,6 +142,8 @@ internal object GemAndroidUiTestRuntime {
             noticeDispatchService = NoticeDispatchService(AndroidUiNoticePort, AndroidUiClockPort),
             loginComplianceProvider = AndroidUiLoginComplianceProvider,
             themePreferenceService = ThemePreferenceService(AndroidUiThemePreferenceStore()),
+            languagePreferenceService = LanguagePreferenceService(AndroidUiLanguagePreferenceStore()),
+            platformLocaleProvider = PlatformLocaleProvider { "en-GB" },
             appearanceProfileService = AppearanceProfileService(AndroidUiAppearanceProfileStore()),
             platformFontCatalogue = PlatformFontCatalogue {
                 listOf(AppearanceFontFamily("sans-serif"))
@@ -342,6 +350,18 @@ private class AndroidUiThemePreferenceStore : ThemePreferenceStore {
     override fun save(preference: ThemePreference): ThemePreferenceSaveResult {
         this.preference = preference
         return ThemePreferenceSaveResult.Saved
+    }
+}
+
+private class AndroidUiLanguagePreferenceStore : LanguagePreferenceStore {
+    private var preference: LanguagePreference? = null
+
+    override fun load(): LanguagePreferenceLoadResult =
+        preference?.let(LanguagePreferenceLoadResult::Loaded) ?: LanguagePreferenceLoadResult.Missing
+
+    override fun save(preference: LanguagePreference): LanguagePreferenceSaveResult {
+        this.preference = preference
+        return LanguagePreferenceSaveResult.Saved
     }
 }
 

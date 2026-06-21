@@ -2,6 +2,7 @@ package org.gem.ui.runtime
 
 import org.gem.core.appearance.AppearanceFontFamily
 import org.gem.core.appearance.AppearanceProfileLoadResult
+import org.gem.core.language.LanguagePreference
 import org.gem.core.services.GemCredentialRuntimeReady
 import org.gem.ui.testing.FakeGemUiRuntime
 import kotlin.test.Test
@@ -34,6 +35,8 @@ class GemUiRuntimeTest {
             AppearanceFontFamily("sans-serif"),
             runtime.platformSystemFontFamilyProvider.defaultFamily(emptyList()),
         )
+        assertEquals(LanguagePreference.System, runtime.languagePreferenceService.loadPreference().preference)
+        assertEquals("en-GB", runtime.platformLocaleProvider.currentLocaleTag())
     }
 
     @Test
@@ -64,5 +67,15 @@ class GemUiRuntimeTest {
 
         assertNull(snapshot.warning)
         assertTrue(snapshot.preference.name.isNotBlank())
+    }
+
+    @Test
+    fun languagePreferenceAndLocaleProviderAreSuppliedByRuntimeComposition() {
+        val runtime = FakeGemUiRuntime.ready()
+        val snapshot = runtime.languagePreferenceService.loadPreference()
+
+        assertNull(snapshot.warning)
+        assertEquals(LanguagePreference.System, snapshot.preference)
+        assertEquals("en-GB", runtime.platformLocaleProvider.currentLocaleTag())
     }
 }

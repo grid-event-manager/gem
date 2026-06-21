@@ -17,11 +17,13 @@ import org.gem.core.services.SavedAccountManagementService
 import org.gem.core.services.SessionService
 import org.gem.core.services.TargetSelectionService
 import org.gem.core.ports.ClockPort
+import org.gem.core.language.LanguagePreferenceService
 import org.gem.core.preferences.LastLoginProfilePreferenceService
 import org.gem.core.theme.ThemePreferenceService
 import org.gem.ui.design.PlatformFontCatalogue
 import org.gem.ui.design.PlatformFontFamilyResolver
 import org.gem.ui.design.PlatformSystemFontFamilyProvider
+import org.gem.ui.text.PlatformLocaleProvider
 
 data class GemUiRuntime(
     val credentialRuntimeState: GemCredentialRuntimeState,
@@ -37,6 +39,8 @@ data class GemUiRuntime(
     val noticeDispatchService: NoticeDispatchService,
     val loginComplianceProvider: GemLoginComplianceProvider,
     val themePreferenceService: ThemePreferenceService,
+    val languagePreferenceService: LanguagePreferenceService,
+    val platformLocaleProvider: PlatformLocaleProvider,
     val appearanceProfileService: AppearanceProfileService,
     val platformFontCatalogue: PlatformFontCatalogue,
     val platformFontFamilyResolver: PlatformFontFamilyResolver,

@@ -12,6 +12,8 @@ import org.gem.core.domain.AccountProfileId
 import org.gem.core.domain.SavedAccountProfile
 import org.gem.core.domain.SecondLifeLoginName
 import org.gem.core.domain.SecondLifeLoginNameResult
+import org.gem.core.language.LanguagePreference
+import org.gem.core.language.LanguagePreferenceSaveResult
 import org.gem.core.ports.CredentialHandle
 import org.gem.core.preferences.LastLoginProfilePreferenceSaveResult
 import org.gem.core.services.GemCredentialRuntimeReady
@@ -53,6 +55,12 @@ class GemDesktopCompositionRootTest {
             assertNull(initialThemePreference.warning)
             assertEquals(ThemePreferenceSaveResult.Saved, runtime.themePreferenceService.savePreference(ThemePreference.DARK))
             assertTrue(Files.exists(Path.of(preferenceFile(tempDataHome))))
+            assertEquals(
+                LanguagePreferenceSaveResult.Saved,
+                runtime.languagePreferenceService.savePreference(LanguagePreference.Locale("fr-FR")),
+            )
+            assertTrue(Files.exists(Path.of(languagePreferenceFile(tempDataHome))))
+            assertTrue(runtime.platformLocaleProvider.currentLocaleTag().isNotBlank())
             assertEquals(
                 LastLoginProfilePreferenceSaveResult.Saved,
                 runtime.lastLoginProfilePreferenceService.saveProfileId(AccountProfileId("profile:v1:last")),
@@ -128,6 +136,13 @@ class GemDesktopCompositionRootTest {
 
     private fun appearanceProfileFile(tempDataHome: Path): String =
         DesktopGemPreferencePaths.defaultAppearanceProfileFile(
+            osName = "Linux",
+            env = mapOf("XDG_DATA_HOME" to tempDataHome.toString()),
+            userHome = tempDataHome.resolve("home").toString(),
+        )
+
+    private fun languagePreferenceFile(tempDataHome: Path): String =
+        DesktopGemPreferencePaths.defaultLanguagePreferenceFile(
             osName = "Linux",
             env = mapOf("XDG_DATA_HOME" to tempDataHome.toString()),
             userHome = tempDataHome.resolve("home").toString(),

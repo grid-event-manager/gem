@@ -22,6 +22,13 @@ object DesktopGemPreferencePaths {
     ): String =
         joinPath(defaultPreferenceDirectory(osName, env, userHome), "appearance-profiles.properties")
 
+    fun defaultLanguagePreferenceFile(
+        osName: String,
+        env: Map<String, String>,
+        userHome: String,
+    ): String =
+        joinPath(defaultPreferenceDirectory(osName, env, userHome), "language.properties")
+
     fun defaultPreferenceDirectory(
         osName: String,
         env: Map<String, String>,

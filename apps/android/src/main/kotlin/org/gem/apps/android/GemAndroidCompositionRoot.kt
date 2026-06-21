@@ -10,6 +10,7 @@ import org.gem.core.domain.LoginComplianceRequest
 import org.gem.core.domain.OperatorLabel
 import org.gem.core.domain.SavedAccountProfile
 import org.gem.core.domain.ScriptedAgentEvidenceSource
+import org.gem.core.language.LanguagePreferenceService
 import org.gem.core.ports.ClockPort
 import org.gem.core.preferences.LastLoginProfilePreferenceService
 import org.gem.core.services.AttachmentService
@@ -34,6 +35,7 @@ import org.gem.ui.design.AndroidPlatformFontFamilyResolver
 import org.gem.ui.design.AndroidPlatformSystemFontFamilyProvider
 import org.gem.ui.runtime.GemLoginComplianceProvider
 import org.gem.ui.runtime.GemUiRuntime
+import org.gem.ui.text.PlatformLocaleProvider
 
 object GemAndroidCompositionRoot {
     fun create(context: Context): GemUiRuntime =
@@ -56,9 +58,12 @@ object GemAndroidCompositionRoot {
             androidContext = androidContext,
             vaultAccess = GemAndroidVaultComposition.open(appFilesDir),
             themePreferenceService = GemAndroidPreferenceComposition.open(appFilesDir),
+            languagePreferenceService = GemAndroidPreferenceComposition.openLanguagePreference(appFilesDir),
             appearanceProfileService = GemAndroidPreferenceComposition.openAppearanceProfiles(appFilesDir),
             lastLoginProfilePreferenceService = GemAndroidPreferenceComposition.openLastLoginProfile(appFilesDir),
             inventorySnapshotCacheDirectory = GemAndroidPreferenceComposition.inventorySnapshotCacheDirectory(appFilesDir),
+            platformLocaleProvider = androidContext?.let(::AndroidPlatformLocaleProvider)
+                ?: AndroidPlatformLocaleProvider.javaDefault(),
         )
 
     private object GemRuntimeComposition {
@@ -66,9 +71,11 @@ object GemAndroidCompositionRoot {
             androidContext: Context?,
             vaultAccess: GemVaultRuntimeAccess,
             themePreferenceService: ThemePreferenceService,
+            languagePreferenceService: LanguagePreferenceService,
             appearanceProfileService: AppearanceProfileService,
             lastLoginProfilePreferenceService: LastLoginProfilePreferenceService,
             inventorySnapshotCacheDirectory: Path,
+            platformLocaleProvider: PlatformLocaleProvider,
         ): GemUiRuntime {
             val secretResolver = vaultAccess.loginSecretResolver()
             val protocolRuntime = if (androidContext == null) {
@@ -105,6 +112,8 @@ object GemAndroidCompositionRoot {
                 ),
                 loginComplianceProvider = GemUiLoginComplianceProvider,
                 themePreferenceService = themePreferenceService,
+                languagePreferenceService = languagePreferenceService,
+                platformLocaleProvider = platformLocaleProvider,
                 appearanceProfileService = appearanceProfileService,
                 platformFontCatalogue = AndroidPlatformFontCatalogue(),
                 platformFontFamilyResolver = AndroidPlatformFontFamilyResolver(),

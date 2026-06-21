@@ -3,10 +3,12 @@ package org.gem.apps.android
 import java.io.File
 import java.nio.file.Path
 import org.gem.core.appearance.AppearanceProfileService
+import org.gem.core.language.LanguagePreferenceService
 import org.gem.core.preferences.LastLoginProfilePreferenceService
 import org.gem.core.theme.ThemePreferenceService
 import org.gem.preferences.AndroidGemPreferencePaths
 import org.gem.preferences.FileAppearanceProfileStore
+import org.gem.preferences.FileLanguagePreferenceStore
 import org.gem.preferences.FileLastLoginProfilePreferenceStore
 import org.gem.preferences.FileThemePreferenceStore
 
@@ -30,6 +32,13 @@ object GemAndroidPreferenceComposition {
             AndroidGemPreferencePaths.defaultAppearanceProfileFile(appFilesDir.path),
         )
         return AppearanceProfileService(FileAppearanceProfileStore(preferenceFile.toPath()))
+    }
+
+    fun openLanguagePreference(appFilesDir: File): LanguagePreferenceService {
+        val preferenceFile = File(
+            AndroidGemPreferencePaths.defaultLanguagePreferenceFile(appFilesDir.path),
+        )
+        return LanguagePreferenceService(FileLanguagePreferenceStore(preferenceFile.toPath()))
     }
 
     fun inventorySnapshotCacheDirectory(appFilesDir: File): Path =

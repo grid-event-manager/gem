@@ -27,6 +27,17 @@ class DesktopGemPreferencePathsTest {
     }
 
     @Test
+    fun `places language preference file beside desktop ui preferences`() {
+        val path = DesktopGemPreferencePaths.defaultLanguagePreferenceFile(
+            osName = "Linux",
+            env = mapOf("XDG_DATA_HOME" to "/var/tmp/xdg"),
+            userHome = "/home/gemuser",
+        )
+
+        assertEquals("/var/tmp/xdg/gem/preferences/language.properties", path)
+    }
+
+    @Test
     fun `selects linux home fallback when xdg data home is absent`() {
         val path = DesktopGemPreferencePaths.defaultPreferenceFile(
             osName = "Linux",

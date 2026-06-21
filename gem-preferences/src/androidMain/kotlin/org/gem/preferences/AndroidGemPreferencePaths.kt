@@ -10,6 +10,9 @@ object AndroidGemPreferencePaths {
     fun defaultAppearanceProfileFile(appFilesDir: String): String =
         joinPath(defaultPreferenceDirectory(appFilesDir), "appearance-profiles.properties")
 
+    fun defaultLanguagePreferenceFile(appFilesDir: String): String =
+        joinPath(defaultPreferenceDirectory(appFilesDir), "language.properties")
+
     private fun defaultPreferenceDirectory(appFilesDir: String): String =
         joinPath(appFilesDir, "gem", "preferences")
 
