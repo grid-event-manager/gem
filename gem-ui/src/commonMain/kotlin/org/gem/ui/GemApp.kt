@@ -23,6 +23,7 @@ import org.gem.ui.components.GemSendFooter
 import org.gem.ui.components.GemTopBar
 import org.gem.ui.components.GemTopBarSubtitle
 import org.gem.ui.components.GemTopBarTitle
+import org.gem.ui.components.LanguagePanelCallbacks
 import org.gem.ui.components.SessionStrip
 import org.gem.ui.components.SectionBackNav
 import org.gem.ui.components.ThemeModeToggle
@@ -33,6 +34,7 @@ import org.gem.ui.controllers.GemAppController
 import org.gem.ui.controllers.GemLogoutWorkflow
 import org.gem.ui.controllers.GemLogoutWorkflowAction
 import org.gem.ui.controllers.InventoryBrowserController
+import org.gem.ui.controllers.LanguageController
 import org.gem.ui.controllers.LoginController
 import org.gem.ui.controllers.NoticeComposerController
 import org.gem.ui.design.AppearanceDesignTokenMapper
@@ -74,6 +76,9 @@ fun GemApp(
     var noticeController by remember(runtime) { mutableStateOf(NoticeComposerController(runtime)) }
     var groupTargetController by remember(runtime) { mutableStateOf(GroupTargetController(runtime)) }
     var inventoryController by remember(runtime) { mutableStateOf(InventoryBrowserController(runtime)) }
+    var languageController by remember(runtime, initialTextSelection) {
+        mutableStateOf(LanguageController.initial(runtime, initialTextSelection))
+    }
     var sendFeedbackGeneration by remember(runtime) { mutableStateOf(0) }
     var logoutInFlight by remember(runtime) { mutableStateOf(false) }
     var exitAfterCurrentLogout by remember(runtime) { mutableStateOf(false) }
@@ -507,8 +512,9 @@ fun GemApp(
                     )
                     UiRoute.Settings -> SettingsScreen(
                         appearanceState = appearanceController.state,
+                        languageState = languageController.state,
                         textCatalogue = textCatalogue,
-                        callbacks = AppearancePanelCallbacks(
+                        appearanceCallbacks = AppearancePanelCallbacks(
                             onExpandedPanelChanged = { panel ->
                                 appearanceController = appearanceController.setExpandedPanel(panel)
                             },
@@ -559,6 +565,18 @@ fun GemApp(
                             },
                             onProfileSelected = { profileId ->
                                 appearanceController = appearanceController.selectProfile(profileId)
+                            },
+                        ),
+                        languageCallbacks = LanguagePanelCallbacks(
+                            onExpandedChanged = { expanded ->
+                                languageController = languageController.setExpanded(expanded)
+                            },
+                            onOptionSelected = { option ->
+                                val changed = languageController.selectOption(option)
+                                languageController = changed.controller
+                                changed.selection?.let { selection ->
+                                    activeTextSelection = selection
+                                }
                             },
                         ),
                     )

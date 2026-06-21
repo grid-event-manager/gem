@@ -17,6 +17,7 @@ class SettingsScreenStateTest {
         val catalogue = EnglishGemTextCatalogue
 
         assertEquals("Settings", catalogue.text(GemTextKey.Settings))
+        assertEquals("Language", catalogue.text(GemTextKey.Language))
         assertEquals("Light", catalogue.text(GemTextKey.Light))
         assertEquals("Dark", catalogue.text(GemTextKey.Dark))
         assertEquals("data-view-settings", GemTestTags.ViewSettings)
@@ -33,5 +34,13 @@ class SettingsScreenStateTest {
         assertEquals(AppearanceMode.DARK, dark.mode)
         assertEquals(AppearanceExpandedPanel.NONE, dark.expandedPanel)
         assertTrue(dark.toggleChecked)
+    }
+
+    @Test
+    fun settingsCardOrderIsCustomiseThemesThenLanguage() {
+        assertEquals(
+            listOf(GemTextKey.Customise, GemTextKey.Themes, GemTextKey.Language),
+            SettingsScreenInteraction.cardOrder,
+        )
     }
 }
