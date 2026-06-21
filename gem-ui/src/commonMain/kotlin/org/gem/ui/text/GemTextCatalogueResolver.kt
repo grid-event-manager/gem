@@ -9,7 +9,7 @@ object GemTextCatalogueResolver {
         registry: GemTextCatalogueRegistry = GemTextCatalogueRegistry.generated(),
     ): GemTextCatalogueSelection {
         val requestedLocaleTag = when (preference) {
-            is LanguagePreference.Locale -> preference.localeTag
+            is LanguagePreference.Locale -> preference.localeTag.value
             LanguagePreference.System -> systemLocaleTag
         }
         val exact = registry.catalogueMetadataFor(requestedLocaleTag)

@@ -51,7 +51,7 @@ class LanguagePreferenceFileCodec {
 
     private fun LanguagePreference.encodedValue(): String =
         when (this) {
-            is LanguagePreference.Locale -> "$LOCALE_PREFIX$localeTag"
+            is LanguagePreference.Locale -> "$LOCALE_PREFIX${localeTag.value}"
             LanguagePreference.System -> SYSTEM_VALUE
         }
 

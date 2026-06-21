@@ -90,7 +90,7 @@ internal object LanguageSettingsPanelInteraction {
             LanguagePreference.System -> textCatalogue.text(GemTextKey.SystemLanguage)
             is LanguagePreference.Locale -> state.options
                 .filterIsInstance<LanguageOption.Locale>()
-                .firstOrNull { it.localeTag == preference.localeTag }
+                .firstOrNull { it.localeTag == preference.localeTag.value }
                 ?.nativeName
         }
 
