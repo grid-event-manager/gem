@@ -38,6 +38,7 @@ fun versionedPackagingText(key: String, version: String = desktopPackageVersion)
 val desktopPackageDescription = packagingText("app.fullName")
 val launcherDisplayName = packagingText("launcher.displayName")
 val macApplicationBundleName = packagingText("mac.bundleName")
+val desktopWindowTitlePrefix = versionedPackagingText("windows.displayName", "").trim()
 val nativePackageName = if (System.getProperty("os.name").startsWith("Mac", ignoreCase = true)) {
     macApplicationBundleName
 } else {
@@ -86,6 +87,7 @@ val generateGemDesktopBuildVersion by tasks.registering {
 
             internal object GemDesktopBuildVersion {
                 const val VisibleVersion = "$desktopPackageVersion"
+                const val WindowTitlePrefix = "$desktopWindowTitlePrefix"
             }
             """.trimIndent() + "\n",
         )

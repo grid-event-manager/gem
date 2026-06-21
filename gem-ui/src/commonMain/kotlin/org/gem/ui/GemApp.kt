@@ -51,19 +51,23 @@ import org.gem.ui.state.AppearanceUiState
 import org.gem.ui.state.LoginEntryMode
 import org.gem.ui.state.UiRoute
 import org.gem.ui.testtags.GemTestTags
-import org.gem.ui.text.EnglishGemTextCatalogue
 import org.gem.ui.text.AppearanceProfileDisplayLabel
 import org.gem.ui.text.GemTextCatalogue
+import org.gem.ui.text.GemTextCatalogueSelection
 import org.gem.ui.text.GemTextKey
 import org.gem.ui.time.SecondLifeTimeService
 
 @Composable
 fun GemApp(
     runtime: GemUiRuntime,
-    textCatalogue: GemTextCatalogue = EnglishGemTextCatalogue,
+    initialTextSelection: GemTextCatalogueSelection,
     exitRequestSerial: Int = 0,
     onExitReady: () -> Unit = {},
 ) {
+    var activeTextSelection by remember(runtime, initialTextSelection) {
+        mutableStateOf(initialTextSelection)
+    }
+    val textCatalogue = activeTextSelection.catalogue
     var appController by remember(runtime) { mutableStateOf(GemAppController(runtime)) }
     var loginController by remember(runtime) { mutableStateOf(LoginController(runtime).refreshSavedLogins()) }
     var accountsController by remember(runtime) { mutableStateOf(AccountsController(runtime).refreshSavedAccounts()) }

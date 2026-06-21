@@ -19,9 +19,11 @@ import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
+import org.gem.core.language.LanguagePreference
 import org.gem.ui.GemApp
 import org.gem.ui.testtags.GemTestTags
 import org.gem.ui.text.EnglishGemTextCatalogue
+import org.gem.ui.text.GemTextCatalogueResolver
 import org.gem.ui.text.GemTextKey
 import org.junit.Assert.assertFalse
 import org.junit.Rule
@@ -157,9 +159,14 @@ class GemAndroidNativeUiInstrumentedTest {
 
     private fun installFakeRuntime() {
         composeRule.activity.runOnUiThread {
+            val runtime = GemAndroidUiTestRuntime.ready()
             composeRule.activity.setContent {
                 GemApp(
-                    runtime = GemAndroidUiTestRuntime.ready(),
+                    runtime = runtime,
+                    initialTextSelection = GemTextCatalogueResolver.resolve(
+                        preference = LanguagePreference.System,
+                        systemLocaleTag = "en-GB",
+                    ),
                     onExitReady = { composeRule.activity.finish() },
                 )
             }

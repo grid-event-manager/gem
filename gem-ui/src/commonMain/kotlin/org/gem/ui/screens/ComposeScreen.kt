@@ -17,7 +17,6 @@ import org.gem.ui.state.InventoryBrowserUiState
 import org.gem.ui.state.InventoryShortcut
 import org.gem.ui.state.NoticeComposerUiState
 import org.gem.ui.testtags.GemTestTags
-import org.gem.ui.text.EnglishGemTextCatalogue
 import org.gem.ui.text.GemTextCatalogue
 
 @Composable
@@ -25,7 +24,7 @@ fun ComposeScreen(
     noticeState: NoticeComposerUiState = NoticeComposerUiState(),
     inventoryState: InventoryBrowserUiState = InventoryBrowserUiState(),
     groupTargetState: GroupTargetUiState = GroupTargetUiState(),
-    textCatalogue: GemTextCatalogue = EnglishGemTextCatalogue,
+    textCatalogue: GemTextCatalogue,
     onSubjectChanged: (String) -> Unit = {},
     onBodyChanged: (String) -> Unit = {},
     onInventoryShortcutSelected: (InventoryShortcut) -> Unit = {},
