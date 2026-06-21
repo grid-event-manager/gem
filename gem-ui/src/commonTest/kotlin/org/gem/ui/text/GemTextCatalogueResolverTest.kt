@@ -8,9 +8,9 @@ import org.gem.core.language.LanguagePreference
 class GemTextCatalogueResolverTest {
     private val registry = GemTextCatalogueRegistry(
         listOf(
-            GemTextCatalogueMetadata("fr-FR", "French", "Francais", FrenchCatalogue),
+            GemTextCatalogueMetadata("fr-FR", "French", "Francais", ExactLocaleCatalogue),
             GemTextCatalogueMetadata("en-GB", "English", "English", EnglishGemTextCatalogue),
-            GemTextCatalogueMetadata("fr-CA", "French", "Francais (Canada)", CanadianFrenchCatalogue),
+            GemTextCatalogueMetadata("fr-CA", "French", "Francais (Canada)", LanguageFallbackCatalogue),
         ),
     )
 
@@ -21,7 +21,7 @@ class GemTextCatalogueResolverTest {
         assertEquals(LanguagePreference.System, selection.preference)
         assertEquals("fr-FR", selection.requestedLocaleTag)
         assertEquals("fr-FR", selection.resolvedLocaleTag)
-        assertSame(FrenchCatalogue, selection.catalogue)
+        assertSame(ExactLocaleCatalogue, selection.catalogue)
         assertEquals(null, selection.warningKey)
     }
 
@@ -31,7 +31,7 @@ class GemTextCatalogueResolverTest {
 
         assertEquals("fr-BE", selection.requestedLocaleTag)
         assertEquals("fr-CA", selection.resolvedLocaleTag)
-        assertSame(CanadianFrenchCatalogue, selection.catalogue)
+        assertSame(LanguageFallbackCatalogue, selection.catalogue)
         assertEquals(null, selection.warningKey)
     }
 
@@ -52,7 +52,7 @@ class GemTextCatalogueResolverTest {
         assertEquals(LanguagePreference.Locale("fr-FR"), selection.preference)
         assertEquals("fr-FR", selection.requestedLocaleTag)
         assertEquals("fr-FR", selection.resolvedLocaleTag)
-        assertSame(FrenchCatalogue, selection.catalogue)
+        assertSame(ExactLocaleCatalogue, selection.catalogue)
         assertEquals(null, selection.warningKey)
     }
 
@@ -66,12 +66,12 @@ class GemTextCatalogueResolverTest {
         assertEquals(GemTextKey.LanguagePreferenceUnavailable, selection.warningKey)
     }
 
-    private object FrenchCatalogue : GemTextCatalogue {
+    private object ExactLocaleCatalogue : GemTextCatalogue {
         override fun text(key: GemTextKey): String =
             "fr-FR:${EnglishGemTextCatalogue.text(key)}"
     }
 
-    private object CanadianFrenchCatalogue : GemTextCatalogue {
+    private object LanguageFallbackCatalogue : GemTextCatalogue {
         override fun text(key: GemTextKey): String =
             "fr-CA:${EnglishGemTextCatalogue.text(key)}"
     }

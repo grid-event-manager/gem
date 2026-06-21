@@ -62,7 +62,7 @@ class LanguageControllerTest {
         assertEquals(LanguagePreference.Locale("fr-FR"), store.lastSavedPreference)
         assertEquals(LanguagePreference.Locale("fr-FR"), changed.controller.state.preference)
         assertEquals("fr-FR", changed.controller.state.resolvedLocaleTag)
-        assertSame(FrenchCatalogue, selection.catalogue)
+        assertSame(AlternateLocaleCatalogue, selection.catalogue)
         assertEquals(
             "fr-FR:${EnglishGemTextCatalogue.text(GemTextKey.Settings)}",
             selection.catalogue.text(GemTextKey.Settings),
@@ -82,7 +82,7 @@ class LanguageControllerTest {
         assertEquals(LanguagePreference.System, store.lastSavedPreference)
         assertEquals("fr-CA", changed.selection?.requestedLocaleTag)
         assertEquals("fr-FR", changed.selection?.resolvedLocaleTag)
-        assertSame(FrenchCatalogue, changed.selection?.catalogue)
+        assertSame(AlternateLocaleCatalogue, changed.selection?.catalogue)
     }
 
     @Test
@@ -93,7 +93,7 @@ class LanguageControllerTest {
 
         val changed = controller.selectOption(LanguageOption.Locale("fr-FR", "Francais"))
 
-        assertSame(FrenchCatalogue, changed.selection?.catalogue)
+        assertSame(AlternateLocaleCatalogue, changed.selection?.catalogue)
         assertEquals(GemTextKey.LanguagePreferenceSaveFailed, changed.controller.state.warningKey)
     }
 
@@ -145,7 +145,7 @@ class LanguageControllerTest {
         )
     }
 
-    private object FrenchCatalogue : GemTextCatalogue {
+    private object AlternateLocaleCatalogue : GemTextCatalogue {
         override fun text(key: GemTextKey): String =
             "fr-FR:${EnglishGemTextCatalogue.text(key)}"
     }
@@ -153,7 +153,7 @@ class LanguageControllerTest {
     private companion object {
         val registry = GemTextCatalogueRegistry(
             listOf(
-                GemTextCatalogueMetadata("fr-FR", "French", "Francais", FrenchCatalogue),
+                GemTextCatalogueMetadata("fr-FR", "French", "Francais", AlternateLocaleCatalogue),
                 GemTextCatalogueMetadata("en-GB", "English", "English", EnglishGemTextCatalogue),
             ),
         )

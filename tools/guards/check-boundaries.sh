@@ -118,6 +118,12 @@ APPEARANCE_SELECTOR_OPEN_MUTATION_PATTERN='on(Text|Element)TargetSelectorOpened[
 APPEARANCE_SELECTED_INK_SEGMENT_PATTERN='selectedInk'
 APPEARANCE_LOCAL_RGB_HEX_STATE_PATTERN='(rgb|Rgb|hex|Hex)[A-Za-z0-9_]*[[:space:]]+by[[:space:]]+remember|remember[[:space:]]*\([^)]*\)[[:space:]]*\{[[:space:]]*mutableStateOf\([^)]*(rgb|Rgb|hex|Hex)'
 APPEARANCE_SCREEN_LOCAL_FONT_PATTERN='fontFamily[[:space:]]*='
+LOCALIZATION_PRIVATE_SEED_PATTERN='docs/localization/HS003''-TRACK-D-en-GB'
+LOCALIZATION_HANDWRITTEN_CATALOGUE_PATTERN='object[[:space:]]+(English|French|German|Spanish|Ukrainian)[A-Za-z0-9_]*GemTextCatalogue|override fun text\(key:[[:space:]]*GemTextKey\):[[:space:]]*String[[:space:]]*=[[:space:]]*when'
+LOCALIZATION_DEFAULT_ENGLISH_ROUTE_PATTERN='textCatalogue:[[:space:]]*GemTextCatalogue[[:space:]]*=[[:space:]]*EnglishGemTextCatalogue|GemApp\(runtime\)'
+LOCALIZATION_SCREEN_COMPONENT_RESOLVER_PATTERN='GemTextCatalogueResolver|PlatformLocaleProvider|LanguagePreferenceStore'
+LOCALIZATION_APPEARANCE_LANGUAGE_PATTERN='LanguageController|LanguageSettingsPanel|GemTextKey\.Language|ChooseLanguage|SystemLanguage'
+LOCALIZATION_PRODUCTION_FIXTURE_PATTERN='object[[:space:]]+(French|German|Spanish|Ukrainian)[A-Za-z0-9_]*Catalogue|GemTextCatalogueMetadata\("[a-z][a-z]-[A-Z][A-Z]"'
 APPEARANCE_CURRENT_STREAM_FRAGMENT='HS003'
 APPEARANCE_CURRENT_TRACK_PREFIX='B'
 APPEARANCE_CURRENT_TRACK_SUFFIX='2'
@@ -404,6 +410,150 @@ check_appearance_target_placeholders_selectable() {
         failures=1
     else
         echo "PASS: appearance Text/Element placeholders stay selectable"
+    fi
+}
+
+check_localization_locale_set() {
+    local actual
+    actual="$(find gem-ui/src/commonMain/localization -maxdepth 1 -type f -name '*.properties' -printf '%f\n' | sort)"
+    if [[ "$actual" == "en-GB.properties" ]]; then
+        echo "PASS: localization shipped locale set is en-GB only"
+    else
+        echo "FAIL: localization shipped locale set is en-GB only"
+        echo "$actual"
+        failures=1
+    fi
+}
+
+check_localization_no_package_diff() {
+    local output
+    set +e
+    output="$(git diff -- apps/android/src/main/AndroidManifest.xml apps/desktop/src/main/package apps/desktop/build.gradle.kts apps/android/build.gradle.kts)"
+    set -e
+    if [[ -z "$output" ]]; then
+        echo "PASS: localization package-visible text unchanged"
+    else
+        echo "FAIL: localization package-visible text unchanged"
+        echo "$output"
+        failures=1
+    fi
+}
+
+check_localization_no_android_strings_route() {
+    local android_string_resource
+    local output
+    android_string_resource="$(printf '%s' 'strings' '.xml')"
+    set +e
+    output="$(find apps/android/src/main -path "*/res/values/${android_string_resource}" -type f -print)"
+    set -e
+    if [[ -z "$output" ]]; then
+        echo "PASS: localization Android string resource common UI route absent"
+    else
+        echo "FAIL: localization Android string resource common UI route absent"
+        echo "$output"
+        failures=1
+    fi
+}
+
+check_localization_allowlist_format() {
+    local allowlist="tools/guards/localization-visible-literal-allowlist.txt"
+    local bad=""
+    if [[ ! -f "$allowlist" ]]; then
+        echo "FAIL: localization visible literal allowlist exists"
+        failures=1
+        return
+    fi
+    while IFS= read -r line; do
+        [[ -z "$line" || "$line" == \#* ]] && continue
+        local row_path="${line%%::*}"
+        local rest="${line#*::}"
+        local row_literal="${rest%%::*}"
+        local row_tail="${rest#*::}"
+        if [[ "$row_path" == "$line" || "$row_literal" == "$rest" || -z "$row_path" || -z "$row_literal" ]]; then
+            bad+="$line"$'\n'
+        elif [[ ! "$row_tail" =~ ^uiVisible=(true|false)::allowedClass=(identifier|test-tag|package-build|diagnostic-log|data-label|private-proof)::.+$ ]]; then
+            bad+="$line"$'\n'
+        fi
+    done < "$allowlist"
+    if [[ -z "$bad" ]]; then
+        echo "PASS: localization visible literal allowlist format"
+    else
+        echo "FAIL: localization visible literal allowlist format"
+        printf '%s' "$bad"
+        failures=1
+    fi
+}
+
+decode_localization_property_value() {
+    local value="$1"
+    printf '%b' "$value"
+}
+
+is_allowed_localization_visible_literal_hit() {
+    local hit_path="$1"
+    local literal="$2"
+    local allowlist="tools/guards/localization-visible-literal-allowlist.txt"
+    local line
+    local row_path
+    local rest
+    local row_literal
+
+    [[ -f "$allowlist" ]] || return 1
+
+    while IFS= read -r line; do
+        [[ -z "$line" || "$line" == \#* ]] && continue
+        row_path="${line%%::*}"
+        rest="${line#*::}"
+        row_literal="${rest%%::*}"
+        if [[ "$row_path" == "$hit_path" && "$row_literal" == "$literal" ]]; then
+            return 0
+        fi
+    done < "$allowlist"
+
+    return 1
+}
+
+check_localization_raw_visible_copy() {
+    local source="gem-ui/src/commonMain/localization/en-GB.properties"
+    local targets=(
+        "gem-ui/src/commonMain/kotlin/org/gem/ui"
+        "gem-ui/src/jvmMain/kotlin/org/gem/ui"
+        "gem-ui/src/androidMain/kotlin/org/gem/ui"
+        "apps/desktop/src/main/kotlin"
+        "apps/android/src/main/kotlin"
+    )
+    local found=""
+    local key
+    local value
+    local decoded_value
+    local output
+    local hit
+    local hit_path
+    while IFS='=' read -r key value; do
+        [[ -n "${key:-}" ]] || continue
+        [[ "$key" == \#* || "$key" == meta.* || "$key" == *.* ]] && continue
+        [[ -n "${value:-}" ]] || continue
+        decoded_value="$(decode_localization_property_value "$value")"
+        [[ -n "$decoded_value" ]] || continue
+        set +e
+        output="$(rg -nF --glob '!**/build/**' -- "\"$decoded_value\"" "${targets[@]}" 2>/dev/null)"
+        set -e
+        if [[ -n "$output" ]]; then
+            while IFS= read -r hit; do
+                [[ -n "$hit" ]] || continue
+                hit_path="${hit%%:*}"
+                if ! is_allowed_localization_visible_literal_hit "$hit_path" "$decoded_value"; then
+                    found+="$hit"$'\n'
+                fi
+            done <<< "$output"
+        fi
+    done < "$source"
+    if [[ -z "$found" ]]; then
+        echo "PASS: localization raw visible UI copy centralized"
+    else
+        echo "FAIL: localization raw visible UI copy centralized"
+        printf '%s' "$found"
+        failures=1
     fi
 }
 
@@ -2498,6 +2648,51 @@ check_no_hits \
     "gem-ui/src/commonMain/kotlin/org/gem/ui/screens/SettingsScreen.kt"
 
 check_no_hits \
+    "localization private seed dependency absent" \
+    "$LOCALIZATION_PRIVATE_SEED_PATTERN" \
+    "${production_targets[@]}"
+
+check_no_hits \
+    "localization handwritten production catalogue source absent" \
+    "$LOCALIZATION_HANDWRITTEN_CATALOGUE_PATTERN" \
+    "gem-ui/src/commonMain/kotlin" \
+    "gem-ui/src/jvmMain/kotlin" \
+    "gem-ui/src/androidMain/kotlin" \
+    "apps/desktop/src/main/kotlin" \
+    "apps/android/src/main/kotlin"
+
+check_no_hits \
+    "localization production default-English route absent" \
+    "$LOCALIZATION_DEFAULT_ENGLISH_ROUTE_PATTERN" \
+    "gem-ui/src/commonMain" \
+    "apps/desktop/src/main" \
+    "apps/android/src/main"
+
+check_no_hits \
+    "localization screens and components do not resolve locale" \
+    "$LOCALIZATION_SCREEN_COMPONENT_RESOLVER_PATTERN" \
+    "gem-ui/src/commonMain/kotlin/org/gem/ui/screens" \
+    "gem-ui/src/commonMain/kotlin/org/gem/ui/components"
+
+check_no_hits \
+    "localization AppearanceSettingsPanel has no language code" \
+    "$LOCALIZATION_APPEARANCE_LANGUAGE_PATTERN" \
+    "gem-ui/src/commonMain/kotlin/org/gem/ui/components/AppearanceSettingsPanel.kt"
+
+check_no_hits \
+    "localization production recomposition fixture locale absent" \
+    "$LOCALIZATION_PRODUCTION_FIXTURE_PATTERN" \
+    "gem-ui/src/commonMain" \
+    "apps/desktop/src/main" \
+    "apps/android/src/main"
+
+check_localization_locale_set
+check_localization_no_package_diff
+check_localization_no_android_strings_route
+check_localization_allowlist_format
+check_localization_raw_visible_copy
+
+check_no_hits \
     "appearance ledger consumers do not read stale secondary token" \
     "$APPEARANCE_LEDGER_SECONDARY_CONSUMER_PATTERN" \
     "${appearance_ledger_consumer_targets[@]}"
@@ -3173,6 +3368,36 @@ check_pattern_matches \
     'Text("Preview", fontFamily = FontFamily.Serif)'
 
 check_pattern_matches \
+    "self-test localization private seed dependency pattern" \
+    "$LOCALIZATION_PRIVATE_SEED_PATTERN" \
+    "$(printf '%s' 'val seed = "docs/localization/HS003' '-TRACK-D-en-GB.properties"')"
+
+check_pattern_matches \
+    "self-test localization handwritten catalogue pattern" \
+    "$LOCALIZATION_HANDWRITTEN_CATALOGUE_PATTERN" \
+    "$(printf '%s%s%s' 'object ' 'French' 'GemTextCatalogue : GemTextCatalogue')"
+
+check_pattern_matches \
+    "self-test localization default English route pattern" \
+    "$LOCALIZATION_DEFAULT_ENGLISH_ROUTE_PATTERN" \
+    "$(printf '%s' 'textCatalogue: GemTextCatalogue = English' 'GemTextCatalogue')"
+
+check_pattern_matches \
+    "self-test localization screen resolver pattern" \
+    "$LOCALIZATION_SCREEN_COMPONENT_RESOLVER_PATTERN" \
+    'GemTextCatalogueResolver.resolve(preference, locale)'
+
+check_pattern_matches \
+    "self-test localization Appearance language pattern" \
+    "$LOCALIZATION_APPEARANCE_LANGUAGE_PATTERN" \
+    'LanguageSettingsPanel(state)'
+
+check_pattern_matches \
+    "self-test localization production fixture locale pattern" \
+    "$LOCALIZATION_PRODUCTION_FIXTURE_PATTERN" \
+    'GemTextCatalogueMetadata("fr-FR", "French", "Francais", FrenchCatalogue)'
+
+check_pattern_matches \
     "self-test ephemeral workstream label detector catches current raw track label" \
     "$APPEARANCE_PUBLIC_WORKSTREAM_LABEL_PATTERN" \
     "$APPEARANCE_CURRENT_TRACK_LABEL"
@@ -3545,7 +3770,7 @@ check_pattern_matches \
 check_pattern_matches \
     "self-test ANDROID_ACTIVITY_COMPOSE_DEPENDENCY_LIMIT setContent pattern" \
     "$ANDROID_SET_CONTENT_SOURCE_PATTERN" \
-    'activity.setContent { GemApp(runtime) }'
+    "$(printf '%s' 'activity.setContent { GemApp' '(runtime) }')"
 
 if [[ "$failures" -ne 0 ]]; then
     exit 1
