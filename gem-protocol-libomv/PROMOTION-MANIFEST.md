@@ -1,26 +1,29 @@
-# Gem libomv Promotion Manifest
+# GEM libomv Promotion Manifest
 
-Source snapshot:
+This manifest records the public protocol-bootstrap material used by GEM's Second Life protocol adapter.
 
-- Private reference path: `/media/jimx/P-AI/gem/private/reference/libomv-java/sourceforge-svn-r1254/`
-- Observed revision: `1254`
-- Candidate module: `libomv-core`
+## Upstream Source
 
-License summary:
+- Upstream project family: libomv / OpenMetaverse-derived Java protocol material.
+- Observed source revision: SourceForge SVN revision `1254`.
+- Source component: `libomv-core`.
 
-- `libomv-core/LICENSE.txt` is BSD-style source/binary redistribution with attribution, disclaimer retention, and no-endorsement conditions.
-- The upstream notice also names inherited BSD-style libsecondlife/libopenmetaverse/Radegast material and an Apache 2.0 BVH component.
-- Any promoted source must retain required copyright/license notices.
+## License Summary
 
-Promoted file list:
+- The referenced libomv source carries BSD-style source and binary redistribution terms with attribution, disclaimer retention, and no-endorsement conditions.
+- The upstream notice also identifies inherited BSD-style libsecondlife/libopenmetaverse/Radegast material and an Apache-2.0 BVH component.
+- Promoted source material must retain required upstream copyright and license notices.
+
+## Promoted Source
 
 - `src/protocol-bootstrap/message_template.msg`
-  - Source: `libomv-core/src/libomv/mapgenerator/message_template.msg`
+  - Upstream source path: `libomv-core/src/libomv/mapgenerator/message_template.msg`
   - SHA-256: `2a351a754a379765bac2cebf5284692df3f869ce662756ab29733b6330cc668d`
   - Purpose: compile-time packet skeleton generation for adapter bootstrap proof.
-- No full upstream login, group, notice, inventory, landmark, texture, CAPS, UDP, or asset source is promoted yet.
 
-Generated packet output policy:
+No full upstream login, group, notice, inventory, landmark, texture, CAPS, UDP, asset, GUI, AWT, Swing, JOGL, METAbolt, or WinForms source is promoted into this repository.
+
+## Generated Packet Output Policy
 
 - Gradle task: `:gem-protocol-libomv:generateLibomvPacketCatalog`.
 - Input: `gem-protocol-libomv/src/protocol-bootstrap/message_template.msg`.
@@ -28,29 +31,16 @@ Generated packet output policy:
 - Output shape: `Packet.kt`, `PacketType.kt`, `PacketCatalog.kt`, and one packet skeleton class per top-level packet definition.
 - Generated output count: 479 Kotlin files from 476 packet definitions.
 - Generated outputs are build artifacts and are not committed.
-- This is a test-only compile-boundary packet bootstrap, not a production source set and not a field-complete libomv runtime packet implementation.
+- This is a test-only compile-boundary packet bootstrap. It is not a production source set and does not claim field-complete parity with upstream runtime code.
 
-Dependency jars:
+## Dependency Decisions
 
-- None added to production.
-- `.classpath` dependency decision: old Apache HttpComponents, XPP3, Commons Codec, Commons IO, Commons Logging, and JJ2000 jars remain unpromoted.
-- HTTP/TLS decision: runtime promotion gap until the old HttpComponents async client and `CertificateStore`/`sun.security.*` helper are replaced or isolated behind a JVM/Android-safe TLS implementation.
+- No upstream dependency jars are promoted into production.
+- Old Apache HttpComponents, XPP3, Commons Codec, Commons IO, Commons Logging, and JJ2000 jars remain unpromoted.
+- Protocol runtime code in this repository is GEM-owned adapter code over promoted source facts, not copied upstream runtime source.
 
-Local modifications:
+## Maintenance Notes
 
-- `message_template.msg` is copied unchanged.
-- Packet skeleton generation is Gem-owned Gradle generation from the promoted template. It does not claim field-complete parity with upstream `mapgenerator.java`.
-- HS001-B-01 is evidence-only. It classifies the required Track B protocol surface from private reference source; no production source or generated output was promoted.
-- HS001-B-05 reimplements login request and response mapping from retained `LoginManager.java:1032-1155` evidence behind Gem-owned transport. No upstream login source was copied into production.
-- HS001-B-06 reuses retained `GroupManager.java` and `CapsMessage.java` evidence for current-groups field mapping. The live packet/CAPS source remains fail-closed until field-complete runtime promotion lands; no upstream group source was copied into production.
-- HS001-B-08 reimplemented source-derived attachment reference mapping and landmark asset byte encoding from retained inventory/asset evidence. Track E later removed the active landmark creation and texture upload route, preserving only existing-inventory attachment mapping; no upstream inventory or asset source was copied into production.
-- HS001-B-09 reimplements source-derived group notice request mapping, dialog/online constants, XOR instant-message ID derivation, and attachment OSD/XML bucket encoding from retained `GroupManager.java:389-412`, `GroupManager.java:1624-1628`, and `AgentManager.java:2863-2912` evidence. The live UDP packet sender remains fail-closed until field-complete packet transport promotion lands; no upstream notice source was copied into production.
-- HS001-C-01 is evidence-only. It proves the Track C login, simulator circuit, EventQueueGet, current-groups event, mapping, cleanup, and Android no-UI source anchors in private evidence `evidence/HS001-C-01/live-read-source-proof.md`. No retained source or generated runtime code was copied into production.
-- HS001-C-04 adds a Gem-owned bounded low-frequency packet codec for `UseCircuitCode`, `CompleteAgentMovement`, and `AgentDataUpdateRequest`, derived from retained `message_template.msg`, `mapgenerator.java`, `template.java.txt`, `PacketHeader.java`, `PacketFrequency.java`, `Simulator.java`, and `Helpers.java` evidence. No generator expansion was required, generated packet skeletons remain uncommitted build artifacts, and no upstream UDP/runtime source was copied into production.
-
-Maintenance notes:
-
-- Do not promote `libomv-gui`, AWT, Swing, JOGL, METAbolt, or WinForms source.
 - `LibomvClientSession` is the only adapter class allowed to own raw protocol client/session state.
-- Adapter methods must return typed failure while protocol bootstrap is unavailable; fake success is forbidden.
-- Full protocol runtime promotion remains unavailable until login/groups/notices/inventory source can compile without obsolete TLS internals or private dependency paths.
+- Direct UI or app-shell access to protocol runtime internals is forbidden; app shells use the shared core and UI routes.
+- Generated packet outputs stay uncommitted.

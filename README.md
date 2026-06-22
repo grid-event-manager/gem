@@ -1,15 +1,103 @@
-# Gem
+# GEM - Grid Event Manager
 
-Gem is a planned Second Life venue-manager aid focused on one narrow job: help a pre-provisioned account log in, choose its groups by display name, and send event notices with an existing landmark or texture attachment to selected group targets.
+GEM is a small cross-platform notice manager for Second Life venue work. It helps an operator log in, choose groups, write a notice, optionally attach an existing landmark or texture, and send the notice to selected groups.
 
-This repository is the public-ready production source tree inside the Gem project container. Internal RFCs, briefs, standard operating procedures, runbooks, reference-source snapshots, and discovery archives are kept outside this repo in `../private/`.
+GEM is not affiliated with, sponsored by, or endorsed by Linden Lab. Second Life grid behaviour remains controlled by Linden Lab and the Second Life service.
+
+This repository contains the public source tree for GEM. Internal planning notes, private test fixtures, credentials, live-grid evidence, and release-process records are not part of this public repository.
+
+## Current Status
+
+GEM is alpha software. The `0.1.x` builds are intended for controlled testing and feedback. The app has working Linux, Windows, macOS, and Android artifacts, but public distribution still needs normal platform hardening such as installer signing and macOS notarization.
+
+Supported alpha artifacts:
+
+- Linux: `.deb`
+- Windows: `.msi`
+- macOS: `.dmg`
+- Android: APK sideload build
+
+## What GEM Does
+
+- Stores local account details in the platform vault route.
+- Logs in to Second Life with the selected saved account.
+- Reads groups where the account can send notices.
+- Lets the operator write a subject and notice body.
+- Lets the operator choose one existing inventory attachment.
+- Sends notices through the shared core dispatch route.
+- Provides shared Compose UI across desktop and Android.
+- Provides in-app localization catalogues for supported UI languages.
+
+## What GEM Does Not Do Yet
+
+- GEM does not manage events end to end.
+- GEM does not create landmarks or upload textures from local files.
+- GEM does not expose pro operator tools, scheduling, serial keys, or skin packs yet.
+- GEM does not attempt to diagnose or display every post-send Second Life archive or delivery confirmation condition.
+- GEM does not ship signed public installers yet.
 
 ## Layout
 
 - `gem-core/` - reusable core boundary for login, group listing, display-name targeting, existing-inventory attachment handling, and notice orchestration.
 - `gem-ui/` - shared Compose UI used by Android and desktop app shells.
 - `apps/android/` - Android launcher and platform composition for the shared UI.
-- `apps/desktop/` - Linux desktop launcher and platform composition for the shared UI.
+- `apps/desktop/` - desktop launcher and platform composition for Linux, Windows, and macOS builds.
+- `gem-credential-vault/` - local encrypted credential storage route.
+- `gem-preferences/` - local appearance, language, and last-login preferences.
+- `gem-protocol-libomv/` - Second Life protocol adapter boundary and promoted protocol-bootstrap material.
 - `tools/cli/` - local proof and operational helpers for the current implementation path.
+- `tools/guards/` - boundary checks that keep architecture, localization, package identity, and UI ownership rules intact.
 
-Public production documentation can be added under `docs/` later when it is intended to ship with the project.
+## Build Requirements
+
+- JDK 21
+- Android SDK with API 36 for Android builds
+- Gradle wrapper from this repository
+- Platform packaging tools for desktop installers:
+  - Linux for `.deb`
+  - Windows for `.msi`
+  - macOS for `.dmg`
+
+## Common Checks
+
+```bash
+./gradlew --no-daemon :gem-ui:check
+./gradlew --no-daemon :apps:desktop:check :apps:android:check checkGemBoundaries
+```
+
+## Local Builds
+
+Linux DEB:
+
+```bash
+./gradlew --no-daemon :apps:desktop:packageDeb
+```
+
+Android debug APK:
+
+```bash
+./gradlew --no-daemon :apps:android:assembleDebug
+```
+
+Windows MSI and macOS DMG must be built on their target operating systems through the same Gradle packaging route:
+
+```bash
+./gradlew --no-daemon :apps:desktop:packageMsi
+./gradlew --no-daemon :apps:desktop:packageDmg
+```
+
+## Releases
+
+Release binaries are distributed as GitHub Release assets, not committed to the Git repository. GitHub Releases are suitable for the four GEM artifacts because each current artifact is far below GitHub's per-asset release limit.
+
+See `docs/PUBLISHING.md` for the current pre-publication checklist and release upload commands.
+
+## Security
+
+Do not put real Second Life account names, passwords, session data, inventory identifiers, local machine paths, or support-channel secrets in public issues. See `SECURITY.md`.
+
+## License
+
+GEM is released under the Apache License 2.0. See `LICENSE`.
+
+Third-party provenance and dependency notes live in `THIRD_PARTY_NOTICES.md` and `gem-protocol-libomv/PROMOTION-MANIFEST.md`.
