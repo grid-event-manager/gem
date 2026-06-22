@@ -56,6 +56,7 @@ class GemDesignTokenTest {
         assertEquals(220.dp, spacing.inventoryPaneMaxHeight)
         assertEquals(220.dp, spacing.groupPickerMaxHeight)
         assertEquals(8.dp, spacing.fieldGap)
+        assertEquals(24.dp, spacing.dropdownTrailingIconSlotWidth)
         assertEquals(10.dp, spacing.rowGap)
         assertEquals(8.dp, shapes.panelRadius)
         assertEquals(8.dp, shapes.controlRadius)

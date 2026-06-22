@@ -52,6 +52,7 @@ data class GemSpacing(
     val menuItemHorizontalPadding: Dp = 12.dp,
     val menuItemVerticalPadding: Dp = 3.dp,
     val fieldHorizontalPadding: Dp = 12.dp,
+    val dropdownTrailingIconSlotWidth: Dp = 24.dp,
     val rowVerticalPadding: Dp = 9.dp,
     val rowHorizontalPadding: Dp = 12.dp,
     val compactRowVerticalPadding: Dp = 4.dp,

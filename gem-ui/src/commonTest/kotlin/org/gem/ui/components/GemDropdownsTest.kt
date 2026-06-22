@@ -1,10 +1,13 @@
 package org.gem.ui.components
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 import org.gem.ui.design.GemColors
 import org.gem.ui.design.GemTypeScale
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class GemDropdownsTest {
     @Test
@@ -18,6 +21,12 @@ class GemDropdownsTest {
         assertEquals(Color(0xFF102030), GemDropdownTokens.selectorTextColor(colors, hasSelection = true))
         assertEquals(Color(0xFF405060), GemDropdownTokens.selectorTextColor(colors, hasSelection = false))
         assertEquals(typeScale.fieldText, GemDropdownTokens.selectorTextStyle(typeScale))
+    }
+
+    @Test
+    fun centeredDropdownsReserveMatchingLeadingSlotForTrailingChevron() {
+        assertTrue(GemDropdownTokens.needsCenteredSelectorLeadingSlot(TextAlign.Center))
+        assertFalse(GemDropdownTokens.needsCenteredSelectorLeadingSlot(TextAlign.Start))
     }
 
     @Test

@@ -6,7 +6,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
-import org.gem.core.language.LanguagePreference
 import org.gem.ui.design.GemTheme
 import org.gem.ui.state.LanguageOption
 import org.gem.ui.state.LanguageUiState
@@ -28,8 +27,8 @@ fun LanguageSettingsPanel(
 ) {
     GemPanel(modifier = modifier.testTag(GemTestTags.LanguagePanel)) {
         GemUnlabelledDropdownField(
-            selectedLabel = LanguageSettingsPanelInteraction.selectedLabel(state, textCatalogue),
-            placeholderLabel = textCatalogue.text(GemTextKey.ChooseLanguage),
+            selectedLabel = null,
+            placeholderLabel = LanguageSettingsPanelInteraction.collapsedLabel(textCatalogue),
             options = LanguageSettingsPanelInteraction.options(state, textCatalogue),
             onSelected = { selected -> selected?.let(callbacks.onOptionSelected) },
             enabled = enabled,
@@ -52,6 +51,9 @@ fun LanguageSettingsPanel(
 internal object LanguageSettingsPanelInteraction {
     val contentOrder: List<String> = listOf("language-dropdown")
 
+    fun collapsedLabel(textCatalogue: GemTextCatalogue): String =
+        textCatalogue.text(GemTextKey.Language)
+
     fun options(
         state: LanguageUiState,
         textCatalogue: GemTextCatalogue,
@@ -73,18 +75,6 @@ internal object LanguageSettingsPanelInteraction {
                     label = option.nativeName,
                 )
             }
-        }
-
-    fun selectedLabel(
-        state: LanguageUiState,
-        textCatalogue: GemTextCatalogue,
-    ): String? =
-        when (val preference = state.preference) {
-            LanguagePreference.System -> textCatalogue.text(GemTextKey.SystemLanguage)
-            is LanguagePreference.Locale -> state.options
-                .filterIsInstance<LanguageOption.Locale>()
-                .firstOrNull { it.localeTag == preference.localeTag.value }
-                ?.nativeName
         }
 
     fun warningKey(state: LanguageUiState): GemTextKey? =

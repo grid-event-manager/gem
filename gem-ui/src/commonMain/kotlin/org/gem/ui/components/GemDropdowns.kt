@@ -7,9 +7,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -167,6 +169,9 @@ private fun GemDropdownSelector(
             horizontalArrangement = Arrangement.spacedBy(spacing.fieldGap),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            if (GemDropdownTokens.needsCenteredSelectorLeadingSlot(textAlign)) {
+                Spacer(modifier = Modifier.width(spacing.dropdownTrailingIconSlotWidth))
+            }
             Text(
                 text = selectedLabel ?: placeholderLabel,
                 style = GemDropdownTokens.selectorTextStyle(GemTheme.typeScale),
@@ -312,6 +317,9 @@ private fun GemDropdownMenuItem(
 }
 
 internal object GemDropdownTokens {
+    fun needsCenteredSelectorLeadingSlot(textAlign: TextAlign): Boolean =
+        textAlign == TextAlign.Center
+
     fun selectorTextColor(
         colors: GemColors,
         hasSelection: Boolean,

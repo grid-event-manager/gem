@@ -20,6 +20,11 @@ class LanguageSettingsPanelTest {
     }
 
     @Test
+    fun collapsedDropdownUsesStableLanguageLabel() {
+        assertEquals(text.text(GemTextKey.Language), LanguageSettingsPanelInteraction.collapsedLabel(text))
+    }
+
+    @Test
     fun dropdownOptionsUseCentralCopyAndGeneratedLocaleNativeNames() {
         val options = LanguageSettingsPanelInteraction.options(state(), text)
 
@@ -38,27 +43,6 @@ class LanguageSettingsPanelTest {
         assertEquals(
             expectedLocaleOptions(),
             options.drop(2).map { it.value },
-        )
-    }
-
-    @Test
-    fun selectedLabelUsesPreferenceAndUnavailableLocaleFallsBackToPlaceholder() {
-        assertEquals(
-            text.text(GemTextKey.SystemLanguage),
-            LanguageSettingsPanelInteraction.selectedLabel(state(), text),
-        )
-        assertEquals(
-            "Français",
-            LanguageSettingsPanelInteraction.selectedLabel(
-                state().copy(preference = LanguagePreference.Locale("fr-FR")),
-                text,
-            ),
-        )
-        assertNull(
-            LanguageSettingsPanelInteraction.selectedLabel(
-                state().copy(preference = LanguagePreference.Locale("zz-ZZ")),
-                text,
-            ),
         )
     }
 
