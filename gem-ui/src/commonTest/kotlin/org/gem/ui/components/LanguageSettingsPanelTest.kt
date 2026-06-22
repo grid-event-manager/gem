@@ -15,8 +15,8 @@ class LanguageSettingsPanelTest {
     private val text = EnglishGemTextCatalogue
 
     @Test
-    fun languagePanelOwnsOnlyLanguageCard() {
-        assertEquals(listOf(GemTextKey.Language), LanguageSettingsPanelInteraction.contentOrder)
+    fun languagePanelOwnsSingleDropdownLikeThemes() {
+        assertEquals(listOf("language-dropdown"), LanguageSettingsPanelInteraction.contentOrder)
     }
 
     @Test

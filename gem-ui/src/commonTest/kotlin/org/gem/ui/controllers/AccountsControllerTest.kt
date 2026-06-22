@@ -103,6 +103,34 @@ class AccountsControllerTest {
     }
 
     @Test
+    fun accountPanelsCollapseEachOtherAndClearDeleteSelection() {
+        val runtime = FakeGemUiRuntime.ready()
+        val profile = FakeGemUiRuntime.defaultProfile()
+        val deleteOpen = AccountsController(runtime)
+            .refreshSavedAccounts()
+            .openDeleteAccounts()
+            .setDeleteAccountSelected(profile.profileId, true)
+
+        val addOpen = deleteOpen.toggleAddAccountPanel()
+        assertTrue(addOpen.state.addAccountExpanded)
+        assertFalse(addOpen.state.editAccountExpanded)
+        assertFalse(addOpen.state.deleteExpanded)
+        assertEquals(emptySet(), addOpen.state.selectedDeleteProfileIds)
+        assertFalse(addOpen.state.confirmDeleteOpen)
+
+        val editOpen = addOpen.toggleEditAccountPanel()
+        assertTrue(editOpen.state.editAccountExpanded)
+        assertFalse(editOpen.state.addAccountExpanded)
+        assertFalse(editOpen.state.deleteExpanded)
+
+        val deleteReopened = editOpen.openDeleteAccounts()
+        assertTrue(deleteReopened.state.deleteExpanded)
+        assertFalse(deleteReopened.state.editAccountExpanded)
+        assertFalse(deleteReopened.state.addAccountExpanded)
+        assertEquals(emptySet(), deleteReopened.state.selectedDeleteProfileIds)
+    }
+
+    @Test
     fun deleteAccountRequiresModalAndClearsDeletedActiveLabelOnConfirmOnly() {
         val runtime = FakeGemUiRuntime.ready()
         val profile = FakeGemUiRuntime.defaultProfile()

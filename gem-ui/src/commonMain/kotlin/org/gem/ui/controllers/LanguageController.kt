@@ -16,9 +16,6 @@ class LanguageController(
     private val registry: GemTextCatalogueRegistry,
     val state: LanguageUiState,
 ) {
-    fun setExpanded(expanded: Boolean): LanguageController =
-        copy(state = state.copy(expanded = expanded))
-
     fun selectOption(option: LanguageOption): LanguageSelectionChange {
         val preference = option.preference ?: return LanguageSelectionChange(this, null)
         val saveResult = runtime.languagePreferenceService.savePreference(preference)

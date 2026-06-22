@@ -111,10 +111,18 @@ class AccountsController(
     }
 
     fun toggleEditAccountPanel(): AccountsController =
-        copy(state.copy(editAccountExpanded = !state.editAccountExpanded))
+        copy(
+            state.withExpandedPanel(
+                if (state.editAccountExpanded) AccountPanel.NONE else AccountPanel.EDIT,
+            ),
+        )
 
     fun toggleAddAccountPanel(): AccountsController =
-        copy(state.copy(addAccountExpanded = !state.addAccountExpanded))
+        copy(
+            state.withExpandedPanel(
+                if (state.addAccountExpanded) AccountPanel.NONE else AccountPanel.ADD,
+            ),
+        )
 
     fun updateNewUsernameDraft(username: String): AccountsController =
         copy(state.withNewAccountDrafts(username = username))
@@ -189,9 +197,11 @@ class AccountsController(
 
     fun openDeleteAccounts(): AccountsController =
         when {
-            !state.deleteExpanded -> copy(state.copy(deleteExpanded = true, confirmDeleteOpen = false))
+            !state.deleteExpanded -> copy(
+                state.withExpandedPanel(AccountPanel.DELETE).copy(selectedDeleteProfileIds = emptySet()),
+            )
             state.deleteEnabled -> copy(state.copy(confirmDeleteOpen = true))
-            else -> copy(state.copy(deleteExpanded = false, confirmDeleteOpen = false))
+            else -> copy(state.withExpandedPanel(AccountPanel.NONE))
         }
 
     fun setDeleteAccountSelected(
@@ -257,6 +267,15 @@ class AccountsController(
             saveNewAccountEnabled = credentialRuntime.ready && username.isNotBlank() && password.isNotBlank(),
             errorKey = null,
             errorMessage = null,
+        )
+
+    private fun AccountsUiState.withExpandedPanel(panel: AccountPanel): AccountsUiState =
+        copy(
+            editAccountExpanded = panel == AccountPanel.EDIT,
+            addAccountExpanded = panel == AccountPanel.ADD,
+            deleteExpanded = panel == AccountPanel.DELETE,
+            selectedDeleteProfileIds = if (panel == AccountPanel.DELETE) selectedDeleteProfileIds else emptySet(),
+            confirmDeleteOpen = false,
         )
 
     private fun afterDeleteSuccess(
@@ -361,4 +380,11 @@ class AccountsController(
         appState: AppUiState = this.appState,
     ): AccountsController =
         AccountsController(runtime, state, appState)
+
+    private enum class AccountPanel {
+        NONE,
+        EDIT,
+        ADD,
+        DELETE,
+    }
 }

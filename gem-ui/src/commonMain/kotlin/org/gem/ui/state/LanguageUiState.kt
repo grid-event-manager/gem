@@ -4,7 +4,6 @@ import org.gem.core.language.LanguagePreference
 import org.gem.ui.text.GemTextKey
 
 data class LanguageUiState(
-    val expanded: Boolean = false,
     val preference: LanguagePreference = LanguagePreference.System,
     val requestedLocaleTag: String = "",
     val resolvedLocaleTag: String = "",

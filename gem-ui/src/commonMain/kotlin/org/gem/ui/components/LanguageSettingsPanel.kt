@@ -5,6 +5,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.style.TextAlign
 import org.gem.core.language.LanguagePreference
 import org.gem.ui.design.GemTheme
 import org.gem.ui.state.LanguageOption
@@ -14,7 +15,6 @@ import org.gem.ui.text.GemTextCatalogue
 import org.gem.ui.text.GemTextKey
 
 data class LanguagePanelCallbacks(
-    val onExpandedChanged: (Boolean) -> Unit,
     val onOptionSelected: (LanguageOption) -> Unit,
 )
 
@@ -27,37 +27,30 @@ fun LanguageSettingsPanel(
     enabled: Boolean = true,
 ) {
     GemPanel(modifier = modifier.testTag(GemTestTags.LanguagePanel)) {
-        GemExpandablePanelHeader(
-            text = textCatalogue.text(GemTextKey.Language),
-            expanded = state.expanded,
+        GemUnlabelledDropdownField(
+            selectedLabel = LanguageSettingsPanelInteraction.selectedLabel(state, textCatalogue),
+            placeholderLabel = textCatalogue.text(GemTextKey.ChooseLanguage),
+            options = LanguageSettingsPanelInteraction.options(state, textCatalogue),
+            onSelected = { selected -> selected?.let(callbacks.onOptionSelected) },
             enabled = enabled,
-            onClick = { callbacks.onExpandedChanged(!state.expanded) },
+            fieldModifier = Modifier.testTag(GemTestTags.LanguageDropdown),
+            textAlign = TextAlign.Center,
         )
-        if (state.expanded) {
-            GemUnlabelledDropdownField(
-                selectedLabel = LanguageSettingsPanelInteraction.selectedLabel(state, textCatalogue),
-                placeholderLabel = textCatalogue.text(GemTextKey.ChooseLanguage),
-                options = LanguageSettingsPanelInteraction.options(state, textCatalogue),
-                onSelected = { selected -> selected?.let(callbacks.onOptionSelected) },
-                enabled = enabled,
-                fieldModifier = Modifier.testTag(GemTestTags.LanguageDropdown),
+        LanguageSettingsPanelInteraction.warningKey(state)?.let { warningKey ->
+            Text(
+                text = textCatalogue.text(warningKey),
+                color = GemTheme.colors.danger,
+                style = GemTheme.typeScale.smallLabel,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag(GemTestTags.LanguageWarning),
             )
-            LanguageSettingsPanelInteraction.warningKey(state)?.let { warningKey ->
-                Text(
-                    text = textCatalogue.text(warningKey),
-                    color = GemTheme.colors.danger,
-                    style = GemTheme.typeScale.smallLabel,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag(GemTestTags.LanguageWarning),
-                )
-            }
         }
     }
 }
 
 internal object LanguageSettingsPanelInteraction {
-    val contentOrder: List<GemTextKey> = listOf(GemTextKey.Language)
+    val contentOrder: List<String> = listOf("language-dropdown")
 
     fun options(
         state: LanguageUiState,

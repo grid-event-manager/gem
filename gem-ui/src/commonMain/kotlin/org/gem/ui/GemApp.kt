@@ -568,9 +568,6 @@ fun GemApp(
                             },
                         ),
                         languageCallbacks = LanguagePanelCallbacks(
-                            onExpandedChanged = { expanded ->
-                                languageController = languageController.setExpanded(expanded)
-                            },
                             onOptionSelected = { option ->
                                 val changed = languageController.selectOption(option)
                                 languageController = changed.controller
