@@ -118,7 +118,7 @@ APPEARANCE_SELECTOR_OPEN_MUTATION_PATTERN='on(Text|Element)TargetSelectorOpened[
 APPEARANCE_SELECTED_INK_SEGMENT_PATTERN='selectedInk'
 APPEARANCE_LOCAL_RGB_HEX_STATE_PATTERN='(rgb|Rgb|hex|Hex)[A-Za-z0-9_]*[[:space:]]+by[[:space:]]+remember|remember[[:space:]]*\([^)]*\)[[:space:]]*\{[[:space:]]*mutableStateOf\([^)]*(rgb|Rgb|hex|Hex)'
 APPEARANCE_SCREEN_LOCAL_FONT_PATTERN='fontFamily[[:space:]]*='
-LOCALIZATION_PRIVATE_SEED_PATTERN='docs/localization/HS003''-TRA''CK-D-en-GB'
+LOCALIZATION_PRIVATE_EVIDENCE_PATTERN='docs/localization/HS003''-TRA''CK-D-[A-Za-z]{2}-[A-Za-z]{2}'
 LOCALIZATION_HANDWRITTEN_CATALOGUE_PATTERN='object[[:space:]]+[A-Za-z0-9_]*GemTextCatalogue[[:space:]]*:[[:space:]]*GemTextCatalogue|override fun text\(key:[[:space:]]*GemTextKey\):[[:space:]]*String[[:space:]]*=[[:space:]]*when'
 LOCALIZATION_DEFAULT_ENGLISH_ROUTE_PATTERN='textCatalogue:[[:space:]]*GemTextCatalogue[[:space:]]*=[[:space:]]*EnglishGemTextCatalogue|GemApp\(runtime\)'
 LOCALIZATION_SCREEN_COMPONENT_RESOLVER_PATTERN='GemTextCatalogueResolver|PlatformLocaleProvider|LanguagePreferenceStore'
@@ -2710,8 +2710,8 @@ check_no_hits \
     "gem-ui/src/commonMain/kotlin/org/gem/ui/screens/SettingsScreen.kt"
 
 check_no_hits \
-    "localization private seed dependency absent" \
-    "$LOCALIZATION_PRIVATE_SEED_PATTERN" \
+    "localization private evidence dependency absent" \
+    "$LOCALIZATION_PRIVATE_EVIDENCE_PATTERN" \
     "${production_targets[@]}"
 
 check_no_hits \
@@ -3438,9 +3438,9 @@ check_pattern_matches \
     'Text("Preview", fontFamily = FontFamily.Serif)'
 
 check_pattern_matches \
-    "self-test localization private seed dependency pattern" \
-    "$LOCALIZATION_PRIVATE_SEED_PATTERN" \
-    "$(printf '%s%s' 'val seed = "docs/localization/HS003-TRA' 'CK-D-en-GB.properties"')"
+    "self-test localization private evidence dependency pattern" \
+    "$LOCALIZATION_PRIVATE_EVIDENCE_PATTERN" \
+    "$(printf '%s%s' 'val evidence = "docs/localization/HS003-TRA' 'CK-D-fr-FR.properties"')"
 
 check_pattern_matches \
     "self-test localization handwritten catalogue pattern" \

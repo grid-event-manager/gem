@@ -29,7 +29,7 @@ internal object GemLocalizationPropertiesParser {
     }
 
     private fun parseFile(file: File): GemLocalizationSource {
-        val rawLines = file.readLines()
+        val rawLines = file.readLines(Charsets.UTF_8)
         val rawKeys = rawLines.mapIndexedNotNull { index, line ->
             val trimmed = line.trim()
             when {
