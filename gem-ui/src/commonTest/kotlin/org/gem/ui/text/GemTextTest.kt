@@ -7,7 +7,7 @@ import kotlin.test.assertTrue
 class GemTextTest {
     @Test
     fun fixedKeysCoverPrototypeCopy() {
-        assertEquals(128, GemTextKey.fixedKeys.size)
+        assertEquals(133, GemTextKey.fixedKeys.size)
         assertTrue(GemTextKey.AppName in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.BrandInitials in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.BrandSubtitle in GemTextKey.fixedKeys)
@@ -19,6 +19,11 @@ class GemTextTest {
         assertTrue(GemTextKey.LogOut in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.Exit in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.Accounts in GemTextKey.fixedKeys)
+        assertTrue(GemTextKey.About in GemTextKey.fixedKeys)
+        assertTrue(GemTextKey.AboutProductLine in GemTextKey.fixedKeys)
+        assertTrue(GemTextKey.AboutCopyright in GemTextKey.fixedKeys)
+        assertTrue(GemTextKey.AboutLicense in GemTextKey.fixedKeys)
+        assertTrue(GemTextKey.AboutHelpSupport in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.Language in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.ChooseLanguage in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.SystemLanguage in GemTextKey.fixedKeys)
@@ -84,6 +89,11 @@ class GemTextTest {
         assertEquals("PM", catalogue.text(GemTextKey.MeridiemPm))
         assertEquals("Menu", catalogue.text(GemTextKey.Menu))
         assertEquals("Accounts", catalogue.text(GemTextKey.Accounts))
+        assertEquals("About", catalogue.text(GemTextKey.About))
+        assertEquals("GEM - Grid Event Manager", catalogue.text(GemTextKey.AboutProductLine))
+        assertEquals("Copyright (c) 2026 ANVLL", catalogue.text(GemTextKey.AboutCopyright))
+        assertEquals("Released under the Apache License 2.0.", catalogue.text(GemTextKey.AboutLicense))
+        assertEquals("Help & Support", catalogue.text(GemTextKey.AboutHelpSupport))
         assertEquals("Language", catalogue.text(GemTextKey.Language))
         assertEquals("\u2014 choose language \u2014", catalogue.text(GemTextKey.ChooseLanguage))
         assertEquals("System language", catalogue.text(GemTextKey.SystemLanguage))

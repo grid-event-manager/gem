@@ -5,4 +5,5 @@ sealed interface UiRoute {
     data object Compose : UiRoute
     data object Accounts : UiRoute
     data object Settings : UiRoute
+    data object About : UiRoute
 }

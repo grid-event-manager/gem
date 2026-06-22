@@ -36,7 +36,15 @@ object AppSectionCatalogue {
         sessionStripPolicy = SectionSessionStripPolicy.Hidden,
     )
 
-    val sections: List<AppSection> = listOf(login, compose, accounts, settings)
+    val about = AppSection(
+        sectionId = "about",
+        route = UiRoute.About,
+        labelKey = GemTextKey.About,
+        backPolicy = SectionBackPolicy.ReturnToSessionOrLogin,
+        sessionStripPolicy = SectionSessionStripPolicy.Hidden,
+    )
+
+    val sections: List<AppSection> = listOf(login, compose, accounts, settings, about)
 
     fun sectionFor(route: UiRoute): AppSection =
         when (route) {
@@ -44,5 +52,6 @@ object AppSectionCatalogue {
             UiRoute.Compose -> compose
             UiRoute.Accounts -> accounts
             UiRoute.Settings -> settings
+            UiRoute.About -> about
         }
 }

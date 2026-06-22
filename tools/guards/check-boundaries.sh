@@ -27,7 +27,7 @@ UI_STYLE_TOKEN_PATTERN='#[0-9A-Fa-f]{6}|(^|[^[:alnum:]_])Color\(|[0-9]+\.dp'
 UI_DIRECT_CONTROL_PATTERN='(^|[^[:alnum:]_])(OutlinedTextField|DropdownMenu|DropdownMenuItem|ExposedDropdownMenu|ExposedDropdownMenuBox|Button|OutlinedButton|verticalScroll|rememberScrollState|VerticalScrollbar|rememberScrollbarAdapter)[[:space:]]*\('
 UI_SECTIONS_STALE_ACCOUNT_SETTINGS_PATTERN='SettingsController|SettingsUiState|SettingsPanels|SettingsEditAccountPanel|SettingsAddAccountPanel|SettingsErrorText|SettingsBackNav'
 UI_SECTIONS_FIXED_SETTINGS_CALLBACK_PATTERN='onSettingsClick'
-UI_SECTIONS_PLATFORM_DIRECT_LABEL_PATTERN='GemTextKey\.(Accounts|Settings)'
+UI_SECTIONS_PLATFORM_DIRECT_LABEL_PATTERN='GemTextKey\.(Accounts|Settings|About)'
 UI_SECTIONS_PLATFORM_SECTION_LABEL_FLOW_PATTERN='textCatalogue\.text\([[:space:]]*entry\.section\.labelKey[[:space:]]*\)'
 UI_SECTIONS_PLATFORM_COMMAND_LABEL_FLOW_PATTERN='textCatalogue\.text\([[:space:]]*entry\.labelKey[[:space:]]*\)'
 UI_SECTIONS_PAGE_BUILDER_ROUTE_PATTERN='PageBuilder|SectionManager|WebView|<html|json[[:space:]]+route|string[[:space:]]+route'
@@ -2388,6 +2388,11 @@ check_required_hits \
     "gem-ui/src/commonMain/kotlin/org/gem/ui/navigation/AppMenuCatalogue.kt"
 
 check_required_hits \
+    "ui sections menu catalogue owner present OpenAbout" \
+    'GemTestTags\.OpenAbout' \
+    "gem-ui/src/commonMain/kotlin/org/gem/ui/navigation/AppMenuCatalogue.kt"
+
+check_required_hits \
     "ui sections menu catalogue owner present LogOut" \
     'GemTestTags\.LogOut' \
     "gem-ui/src/commonMain/kotlin/org/gem/ui/navigation/AppMenuCatalogue.kt"
@@ -2410,6 +2415,11 @@ check_required_hits \
 check_required_hits \
     "ui sections section catalogue owner present Settings route" \
     'UiRoute\.Settings' \
+    "gem-ui/src/commonMain/kotlin/org/gem/ui/navigation/AppSectionCatalogue.kt"
+
+check_required_hits \
+    "ui sections section catalogue owner present About route" \
+    'UiRoute\.About' \
     "gem-ui/src/commonMain/kotlin/org/gem/ui/navigation/AppSectionCatalogue.kt"
 
 check_required_hits \

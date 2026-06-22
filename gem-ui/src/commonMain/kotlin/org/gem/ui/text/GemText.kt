@@ -20,6 +20,11 @@ sealed interface GemTextKey {
     data object SaveAndLogin : GemTextKey
     data object Accounts : GemTextKey
     data object Settings : GemTextKey
+    data object About : GemTextKey
+    data object AboutProductLine : GemTextKey
+    data object AboutCopyright : GemTextKey
+    data object AboutLicense : GemTextKey
+    data object AboutHelpSupport : GemTextKey
     data object Language : GemTextKey
     data object ChooseLanguage : GemTextKey
     data object SystemLanguage : GemTextKey
@@ -154,6 +159,11 @@ sealed interface GemTextKey {
             SaveAndLogin,
             Accounts,
             Settings,
+            About,
+            AboutProductLine,
+            AboutCopyright,
+            AboutLicense,
+            AboutHelpSupport,
             Language,
             ChooseLanguage,
             SystemLanguage,

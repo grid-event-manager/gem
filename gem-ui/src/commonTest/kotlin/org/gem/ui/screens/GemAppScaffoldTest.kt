@@ -52,15 +52,18 @@ class GemAppScaffoldTest {
     }
 
     @Test
-    fun `top bar title model preserves brand on root routes`() {
+    fun `top bar title model preserves brand on product routes`() {
         val appearanceState = AppearanceController.initial(FakeGemUiRuntime.ready(), osDark = false).state
         val login = topBarTitleForRoute(UiRoute.Login, appearanceState, EnglishGemTextCatalogue)
         val compose = topBarTitleForRoute(UiRoute.Compose, appearanceState, EnglishGemTextCatalogue)
+        val about = topBarTitleForRoute(UiRoute.About, appearanceState, EnglishGemTextCatalogue)
 
         assertEquals(GemTextKey.BrandInitials, login.titleKey)
         assertEquals(GemTopBarSubtitle.Catalogue(GemTextKey.BrandSubtitle), login.subtitle)
         assertEquals(GemTextKey.BrandInitials, compose.titleKey)
         assertEquals(GemTopBarSubtitle.Catalogue(GemTextKey.BrandSubtitle), compose.subtitle)
+        assertEquals(GemTextKey.BrandInitials, about.titleKey)
+        assertEquals(GemTopBarSubtitle.Catalogue(GemTextKey.BrandSubtitle), about.subtitle)
     }
 
     @Test
@@ -81,6 +84,7 @@ class GemAppScaffoldTest {
     fun `section navigation toggle is settings only`() {
         assertTrue(sectionNavigationShowsThemeToggle(UiRoute.Settings))
         assertFalse(sectionNavigationShowsThemeToggle(UiRoute.Accounts))
+        assertFalse(sectionNavigationShowsThemeToggle(UiRoute.About))
         assertFalse(sectionNavigationShowsThemeToggle(UiRoute.Login))
         assertFalse(sectionNavigationShowsThemeToggle(UiRoute.Compose))
     }

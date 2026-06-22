@@ -30,6 +30,11 @@ internal object GemLocalizationContract {
         "SaveAndLogin",
         "Accounts",
         "Settings",
+        "About",
+        "AboutProductLine",
+        "AboutCopyright",
+        "AboutLicense",
+        "AboutHelpSupport",
         "Language",
         "ChooseLanguage",
         "SystemLanguage",
@@ -191,6 +196,7 @@ internal object GemLocalizationContract {
         "AppName" to "Grid Event Manager",
         "BrandInitials" to "GEM",
         "BrandSubtitle" to "GRID EVENT MANAGER",
+        "AboutProductLine" to "GEM - Grid Event Manager",
     )
 
     val fixedKeySet: Set<String> = fixedKeys.toSet()

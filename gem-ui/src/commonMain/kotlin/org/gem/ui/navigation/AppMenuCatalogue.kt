@@ -14,6 +14,10 @@ object AppMenuCatalogue {
                 section = AppSectionCatalogue.settings,
                 testTag = GemTestTags.OpenSettings,
             ),
+            AppMenuEntry.SectionEntry(
+                section = AppSectionCatalogue.about,
+                testTag = GemTestTags.OpenAbout,
+            ),
             AppMenuEntry.CommandEntry(
                 command = AppMenuCommand.LogOut,
                 labelKey = GemTextKey.LogOut,

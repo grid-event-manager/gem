@@ -44,10 +44,11 @@ import org.gem.ui.navigation.AppMenuCommand
 import org.gem.ui.navigation.AppSectionCatalogue
 import org.gem.ui.navigation.SectionBackPolicy
 import org.gem.ui.navigation.SectionSessionStripPolicy
+import org.gem.ui.screens.AboutScreen
+import org.gem.ui.screens.AccountsScreen
 import org.gem.ui.screens.ComposeScreen
 import org.gem.ui.runtime.GemUiRuntime
 import org.gem.ui.screens.LoginScreen
-import org.gem.ui.screens.AccountsScreen
 import org.gem.ui.screens.SettingsScreen
 import org.gem.ui.state.AppearanceUiState
 import org.gem.ui.state.LoginEntryMode
@@ -577,6 +578,9 @@ fun GemApp(
                             },
                         ),
                     )
+                    UiRoute.About -> AboutScreen(
+                        textCatalogue = textCatalogue,
+                    )
                 }
             },
         )
@@ -611,7 +615,8 @@ internal fun topBarTitleForRoute(
             subtitle = GemTopBarSubtitle.None,
         )
         UiRoute.Login,
-        UiRoute.Compose -> GemTopBarTitle.brand()
+        UiRoute.Compose,
+        UiRoute.About -> GemTopBarTitle.brand()
     }
 
 internal fun sectionNavigationShowsThemeToggle(route: UiRoute): Boolean =

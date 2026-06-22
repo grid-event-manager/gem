@@ -44,6 +44,7 @@ class GemAndroidNativeUiInstrumentedTest {
         composeRule.onNodeWithTag(GemTestTags.AppMenu).assertIsDisplayed()
         composeRule.onNodeWithTag(GemTestTags.OpenAccounts).assertIsDisplayed().assertIsEnabled()
         composeRule.onNodeWithTag(GemTestTags.OpenSettings).assertIsDisplayed().assertIsEnabled()
+        composeRule.onNodeWithTag(GemTestTags.OpenAbout).assertIsDisplayed().assertIsEnabled()
         composeRule.onNodeWithTag(GemTestTags.LogOut).assertIsDisplayed().assertIsNotEnabled()
         composeRule.onNodeWithTag(GemTestTags.Exit).assertIsDisplayed().assertIsEnabled()
     }
@@ -67,6 +68,19 @@ class GemAndroidNativeUiInstrumentedTest {
         openMenu()
         composeRule.onNodeWithTag(GemTestTags.OpenSettings).performClick()
         waitForNode(GemTestTags.ViewSettings)
+
+        settingsBackButton().performClick()
+
+        waitForNode(GemTestTags.ViewLogin)
+        assertFalse(composeRule.activity.isFinishing)
+    }
+
+    @Test
+    fun aboutBackReturnsToLoginWithoutFinishingActivity() {
+        waitForNode(GemTestTags.ViewLogin)
+        openMenu()
+        composeRule.onNodeWithTag(GemTestTags.OpenAbout).performClick()
+        waitForNode(GemTestTags.ViewAbout)
 
         settingsBackButton().performClick()
 
