@@ -160,8 +160,32 @@ internal object GemLocalizationContract {
     )
 
     val requiredPluralCategoriesByLocale: Map<String, Set<String>> = mapOf(
+        "cs-CZ" to setOf("one", "few", "many", "other"),
+        "da-DK" to setOf("one", "other"),
+        "de-DE" to setOf("one", "other"),
+        "el-GR" to setOf("one", "other"),
         "en-GB" to setOf("one", "other"),
+        "es-ES" to setOf("one", "many", "other"),
+        "et-EE" to setOf("one", "other"),
+        "fi-FI" to setOf("one", "other"),
+        "fr-FR" to setOf("one", "many", "other"),
+        "hu-HU" to setOf("one", "other"),
+        "it-IT" to setOf("one", "many", "other"),
+        "lt-LT" to setOf("one", "few", "many", "other"),
+        "lv-LV" to setOf("zero", "one", "other"),
+        "nb-NO" to setOf("one", "other"),
+        "nl-NL" to setOf("one", "other"),
+        "nn-NO" to setOf("one", "other"),
+        "pl-PL" to setOf("one", "few", "many", "other"),
+        "pt-BR" to setOf("one", "many", "other"),
+        "pt-PT" to setOf("one", "many", "other"),
+        "ro-RO" to setOf("one", "few", "other"),
+        "sv-SE" to setOf("one", "other"),
+        "tr-TR" to setOf("one", "other"),
+        "uk-UA" to setOf("one", "few", "many", "other"),
     )
+
+    val approvedLocaleTags: Set<String> = requiredPluralCategoriesByLocale.keys
 
     val protectedProductValues: Map<String, String> = mapOf(
         "AppName" to "Grid Event Manager",

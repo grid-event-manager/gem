@@ -3,17 +3,33 @@ package org.gem.ui.text
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertSame
+import kotlin.test.assertTrue
 
 class GemTextCatalogueTest {
     @Test
-    fun generatedRegistryExposesEnglishCatalogueMetadata() {
-        assertEquals(listOf("en-GB"), GemTextCatalogueRegistry.locales.map { it.localeTag })
-        val metadata = GemTextCatalogueRegistry.locales.single()
-        assertEquals("English", metadata.languageName)
-        assertEquals("English", metadata.nativeName)
+    fun generatedRegistryExposesApprovedLocaleMetadata() {
+        assertEquals(ExpectedGemLocalizationLocales.localeTags, GemTextCatalogueRegistry.locales.map { it.localeTag })
+        assertEquals(
+            ExpectedGemLocalizationLocales.nativeNamesByLocaleTag,
+            GemTextCatalogueRegistry.locales.associate { it.localeTag to it.nativeName },
+        )
+        val metadata = GemTextCatalogueRegistry.locales.single { it.localeTag == "en-GB" }
         assertSame(EnglishGemTextCatalogue, metadata.catalogue)
         assertSame(EnglishGemTextCatalogue, GemTextCatalogueRegistry.catalogueFor("en-GB"))
-        assertEquals(null, GemTextCatalogueRegistry.catalogueFor("fr-FR"))
+        assertEquals("Connexion", GemTextCatalogueRegistry.catalogueFor("fr-FR")?.text(GemTextKey.Login))
+        assertEquals(null, GemTextCatalogueRegistry.catalogueFor("ga-IE"))
+    }
+
+    @Test
+    fun generatedNonEnglishCataloguesRenderDynamicCountKeys() {
+        listOf("fr-FR", "pt-BR", "pt-PT", "uk-UA").forEach { localeTag ->
+            val catalogue = checkNotNull(GemTextCatalogueRegistry.catalogueFor(localeTag))
+
+            listOf(0, 1, 2, 3, 5, 21, 22, 25, 249, 1_000_000).forEach { count ->
+                assertTrue(catalogue.text(GemTextKey.DraftCharCount(count)).contains(count.toString()))
+                assertTrue(catalogue.text(GemTextKey.SelectedCount(count)).contains(count.toString()))
+            }
+        }
     }
 
     @Test

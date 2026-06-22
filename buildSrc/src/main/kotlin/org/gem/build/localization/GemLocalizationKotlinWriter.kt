@@ -13,6 +13,7 @@ internal object GemLocalizationKotlinWriter {
         reportDirectory.mkdirs()
 
         File(packageDirectory, "GeneratedGemTextCatalogues.kt").writeText(generatedSource(sources))
+        File(packageDirectory, "GemPluralCategoryResolver.kt").writeText(GemLocalizationPluralRules.resolverSource())
         sources.forEach { source ->
             writeReports(source, reportDirectory)
         }
@@ -118,26 +119,30 @@ $fixedBranches
         File(reportDirectory, "${source.localeTag}-dynamic-keys.tsv").writeText(
             buildString {
                 appendLine("key\tcase\tvalue")
-                appendLine("DraftCharCount\t0\t${renderCount(source, "DraftCharCount", 0)}")
-                appendLine("DraftCharCount\t1\t${renderCount(source, "DraftCharCount", 1)}")
-                appendLine("DraftCharCount\t249\t${renderCount(source, "DraftCharCount", 249)}")
-                appendLine("SelectedCount\t0\t${renderCount(source, "SelectedCount", 0)}")
-                appendLine("SelectedCount\t1\t${renderCount(source, "SelectedCount", 1)}")
-                appendLine("SelectedCount\t3\t${renderCount(source, "SelectedCount", 3)}")
+                GemLocalizationPluralRules.reportCounts.forEach { count ->
+                    appendLine("DraftCharCount\t$count\t${renderCount(source, "DraftCharCount", count)}")
+                }
+                GemLocalizationPluralRules.reportCounts.forEach { count ->
+                    appendLine("SelectedCount\t$count\t${renderCount(source, "SelectedCount", count)}")
+                }
                 appendLine("SendFailureDetailLine\tOwks\t${source.placeholderValues.getValue("SendFailureDetailLine").replace("{groupName}", "Owks").replace("{reason}", "Second Life did not accept the notice send.")}")
             },
         )
     }
 
     private fun renderCount(source: GemLocalizationSource, key: String, count: Int): String {
-        val category = if (source.localeTag.startsWith("en") && count == 1) "one" else "other"
+        val category = GemLocalizationPluralRules.category(source.localeTag, count)
         return source.countValues.getValue(key).getValue(category).replace("{count}", count.toString())
     }
 
     private fun catalogueObjectName(source: GemLocalizationSource): String =
         when (source.localeTag) {
             "en-GB" -> "EnglishGemTextCatalogue"
-            else -> error("No generated catalogue object name for ${source.localeTag}")
+            else -> "GeneratedGemTextCatalogue" + source.localeTag
+                .split("-")
+                .joinToString(separator = "") { subtag ->
+                    subtag.lowercase().replaceFirstChar(Char::uppercaseChar)
+                }
         }
 
     private fun String.kotlinString(): String =

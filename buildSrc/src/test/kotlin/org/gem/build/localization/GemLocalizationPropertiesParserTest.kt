@@ -21,12 +21,30 @@ class GemLocalizationPropertiesParserTest {
     }
 
     @Test
-    fun rejectsNonEnglishProductionLocale() {
-        assertParseFails(
-            expectedMessage = "Track D only authorizes en-GB production localization source: fr-FR",
-            fileName = "fr-FR.properties",
+    fun parsesApprovedNonEnglishProductionLocaleWithUtf8NativeName() {
+        val source = parseSource(
             text = productionEnglishSource()
-                .replaceLine("meta.locale", "meta.locale=fr-FR"),
+                .replaceLine("meta.locale", "meta.locale=fr-FR")
+                .replaceLine("meta.languageName", "meta.languageName=French")
+                .replaceLine("meta.nativeName", "meta.nativeName=Français")
+                .plus("DraftCharCount.many={count} caractères\n")
+                .plus("SelectedCount.many={count} groupes sélectionnés\n"),
+            fileName = "fr-FR.properties",
+        )
+
+        assertEquals("fr-FR", source.localeTag)
+        assertEquals("French", source.languageName)
+        assertEquals("Français", source.nativeName)
+        assertEquals("{count} caractères", source.countValues.getValue("DraftCharCount").getValue("many"))
+    }
+
+    @Test
+    fun rejectsUnapprovedProductionLocale() {
+        assertParseFails(
+            expectedMessage = "Unsupported production localization source: ga-IE",
+            fileName = "ga-IE.properties",
+            text = productionEnglishSource()
+                .replaceLine("meta.locale", "meta.locale=ga-IE"),
         )
     }
 
@@ -59,6 +77,19 @@ class GemLocalizationPropertiesParserTest {
         assertParseFails(
             expectedMessage = "Missing localization key in en-GB.properties: DraftCharCount.other",
             text = productionEnglishSource().removeLine("DraftCharCount.other"),
+        )
+    }
+
+    @Test
+    fun rejectsSurplusPluralCategoryRowsForApprovedLocale() {
+        assertParseFails(
+            expectedMessage = "Unknown localization key in de-DE.properties: DraftCharCount.few",
+            fileName = "de-DE.properties",
+            text = productionEnglishSource()
+                .replaceLine("meta.locale", "meta.locale=de-DE")
+                .replaceLine("meta.languageName", "meta.languageName=German")
+                .replaceLine("meta.nativeName", "meta.nativeName=Deutsch")
+                .plus("DraftCharCount.few={count} chars\n"),
         )
     }
 

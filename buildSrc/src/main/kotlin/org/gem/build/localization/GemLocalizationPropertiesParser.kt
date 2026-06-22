@@ -64,8 +64,8 @@ internal object GemLocalizationPropertiesParser {
         require(file.nameWithoutExtension == localeTag) {
             "Localization file ${file.name} meta.locale must match filename: $localeTag"
         }
-        require(localeTag == "en-GB") {
-            "Track D only authorizes en-GB production localization source: $localeTag"
+        require(localeTag in GemLocalizationContract.approvedLocaleTags) {
+            "Unsupported production localization source: $localeTag"
         }
         val requiredPluralCategories = GemLocalizationContract.requiredPluralCategoriesByLocale[localeTag]
             ?: error("Missing plural formula contract for locale: $localeTag")
@@ -77,7 +77,7 @@ internal object GemLocalizationPropertiesParser {
             addAll(GemLocalizationContract.fixedKeys)
             addAll(GemLocalizationContract.placeholderKeys.keys)
             GemLocalizationContract.countKeys.forEach { key ->
-                GemLocalizationContract.pluralCategories.forEach { category ->
+                requiredPluralCategories.forEach { category ->
                     add("$key.$category")
                 }
             }

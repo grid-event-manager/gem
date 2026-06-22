@@ -415,11 +415,37 @@ check_appearance_target_placeholders_selectable() {
 
 check_localization_locale_set() {
     local actual
+    local expected
     actual="$(find gem-ui/src/commonMain/localization -maxdepth 1 -type f -name '*.properties' -printf '%f\n' | sort)"
-    if [[ "$actual" == "en-GB.properties" ]]; then
-        echo "PASS: localization shipped locale set is en-GB only"
+    expected="$(printf '%s\n' \
+        cs-CZ.properties \
+        da-DK.properties \
+        de-DE.properties \
+        el-GR.properties \
+        en-GB.properties \
+        es-ES.properties \
+        et-EE.properties \
+        fi-FI.properties \
+        fr-FR.properties \
+        hu-HU.properties \
+        it-IT.properties \
+        lt-LT.properties \
+        lv-LV.properties \
+        nb-NO.properties \
+        nl-NL.properties \
+        nn-NO.properties \
+        pl-PL.properties \
+        pt-BR.properties \
+        pt-PT.properties \
+        ro-RO.properties \
+        sv-SE.properties \
+        tr-TR.properties \
+        uk-UA.properties \
+        | sort)"
+    if [[ "$actual" == "$expected" ]]; then
+        echo "PASS: localization shipped locale set is approved locale set"
     else
-        echo "FAIL: localization shipped locale set is en-GB only"
+        echo "FAIL: localization shipped locale set is approved locale set"
         echo "$actual"
         failures=1
     fi

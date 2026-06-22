@@ -6,9 +6,9 @@ import kotlin.test.assertSame
 
 class GemLocalizationBoundaryTest {
     @Test
-    fun productionRegistryShipsOnlyEnglishLocale() {
-        assertEquals(listOf("en-GB"), GemTextCatalogueRegistry.locales.map { it.localeTag })
+    fun productionRegistryShipsApprovedLocaleSetOnly() {
+        assertEquals(ExpectedGemLocalizationLocales.localeTags, GemTextCatalogueRegistry.locales.map { it.localeTag })
         assertSame(EnglishGemTextCatalogue, GemTextCatalogueRegistry.catalogueFor("en-GB"))
-        assertEquals(null, GemTextCatalogueRegistry.catalogueFor("fr-FR"))
+        assertEquals(null, GemTextCatalogueRegistry.catalogueFor("ga-IE"))
     }
 }
