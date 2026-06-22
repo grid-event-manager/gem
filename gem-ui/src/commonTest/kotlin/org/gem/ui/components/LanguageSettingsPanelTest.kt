@@ -8,6 +8,7 @@ import org.gem.core.language.LanguagePreference
 import org.gem.ui.state.LanguageOption
 import org.gem.ui.state.LanguageUiState
 import org.gem.ui.text.EnglishGemTextCatalogue
+import org.gem.ui.text.ExpectedGemLocalizationLocales
 import org.gem.ui.text.GemTextKey
 
 class LanguageSettingsPanelTest {
@@ -19,16 +20,25 @@ class LanguageSettingsPanelTest {
     }
 
     @Test
-    fun dropdownOptionsUseCentralCopyAndLocaleNativeNames() {
+    fun dropdownOptionsUseCentralCopyAndGeneratedLocaleNativeNames() {
         val options = LanguageSettingsPanelInteraction.options(state(), text)
 
+        assertEquals(2 + ExpectedGemLocalizationLocales.localeTags.size, options.size)
         assertEquals(text.text(GemTextKey.ChooseLanguage), options[0].label)
         assertNull(options[0].value)
         assertFalse(options[0].enabled)
         assertEquals(text.text(GemTextKey.SystemLanguage), options[1].label)
         assertEquals(LanguageOption.System, options[1].value)
-        assertEquals("English", options[2].label)
-        assertEquals(LanguageOption.Locale("en-GB", "English"), options[2].value)
+        assertEquals(
+            ExpectedGemLocalizationLocales.localeTags.map { localeTag ->
+                ExpectedGemLocalizationLocales.nativeNamesByLocaleTag.getValue(localeTag)
+            },
+            options.drop(2).map { it.label },
+        )
+        assertEquals(
+            expectedLocaleOptions(),
+            options.drop(2).map { it.value },
+        )
     }
 
     @Test
@@ -38,9 +48,9 @@ class LanguageSettingsPanelTest {
             LanguageSettingsPanelInteraction.selectedLabel(state(), text),
         )
         assertEquals(
-            "English",
+            "Français",
             LanguageSettingsPanelInteraction.selectedLabel(
-                state().copy(preference = LanguagePreference.Locale("en-GB")),
+                state().copy(preference = LanguagePreference.Locale("fr-FR")),
                 text,
             ),
         )
@@ -68,10 +78,14 @@ class LanguageSettingsPanelTest {
             preference = LanguagePreference.System,
             requestedLocaleTag = "en-GB",
             resolvedLocaleTag = "en-GB",
-            options = listOf(
-                LanguageOption.Placeholder,
-                LanguageOption.System,
-                LanguageOption.Locale("en-GB", "English"),
-            ),
+            options = listOf(LanguageOption.Placeholder, LanguageOption.System) + expectedLocaleOptions(),
         )
+
+    private fun expectedLocaleOptions(): List<LanguageOption.Locale> =
+        ExpectedGemLocalizationLocales.localeTags.map { localeTag ->
+            LanguageOption.Locale(
+                localeTag = localeTag,
+                nativeName = ExpectedGemLocalizationLocales.nativeNamesByLocaleTag.getValue(localeTag),
+            )
+        }
 }

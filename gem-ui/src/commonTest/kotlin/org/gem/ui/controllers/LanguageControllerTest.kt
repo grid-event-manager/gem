@@ -12,28 +12,18 @@ import org.gem.core.language.LanguagePreferenceSaveResult
 import org.gem.ui.state.LanguageOption
 import org.gem.ui.testing.FakeGemUiRuntime
 import org.gem.ui.testing.FakeLanguagePreferenceStore
-import org.gem.ui.text.EnglishGemTextCatalogue
-import org.gem.ui.text.GemTextCatalogue
-import org.gem.ui.text.GemTextCatalogueMetadata
+import org.gem.ui.text.ExpectedGemLocalizationLocales
 import org.gem.ui.text.GemTextCatalogueRegistry
 import org.gem.ui.text.GemTextCatalogueResolver
 import org.gem.ui.text.GemTextKey
 
 class LanguageControllerTest {
     @Test
-    fun initialStateIsCollapsedAndListsSystemThenLocalesSortedByTag() {
+    fun initialStateIsCollapsedAndListsSystemThenGeneratedLocalesSortedByTag() {
         val controller = controller()
 
         assertFalse(controller.state.expanded)
-        assertEquals(
-            listOf(
-                LanguageOption.Placeholder,
-                LanguageOption.System,
-                LanguageOption.Locale("en-GB", "English"),
-                LanguageOption.Locale("fr-FR", "Francais"),
-            ),
-            controller.state.options,
-        )
+        assertEquals(expectedOptions(), controller.state.options)
         assertEquals(LanguagePreference.System, controller.state.preference)
         assertEquals("en-GB", controller.state.resolvedLocaleTag)
         assertNull(controller.state.warningKey)
@@ -56,17 +46,15 @@ class LanguageControllerTest {
         val store = FakeLanguagePreferenceStore()
         val controller = controller(store = store)
 
-        val changed = controller.selectOption(LanguageOption.Locale("fr-FR", "Francais"))
+        val changed = controller.selectOption(
+            LanguageOption.Locale("fr-FR", ExpectedGemLocalizationLocales.nativeNamesByLocaleTag.getValue("fr-FR")),
+        )
         val selection = assertNotNull(changed.selection)
 
         assertEquals(LanguagePreference.Locale("fr-FR"), store.lastSavedPreference)
         assertEquals(LanguagePreference.Locale("fr-FR"), changed.controller.state.preference)
         assertEquals("fr-FR", changed.controller.state.resolvedLocaleTag)
-        assertSame(AlternateLocaleCatalogue, selection.catalogue)
-        assertEquals(
-            "fr-FR:${EnglishGemTextCatalogue.text(GemTextKey.Settings)}",
-            selection.catalogue.text(GemTextKey.Settings),
-        )
+        assertEquals("Connexion", selection.catalogue.text(GemTextKey.Login))
     }
 
     @Test
@@ -82,7 +70,7 @@ class LanguageControllerTest {
         assertEquals(LanguagePreference.System, store.lastSavedPreference)
         assertEquals("fr-CA", changed.selection?.requestedLocaleTag)
         assertEquals("fr-FR", changed.selection?.resolvedLocaleTag)
-        assertSame(AlternateLocaleCatalogue, changed.selection?.catalogue)
+        assertEquals("Connexion", changed.selection?.catalogue?.text(GemTextKey.Login))
     }
 
     @Test
@@ -91,9 +79,11 @@ class LanguageControllerTest {
             store = FakeLanguagePreferenceStore(saveResult = LanguagePreferenceSaveResult.StorageFailed()),
         )
 
-        val changed = controller.selectOption(LanguageOption.Locale("fr-FR", "Francais"))
+        val changed = controller.selectOption(
+            LanguageOption.Locale("uk-UA", ExpectedGemLocalizationLocales.nativeNamesByLocaleTag.getValue("uk-UA")),
+        )
 
-        assertSame(AlternateLocaleCatalogue, changed.selection?.catalogue)
+        assertEquals("Увійти", changed.selection?.catalogue?.text(GemTextKey.Login))
         assertEquals(GemTextKey.LanguagePreferenceSaveFailed, changed.controller.state.warningKey)
     }
 
@@ -145,17 +135,16 @@ class LanguageControllerTest {
         )
     }
 
-    private object AlternateLocaleCatalogue : GemTextCatalogue {
-        override fun text(key: GemTextKey): String =
-            "fr-FR:${EnglishGemTextCatalogue.text(key)}"
-    }
+    private fun expectedOptions(): List<LanguageOption> =
+        listOf(LanguageOption.Placeholder, LanguageOption.System) +
+            ExpectedGemLocalizationLocales.localeTags.map { localeTag ->
+                LanguageOption.Locale(
+                    localeTag = localeTag,
+                    nativeName = ExpectedGemLocalizationLocales.nativeNamesByLocaleTag.getValue(localeTag),
+                )
+            }
 
     private companion object {
-        val registry = GemTextCatalogueRegistry(
-            listOf(
-                GemTextCatalogueMetadata("fr-FR", "French", "Francais", AlternateLocaleCatalogue),
-                GemTextCatalogueMetadata("en-GB", "English", "English", EnglishGemTextCatalogue),
-            ),
-        )
+        val registry: GemTextCatalogueRegistry = GemTextCatalogueRegistry.generated()
     }
 }
