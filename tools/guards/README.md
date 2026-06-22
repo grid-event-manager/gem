@@ -28,6 +28,13 @@ Protocol and shared UI boundary rules:
 - `JvmPlatformFontCatalogue.kt` is the only approved `java.awt.GraphicsEnvironment` caller; it owns desktop system-font enumeration behind the shared `PlatformFontCatalogue` interface.
 - Appearance customiser state, fonts, RGB/hex feedback, selector-open actions, and visible palette surfaces stay on the shared controller/design-token/component routes; prototype imports, local screen fonts, local colour state, and duplicate settings titles are forbidden.
 
+Localization rules:
+
+- Shipped in-app locale source is exactly the approved 23-file set in `gem-ui/src/commonMain/localization`; extra or missing `.properties` files fail the guard.
+- Production source must not depend on private translation evidence, Android `strings.xml`, package-visible text diffs, public workstream labels, handwritten catalogues, or checked-in generated non-English catalogue objects.
+- Generated catalogue objects belong only under generated build output; production source consumes them through `GemTextCatalogueRegistry`.
+- Visible UI-copy literals outside locale source require an explicit row in `localization-visible-literal-allowlist.txt`.
+
 Credential and session owner rules:
 
 - Current-groups runtime and transport classes remain inside `:gem-protocol-libomv`; core, CLI, desktop, and Android source must not call them directly.

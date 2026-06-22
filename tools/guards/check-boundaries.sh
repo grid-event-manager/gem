@@ -119,11 +119,12 @@ APPEARANCE_SELECTED_INK_SEGMENT_PATTERN='selectedInk'
 APPEARANCE_LOCAL_RGB_HEX_STATE_PATTERN='(rgb|Rgb|hex|Hex)[A-Za-z0-9_]*[[:space:]]+by[[:space:]]+remember|remember[[:space:]]*\([^)]*\)[[:space:]]*\{[[:space:]]*mutableStateOf\([^)]*(rgb|Rgb|hex|Hex)'
 APPEARANCE_SCREEN_LOCAL_FONT_PATTERN='fontFamily[[:space:]]*='
 LOCALIZATION_PRIVATE_SEED_PATTERN='docs/localization/HS003''-TRA''CK-D-en-GB'
-LOCALIZATION_HANDWRITTEN_CATALOGUE_PATTERN='object[[:space:]]+(English|French|German|Spanish|Ukrainian)[A-Za-z0-9_]*GemTextCatalogue|override fun text\(key:[[:space:]]*GemTextKey\):[[:space:]]*String[[:space:]]*=[[:space:]]*when'
+LOCALIZATION_HANDWRITTEN_CATALOGUE_PATTERN='object[[:space:]]+[A-Za-z0-9_]*GemTextCatalogue[[:space:]]*:[[:space:]]*GemTextCatalogue|override fun text\(key:[[:space:]]*GemTextKey\):[[:space:]]*String[[:space:]]*=[[:space:]]*when'
 LOCALIZATION_DEFAULT_ENGLISH_ROUTE_PATTERN='textCatalogue:[[:space:]]*GemTextCatalogue[[:space:]]*=[[:space:]]*EnglishGemTextCatalogue|GemApp\(runtime\)'
 LOCALIZATION_SCREEN_COMPONENT_RESOLVER_PATTERN='GemTextCatalogueResolver|PlatformLocaleProvider|LanguagePreferenceStore'
 LOCALIZATION_APPEARANCE_LANGUAGE_PATTERN='LanguageController|LanguageSettingsPanel|GemTextKey\.Language|ChooseLanguage|SystemLanguage'
 LOCALIZATION_PRODUCTION_FIXTURE_PATTERN='object[[:space:]]+(French|German|Spanish|Ukrainian)[A-Za-z0-9_]*Catalogue|GemTextCatalogueMetadata\("[a-z][a-z]-[A-Z][A-Z]"'
+LOCALIZATION_GENERATED_CATALOGUE_SOURCE_PATTERN='GeneratedGemTextCatalogue[A-Za-z]+[[:space:]]*:'
 APPEARANCE_CURRENT_STREAM_FRAGMENT='HS003'
 APPEARANCE_CURRENT_TRACK_PREFIX='B'
 APPEARANCE_CURRENT_TRACK_SUFFIX='2'
@@ -413,11 +414,8 @@ check_appearance_target_placeholders_selectable() {
     fi
 }
 
-check_localization_locale_set() {
-    local actual
-    local expected
-    actual="$(find gem-ui/src/commonMain/localization -maxdepth 1 -type f -name '*.properties' -printf '%f\n' | sort)"
-    expected="$(printf '%s\n' \
+localization_expected_locale_files() {
+    printf '%s\n' \
         cs-CZ.properties \
         da-DK.properties \
         de-DE.properties \
@@ -441,12 +439,50 @@ check_localization_locale_set() {
         sv-SE.properties \
         tr-TR.properties \
         uk-UA.properties \
-        | sort)"
+        | sort
+}
+
+localization_locale_set_failure_detail() {
+    local actual="$1"
+    local expected="$2"
+    printf 'Expected approved locale files:\n%s\nActual locale files:\n%s\n' "$expected" "$actual"
+}
+
+check_localization_locale_set_sample() {
+    local label="$1"
+    local actual="$2"
+    local should_match="$3"
+    local expected
+    expected="$(localization_expected_locale_files)"
+
+    if [[ "$actual" == "$expected" ]]; then
+        if [[ "$should_match" == "true" ]]; then
+            echo "PASS: $label"
+        else
+            echo "FAIL: $label did not detect fixture"
+            failures=1
+        fi
+    else
+        if [[ "$should_match" == "true" ]]; then
+            echo "FAIL: $label"
+            localization_locale_set_failure_detail "$actual" "$expected"
+            failures=1
+        else
+            echo "PASS: $label"
+        fi
+    fi
+}
+
+check_localization_locale_set() {
+    local actual
+    local expected
+    actual="$(find gem-ui/src/commonMain/localization -maxdepth 1 -type f -name '*.properties' -printf '%f\n' | sort)"
+    expected="$(localization_expected_locale_files)"
     if [[ "$actual" == "$expected" ]]; then
         echo "PASS: localization shipped locale set is approved locale set"
     else
         echo "FAIL: localization shipped locale set is approved locale set"
-        echo "$actual"
+        localization_locale_set_failure_detail "$actual" "$expected"
         failures=1
     fi
 }
@@ -2712,6 +2748,14 @@ check_no_hits \
     "apps/desktop/src/main" \
     "apps/android/src/main"
 
+check_no_hits \
+    "localization generated catalogue source route absent outside generated output" \
+    "$LOCALIZATION_GENERATED_CATALOGUE_SOURCE_PATTERN" \
+    "gem-ui/src/commonMain" \
+    "apps/desktop/src/main" \
+    "apps/android/src/main" \
+    "buildSrc/src/main"
+
 check_localization_locale_set
 check_localization_no_package_diff
 check_localization_no_android_strings_route
@@ -3422,6 +3466,26 @@ check_pattern_matches \
     "self-test localization production fixture locale pattern" \
     "$LOCALIZATION_PRODUCTION_FIXTURE_PATTERN" \
     'GemTextCatalogueMetadata("fr-FR", "French", "Francais", FrenchCatalogue)'
+
+check_pattern_matches \
+    "self-test localization generated catalogue source pattern" \
+    "$LOCALIZATION_GENERATED_CATALOGUE_SOURCE_PATTERN" \
+    'object GeneratedGemTextCatalogueFrFr : GemTextCatalogue'
+
+check_localization_locale_set_sample \
+    "self-test localization exact locale-list accepts approved set" \
+    "$(localization_expected_locale_files)" \
+    "true"
+
+check_localization_locale_set_sample \
+    "self-test localization exact locale-list rejects extra locale" \
+    "$(printf '%s\n%s\n' "$(localization_expected_locale_files)" 'ga-IE.properties' | sort)" \
+    "false"
+
+check_localization_locale_set_sample \
+    "self-test localization exact locale-list rejects missing locale" \
+    "$(localization_expected_locale_files | rg -v '^uk-UA\.properties$')" \
+    "false"
 
 check_pattern_matches \
     "self-test ephemeral workstream label detector catches current raw track label" \
