@@ -5,6 +5,7 @@ This checklist prepares GEM for a public GitHub repository and a GitHub beta Rel
 ## Current Release Candidate
 
 - Version: `0.1.47`
+- Repository: `grid-event-manager/gem`
 - Public source head: release-prep head for the `0.1.47` beta.
 - Release artifacts folder before upload: local operator-owned release folder for version `0.1.47`.
 
@@ -74,7 +75,7 @@ export GEM_REPO=/path/to/gem/public
 export GEM_RELEASE_ARTIFACTS=/path/to/release-artifacts/0.1.47
 cd "$GEM_RELEASE_ARTIFACTS"
 gh release create v0.1.47 \
-  --repo ANVLL/<repo-name> \
+  --repo grid-event-manager/gem \
   --title "GEM 0.1.47 beta" \
   --prerelease \
   --notes-file "$GEM_REPO/docs/releases/0.1.47.md" \
