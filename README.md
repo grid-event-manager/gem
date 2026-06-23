@@ -1,4 +1,4 @@
-<img src="docs/assets/social-preview.png" alt="GEM - Grid Event Manager">
+<img src="docs/assets/readme-hdr.png" alt="GEM - Grid Event Manager" width="444">
 
 GEM is a small cross-platform notice manager for Second Life venue work. It enables a venue manager to log in, choose groups, write a notice, optionally attach an existing landmark or texture, and send the notice to selected groups.
 
@@ -86,7 +86,7 @@ Download the current beta from [GEM 0.1.47 beta](https://github.com/grid-event-m
 
 See `docs/PUBLISHING.md` for the current pre-publication checklist and release upload commands.
 
-[Help & support](https://gem.anvll.com).
+## [Help & support](https://gem.anvll.com)
 
 ## Security
 
