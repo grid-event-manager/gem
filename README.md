@@ -91,7 +91,7 @@ Download the current beta from [GEM 0.1.47 beta](https://github.com/grid-event-m
 
 See `docs/PUBLISHING.md` for the current pre-publication checklist and release upload commands.
 
-Help and support: [gem.anvll.com](https://gem.anvll.com).
+[Help & support](https://gem.anvll.com).
 
 ## Security
 
