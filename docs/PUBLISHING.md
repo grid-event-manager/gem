@@ -1,19 +1,19 @@
 # GitHub Publishing Checklist
 
-This checklist prepares GEM for a public GitHub repository and a GitHub Release with binary artifacts.
+This checklist prepares GEM for a public GitHub repository and a GitHub beta Release with binary artifacts.
 
 ## Current Release Candidate
 
-- Version: `0.1.45`
-- Public source head: `cd9715e`
-- Release artifacts folder before upload: local operator-owned release folder for version `0.1.45`.
+- Version: `0.1.47`
+- Public source head: release-prep head for the `0.1.47` beta.
+- Release artifacts folder before upload: local operator-owned release folder for version `0.1.47`.
 
 Artifacts:
 
-- `gema_0.1.45_amd64.deb`
-- `gema-0.1.45.msi`
-- `gema-1.0.45.dmg`
-- `gem-android-0.1.45-debug.apk`
+- `gema_0.1.47_amd64.deb`
+- `gema-0.1.47.msi`
+- `gema-1.0.47.dmg`
+- `gem-android-0.1.47-debug.apk`
 - `SHA256SUMS.txt`
 
 ## GitHub Release Asset Feasibility
@@ -32,8 +32,8 @@ References:
 1. Create the ANVLL GitHub organization or account.
 2. Create a public repository for GEM.
 3. Enable private vulnerability reporting if available.
-4. Decide whether issue discussions are open immediately or limited during alpha.
-5. Decide whether release artifacts remain alpha-unsigned or wait for signing.
+4. Decide whether issue discussions are open immediately or limited during beta.
+5. Decide whether release artifacts remain beta-unsigned or wait for signing.
 
 ## Local Pre-Push Gate
 
@@ -71,16 +71,17 @@ Create the release tag and upload all user-test artifacts:
 
 ```bash
 export GEM_REPO=/path/to/gem/public
-export GEM_RELEASE_ARTIFACTS=/path/to/release-artifacts/0.1.45
+export GEM_RELEASE_ARTIFACTS=/path/to/release-artifacts/0.1.47
 cd "$GEM_RELEASE_ARTIFACTS"
-gh release create v0.1.45 \
+gh release create v0.1.47 \
   --repo ANVLL/<repo-name> \
-  --title "GEM 0.1.45 alpha" \
-  --notes-file "$GEM_REPO/docs/releases/0.1.45.md" \
-  gema_0.1.45_amd64.deb \
-  gema-0.1.45.msi \
-  gema-1.0.45.dmg \
-  gem-android-0.1.45-debug.apk \
+  --title "GEM 0.1.47 beta" \
+  --prerelease \
+  --notes-file "$GEM_REPO/docs/releases/0.1.47.md" \
+  gema_0.1.47_amd64.deb \
+  gema-0.1.47.msi \
+  gema-1.0.47.dmg \
+  gem-android-0.1.47-debug.apk \
   SHA256SUMS.txt
 ```
 
@@ -89,4 +90,4 @@ gh release create v0.1.45 \
 - Linux package is unsigned unless distributed through a signed apt repository later.
 - Windows MSI is unsigned unless a code-signing certificate is added.
 - macOS DMG is unsigned and not notarized unless Apple Developer signing is added.
-- Android artifact is a debug-signed sideload APK for alpha testing unless a release signing pipeline is added.
+- Android artifact is a debug-signed sideload APK for beta testing unless a release signing pipeline is added.

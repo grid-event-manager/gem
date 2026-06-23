@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="apps/desktop/src/main/package/icons/gem.png" alt="GEM diamond logo" width="96">
+</p>
+
 # GEM - Grid Event Manager
 
 GEM is a small cross-platform notice manager for Second Life venue work. It helps an operator log in, choose groups, write a notice, optionally attach an existing landmark or texture, and send the notice to selected groups.
@@ -8,9 +12,9 @@ This repository contains the public source tree for GEM. Internal planning notes
 
 ## Current Status
 
-GEM is alpha software. The `0.1.x` builds are intended for controlled testing and feedback. The app has working Linux, Windows, macOS, and Android artifacts, but public distribution still needs normal platform hardening such as installer signing and macOS notarization.
+GEM is beta software. The `0.1.x` builds are intended for controlled testing and feedback. The app has working Linux, Windows, macOS, and Android artifacts, but public distribution still needs normal platform hardening such as installer signing and macOS notarization.
 
-Supported alpha artifacts:
+Supported beta artifacts:
 
 - Linux: `.deb`
 - Windows: `.msi`
@@ -91,6 +95,8 @@ Windows MSI and macOS DMG must be built on their target operating systems throug
 Release binaries are distributed as GitHub Release assets, not committed to the Git repository. GitHub Releases are suitable for the four GEM artifacts because each current artifact is far below GitHub's per-asset release limit.
 
 See `docs/PUBLISHING.md` for the current pre-publication checklist and release upload commands.
+
+Help and support: [gem.anvll.com](https://gem.anvll.com).
 
 ## Security
 
