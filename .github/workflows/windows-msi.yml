@@ -1,0 +1,50 @@
+name: Windows MSI
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-msi:
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Install WiX
+        shell: pwsh
+        run: |
+          choco install wixtoolset --version=3.14.1 -y
+          $wixBin = "${env:ProgramFiles(x86)}\WiX Toolset v3.14\bin"
+          if (-not (Test-Path $wixBin)) { throw "WiX bin not found: $wixBin" }
+          $wixBin | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Build and prove MSI
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $versionProperties = Get-Content .\gradle\gem-version.properties -Raw | ConvertFrom-StringData
+          $version = $versionProperties.visibleVersion
+          $msi = "apps\desktop\build\compose\binaries\main\msi\gema-$version.msi"
+          $inspectRoot = "build\inspect-msi-$version"
+          .\gradlew.bat --no-daemon :apps:desktop:packageMsi
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          powershell -NoProfile -ExecutionPolicy Bypass -File .\apps\desktop\src\main\package\windows\proof-msi-package.ps1 -MsiPath $msi -Version $version -ExtractRoot $inspectRoot
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Get-FileHash $msi -Algorithm SHA256
+
+      - name: Upload MSI
+        uses: actions/upload-artifact@v4
+        with:
+          name: gem-windows-msi
+          path: apps/desktop/build/compose/binaries/main/msi/gema-*.msi
+          if-no-files-found: error
