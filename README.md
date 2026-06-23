@@ -1,21 +1,16 @@
-<img src="apps/desktop/src/main/package/icons/gem.png" alt="GEM diamond logo" width="72" align="left">
+<img src="docs/assets/readme-hdr.png" alt="GEM - Grid Event Manager" width="467">
 
-# GEM
-Grid Event Manager
-
-<br clear="left">
-
-GEM is a small cross-platform notice manager for Second Life venue work. It helps an operator log in, choose groups, write a notice, optionally attach an existing landmark or texture, and send the notice to selected groups.
+GEM is a small cross-platform notice manager for Second Life venue work. It enables a venue manager to log in, choose groups, write a notice, optionally attach an existing landmark or texture, and send the notice to selected groups.
 
 GEM is not affiliated with, sponsored by, or endorsed by Linden Lab. Second Life grid behaviour remains controlled by Linden Lab and the Second Life service.
 
-This repository contains the public source tree for GEM. Internal planning notes, private test fixtures, credentials, live-grid evidence, and release-process records are not part of this public repository.
+This repository contains the public source tree for GEM.
 
 ## Current Status
 
-GEM is beta software. The `0.1.x` builds are intended for controlled testing and feedback. The app has working Linux, Windows, macOS, and Android artifacts, but public distribution still needs normal platform hardening such as installer signing and macOS notarization.
+GEM is beta software. The `0.1.x` builds are intended for controlled testing and feedback. The app has working Linux, Windows, macOS, and Android artefacts, but public distribution still needs normal platform hardening such as installer signing and macOS notarisation.
 
-Supported beta artifacts:
+Supported beta artefacts:
 
 - Linux: `.deb`
 - Windows: `.msi`
@@ -31,7 +26,7 @@ Supported beta artifacts:
 - Lets the operator choose one existing inventory attachment.
 - Sends notices through the shared core dispatch route.
 - Provides shared Compose UI across desktop and Android.
-- Provides in-app localization catalogues for supported UI languages.
+- Provides in-app localisation catalogues for supported UI languages.
 
 ## Layout
 
@@ -43,7 +38,7 @@ Supported beta artifacts:
 - `gem-preferences/` - local appearance, language, and last-login preferences.
 - `gem-protocol-libomv/` - Second Life protocol adapter boundary and promoted protocol-bootstrap material.
 - `tools/cli/` - local proof and operational helpers for the current implementation path.
-- `tools/guards/` - boundary checks that keep architecture, localization, package identity, and UI ownership rules intact.
+- `tools/guards/` - boundary checks that keep architecture, localisation, package identity, and UI ownership rules intact.
 
 ## Build Requirements
 
@@ -85,7 +80,7 @@ Windows MSI and macOS DMG must be built on their target operating systems throug
 
 ## Releases
 
-Release binaries are distributed as GitHub Release assets, not committed to the Git repository. GitHub Releases are suitable for the four GEM artifacts because each current artifact is far below GitHub's per-asset release limit.
+Release binaries are distributed as GitHub Release assets, not committed to the Git repository. GitHub Releases are suitable for the four GEM artefacts because each current artefact is far below GitHub's per-asset release limit.
 
 Download the current beta from [GEM 0.1.47 beta](https://github.com/grid-event-manager/gem/releases/tag/v0.1.47).
 
