@@ -211,12 +211,17 @@ if (Test-Path -LiteralPath $ExtractRoot) {
     Remove-Item -LiteralPath $ExtractRoot -Recurse -Force
 }
 New-Item -ItemType Directory -Path $ExtractRoot | Out-Null
-$extract = Start-Process -FilePath "msiexec.exe" -ArgumentList @("/a", $resolvedMsi, "/qn", "TARGETDIR=$ExtractRoot") -Wait -PassThru
+$resolvedExtractRoot = (Resolve-Path -LiteralPath $ExtractRoot).Path
+$extractLog = Join-Path $resolvedExtractRoot "admin-extract.log"
+$extract = Start-Process -FilePath "msiexec.exe" -ArgumentList @("/a", $resolvedMsi, "/qn", "TARGETDIR=$resolvedExtractRoot", "/l*v", $extractLog) -Wait -PassThru
 if ($extract.ExitCode -ne 0) {
+    if (Test-Path -LiteralPath $extractLog -PathType Leaf) {
+        Get-Content -LiteralPath $extractLog -Tail 80 | ForEach-Object { [Console]::Error.WriteLine($_) }
+    }
     Fail "administrative extract exited $($extract.ExitCode)"
 }
 
-$installRoot = Join-Path $ExtractRoot "gema"
+$installRoot = Join-Path $resolvedExtractRoot "gema"
 if (-not (Test-Path -LiteralPath $installRoot -PathType Container)) {
     Fail "administrative extract did not create expected gema install root"
 }
