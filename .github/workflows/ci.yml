@@ -29,6 +29,9 @@ jobs:
       - name: Install Android API
         run: sdkmanager "platforms;android-36" "build-tools;36.1.0"
 
+      - name: Install runner tools
+        run: sudo apt-get update && sudo apt-get install -y ripgrep
+
       - name: Make Gradle wrapper executable
         run: chmod +x ./gradlew
 
