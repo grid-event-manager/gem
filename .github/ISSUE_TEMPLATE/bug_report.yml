@@ -11,7 +11,7 @@ body:
     id: version
     attributes:
       label: GEM version
-      placeholder: "0.1.45"
+      placeholder: "0.1.47"
     validations:
       required: true
   - type: dropdown
