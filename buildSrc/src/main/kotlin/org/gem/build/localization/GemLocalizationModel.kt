@@ -136,6 +136,8 @@ internal object GemLocalizationContract {
         "AppearanceElementRulesAndSeparators",
         "NoAttachmentsAdded",
         "ClearAttachment",
+        "AttachmentAdded",
+        "AttachmentRemoved",
         "SendingNotices",
         "NoticesSent",
         "SomeNoticesFailed",

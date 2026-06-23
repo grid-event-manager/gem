@@ -81,6 +81,8 @@ fun GemApp(
         mutableStateOf(LanguageController.initial(runtime, initialTextSelection))
     }
     var sendFeedbackGeneration by remember(runtime) { mutableStateOf(0) }
+    var confirmationModalMessageKey by remember(runtime) { mutableStateOf<GemTextKey?>(null) }
+    var confirmationModalJob by remember(runtime) { mutableStateOf<Job?>(null) }
     var logoutInFlight by remember(runtime) { mutableStateOf(false) }
     var exitAfterCurrentLogout by remember(runtime) { mutableStateOf(false) }
     val secondLifeTimeService = remember(runtime) { SecondLifeTimeService(runtime.clockPort) }
@@ -180,6 +182,16 @@ fun GemApp(
         when (command) {
             AppMenuCommand.LogOut -> runLogoutWorkflow()
             AppMenuCommand.Exit -> runLogoutWorkflow(exitAfterLogout = true)
+        }
+    }
+
+    fun showConfirmationModal(messageKey: GemTextKey) {
+        confirmationModalJob?.cancel()
+        confirmationModalMessageKey = messageKey
+        confirmationModalJob = coroutineScope.launch {
+            delay(ConfirmationModalMillis)
+            confirmationModalMessageKey = null
+            confirmationModalJob = null
         }
     }
 
@@ -357,8 +369,12 @@ fun GemApp(
                             noticeController = started
                             if (started.state.sendFooterState.sending) {
                                 coroutineScope.launch {
-                                    noticeController = withContext(Dispatchers.Default) {
+                                    val completed = withContext(Dispatchers.Default) {
                                         started.sendNotices()
+                                    }
+                                    noticeController = completed
+                                    if (completed.state.sendFooterState.statusTextKey == GemTextKey.NoticesSent) {
+                                        showConfirmationModal(GemTextKey.NoticesSent)
                                     }
                                 }
                             } else if (!started.state.sendFooterState.enabled &&
@@ -426,14 +442,24 @@ fun GemApp(
                                 inventoryController = inventoryController.openInventoryFolder(folderId)
                             },
                             onInventoryAssetSelected = { itemId ->
-                                inventoryController = inventoryController.selectInventoryAsset(itemId)
+                                val previousAttachment = inventoryController.state.selectedAttachment
+                                val selected = inventoryController.selectInventoryAsset(itemId)
+                                val selectedAttachment = selected.state.selectedAttachment
+                                inventoryController = selected
                                 noticeController = noticeController.updateSelectedAttachment(
-                                    inventoryController.state.selectedAttachment,
+                                    selectedAttachment,
                                 )
+                                if (selectedAttachment != null && selectedAttachment != previousAttachment) {
+                                    showConfirmationModal(GemTextKey.AttachmentAdded)
+                                }
                             },
                             onAttachmentCleared = {
+                                val hadAttachment = inventoryController.state.selectedAttachment != null
                                 inventoryController = inventoryController.clearSelectedAttachment()
                                 noticeController = noticeController.updateSelectedAttachment(null)
+                                if (hadAttachment) {
+                                    showConfirmationModal(GemTextKey.AttachmentRemoved)
+                                }
                             },
                             onAllGroupsChanged = { selected ->
                                 groupTargetController = if (selected) {
@@ -584,10 +610,21 @@ fun GemApp(
                 }
             },
         )
-        appController.state.blockingOperationMessageKey?.let { messageKey ->
+        val operationModal = operationModalFor(
+            blockingOperationMessageKey = appController.state.blockingOperationMessageKey,
+            loginOperationMessageKey = if (loginController.state.operation.inFlight) {
+                loginController.state.operation.messageKey ?: GemTextKey.LoggingIn
+            } else {
+                null
+            },
+            sendInFlight = noticeController.state.sendFooterState.sending,
+            confirmationMessageKey = confirmationModalMessageKey,
+        )
+        operationModal?.let { modal ->
             GemOperationModal(
                 visible = true,
-                message = textCatalogue.text(messageKey),
+                message = textCatalogue.text(modal.messageKey),
+                showSpinner = modal.showSpinner,
             )
         }
     }
@@ -595,8 +632,40 @@ fun GemApp(
 
 private const val LogoutSpinnerMinimumMillis: Long = 650L
 private const val SendValidationFeedbackMillis: Long = 3_000L
+private const val ConfirmationModalMillis: Long = 1_800L
 private const val AvatarProgressDetailMillis: Long = 5_000L
 private const val ClockMinuteMillis: Long = 60_000L
+
+internal data class OperationModalPresentation(
+    val messageKey: GemTextKey,
+    val showSpinner: Boolean,
+)
+
+internal fun operationModalFor(
+    blockingOperationMessageKey: GemTextKey?,
+    loginOperationMessageKey: GemTextKey?,
+    sendInFlight: Boolean,
+    confirmationMessageKey: GemTextKey?,
+): OperationModalPresentation? =
+    when {
+        blockingOperationMessageKey != null -> OperationModalPresentation(
+            messageKey = blockingOperationMessageKey,
+            showSpinner = true,
+        )
+        loginOperationMessageKey != null -> OperationModalPresentation(
+            messageKey = loginOperationMessageKey,
+            showSpinner = true,
+        )
+        sendInFlight -> OperationModalPresentation(
+            messageKey = GemTextKey.SendingNotices,
+            showSpinner = true,
+        )
+        confirmationMessageKey != null -> OperationModalPresentation(
+            messageKey = confirmationMessageKey,
+            showSpinner = false,
+        )
+        else -> null
+    }
 
 internal fun topBarTitleForRoute(
     route: UiRoute,

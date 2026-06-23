@@ -7,7 +7,7 @@ import kotlin.test.assertTrue
 class GemTextTest {
     @Test
     fun fixedKeysCoverPrototypeCopy() {
-        assertEquals(133, GemTextKey.fixedKeys.size)
+        assertEquals(135, GemTextKey.fixedKeys.size)
         assertTrue(GemTextKey.AppName in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.BrandInitials in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.BrandSubtitle in GemTextKey.fixedKeys)
@@ -63,6 +63,8 @@ class GemTextTest {
         assertTrue(GemTextKey.AppearanceElementRulesAndSeparators in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.NoAttachmentsAdded in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.ClearAttachment in GemTextKey.fixedKeys)
+        assertTrue(GemTextKey.AttachmentAdded in GemTextKey.fixedKeys)
+        assertTrue(GemTextKey.AttachmentRemoved in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.SendingNotices in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.NoticesSent in GemTextKey.fixedKeys)
         assertTrue(GemTextKey.SomeNoticesFailed in GemTextKey.fixedKeys)
@@ -149,6 +151,8 @@ class GemTextTest {
         assertEquals("Interactive hover text", catalogue.text(GemTextKey.AppearanceElementInteractiveHoverText))
         assertEquals("No attachments added", catalogue.text(GemTextKey.NoAttachmentsAdded))
         assertEquals("Clear attachment", catalogue.text(GemTextKey.ClearAttachment))
+        assertEquals("Attachment added", catalogue.text(GemTextKey.AttachmentAdded))
+        assertEquals("Attachment removed", catalogue.text(GemTextKey.AttachmentRemoved))
         assertEquals("Sending notices", catalogue.text(GemTextKey.SendingNotices))
         assertEquals("Notices sent", catalogue.text(GemTextKey.NoticesSent))
         assertEquals("Some notices could not be sent", catalogue.text(GemTextKey.SomeNoticesFailed))

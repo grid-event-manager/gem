@@ -11,9 +11,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.size
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -44,43 +41,23 @@ fun GemSendFooter(
             .testTag(GemTestTags.SendBar),
         verticalArrangement = Arrangement.spacedBy(GemTheme.spacing.fieldGap),
     ) {
-        state.statusTextKey?.let { statusTextKey ->
+        state.statusTextKey?.takeIf(::sendFooterDisplaysStatus)?.let { statusTextKey ->
             if (textCatalogue.text(statusTextKey).isNotBlank()) {
-                if (state.sending) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(GemTheme.spacing.fieldGap),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .testTag(GemTestTags.StatusText),
-                    ) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(GemTheme.spacing.operationSpinnerSize),
-                            strokeWidth = GemTheme.spacing.borderWidth,
-                            color = GemTheme.colors.primary,
-                        )
-                        Text(
-                            text = textCatalogue.text(statusTextKey),
-                            style = GemTheme.typeScale.smallLabel,
-                            color = GemTheme.colors.secondary,
-                        )
-                    }
-                } else {
-                    val hasFailureDetails = state.failureDetails.isNotEmpty()
-                    Text(
-                        text = textCatalogue.text(statusTextKey),
-                        style = GemTheme.typeScale.smallLabel,
-                        color = GemTheme.colors.secondary,
-                        modifier = Modifier
-                            .testTag(GemTestTags.StatusText)
-                            .then(
-                                if (hasFailureDetails) {
-                                    Modifier.clickable(role = Role.Button, onClick = onFailureDetailsToggle)
-                                } else {
-                                    Modifier
-                                },
-                            ),
-                    )
-                }
+                val hasFailureDetails = state.failureDetails.isNotEmpty()
+                Text(
+                    text = textCatalogue.text(statusTextKey),
+                    style = GemTheme.typeScale.smallLabel,
+                    color = GemTheme.colors.secondary,
+                    modifier = Modifier
+                        .testTag(GemTestTags.StatusText)
+                        .then(
+                            if (hasFailureDetails) {
+                                Modifier.clickable(role = Role.Button, onClick = onFailureDetailsToggle)
+                            } else {
+                                Modifier
+                            },
+                        ),
+                )
             }
         }
         AnimatedVisibility(
@@ -172,5 +149,9 @@ private fun List<SendFailureDetailUiState>.failureDetailsText(
             ),
         )
     }
+
+internal fun sendFooterDisplaysStatus(statusTextKey: GemTextKey): Boolean =
+    statusTextKey != GemTextKey.SendingNotices &&
+        statusTextKey != GemTextKey.NoticesSent
 
 private const val SendFailureDetailsMaxVisibleRows = 10

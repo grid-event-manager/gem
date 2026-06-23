@@ -1,11 +1,6 @@
 package org.gem.ui.components
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.size
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -123,23 +118,6 @@ private fun LoginOperationText(
     textCatalogue: GemTextCatalogue,
 ) {
     val operation = state.operation
-    if (operation.inFlight) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(GemTheme.spacing.fieldGap),
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            CircularProgressIndicator(
-                modifier = Modifier.size(GemTheme.spacing.operationSpinnerSize),
-                strokeWidth = GemTheme.spacing.borderWidth,
-                color = GemTheme.colors.primary,
-            )
-            Text(
-                text = textCatalogue.text(operation.messageKey ?: GemTextKey.LoggingIn),
-                color = GemTheme.colors.muted,
-                style = GemTheme.typeScale.smallLabel,
-            )
-        }
-    }
     if (operation.errorKey != null || operation.errorMessage != null) {
         val message = listOfNotNull(
             operation.errorKey

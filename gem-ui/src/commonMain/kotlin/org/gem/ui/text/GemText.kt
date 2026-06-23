@@ -127,6 +127,8 @@ sealed interface GemTextKey {
     data object AppearanceElementRulesAndSeparators : GemTextKey
     data object NoAttachmentsAdded : GemTextKey
     data object ClearAttachment : GemTextKey
+    data object AttachmentAdded : GemTextKey
+    data object AttachmentRemoved : GemTextKey
     data object SendingNotices : GemTextKey
     data object NoticesSent : GemTextKey
     data object SomeNoticesFailed : GemTextKey
@@ -265,6 +267,8 @@ sealed interface GemTextKey {
             AppearanceElementRulesAndSeparators,
             NoAttachmentsAdded,
             ClearAttachment,
+            AttachmentAdded,
+            AttachmentRemoved,
             SendingNotices,
             NoticesSent,
             SomeNoticesFailed,

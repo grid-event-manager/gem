@@ -19,6 +19,7 @@ fun GemOperationModal(
     visible: Boolean,
     message: String,
     modifier: Modifier = Modifier,
+    showSpinner: Boolean = true,
 ) {
     if (!visible) {
         return
@@ -36,11 +37,13 @@ fun GemOperationModal(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(GemTheme.spacing.panelPadding),
             ) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(GemTheme.spacing.operationSpinnerSize),
-                    strokeWidth = GemTheme.spacing.borderWidth,
-                    color = GemTheme.colors.secondary,
-                )
+                if (showSpinner) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(GemTheme.spacing.operationSpinnerSize),
+                        strokeWidth = GemTheme.spacing.borderWidth,
+                        color = GemTheme.colors.secondary,
+                    )
+                }
                 Text(
                     text = message,
                     style = GemTheme.typeScale.body,
