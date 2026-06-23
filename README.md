@@ -1,14 +1,9 @@
-<table>
-  <tr>
-    <td width="88" valign="middle">
-      <img src="apps/desktop/src/main/package/icons/gem.png" alt="GEM diamond logo" width="72">
-    </td>
-    <td valign="middle">
-      <h1>GEM</h1>
-      <strong>GRID EVENT MANAGER</strong>
-    </td>
-  </tr>
-</table>
+<img src="apps/desktop/src/main/package/icons/gem.png" alt="GEM diamond logo" width="72" align="left">
+
+# GEM
+Grid Event Manager
+
+<br clear="left">
 
 GEM is a small cross-platform notice manager for Second Life venue work. It helps an operator log in, choose groups, write a notice, optionally attach an existing landmark or texture, and send the notice to selected groups.
 
