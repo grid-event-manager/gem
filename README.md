@@ -1,8 +1,14 @@
-<p align="center">
-  <img src="apps/desktop/src/main/package/icons/gem.png" alt="GEM diamond logo" width="96">
-</p>
-
-# GEM - Grid Event Manager
+<table>
+  <tr>
+    <td width="88" valign="middle">
+      <img src="apps/desktop/src/main/package/icons/gem.png" alt="GEM diamond logo" width="72">
+    </td>
+    <td valign="middle">
+      <h1>GEM</h1>
+      <strong>GRID EVENT MANAGER</strong>
+    </td>
+  </tr>
+</table>
 
 GEM is a small cross-platform notice manager for Second Life venue work. It helps an operator log in, choose groups, write a notice, optionally attach an existing landmark or texture, and send the notice to selected groups.
 
@@ -31,14 +37,6 @@ Supported beta artifacts:
 - Sends notices through the shared core dispatch route.
 - Provides shared Compose UI across desktop and Android.
 - Provides in-app localization catalogues for supported UI languages.
-
-## What GEM Does Not Do Yet
-
-- GEM does not manage events end to end.
-- GEM does not create landmarks or upload textures from local files.
-- GEM does not expose pro operator tools, scheduling, serial keys, or skin packs yet.
-- GEM does not attempt to diagnose or display every post-send Second Life archive or delivery confirmation condition.
-- GEM does not ship signed public installers yet.
 
 ## Layout
 
@@ -93,6 +91,8 @@ Windows MSI and macOS DMG must be built on their target operating systems throug
 ## Releases
 
 Release binaries are distributed as GitHub Release assets, not committed to the Git repository. GitHub Releases are suitable for the four GEM artifacts because each current artifact is far below GitHub's per-asset release limit.
+
+Download the current beta from [GEM 0.1.47 beta](https://github.com/grid-event-manager/gem/releases/tag/v0.1.47).
 
 See `docs/PUBLISHING.md` for the current pre-publication checklist and release upload commands.
 

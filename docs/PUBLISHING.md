@@ -70,6 +70,8 @@ Use the actual organization and repository names chosen on GitHub.
 
 Create the release tag and upload all user-test artifacts:
 
+Keep beta status in the release title and notes. Do not set GitHub's prerelease flag for this public beta, because prereleases are less visible in the repository sidebar download route.
+
 ```bash
 export GEM_REPO=/path/to/gem/public
 export GEM_RELEASE_ARTIFACTS=/path/to/release-artifacts/0.1.47
@@ -77,7 +79,6 @@ cd "$GEM_RELEASE_ARTIFACTS"
 gh release create v0.1.47 \
   --repo grid-event-manager/gem \
   --title "GEM 0.1.47 beta" \
-  --prerelease \
   --notes-file "$GEM_REPO/docs/releases/0.1.47.md" \
   gema_0.1.47_amd64.deb \
   gema-0.1.47.msi \
